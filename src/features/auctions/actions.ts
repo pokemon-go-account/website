@@ -8,6 +8,7 @@ import { ListingValidationSchema } from "@/models/Listing.validation";
 import Auction from "@/models/Auction";
 import Bid from "@/models/Bid";
 import User from "@/models/User";
+import Registration from "@/models/Registration";
 
 export async function createListing(data: unknown) {
   try {
@@ -49,9 +50,19 @@ export async function createListing(data: unknown) {
 export async function fetchAuctionRealtime(auctionId: string) {
   try {
     await connectDB();
-    const auction = await Auction.findById(auctionId).lean();
+    const auction = await Auction.findById(auctionId)
+      .populate("highestBidderId", "name")
+      .lean();
     if (!auction) {
       return { success: false, error: "Auction not found." };
+    }
+
+    const session = await auth();
+    const userId = session?.user?.id;
+    let isRegistered = false;
+    if (userId) {
+      const reg = await Registration.findOne({ userId, auctionId, status: "PAID" }).lean();
+      isRegistered = !!reg;
     }
 
     const bids = await Bid.find({ auctionId })
@@ -70,8 +81,10 @@ export async function fetchAuctionRealtime(auctionId: string) {
     return {
       success: true,
       currentHighestBid: auction.currentHighestBid,
-      highestBidderId: auction.highestBidderId?.toString() || null,
+      highestBidderId: auction.highestBidderId ? (auction.highestBidderId as any)._id?.toString() || (auction.highestBidderId as any).toString() : null,
+      highestBidderName: (auction.highestBidderId as any)?.name || null,
       status: auction.status,
+      isRegistered,
       bids: formattedBids,
     };
   } catch (error) {
@@ -97,10 +110,25 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       return { success: false, error: "Your account is suspended." };
     }
 
+    // 1b. Verify user registration status
+    const registration = await Registration.findOne({
+      userId: user._id,
+      auctionId,
+      status: "PAID",
+    });
+
+    if (!registration) {
+      return { success: false, error: "Access denied. Verification deposit (₹199) is required to place bids." };
+    }
+
     // 2. Fetch auction and validate listing minIncrement rules
     const auction = await Auction.findById(auctionId).populate<{ listingId: any }>("listingId");
     if (!auction) {
       return { success: false, error: "Auction not found." };
+    }
+
+    if (auction.endTime && new Date() >= new Date(auction.endTime)) {
+      return { success: false, error: "Bidding is closed. This auction has concluded." };
     }
 
     if (auction.status !== "LIVE" && auction.status !== "SCHEDULED") {

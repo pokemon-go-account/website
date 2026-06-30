@@ -14,6 +14,8 @@ export function useSocket(auctionId?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [currentBid, setCurrentBid] = useState<number | null>(null);
   const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
+  const [highestBidderName, setHighestBidderName] = useState<string | null>(null);
+  const [isRegistered, setIsRegistered] = useState(false);
   const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +33,8 @@ export function useSocket(auctionId?: string) {
         setIsConnected(true);
         setCurrentBid(res.currentHighestBid);
         setHighestBidderId(res.highestBidderId ?? null);
+        setHighestBidderName(res.highestBidderName ?? null);
+        setIsRegistered(!!res.isRegistered);
         if (res.bids) {
           setBidHistory(res.bids);
         }
@@ -78,6 +82,8 @@ export function useSocket(auctionId?: string) {
     isConnected,
     currentBid,
     highestBidderId,
+    highestBidderName,
+    isRegistered,
     bidHistory,
     error,
     placeBid,
@@ -85,5 +91,6 @@ export function useSocket(auctionId?: string) {
     setBidHistory,
     setCurrentBid,
     setHighestBidderId,
+    setIsRegistered,
   };
 }

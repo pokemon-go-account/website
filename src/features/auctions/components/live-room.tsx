@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { AlertCircle, Clock, Gavel, ShieldCheck, Trophy, Sparkles, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { RegisterAuctionButton } from "@/features/payments/components/register-button";
 
 interface LiveRoomProps {
   auction: {
@@ -36,6 +37,8 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
     isConnected,
     currentBid,
     highestBidderId,
+    highestBidderName,
+    isRegistered,
     bidHistory,
     error,
     placeBid,
@@ -43,10 +46,12 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
     setBidHistory,
     setCurrentBid,
     setHighestBidderId,
+    setIsRegistered,
   } = useSocket(auction._id);
 
   const [timeLeft, setTimeLeft] = useState("Loading timer...");
   const [customBidAmount, setCustomBidAmount] = useState("");
+  const [isConcluded, setIsConcluded] = useState(false);
 
   // Initialize values from SSR state props
   useEffect(() => {
@@ -69,11 +74,13 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
 
       if (diff <= 0) {
         setTimeLeft("Auction Concluded");
+        setIsConcluded(true);
       } else {
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
         setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+        setIsConcluded(false);
       }
     };
 
@@ -225,43 +232,72 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                 </div>
               )}
 
-              {/* Incremental preset button */}
-              <button
-                onClick={() => handlePlaceBid(nextMinBid)}
-                disabled={!isConnected}
-                className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
-              >
-                <Gavel className="h-4 w-4" />
-                Place Bid (₹{nextMinBid.toLocaleString()})
-              </button>
-
-              <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-border"></div>
-                <span className="flex-shrink mx-4 text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Or enter custom amount</span>
-                <div className="flex-grow border-t border-border"></div>
-              </div>
-
-              {/* Custom bid placement form */}
-              <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₹</span>
-                  <input
-                    type="number"
-                    value={customBidAmount}
-                    onChange={(e) => setCustomBidAmount(e.target.value)}
-                    placeholder={nextMinBid.toString()}
-                    className="w-full h-9 pl-6 pr-3 bg-muted/40 border border-border rounded-lg text-xs placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                    disabled={!isConnected}
-                  />
+              {isConcluded ? (
+                highestBidderName ? (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center space-y-3">
+                    <Trophy className="h-8 w-8 text-yellow-500 mx-auto animate-bounce" />
+                    <div className="space-y-1">
+                      <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Winner Announced!</h3>
+                      <p className="text-[11px] text-zinc-300">
+                        Congratulations to <span className="font-extrabold text-white">{highestBidderName}</span> for winning this asset with a bid of <span className="font-extrabold text-white">₹{activeBid.toLocaleString()}</span>!
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 text-center space-y-2">
+                    <AlertCircle className="h-7 w-7 text-zinc-500 mx-auto" />
+                    <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Concluded</h3>
+                    <p className="text-[11px] text-zinc-400">This auction ended with no bids placed.</p>
+                  </div>
+                )
+              ) : !isRegistered ? (
+                <div className="space-y-3">
+                  <div className="rounded bg-yellow-500/10 p-3 text-[11px] leading-relaxed text-yellow-600 dark:text-yellow-400 border border-yellow-500/20">
+                    Verification deposit of ₹199 is required to participate in live bidding.
+                  </div>
+                  <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
                 </div>
-                <button
-                  type="submit"
-                  disabled={!isConnected}
-                  className="h-9 px-4 rounded-lg bg-muted text-foreground border border-border text-xs font-semibold hover:bg-muted/70 active:scale-95 transition-all cursor-pointer"
-                >
-                  Place
-                </button>
-              </form>
+              ) : (
+                <>
+                  {/* Incremental preset button */}
+                  <button
+                    onClick={() => handlePlaceBid(nextMinBid)}
+                    disabled={!isConnected}
+                    className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                  >
+                    <Gavel className="h-4 w-4" />
+                    Place Bid (₹{nextMinBid.toLocaleString()})
+                  </button>
+
+                  <div className="relative flex py-2 items-center">
+                    <div className="flex-grow border-t border-border"></div>
+                    <span className="flex-shrink mx-4 text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Or enter custom amount</span>
+                    <div className="flex-grow border-t border-border"></div>
+                  </div>
+
+                  {/* Custom bid placement form */}
+                  <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₹</span>
+                      <input
+                        type="number"
+                        value={customBidAmount}
+                        onChange={(e) => setCustomBidAmount(e.target.value)}
+                        placeholder={nextMinBid.toString()}
+                        className="w-full h-9 pl-6 pr-3 bg-muted/40 border border-border rounded-lg text-xs placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                        disabled={!isConnected}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={!isConnected}
+                      className="h-9 px-4 rounded-lg bg-muted text-foreground border border-border text-xs font-semibold hover:bg-muted/70 active:scale-95 transition-all cursor-pointer"
+                    >
+                      Place
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           </div>
 
