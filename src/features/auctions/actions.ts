@@ -5,6 +5,9 @@ import connectDB from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import Listing from "@/models/Listing";
 import { ListingValidationSchema } from "@/models/Listing.validation";
+import Auction from "@/models/Auction";
+import Bid from "@/models/Bid";
+import User from "@/models/User";
 
 export async function createListing(data: unknown) {
   try {
@@ -40,5 +43,110 @@ export async function createListing(data: unknown) {
   } catch (error) {
     console.error("Listing submission failure:", error);
     return { success: false, error: "Internal database tracking breakdown." };
+  }
+}
+
+export async function fetchAuctionRealtime(auctionId: string) {
+  try {
+    await connectDB();
+    const auction = await Auction.findById(auctionId).lean();
+    if (!auction) {
+      return { success: false, error: "Auction not found." };
+    }
+
+    const bids = await Bid.find({ auctionId })
+      .populate("bidderId", "name")
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    const formattedBids = bids.map((b: any) => ({
+      _id: b._id.toString(),
+      bidderName: b.bidderId?.name || "Anonymous",
+      amount: b.amount,
+      createdAt: b.createdAt.toISOString(),
+    }));
+
+    return {
+      success: true,
+      currentHighestBid: auction.currentHighestBid,
+      highestBidderId: auction.highestBidderId?.toString() || null,
+      status: auction.status,
+      bids: formattedBids,
+    };
+  } catch (error) {
+    console.error("Realtime fetch failure:", error);
+    return { success: false, error: "Internal server error fetching state." };
+  }
+}
+
+export async function placeAuctionBid(auctionId: string, bidAmount: number) {
+  try {
+    // 1. Session verification & active status check
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in to bid." };
+    }
+
+    await connectDB();
+    const user = await User.findById(session.user.id);
+    if (!user) {
+      return { success: false, error: "User profile not found." };
+    }
+    if (user.isSuspended) {
+      return { success: false, error: "Your account is suspended." };
+    }
+
+    // 2. Fetch auction and validate listing minIncrement rules
+    const auction = await Auction.findById(auctionId).populate<{ listingId: any }>("listingId");
+    if (!auction) {
+      return { success: false, error: "Auction not found." };
+    }
+
+    if (auction.status !== "LIVE" && auction.status !== "SCHEDULED") {
+      return { success: false, error: "Auction is not accepting bids." };
+    }
+
+    const minIncrement = auction.listingId?.minIncrement || 100;
+
+    // 3. Concurrency check & atomic transaction update
+    const updatedAuction = await Auction.findOneAndUpdate(
+      {
+        _id: auctionId,
+        currentHighestBid: { $lte: bidAmount - minIncrement },
+        status: { $in: ["LIVE", "SCHEDULED"] }
+      },
+      {
+        $set: {
+          currentHighestBid: bidAmount,
+          highestBidderId: user._id,
+          status: "LIVE" // Transitions to LIVE when a bid is received
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedAuction) {
+      return { success: false, error: "You were outbid or the increment was invalid. Try a higher amount." };
+    }
+
+    // 4. Create Audit Log document in Bid collection
+    await Bid.create({
+      auctionId,
+      bidderId: user._id,
+      amount: bidAmount,
+    });
+
+    revalidatePath(`/auctions/${auctionId}`);
+
+    return { 
+      success: true, 
+      currentHighestBid: updatedAuction.currentHighestBid,
+      highestBidderId: updatedAuction.highestBidderId?.toString() || "",
+      error: null 
+    };
+  } catch (error) {
+    console.error("Bid placing failure:", error);
+    return { success: false, error: "Internal db tracking failure." };
   }
 }

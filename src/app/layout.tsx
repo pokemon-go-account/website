@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header";
+import { SessionProvider } from "next-auth/react";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -34,10 +35,12 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col tracking-tight bg-background text-foreground">
-        <Header />
-        <main className="flex-1 flex flex-col">
-          {children}
-        </main>
+        <SessionProvider>
+          <Header />
+          <main className="flex-1 flex flex-col">
+            {children}
+          </main>
+        </SessionProvider>
       </body>
     </html>
   );

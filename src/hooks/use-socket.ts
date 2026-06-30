@@ -1,0 +1,89 @@
+import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { fetchAuctionRealtime, placeAuctionBid } from "@/features/auctions/actions";
+
+export interface BidHistoryItem {
+  _id: string;
+  bidderName: string;
+  amount: number;
+  createdAt: string;
+}
+
+export function useSocket(auctionId?: string) {
+  const { data: session } = useSession();
+  const [isConnected, setIsConnected] = useState(false);
+  const [currentBid, setCurrentBid] = useState<number | null>(null);
+  const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
+  const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!auctionId || !session?.user?.id) return;
+
+    let isMounted = true;
+
+    // High frequency poll query function
+    const pollAuctionState = async () => {
+      const res = await fetchAuctionRealtime(auctionId);
+      if (!isMounted) return;
+
+      if (res.success && res.currentHighestBid !== undefined) {
+        setIsConnected(true);
+        setCurrentBid(res.currentHighestBid);
+        setHighestBidderId(res.highestBidderId ?? null);
+        if (res.bids) {
+          setBidHistory(res.bids);
+        }
+      } else {
+        // Soft error reporting to prevent console clutter during connection drops
+        setError(res.error || "Failed to sync auction telemetry.");
+      }
+    };
+
+    // Initial query
+    pollAuctionState();
+
+    // Setup high-speed polling interval
+    const interval = setInterval(pollAuctionState, 1500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [auctionId, session?.user?.id]);
+
+  const placeBid = useCallback(async (amount: number) => {
+    if (!auctionId) {
+      setError("No active auction room context.");
+      return;
+    }
+
+    setError(null);
+    const res = await placeAuctionBid(auctionId, amount);
+
+    if (!res.success) {
+      setError(res.error || "Failed to place bid.");
+    } else {
+      // Optmistic UI updates for ultra-responsive feel
+      if (res.currentHighestBid !== undefined) {
+        setCurrentBid(res.currentHighestBid);
+      }
+      if (res.highestBidderId) {
+        setHighestBidderId(res.highestBidderId);
+      }
+    }
+  }, [auctionId]);
+
+  return {
+    isConnected,
+    currentBid,
+    highestBidderId,
+    bidHistory,
+    error,
+    placeBid,
+    setError,
+    setBidHistory,
+    setCurrentBid,
+    setHighestBidderId,
+  };
+}
