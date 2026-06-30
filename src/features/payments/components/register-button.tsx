@@ -83,7 +83,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess }: RegisterAuctionB
             {/* Header */}
             <div className="space-y-1.5">
               <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-yellow-500" />
+                <Sparkles className="h-5 w-5 text-white" />
                 Select Deposit Method
               </h2>
               <p className="text-xs text-zinc-400">
@@ -110,7 +110,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess }: RegisterAuctionB
                   <button
                     onClick={handleDevSandboxPayment}
                     disabled={isPending}
-                    className="text-[10px] text-amber-500/80 hover:text-amber-400 font-semibold underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    className="text-[10px] text-zinc-400 hover:text-white font-semibold underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
                   >
                     {isPending ? (
                       <Loader2 className="h-3 w-3 animate-spin" />

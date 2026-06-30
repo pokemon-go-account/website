@@ -88,7 +88,7 @@ export default async function AdminDashboardPage() {
             <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
               Pending Review
             </span>
-            <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500/10 text-yellow-500">
+            <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white">
               <Hourglass className="h-4 w-4" />
             </div>
           </div>

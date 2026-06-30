@@ -126,7 +126,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
       {/* Real-time connection status overlay/banner */}
       <div className="mb-6">
         {!isConnected ? (
-          <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-600 dark:text-yellow-400">
+          <div className="flex items-center gap-2 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 p-3 text-xs text-gray-800 dark:text-zinc-300">
             <AlertCircle className="h-4 w-4 animate-pulse" />
             Connecting to real-time bidding engine... Live updates paused.
           </div>
@@ -200,7 +200,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                 <Clock className="h-3.5 w-3.5" />
                 Remaining Time
               </span>
-              <span className="text-xs font-medium text-yellow-500 flex items-center gap-1 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">
+              <span className="text-xs font-medium text-gray-950 dark:text-white flex items-center gap-1 bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded border border-gray-200 dark:border-white/10">
                 {timeLeft}
               </span>
             </div>
@@ -235,7 +235,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               {isConcluded ? (
                 highestBidderName ? (
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center space-y-3">
-                    <Trophy className="h-8 w-8 text-yellow-500 mx-auto animate-bounce" />
+                    <Trophy className="h-8 w-8 text-gray-950 dark:text-white mx-auto animate-bounce" />
                     <div className="space-y-1">
                       <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Winner Announced!</h3>
                       <p className="text-[11px] text-zinc-300">
@@ -252,7 +252,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                 )
               ) : !isRegistered ? (
                 <div className="space-y-3">
-                  <div className="rounded bg-yellow-500/10 p-3 text-[11px] leading-relaxed text-yellow-600 dark:text-yellow-400 border border-yellow-500/20">
+                  <div className="rounded bg-gray-100 dark:bg-white/5 p-3 text-[11px] leading-relaxed text-gray-800 dark:text-zinc-300 border border-gray-200 dark:border-white/10">
                     Verification deposit of ₹199 is required to participate in live bidding.
                   </div>
                   <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />

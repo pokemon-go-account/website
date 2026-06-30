@@ -50,7 +50,7 @@ export default async function SellerDashboardOverview() {
         </div>
         <Link
           href="/dashboard/seller/listings/new"
-          className="inline-flex h-9 items-center justify-center rounded-lg bg-zinc-900 hover:bg-zinc-800 px-4 text-xs font-semibold text-white border border-zinc-700/50 gap-1.5 transition-all active:scale-95 cursor-pointer"
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black px-4 text-xs font-semibold border border-zinc-700/50 gap-1.5 transition-all active:scale-95 cursor-pointer"
         >
           <Plus className="h-3.5 w-3.5" />
           New Listing
@@ -126,7 +126,7 @@ export default async function SellerDashboardOverview() {
                             Current Bid: ₹{auc.currentHighestBid.toLocaleString()}
                           </div>
                           <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Sparkles className="h-3 w-3 text-yellow-500" />
+                            <Sparkles className="h-3 w-3 text-gray-500 dark:text-zinc-400" />
                             {isConcluded ? "Concluded" : auc.status}
                           </div>
                         </div>
@@ -145,7 +145,7 @@ export default async function SellerDashboardOverview() {
                         auc.highestBidderId ? (
                           <div className="rounded bg-emerald-500/5 text-emerald-400 p-2.5 text-[10px] border border-emerald-500/10 max-w-xs space-y-1 leading-normal">
                             <div className="font-bold flex items-center gap-1 uppercase tracking-wider text-[9px] text-emerald-500">
-                              <Trophy className="h-3.5 w-3.5 text-yellow-500" /> Winner Announced
+                              <Trophy className="h-3.5 w-3.5 text-gray-950 dark:text-white" /> Winner Announced
                             </div>
                             <div>Name: <span className="font-semibold text-white">{(auc.highestBidderId as any).name}</span></div>
                             <div className="text-[9px] text-muted-foreground">Email: {(auc.highestBidderId as any).email}</div>
