@@ -9,6 +9,7 @@
     "@auth/core": "^0.37.4",
     "@base-ui/react": "^1.6.0",
     "@hookform/resolvers": "^5.4.0",
+    "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "bunyan": "^1.8.15",
     "class-variance-authority": "^0.7.1",
