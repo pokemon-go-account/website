@@ -7,6 +7,7 @@ import { z } from "zod";
 import { signIn, auth } from "@/auth";
 import { AuthError } from "next-auth";
 import { verifyFirebaseIdToken } from "@/lib/firebase-admin";
+import { verifyRecaptchaToken } from "@/lib/recaptcha";
 
 const RegisterSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -20,6 +21,12 @@ const LoginSchema = z.object({
 
 export async function loginUser(prevState: any, formData: FormData) {
   try {
+    const recaptchaToken = formData.get("g-recaptcha-response") as string | null;
+    const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, "LOGIN");
+    if (!recaptchaResult.success) {
+      return { success: false, error: recaptchaResult.error };
+    }
+
     const rawFields = Object.fromEntries(formData.entries());
     const validated = LoginSchema.safeParse(rawFields);
 
@@ -52,6 +59,12 @@ export async function loginUser(prevState: any, formData: FormData) {
 
 export async function registerUser(prevState: any, formData: FormData) {
   try {
+    const recaptchaToken = formData.get("g-recaptcha-response") as string | null;
+    const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, "REGISTER");
+    if (!recaptchaResult.success) {
+      return { success: false, error: recaptchaResult.error };
+    }
+
     await connectDB();
 
     const rawFields = Object.fromEntries(formData.entries());

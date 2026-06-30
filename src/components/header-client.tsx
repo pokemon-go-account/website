@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, ArrowRight, LogOut, Shield, Sun, Moon } from "lucide-react";
+import { Menu, X, LogOut, Search, Shield, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 
@@ -14,9 +14,20 @@ interface HeaderClientProps {
   signOutAction: () => Promise<void>;
 }
 
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/auctions", label: "Auctions" },
+  { href: "#how-it-works", label: "How It Works" },
+  { href: "/dashboard/seller/listings/new", label: "Sell With Us" },
+  { href: "#faq", label: "FAQ" },
+  { href: "#contact", label: "Contact" },
+];
+
 export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [search, setSearch] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -24,16 +35,22 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
   }, []);
 
   const toggleTheme = () => {
-    if (theme === "light") {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setTheme("dark");
-    } else {
+    if (theme === "dark") {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
       setTheme("light");
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setTheme("dark");
     }
   };
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 4);
+    window.addEventListener("scroll", handler);
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -43,56 +60,78 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/70 backdrop-blur-md">
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? "bg-white/95 dark:bg-[#0d0d0f]/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/30"
+          : "bg-white dark:bg-[#0d0d0f] border-b border-gray-200 dark:border-white/10"
+      }`}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo / Branding */}
-          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-foreground hover:opacity-90 transition-opacity">
-            <Shield className="h-5 w-5 text-yellow-500 fill-yellow-500/20" />
-            <span className="text-sm md:text-base font-bold bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
-              Pokemon Go Auctions
-            </span>
+        <div className="flex h-14 items-center justify-between gap-4">
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <div className="h-8 w-8 rounded-lg bg-gray-900 dark:bg-white flex items-center justify-center shadow-md">
+              <Shield className="h-4 w-4 text-white dark:text-black fill-white/10 dark:fill-black/10" />
+            </div>
+            <div className="leading-tight hidden sm:block">
+              <p className="text-gray-900 dark:text-white font-extrabold text-sm tracking-tight leading-none">POKÉMON GO</p>
+              <p className="text-gray-500 dark:text-gray-400 font-bold text-[10px] tracking-widest leading-none">AUCTION</p>
+            </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/auctions" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Auctions
-            </Link>
-            {user && (
-              <Link href="/profile" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Profile
+          {/* Search bar */}
+          <div className="hidden md:flex flex-1 max-w-xs">
+            <div className="relative w-full">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search for accounts, items & more..."
+                className="w-full h-8 pl-8 pr-3 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400/50 transition-all"
+              />
+              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+            </div>
+          </div>
+
+          {/* Desktop Nav */}
+          <nav className="hidden lg:flex items-center gap-5">
+            {navLinks.map(({ href, label }) => (
+              <Link
+                key={label}
+                href={href}
+                className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors relative group"
+              >
+                {label}
+                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gray-900 dark:bg-white transition-all group-hover:w-full" />
               </Link>
-            )}
-            {(user?.role === "SELLER" || user?.role === "ADMIN") && (
-              <Link href="/dashboard/seller" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Seller Dashboard
-              </Link>
-            )}
+            ))}
             {user?.role === "ADMIN" && (
-              <Link href="/admin" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Admin Control
+              <Link href="/admin" className="text-xs font-medium text-red-500 hover:text-red-400 transition-colors">
+                Admin
               </Link>
             )}
           </nav>
 
           {/* Desktop CTAs */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/40 text-foreground transition-all hover:bg-muted active:scale-95 cursor-pointer"
-              aria-label="Toggle Theme"
+              aria-label="Toggle theme"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 transition-all cursor-pointer"
             >
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             </button>
             {user ? (
-              <div className="flex items-center gap-4">
-                <span className="text-xs text-muted-foreground">
-                  Logged in as <strong className="text-foreground">{user.name || user.email}</strong> ({user.role})
-                </span>
+              <div className="flex items-center gap-3">
+                <Link href="/profile" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  {user.name || user.email}
+                </Link>
                 <button
                   onClick={() => signOutAction()}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-4 text-xs font-medium text-foreground transition-all hover:bg-muted active:scale-95 cursor-pointer"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/15 bg-gray-100 dark:bg-white/5 px-3 text-xs font-medium text-gray-700 dark:text-gray-300 transition-all hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white active:scale-95 cursor-pointer"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   Sign Out
@@ -100,30 +139,34 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
               </div>
             ) : (
               <>
-                <Link href="/login" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Sign In
+                <Link
+                  href="/login"
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-gray-200 dark:border-white/15 bg-transparent px-4 text-xs font-semibold text-gray-800 dark:text-white transition-all hover:bg-gray-100 dark:hover:bg-white/10 active:scale-95"
+                >
+                  Login
                 </Link>
-                <Link href="/register" className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-95">
-                  Get Started
-                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                <Link
+                  href="/register"
+                  className="inline-flex h-8 items-center justify-center rounded-lg bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 px-4 text-xs font-bold text-white dark:text-black transition-all active:scale-95 shadow-md"
+                >
+                  Register
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile Theme Toggle & Menu Button */}
+          {/* Mobile menu button */}
           <div className="flex md:hidden items-center gap-2">
             <button
               onClick={toggleTheme}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/40 text-foreground transition-all hover:bg-muted active:scale-95 cursor-pointer"
-              aria-label="Toggle Theme"
+              aria-label="Toggle theme"
+              className="flex items-center justify-center rounded-lg h-8 w-8 bg-white/5 border border-white/10 text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-pointer"
             >
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none cursor-pointer"
-              aria-label="Toggle main menu"
+              className="flex items-center justify-center rounded-lg h-9 w-9 bg-white/5 border border-white/10 text-gray-300 hover:text-white cursor-pointer"
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -139,76 +182,70 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="md:hidden border-t border-border bg-background/95 backdrop-blur-lg overflow-hidden"
+            className="md:hidden border-t border-white/10 bg-[#0d0d0f]/98 backdrop-blur-xl overflow-hidden"
           >
-            <div className="space-y-1 px-4 py-4">
-              <Link
-                href="/auctions"
-                onClick={toggleMenu}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
-              >
-                Auctions
-              </Link>
-              {user && (
+            {/* Mobile search */}
+            <div className="px-4 pt-4 pb-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search accounts, items..."
+                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400/50"
+                />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+              </div>
+            </div>
+
+            <div className="space-y-0.5 px-4 py-3">
+              {navLinks.map(({ href, label }) => (
                 <Link
-                  href="/profile"
+                  key={label}
+                  href={href}
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
                 >
-                  Profile
+                  {label}
                 </Link>
-              )}
-              {(user?.role === "SELLER" || user?.role === "ADMIN") && (
-                <Link
-                  href="/dashboard/seller"
-                  onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
-                >
-                  Seller Dashboard
-                </Link>
-              )}
+              ))}
               {user?.role === "ADMIN" && (
                 <Link
                   href="/admin"
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   Admin Control
                 </Link>
               )}
 
-              <div className="border-t border-border mt-4 pt-4">
+              <div className="border-t border-white/10 mt-3 pt-3">
                 {user ? (
-                  <div className="space-y-3 px-3">
-                    <div className="text-xs text-neutral-400">
-                      Logged in as <strong className="text-neutral-200">{user.name || user.email}</strong> ({user.role})
-                    </div>
+                  <div className="space-y-2 px-2">
+                    <Link href="/profile" onClick={toggleMenu} className="block text-xs text-gray-400 py-1">
+                      {user.name || user.email} ({user.role})
+                    </Link>
                     <button
-                      onClick={() => {
-                        toggleMenu();
-                        signOutAction();
-                      }}
-                      className="flex w-full h-10 items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 text-sm font-medium text-foreground transition-all hover:bg-muted"
+                      onClick={() => { toggleMenu(); signOutAction(); }}
+                      className="flex w-full h-10 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 text-sm font-medium text-white"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign Out
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2 px-3">
+                  <div className="flex flex-col gap-2 px-2">
                     <Link
                       href="/login"
                       onClick={toggleMenu}
-                      className="flex h-10 items-center justify-center rounded-lg border border-border bg-muted/20 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                      className="flex h-10 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-sm font-semibold text-white"
                     >
-                      Sign In
+                      Login
                     </Link>
                     <Link
                       href="/register"
                       onClick={toggleMenu}
-                      className="flex h-10 items-center justify-center rounded-lg bg-white text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                      className="flex h-10 items-center justify-center rounded-lg bg-gray-900 dark:bg-white text-sm font-bold text-white dark:text-black"
                     >
-                      Get Started
+                      Register
                     </Link>
                   </div>
                 )}

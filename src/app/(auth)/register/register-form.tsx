@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useEffect, useRef } from "react";
+import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { registerUser, loginMockOAuth, loginWithFirebaseIdToken, loginMockPhone } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
@@ -152,6 +153,7 @@ export function RegisterForm() {
 
   return (
     <div className="space-y-6">
+      <Script src="https://www.google.com/recaptcha/enterprise.js" async defer strategy="afterInteractive" />
       {/* Configuration status banner */}
       {!isConfigured && (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs text-amber-200/90 flex gap-2.5 items-start leading-relaxed">
@@ -240,6 +242,12 @@ export function RegisterForm() {
               <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
+          <div 
+            className="g-recaptcha flex justify-center my-4" 
+            data-sitekey="6LfTJD4tAAAAAHsKOZikKbkNQRahOzidVC8tHKL8" 
+            data-action="REGISTER"
+            data-theme="dark"
+          ></div>
           <Button type="submit" className="w-full font-medium" disabled={isCredPending}>
             {isCredPending ? "Creating account..." : "Sign Up with Password"}
           </Button>

@@ -1,53 +1,129 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
+import { ShieldCheck, Users, Lock, Headphones } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
+
+const trustBadges = [
+  { icon: ShieldCheck, label: "100% Secure" },
+  { icon: Users, label: "Trusted Community" },
+  { icon: Lock, label: "Safe Payments" },
+  { icon: Headphones, label: "24/7 Support" },
+];
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
 
 export function Hero() {
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-  };
-
   return (
-    <section className="relative flex flex-col items-center justify-center overflow-hidden bg-background py-24 md:py-32 px-4 text-center">
-      {/* Subtle ambient radial background glow */}
-      <div className="absolute top-0 left-1/2 -z-10 h-[600px] w-[1000px] -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,rgba(0,0,0,0.03),transparent_50%)] dark:bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.03),transparent_50%)]" />
-
-      <motion.div
-        initial="initial"
-        animate="animate"
-        transition={{ staggerChildren: 0.15 }}
-        className="max-w-4xl space-y-6"
+    <section className="relative w-full overflow-hidden bg-white dark:bg-[#080809]">
+      {/* Hero Banner */}
+      <div
+        className="relative min-h-[460px] md:min-h-[540px] flex items-center"
+        style={{
+          backgroundImage: "url('/hero-banner.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
-        {/* Animated Badge */}
-        <motion.div variants={fadeIn} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur-md">
-          <Zap className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-          <span>The Next Generation of Gaming Marketplaces</span>
-        </motion.div>
+        {/* Light mode: bright fade */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/10 dark:from-[#080809] dark:via-[#080809]/85 dark:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#080809] via-transparent to-transparent opacity-60" />
+        {/* Dark mode white ambient glow bottom-left */}
+        <div className="absolute bottom-0 left-0 w-96 h-48 opacity-0 dark:opacity-20 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.1),transparent_70%)]" />
 
-        {/* Main Headline */}
-        <motion.h1 variants={fadeIn} transition={{ duration: 0.6, ease: "easeOut" }} className="text-4xl font-semibold tracking-tighter sm:text-6xl md:text-7xl bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
-          Secure Live Auctions <br />for Premium Gaming Assets
-        </motion.h1>
+        {/* Hero content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="max-w-xl"
+          >
+            <motion.p
+              variants={itemVariants}
+              className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-[0.3em] mb-4"
+            >
+              WELCOME TO
+            </motion.p>
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.1] mb-5"
+            >
+              POKÉMON GO<br />
+              <span className="text-gray-900 dark:text-white [text-shadow:0_0_40px_rgba(255,255,255,0.1)]">
+                AUCTION
+              </span>
+            </motion.h1>
+            <motion.p
+              variants={itemVariants}
+              className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-8 leading-relaxed max-w-md"
+            >
+              The trusted marketplace to buy &amp; sell Pokémon GO accounts, rare Pokémon, items and more – through safe and exciting auctions!
+            </motion.p>
 
-        {/* Subtitle */}
-        <motion.p variants={fadeIn} transition={{ duration: 0.6 }} className="mx-auto max-w-xl text-md sm:text-lg text-muted-foreground tracking-normal font-light">
-          Experience hyper-fast, scheduled live bidding for elite gaming accounts. Fully verified, platform-intermediated, and completely secure.
-        </motion.p>
+            {/* CTA Buttons */}
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-wrap gap-3"
+            >
+              <Link
+                href="/auctions"
+                className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black font-bold px-6 py-3 rounded-xl text-sm transition-all active:scale-95 shadow-lg shadow-black/10 dark:shadow-white/5"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+                </svg>
+                BROWSE AUCTIONS
+              </Link>
+              <Link
+                href="/dashboard/seller/listings/new"
+                className="inline-flex items-center gap-2 border-2 border-gray-800/20 dark:border-white/30 hover:border-gray-800/60 dark:hover:border-white/60 bg-transparent text-gray-900 dark:text-white hover:bg-gray-100/50 dark:hover:bg-white/5 font-bold px-6 py-3 rounded-xl text-sm transition-all active:scale-95"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z" />
+                </svg>
+                SELL YOUR ITEM
+              </Link>
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
 
-        {/* Call to Actions */}
-        <motion.div variants={fadeIn} transition={{ duration: 0.6 }} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          <Link href="/register" className="group inline-flex h-11 items-center justify-center rounded-lg bg-primary px-6 font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-95 text-sm">
-            Explore Live Auctions
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Link>
-          <Link href="/login" className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-muted/30 px-6 font-medium text-foreground transition-all hover:bg-muted active:scale-95 text-sm backdrop-blur-sm">
-            List Your Account
-          </Link>
-        </motion.div>
-      </motion.div>
+      {/* Trust Badges Bar */}
+      <div className="bg-gray-50 dark:bg-[#0d0d0f] border-t border-gray-200 dark:border-white/[0.06]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-200 dark:divide-white/[0.06]"
+          >
+            {trustBadges.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center justify-center gap-2.5 py-4 px-4">
+                <Icon className="h-4 w-4 text-gray-500 dark:text-gray-400 shrink-0" />
+                <span className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-semibold">{label}</span>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
     </section>
   );
 }
