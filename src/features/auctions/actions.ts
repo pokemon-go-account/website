@@ -2,8 +2,9 @@
 
 import { auth } from "@/auth";
 import connectDB from "@/lib/db";
-import Listing, { ListingValidationSchema } from "@/models/Listing";
 import { revalidatePath } from "next/cache";
+import Listing from "@/models/Listing";
+import { ListingValidationSchema } from "@/models/Listing.validation";
 
 export async function createListing(data: unknown) {
   try {

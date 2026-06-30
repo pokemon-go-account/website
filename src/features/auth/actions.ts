@@ -1,11 +1,11 @@
-
-"usesrv"
 "use server";
 
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
 
 const RegisterSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -13,6 +13,43 @@ const RegisterSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   telegramUsername: z.string().optional(),
 });
+
+const LoginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export async function loginUser(prevState: any, formData: FormData) {
+  try {
+    const rawFields = Object.fromEntries(formData.entries());
+    const validated = LoginSchema.safeParse(rawFields);
+
+    if (!validated.success) {
+      return { success: false, error: validated.error.issues[0].message };
+    }
+
+    const { email, password } = validated.data;
+    const callbackUrl = formData.get("callbackUrl") as string | null;
+
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: callbackUrl || "/",
+    });
+
+    return { success: true, error: null };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { success: false, error: "Invalid credentials." };
+        default:
+          return { success: false, error: "Something went wrong." };
+      }
+    }
+    throw error;
+  }
+}
 
 export async function registerUser(prevState: any, formData: FormData) {
   try {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ListingValidationSchema } from "@/models/Listing";
+import { ListingValidationSchema } from "@/models/Listing.validation";
 import { createListing } from "@/features/auctions/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
