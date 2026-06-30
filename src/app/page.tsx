@@ -1,17 +1,25 @@
+import { Hero } from "@/features/landing/components/hero";
+import { Features } from "@/features/landing/components/features";
+import { FAQ } from "@/features/landing/components/faq";
+
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-background px-4 text-center">
-      <div className="max-w-2xl space-y-4">
-        <div className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground transition-colors">
-          Platform Core Infrastructure Engine Active
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Structural layout grid composition slots */}
+      <Hero />
+      <Features />
+      <FAQ />
+      
+      {/* Minimalistic SaaS Footer */}
+      <footer className="mt-auto border-t border-border bg-muted/30 dark:bg-neutral-950/60 py-8 px-4 text-center text-xs text-muted-foreground">
+        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>© 2026 Premium Auction Engine. All rights reserved.</div>
+          <div className="flex gap-6">
+            <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
+          </div>
         </div>
-        <h1 className="text-4xl font-semibold tracking-tighter sm:text-6xl text-foreground">
-          Premium Live Asset Marketplace
-        </h1>
-        <p className="text-muted-foreground text-md sm:text-lg max-w-lg mx-auto">
-          Milestone 1 baseline architecture components verified. Scalable architecture folders and dark-theme configurations are mounted.
-        </p>
-      </div>
+      </footer>
     </div>
   );
 }
