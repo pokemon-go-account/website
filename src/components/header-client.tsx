@@ -75,9 +75,9 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
             <div className="h-8 w-8 rounded-lg bg-gray-900 dark:bg-white flex items-center justify-center shadow-md">
               <Shield className="h-4 w-4 text-white dark:text-black fill-white/10 dark:fill-black/10" />
             </div>
-            <div className="leading-tight hidden sm:block">
-              <p className="text-gray-900 dark:text-white font-extrabold text-sm tracking-tight leading-none">POKÉMON GO</p>
-              <p className="text-gray-500 dark:text-gray-400 font-bold text-[10px] tracking-widest leading-none">AUCTION</p>
+            <div className="leading-tight block">
+              <p className="text-gray-900 dark:text-white font-extrabold text-xs sm:text-sm tracking-tight leading-none">POKÉMON GO</p>
+              <p className="text-gray-500 dark:text-gray-400 font-bold text-[8px] sm:text-[10px] tracking-widest leading-none">AUCTION</p>
             </div>
           </Link>
 
@@ -160,13 +160,13 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="flex items-center justify-center rounded-lg h-8 w-8 bg-white/5 border border-white/10 text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-pointer"
+              className="flex items-center justify-center rounded-lg h-8 w-8 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-pointer"
             >
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button
               onClick={toggleMenu}
-              className="flex items-center justify-center rounded-lg h-9 w-9 bg-white/5 border border-white/10 text-gray-300 hover:text-white cursor-pointer"
+              className="flex items-center justify-center rounded-lg h-9 w-9 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-gray-950 dark:hover:text-white cursor-pointer"
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -182,7 +182,7 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="md:hidden border-t border-white/10 bg-[#0d0d0f]/98 backdrop-blur-xl overflow-hidden"
+            className="md:hidden border-t border-gray-200 dark:border-white/10 bg-white/98 dark:bg-[#0d0d0f]/98 backdrop-blur-xl overflow-hidden"
           >
             {/* Mobile search */}
             <div className="px-4 pt-4 pb-2">
@@ -190,9 +190,9 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
                 <input
                   type="text"
                   placeholder="Search accounts, items..."
-                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400/50"
+                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400/50"
                 />
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
             </div>
 
@@ -202,7 +202,7 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
                   key={label}
                   href={href}
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-950 dark:hover:text-white transition-colors"
                 >
                   {label}
                 </Link>
@@ -211,21 +211,21 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
                 <Link
                   href="/admin"
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   Admin Control
                 </Link>
               )}
 
-              <div className="border-t border-white/10 mt-3 pt-3">
+              <div className="border-t border-gray-200 dark:border-white/10 mt-3 pt-3">
                 {user ? (
                   <div className="space-y-2 px-2">
-                    <Link href="/profile" onClick={toggleMenu} className="block text-xs text-gray-400 py-1">
+                    <Link href="/profile" onClick={toggleMenu} className="block text-xs text-gray-500 dark:text-gray-400 py-1">
                       {user.name || user.email} ({user.role})
                     </Link>
                     <button
                       onClick={() => { toggleMenu(); signOutAction(); }}
-                      className="flex w-full h-10 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 text-sm font-medium text-white"
+                      className="flex w-full h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-white/15 bg-gray-100 dark:bg-white/5 text-sm font-medium text-gray-800 dark:text-white"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign Out
@@ -236,7 +236,7 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
                     <Link
                       href="/login"
                       onClick={toggleMenu}
-                      className="flex h-10 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-sm font-semibold text-white"
+                      className="flex h-10 items-center justify-center rounded-lg border border-gray-200 dark:border-white/15 bg-gray-100 dark:bg-white/5 text-sm font-semibold text-gray-800 dark:text-white"
                     >
                       Login
                     </Link>
