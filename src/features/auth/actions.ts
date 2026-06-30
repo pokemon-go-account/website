@@ -12,6 +12,7 @@ const RegisterSchema = z.object({
   email: z.string().email("Invalid email layout address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   telegramUsername: z.string().optional(),
+  role: z.enum(["USER", "SELLER"]).default("USER"),
 });
 
 const LoginSchema = z.object({
@@ -62,7 +63,7 @@ export async function registerUser(prevState: any, formData: FormData) {
       return { success: false, error: validated.error.issues[0].message };
     }
 
-    const { name, email, password, telegramUsername } = validated.data;
+    const { name, email, password, telegramUsername, role } = validated.data;
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
@@ -77,7 +78,7 @@ export async function registerUser(prevState: any, formData: FormData) {
       email: email.toLowerCase(),
       passwordHash,
       telegramUsername: telegramUsername || undefined,
-      role: "USER", // Hardcoded baseline fallback security default
+      role: role || "USER",
     });
 
     return { success: true, error: null };
