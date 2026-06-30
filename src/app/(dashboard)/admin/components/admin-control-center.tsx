@@ -493,8 +493,10 @@ export function AdminControlCenter({
                     )}
                   </div>
                   
-                  <div className="text-[10px] text-muted-foreground leading-normal bg-muted/20 border border-border p-2 rounded">
-                    <strong>Seller Contact:</strong> {selectedPending.sellerId?.name} ({selectedPending.sellerId?.email})
+                  <div className="text-[10px] text-muted-foreground leading-normal bg-muted/20 border border-border p-2.5 rounded space-y-1">
+                    <div><strong>Seller Contact:</strong> {selectedPending.sellerId?.name} ({selectedPending.sellerId?.email})</div>
+                    <div><strong>Telegram (Listing):</strong> <span className="text-zinc-300 font-semibold">{selectedPending.telegramUsername ? `@${selectedPending.telegramUsername.replace("@", "")}` : "Not configured"}</span></div>
+                    <div><strong>Telegram (Profile):</strong> <span className="text-zinc-300 font-semibold">{selectedPending.sellerId?.telegramUsername ? `@${selectedPending.sellerId.telegramUsername.replace("@", "")}` : "Not configured"}</span></div>
                   </div>
                 </div>
 
@@ -596,7 +598,20 @@ export function AdminControlCenter({
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <h4 className="font-bold text-sm text-foreground">{l.title}</h4>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Seller Telegram: <strong className="text-zinc-300">@{l.telegramUsername}</strong></p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] text-muted-foreground">
+                        <p>Seller Telegram: <strong className="text-zinc-300">@{l.telegramUsername}</strong></p>
+                        {(() => {
+                          const auc = 
+                            activeAuctions.find((a) => a.listingId?._id === l._id) ||
+                            concludedAuctions.find((a) => a.listingId?._id === l._id);
+                          if (auc && auc.highestBidderId) {
+                            return (
+                              <p>Buyer Telegram: <strong className="text-zinc-300">@{auc.highestBidderId.telegramUsername || "None configured"}</strong></p>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-muted-foreground">Stage:</span>
@@ -706,6 +721,13 @@ export function AdminControlCenter({
                           <div className="space-y-0.5">
                             <div className="font-medium text-foreground">{auc.highestBidderId.name}</div>
                             <div className="text-[10px] text-muted-foreground">{auc.highestBidderId.email}</div>
+                            <div className="text-[10px] text-zinc-300">
+                              Telegram: <strong className="font-semibold text-white">
+                                {auc.highestBidderId.telegramUsername 
+                                  ? `@${auc.highestBidderId.telegramUsername.replace("@", "")}` 
+                                  : "Not configured"}
+                              </strong>
+                            </div>
                             {auc.highestBidderId.isSuspended && (
                               <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded text-[9px] font-bold border border-red-500/20">
                                 Suspended

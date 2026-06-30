@@ -59,6 +59,11 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
             <Link href="/auctions" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
               Auctions
             </Link>
+            {user && (
+              <Link href="/profile" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Profile
+              </Link>
+            )}
             {(user?.role === "SELLER" || user?.role === "ADMIN") && (
               <Link href="/dashboard/seller" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Seller Dashboard
@@ -144,6 +149,15 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
               >
                 Auctions
               </Link>
+              {user && (
+                <Link
+                  href="/profile"
+                  onClick={toggleMenu}
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
+                >
+                  Profile
+                </Link>
+              )}
               {(user?.role === "SELLER" || user?.role === "ADMIN") && (
                 <Link
                   href="/dashboard/seller"

@@ -32,11 +32,11 @@ export default async function AdminDashboardPage() {
     User.countDocuments().lean(),
     Listing.countDocuments({ status: "PENDING" }).lean(),
     Listing.find({ status: "PENDING" })
-      .populate("sellerId", "name email")
+      .populate("sellerId", "name email telegramUsername")
       .sort({ createdAt: -1 })
       .lean(),
     Listing.find({ status: "APPROVED" })
-      .populate("sellerId", "name email")
+      .populate("sellerId", "name email telegramUsername")
       .sort({ createdAt: -1 })
       .lean(),
     Auction.find({ status: { $in: ["LIVE", "PAUSED", "SCHEDULED"] } })
@@ -45,7 +45,7 @@ export default async function AdminDashboardPage() {
       .lean(),
     Auction.find({ $or: [{ status: "COMPLETED" }, { endTime: { $lte: new Date() } }] })
       .populate("listingId")
-      .populate("highestBidderId", "name email isSuspended")
+      .populate("highestBidderId", "name email isSuspended telegramUsername")
       .sort({ endTime: -1 })
       .lean(),
     WebhookLog.find().sort({ createdAt: -1 }).limit(50).lean(),

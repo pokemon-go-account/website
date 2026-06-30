@@ -37,6 +37,10 @@ export function RegisterForm() {
         <Input id="password" name="password" type="password" required className="bg-muted/50 border-border" />
       </div>
       <div className="space-y-1">
+        <Label htmlFor="telegramUsername">Telegram Username</Label>
+        <Input id="telegramUsername" name="telegramUsername" type="text" required placeholder="@yourname" className="bg-muted/50 border-border" />
+      </div>
+      <div className="space-y-1">
         <Label htmlFor="role">Register as</Label>
         <select
           id="role"
