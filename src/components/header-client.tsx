@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, LogOut, Search, Shield, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { useSession, signOut as clientSignOut } from "next-auth/react";
 
 interface HeaderClientProps {
   user?: {
@@ -11,7 +12,7 @@ interface HeaderClientProps {
     email?: string | null;
     role?: string | null;
   };
-  signOutAction: () => Promise<void>;
+  signOutAction?: () => Promise<void>;
 }
 
 const navLinks = [
@@ -23,7 +24,24 @@ const navLinks = [
   { href: "#contact", label: "Contact" },
 ];
 
-export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
+export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
+  const { data: session } = useSession();
+  const sessionUser = session?.user;
+  
+  const user = propUser || (sessionUser ? {
+    name: sessionUser.name,
+    email: sessionUser.email,
+    role: (sessionUser as any).role || "USER",
+  } : undefined);
+
+  const handleSignOut = async () => {
+    if (signOutAction) {
+      await signOutAction();
+    } else {
+      await clientSignOut({ callbackUrl: "/" });
+    }
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [scrolled, setScrolled] = useState(false);
@@ -130,7 +148,7 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
                   {user.name || user.email}
                 </Link>
                 <button
-                  onClick={() => signOutAction()}
+                  onClick={() => handleSignOut()}
                   className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/15 bg-gray-100 dark:bg-white/5 px-3 text-xs font-medium text-gray-700 dark:text-gray-300 transition-all hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white active:scale-95 cursor-pointer"
                 >
                   <LogOut className="h-3.5 w-3.5" />
@@ -224,7 +242,7 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
                       {user.name || user.email} ({user.role})
                     </Link>
                     <button
-                      onClick={() => { toggleMenu(); signOutAction(); }}
+                      onClick={() => { toggleMenu(); handleSignOut(); }}
                       className="flex w-full h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-white/15 bg-gray-100 dark:bg-white/5 text-sm font-medium text-gray-800 dark:text-white"
                     >
                       <LogOut className="h-4 w-4" />

@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Auction from "@/models/Auction";
 import Bid from "@/models/Bid";
 import User from "@/models/User"; // Registers model for populate
+import Listing from "@/models/Listing"; // Registers model for populate
 import { LiveRoom } from "@/features/auctions/components/live-room";
 
 interface AuctionPageProps {
@@ -15,6 +16,10 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
   const { id } = await params;
 
   await connectDB();
+
+  // Explicitly reference models to prevent Turbopack tree-shaking
+  const _userCheck = User;
+  const _listingCheck = Listing;
 
   // Fetch the auction and populate the listing details
   const auctionDoc = await Auction.findById(id)
@@ -46,6 +51,26 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
       minIncrement: (auctionDoc.listingId as any).minIncrement,
       startingBid: (auctionDoc.listingId as any).startingBid,
       region: (auctionDoc.listingId as any).region,
+      screenshots: (auctionDoc.listingId as any).screenshots || [],
+      stardust: (auctionDoc.listingId as any).stardust || 0,
+      xp: (auctionDoc.listingId as any).xp || 0,
+      pokedexCompleted: (auctionDoc.listingId as any).pokedexCompleted || 0,
+      bestBuddyCount: (auctionDoc.listingId as any).bestBuddyCount || 0,
+      pokeCoins: (auctionDoc.listingId as any).pokeCoins || 0,
+      startDate: (auctionDoc.listingId as any).startDate || "",
+      accountType: (auctionDoc.listingId as any).accountType || "",
+      accountStatus: (auctionDoc.listingId as any).accountStatus || "",
+      weeklyDistance: (auctionDoc.listingId as any).weeklyDistance || 0,
+      topPokemon: (auctionDoc.listingId as any).topPokemon || "",
+      rareCandy: (auctionDoc.listingId as any).rareCandy || 0,
+      fastTm: (auctionDoc.listingId as any).fastTm || 0,
+      chargedTm: (auctionDoc.listingId as any).chargedTm || 0,
+      eliteFastTm: (auctionDoc.listingId as any).eliteFastTm || 0,
+      eliteChargedTm: (auctionDoc.listingId as any).eliteChargedTm || 0,
+      incubators: (auctionDoc.listingId as any).incubators || 0,
+      luckyEggs: (auctionDoc.listingId as any).luckyEggs || 0,
+      lureModules: (auctionDoc.listingId as any).lureModules || 0,
+      premiumRaidPass: (auctionDoc.listingId as any).premiumRaidPass || 0,
     },
     currentHighestBid: auctionDoc.currentHighestBid,
     highestBidderId: auctionDoc.highestBidderId?.toString() || null,

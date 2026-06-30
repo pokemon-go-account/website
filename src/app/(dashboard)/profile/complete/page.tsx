@@ -5,7 +5,12 @@ import { CompleteProfileForm } from "./complete-form";
 export const revalidate = 0; // Dynamic route
 
 export default async function ProfileCompletePage() {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("ProfileCompletePage session retrieval error:", error);
+  }
 
   // If not logged in, redirect to login page
   if (!session?.user) {

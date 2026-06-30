@@ -9,6 +9,9 @@ export const revalidate = 0; // Dynamic rendering
 
 export default async function AuctionsCatalogPage() {
   await connectDB();
+  
+  // Explicitly reference Listing model to prevent Turbopack tree-shaking
+  const _modelCheck = Listing;
 
   // Fetch all auctions in chronological order of start time
   const auctionDocs = await Auction.find()

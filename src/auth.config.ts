@@ -6,19 +6,27 @@ export const authConfig = {
     error: "/auth-error",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role;
         token.id = user.id;
         token.isOnboarded = (user as any).isOnboarded;
       }
+      if (trigger === "update" && session) {
+        if (session.isOnboarded !== undefined) {
+          token.isOnboarded = session.isOnboarded;
+        }
+        if (session.role) {
+          token.role = session.role;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role as string;
-        session.user.id = token.id as string;
-        (session.user as any).isOnboarded = token.isOnboarded as boolean;
+      if (session.user && token) {
+        session.user.role = (token.role as string) || "USER";
+        session.user.id = (token.id as string) || "";
+        (session.user as any).isOnboarded = !!token.isOnboarded;
       }
       return session;
     },

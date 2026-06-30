@@ -23,6 +23,27 @@ export interface IListing extends Document {
   adminNotes?: string;
   credentialsVault?: string;
   escrowStage?: 'APPROVED' | 'LIVE' | 'AWAITING_PAYMENT' | 'CREDENTIALS_SECURED' | 'CREDENTIALS_DELIVERED' | 'FUNDS_RELEASED';
+  
+  // New Expanded Telemetry
+  pokedexCompleted: number;
+  bestBuddyCount: number;
+  pokeCoins: number;
+  startDate: string;
+  accountType: string;
+  accountStatus: string;
+  weeklyDistance: number;
+  topPokemon?: string;
+  
+  // New Expanded Resources
+  rareCandy: number;
+  fastTm: number;
+  chargedTm: number;
+  eliteFastTm: number;
+  eliteChargedTm: number;
+  incubators: number;
+  luckyEggs: number;
+  lureModules: number;
+  premiumRaidPass: number;
 }
 
 const ListingSchema: Schema<IListing> = new Schema(
@@ -52,6 +73,27 @@ const ListingSchema: Schema<IListing> = new Schema(
       enum: ['APPROVED', 'LIVE', 'AWAITING_PAYMENT', 'CREDENTIALS_SECURED', 'CREDENTIALS_DELIVERED', 'FUNDS_RELEASED'],
       default: 'APPROVED'
     },
+    
+    // New Expanded Telemetry
+    pokedexCompleted: { type: Number, default: 0 },
+    bestBuddyCount: { type: Number, default: 0 },
+    pokeCoins: { type: Number, default: 0 },
+    startDate: { type: String, required: true },
+    accountType: { type: String, required: true },
+    accountStatus: { type: String, required: true },
+    weeklyDistance: { type: Number, default: 0 },
+    topPokemon: { type: String, default: "" },
+    
+    // New Expanded Resources
+    rareCandy: { type: Number, default: 0 },
+    fastTm: { type: Number, default: 0 },
+    chargedTm: { type: Number, default: 0 },
+    eliteFastTm: { type: Number, default: 0 },
+    eliteChargedTm: { type: Number, default: 0 },
+    incubators: { type: Number, default: 0 },
+    luckyEggs: { type: Number, default: 0 },
+    lureModules: { type: Number, default: 0 },
+    premiumRaidPass: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
