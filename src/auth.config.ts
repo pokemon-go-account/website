@@ -10,6 +10,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.isOnboarded = (user as any).isOnboarded;
       }
       return token;
     },
@@ -17,22 +18,31 @@ export const authConfig = {
       if (session.user) {
         session.user.role = token.role as string;
         session.user.id = token.id as string;
+        (session.user as any).isOnboarded = token.isOnboarded as boolean;
       }
       return session;
     },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = auth?.user?.role;
+      const isOnboarded = (auth?.user as any)?.isOnboarded;
 
       const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
+      const isProfileCompleteRoute = nextUrl.pathname.startsWith("/profile/complete");
       const isPublicRoute = ["/", "/login", "/register"].includes(nextUrl.pathname) || isApiAuthRoute;
+
+      // 1. If logged in but profile is not completed, redirect to /profile/complete
+      if (isLoggedIn && !isOnboarded && !isProfileCompleteRoute && !isApiAuthRoute) {
+        return Response.redirect(new URL("/profile/complete", nextUrl));
+      }
+
+      // 2. Let public, API, and onboarding routes pass naturally
+      if (isPublicRoute || isProfileCompleteRoute) return true;
+
       const isAdminRoute = nextUrl.pathname.startsWith("/admin");
       const isSellerRoute = nextUrl.pathname.startsWith("/dashboard/seller");
 
-      // 1. Let public and API routes pass naturally
-      if (isPublicRoute) return true;
-
-      // 2. Route Guards for specific layout protection
+      // 3. Route Guards for specific layout protection
       if (isAdminRoute) {
         return isLoggedIn && role === "ADMIN";
       }
@@ -40,7 +50,7 @@ export const authConfig = {
         return isLoggedIn && (role === "SELLER" || role === "ADMIN");
       }
 
-      // 3. Fallback fallback safety gate for standard protected app routes
+      // 4. Fallback safety gate for standard protected app routes
       return isLoggedIn;
     },
   },

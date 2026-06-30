@@ -16,6 +16,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       async authorize(credentials) {
+        if (credentials?.isFirebase === "true" && credentials?.firebaseUid) {
+          await connectDB();
+          const user = await User.findById(credentials.firebaseUid);
+          if (!user) return null;
+          if (user.isSuspended) {
+            throw new Error("ACCOUNT_SUSPENDED");
+          }
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isOnboarded: user.isOnboarded,
+          } as any;
+        }
+
         const parsedCredentials = loginSchema.safeParse(credentials);
 
         if (!parsedCredentials.success) return null;
@@ -23,7 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await connectDB();
         const { email, password } = parsedCredentials.data;
         
-        // Find user by indexed lowercased email lookup
+        // Find user by email only
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user || !user.passwordHash) return null;
 
@@ -40,7 +56,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
-        };
+          isOnboarded: user.isOnboarded,
+        } as any;
       },
     }),
   ],
