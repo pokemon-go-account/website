@@ -56,15 +56,19 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/auctions" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
               Auctions
             </Link>
-            <Link href="/" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Features
-            </Link>
-            <Link href="/" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Verification
-            </Link>
+            {(user?.role === "SELLER" || user?.role === "ADMIN") && (
+              <Link href="/dashboard/seller" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Seller Dashboard
+              </Link>
+            )}
+            {user?.role === "ADMIN" && (
+              <Link href="/admin" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Admin Control
+              </Link>
+            )}
           </nav>
 
           {/* Desktop CTAs */}
@@ -134,26 +138,30 @@ export function HeaderClient({ user, signOutAction }: HeaderClientProps) {
           >
             <div className="space-y-1 px-4 py-4">
               <Link
-                href="/"
+                href="/auctions"
                 onClick={toggleMenu}
                 className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
               >
                 Auctions
               </Link>
-              <Link
-                href="/"
-                onClick={toggleMenu}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
-              >
-                Features
-              </Link>
-              <Link
-                href="/"
-                onClick={toggleMenu}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
-              >
-                Verification
-              </Link>
+              {(user?.role === "SELLER" || user?.role === "ADMIN") && (
+                <Link
+                  href="/dashboard/seller"
+                  onClick={toggleMenu}
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
+                >
+                  Seller Dashboard
+                </Link>
+              )}
+              {user?.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  onClick={toggleMenu}
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors"
+                >
+                  Admin Control
+                </Link>
+              )}
 
               <div className="border-t border-border mt-4 pt-4">
                 {user ? (
