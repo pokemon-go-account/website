@@ -21,6 +21,8 @@ export interface IListing extends Document {
   durationHours: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   adminNotes?: string;
+  credentialsVault?: string;
+  escrowStage?: 'APPROVED' | 'LIVE' | 'AWAITING_PAYMENT' | 'CREDENTIALS_SECURED' | 'CREDENTIALS_DELIVERED' | 'FUNDS_RELEASED';
 }
 
 const ListingSchema: Schema<IListing> = new Schema(
@@ -44,6 +46,12 @@ const ListingSchema: Schema<IListing> = new Schema(
     durationHours: { type: Number, required: true },
     status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'PENDING' },
     adminNotes: { type: String },
+    credentialsVault: { type: String },
+    escrowStage: {
+      type: String,
+      enum: ['APPROVED', 'LIVE', 'AWAITING_PAYMENT', 'CREDENTIALS_SECURED', 'CREDENTIALS_DELIVERED', 'FUNDS_RELEASED'],
+      default: 'APPROVED'
+    },
   },
   { timestamps: true }
 );

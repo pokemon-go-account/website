@@ -81,9 +81,10 @@ export default async function AuctionsCatalogPage() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {auctions.map((auc) => {
-            const isLive = auc.status === "LIVE";
-            const isScheduled = auc.status === "SCHEDULED";
-            const isConcluded = !isLive && !isScheduled;
+            const hasEnded = new Date() >= new Date(auc.endTime);
+            const isLive = auc.status === "LIVE" && !hasEnded;
+            const isScheduled = auc.status === "SCHEDULED" && !hasEnded;
+            const isConcluded = hasEnded || (!isLive && !isScheduled);
 
             return (
               <div
