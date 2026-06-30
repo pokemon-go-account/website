@@ -178,3 +178,22 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
     return { success: false, error: "Internal db tracking failure." };
   }
 }
+
+/**
+ * Server Action: Upload image base64 data to Cloudinary (or mock sandbox)
+ */
+export async function uploadImageAction(base64Data: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "Unauthorized." };
+    }
+
+    const { uploadToCloudinary } = await import("@/lib/cloudinary");
+    const secureUrl = await uploadToCloudinary(base64Data);
+    return { success: true, url: secureUrl, error: null };
+  } catch (error: any) {
+    console.error("Server image upload failed:", error);
+    return { success: false, error: error.message || "Failed to upload image." };
+  }
+}

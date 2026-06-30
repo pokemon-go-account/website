@@ -5,17 +5,21 @@ import { completeUserProfile } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useSession } from "next-auth/react";
 
 export function CompleteProfileForm() {
   const [state, formAction, isPending] = useActionState(completeUserProfile, { success: false, error: null });
+  const { update } = useSession();
 
   useEffect(() => {
     if (state.success) {
       alert("Profile finalized! Welcome aboard.");
-      // Hard refresh to force session token updating with new isOnboarded status
-      window.location.href = "/auctions";
+      // Dynamically update the client-side session cookie to set isOnboarded = true
+      update({ isOnboarded: true }).then(() => {
+        window.location.href = "/auctions";
+      });
     }
-  }, [state.success]);
+  }, [state.success, update]);
 
   return (
     <form action={formAction} className="space-y-4">

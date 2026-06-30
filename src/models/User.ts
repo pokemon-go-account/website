@@ -27,8 +27,7 @@ const UserSchema: Schema<IUser> = new Schema(
   { timestamps: true }
 );
 
-// Indexing email for ultra-fast lookup during authentication login flows
-UserSchema.index({ email: 1 });
+// Indexing email is automatically created via unique constraint on definition properties.
 
 if (mongoose.models && mongoose.models.User) {
   delete (mongoose.models as any).User;

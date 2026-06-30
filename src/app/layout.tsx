@@ -37,6 +37,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col tracking-tight bg-background text-foreground">
         <SessionProvider>
+          {/* Elegant Beta Announcement Banner */}
+          <div className="w-full bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 py-1.5 px-4 text-center font-medium tracking-wide">
+            🚀 We are currently in Beta. Welcome to the future of Pokémon GO accounts auctioning!
+          </div>
           <Header />
           <main className="flex-1 flex flex-col">
             {children}
