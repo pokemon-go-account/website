@@ -30,6 +30,23 @@ function formatTimeLeft(endTime: Date): string {
   return `${s}s`;
 }
 
+import { useState, useEffect } from "react";
+
+export function AuctionTimer({ endTime }: { endTime: Date | string }) {
+  const [timeLeft, setTimeLeft] = useState(() => formatTimeLeft(new Date(endTime)));
+
+  useEffect(() => {
+    const updateTimer = () => {
+      setTimeLeft(formatTimeLeft(new Date(endTime)));
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [endTime]);
+
+  return <span>{timeLeft}</span>;
+}
+
 interface LiveAuction {
   _id: string;
   currentHighestBid: number;
@@ -118,7 +135,7 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
-            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
           >
             {auctions.map((auction) => (
               <motion.div
@@ -162,14 +179,14 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
                         <p className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-wider">Ends in</p>
                         <p className="text-gray-700 dark:text-gray-300 font-semibold text-xs flex items-center gap-1">
                           <Clock className="h-3 w-3 text-red-400 shrink-0" />
-                          {formatTimeLeft(auction.endTime)}
+                          <AuctionTimer endTime={auction.endTime} />
                         </p>
                       </div>
                     )}
                   </div>
 
                   <Link
-                    href="/auctions"
+                    href={`/auctions/${auction._id}`}
                     className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black text-xs font-bold text-center py-2.5 rounded-xl transition-all active:scale-95 block shadow-sm shadow-black/10 dark:shadow-white/5"
                   >
                     BID NOW

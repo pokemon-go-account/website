@@ -7,19 +7,37 @@ import { cn } from "@/lib/utils";
 
 export const revalidate = 0; // Dynamic rendering
 
-export default async function AuctionsCatalogPage() {
+interface AuctionsCatalogPageProps {
+  searchParams: Promise<{ search?: string }>;
+}
+
+export default async function AuctionsCatalogPage({ searchParams }: AuctionsCatalogPageProps) {
+  const { search } = await searchParams;
   await connectDB();
   
   // Explicitly reference Listing model to prevent Turbopack tree-shaking
   const _modelCheck = Listing;
 
+  let query: any = {};
+  if (search && search.trim()) {
+    const matchingListings = await Listing.find({
+      $or: [
+        { title: { $regex: search.trim(), $options: "i" } },
+        { description: { $regex: search.trim(), $options: "i" } },
+        { region: { $regex: search.trim(), $options: "i" } },
+      ],
+    }).select("_id").lean();
+    const matchingIds = matchingListings.map((l) => l._id);
+    query.listingId = { $in: matchingIds };
+  }
+
   // Fetch all auctions in chronological order of start time
-  const auctionDocs = await Auction.find()
+  const auctionDocs = await Auction.find(query)
     .populate("listingId")
     .sort({ startTime: 1 })
     .lean();
 
-  const auctions = auctionDocs as Array<
+  const auctions = (auctionDocs as any[]).filter((auc) => auc.listingId) as Array<
     any & {
       listingId: {
         title: string;

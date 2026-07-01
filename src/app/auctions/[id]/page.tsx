@@ -26,7 +26,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
     .populate("listingId")
     .lean();
 
-  if (!auctionDoc) {
+  if (!auctionDoc || !auctionDoc.listingId) {
     notFound();
   }
 

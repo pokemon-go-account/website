@@ -214,6 +214,147 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
     };
   });
 
+  const renderBiddingPanel = () => (
+    <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-5 shadow-xl relative overflow-hidden">
+      <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-[#6133e1]/10 blur-xl pointer-events-none" />
+
+      {/* Countdown Ends In */}
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5 text-zinc-500" />
+          Auction Ends In
+        </span>
+        <span className="text-[10px] text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 animate-pulse">
+          {timeLeft}
+        </span>
+      </div>
+
+      {/* Bid Values */}
+      <div className="space-y-1 text-center">
+        <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Current Bid</span>
+        <h3 className="text-4xl font-black text-white tracking-tight">
+          ₹{activeBid.toLocaleString()}
+        </h3>
+        
+        {highestBidderId === session?.user?.id ? (
+          <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-400 font-bold border border-emerald-500/20 mt-1 uppercase tracking-wider">
+            <ShieldCheck className="h-3 w-3" /> You are highest bidder
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-1 rounded bg-zinc-800 px-2.5 py-0.5 text-[9px] text-zinc-400 font-bold border border-zinc-700 mt-1 uppercase tracking-wider">
+            Outbid / No active bids
+          </div>
+        )}
+      </div>
+
+      {/* Counters Info */}
+      <div className="grid grid-cols-2 gap-4 py-2 border-y border-zinc-800/80 text-center text-xs">
+        <div>
+          <span className="text-[9px] text-zinc-500 uppercase">Total Bids</span>
+          <div className="font-bold text-white mt-0.5">{bidHistory.length}</div>
+        </div>
+        <div>
+          <span className="text-[9px] text-zinc-500 uppercase">Watchers</span>
+          <div className="font-bold text-white mt-0.5">32</div>
+        </div>
+      </div>
+
+      {/* Bidding Controls Form */}
+      <div className="space-y-3">
+        {error && (
+          <div className="flex items-start gap-1.5 rounded bg-red-500/10 p-2.5 text-[10px] text-red-400 border border-red-500/20 leading-relaxed">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {isConcluded ? (
+          highestBidderName ? (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-3">
+              <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
+              <div className="space-y-1">
+                <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
+                <p className="text-[11px] text-zinc-300 font-light leading-snug">
+                  Congratulations to <strong className="font-bold text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-white">₹{activeBid.toLocaleString()}</strong>!
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-center space-y-2">
+              <AlertCircle className="h-6 w-6 text-zinc-500 mx-auto" />
+              <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Concluded</h4>
+              <p className="text-[11px] text-zinc-500">This auction expired with no bids.</p>
+            </div>
+          )
+        ) : !isRegistered ? (
+          <div className="space-y-3">
+            <div className="rounded bg-zinc-900 border border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-400 font-light">
+              A refundable verification deposit of ₹199 is required to participate in bidding.
+            </div>
+            <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center font-bold">
+              Minimum Next Bid: <span className="text-white">₹{nextMinBid.toLocaleString()}</span>
+            </div>
+
+            {/* Quick Preset Button */}
+            <button
+              onClick={() => handlePlaceBid(nextMinBid)}
+              disabled={!isConnected}
+              className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/95 text-white font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg shadow-[#6133e1]/10"
+            >
+              <Gavel className="h-4 w-4" />
+              PLACE BID
+            </button>
+
+            {/* Divider */}
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-zinc-800"></div>
+              <span className="flex-shrink mx-3 text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Or enter custom bid</span>
+              <div className="flex-grow border-t border-zinc-800"></div>
+            </div>
+
+            {/* Custom Input */}
+            <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
+              <div className="relative flex-grow">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-semibold">₹</span>
+                <input
+                  type="number"
+                  value={customBidAmount}
+                  onChange={(e) => setCustomBidAmount(e.target.value)}
+                  placeholder={nextMinBid.toString()}
+                  className="w-full h-10 pl-6 pr-3 bg-black/40 border border-zinc-800 rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#6133e1] transition-colors"
+                  disabled={!isConnected}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!isConnected}
+                className="h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-95 text-xs text-white font-bold transition-all cursor-pointer"
+              >
+                Place
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+
+      {/* Buy Now Option */}
+      <div className="pt-4 border-t border-zinc-800 flex items-center justify-between">
+        <div>
+          <h4 className="text-xs font-bold text-white uppercase tracking-wider">Buy Now price</h4>
+          <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
+        </div>
+        <button className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
+          <span>BUY NOW</span>
+          <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2">₹{(auction.listingId.startingBid * 4).toLocaleString()}</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#08080a] text-white py-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
@@ -340,6 +481,11 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   <p className="text-[9px] text-zinc-400">Continuous technical support</p>
                 </div>
               </div>
+            </div>
+
+            {/* Mobile Bidding Control Panel */}
+            <div className="block lg:hidden">
+              {renderBiddingPanel()}
             </div>
 
             {/* Detailed Description, Grid Statistics & Info Tabs */}
@@ -614,144 +760,9 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               </div>
             </div>
 
-            {/* Bidding Control Panel */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-5 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-[#6133e1]/10 blur-xl pointer-events-none" />
-
-              {/* Countdown Ends In */}
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 text-zinc-500" />
-                  Auction Ends In
-                </span>
-                <span className="text-[10px] text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 animate-pulse">
-                  {timeLeft}
-                </span>
-              </div>
-
-              {/* Bid Values */}
-              <div className="space-y-1 text-center">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Current Bid</span>
-                <h3 className="text-4xl font-black text-white tracking-tight">
-                  ₹{activeBid.toLocaleString()}
-                </h3>
-                
-                {highestBidderId === session?.user?.id ? (
-                  <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-400 font-bold border border-emerald-500/20 mt-1 uppercase tracking-wider">
-                    <ShieldCheck className="h-3 w-3" /> You are highest bidder
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-1 rounded bg-zinc-800 px-2.5 py-0.5 text-[9px] text-zinc-400 font-bold border border-zinc-700 mt-1 uppercase tracking-wider">
-                    Outbid / No active bids
-                  </div>
-                )}
-              </div>
-
-              {/* Counters Info */}
-              <div className="grid grid-cols-2 gap-4 py-2 border-y border-zinc-800/80 text-center text-xs">
-                <div>
-                  <span className="text-[9px] text-zinc-500 uppercase">Total Bids</span>
-                  <div className="font-bold text-white mt-0.5">{bidHistory.length}</div>
-                </div>
-                <div>
-                  <span className="text-[9px] text-zinc-500 uppercase">Watchers</span>
-                  <div className="font-bold text-white mt-0.5">32</div>
-                </div>
-              </div>
-
-              {/* Bidding Controls Form */}
-              <div className="space-y-3">
-                {error && (
-                  <div className="flex items-start gap-1.5 rounded bg-red-500/10 p-2.5 text-[10px] text-red-400 border border-red-500/20 leading-relaxed">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                {isConcluded ? (
-                  highestBidderName ? (
-                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-3">
-                      <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
-                      <div className="space-y-1">
-                        <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
-                        <p className="text-[11px] text-zinc-300 font-light leading-snug">
-                          Congratulations to <strong className="font-bold text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-white">₹{activeBid.toLocaleString()}</strong>!
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-center space-y-2">
-                      <AlertCircle className="h-6 w-6 text-zinc-500 mx-auto" />
-                      <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Concluded</h4>
-                      <p className="text-[11px] text-zinc-500">This auction expired with no bids.</p>
-                    </div>
-                  )
-                ) : !isRegistered ? (
-                  <div className="space-y-3">
-                    <div className="rounded bg-zinc-900 border border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-400 font-light">
-                      A refundable verification deposit of ₹199 is required to participate in bidding.
-                    </div>
-                    <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center font-bold">
-                      Minimum Next Bid: <span className="text-white">₹{nextMinBid.toLocaleString()}</span>
-                    </div>
-
-                    {/* Quick Preset Button */}
-                    <button
-                      onClick={() => handlePlaceBid(nextMinBid)}
-                      disabled={!isConnected}
-                      className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/95 text-white font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg shadow-[#6133e1]/10"
-                    >
-                      <Gavel className="h-4 w-4" />
-                      PLACE BID
-                    </button>
-
-                    {/* Divider */}
-                    <div className="relative flex py-1 items-center">
-                      <div className="flex-grow border-t border-zinc-800"></div>
-                      <span className="flex-shrink mx-3 text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Or enter custom bid</span>
-                      <div className="flex-grow border-t border-zinc-800"></div>
-                    </div>
-
-                    {/* Custom Input */}
-                    <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
-                      <div className="relative flex-grow">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-semibold">₹</span>
-                        <input
-                          type="number"
-                          value={customBidAmount}
-                          onChange={(e) => setCustomBidAmount(e.target.value)}
-                          placeholder={nextMinBid.toString()}
-                          className="w-full h-10 pl-6 pr-3 bg-black/40 border border-zinc-800 rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#6133e1] transition-colors"
-                          disabled={!isConnected}
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={!isConnected}
-                        className="h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-95 text-xs text-white font-bold transition-all cursor-pointer"
-                      >
-                        Place
-                      </button>
-                    </form>
-                  </div>
-                )}
-              </div>
-
-              {/* Buy Now Option */}
-              <div className="pt-4 border-t border-zinc-800 flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Buy Now price</h4>
-                  <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
-                </div>
-                <button className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
-                  <span>BUY NOW</span>
-                  <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2">₹{(auction.listingId.startingBid * 4).toLocaleString()}</span>
-                </button>
-              </div>
+            {/* Desktop Bidding Control Panel */}
+            <div className="hidden lg:block">
+              {renderBiddingPanel()}
             </div>
 
 

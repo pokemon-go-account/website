@@ -163,7 +163,7 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
       isOnboarded: true,
     });
 
-    return { success: true, error: null };
+    return { success: true, role: role as "USER" | "SELLER", error: null };
   } catch (error: any) {
     console.error("Profile onboarding error:", error);
     return { success: false, error: "Failed to finalize profile." };
@@ -192,7 +192,7 @@ export async function loginMockOAuth(provider: "google" | "apple") {
     await user.save();
 
     await signIn("credentials", {
-      identifier: mockEmail,
+      email: mockEmail,
       password: mockPass,
       redirectTo: "/profile/complete",
     });

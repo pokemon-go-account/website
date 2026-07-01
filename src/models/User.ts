@@ -27,11 +27,5 @@ const UserSchema: Schema<IUser> = new Schema(
   { timestamps: true }
 );
 
-// Indexing email is automatically created via unique constraint on definition properties.
-
-if (mongoose.models && mongoose.models.User) {
-  delete (mongoose.models as any).User;
-}
-
 const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 export default User;
