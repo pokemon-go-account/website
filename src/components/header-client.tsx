@@ -18,10 +18,10 @@ interface HeaderClientProps {
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/auctions", label: "Auctions" },
-  { href: "#how-it-works", label: "How It Works" },
+  { href: "/#how-it-works", label: "How It Works" },
   { href: "/dashboard/seller/listings/new", label: "Sell With Us" },
-  { href: "#faq", label: "FAQ" },
-  { href: "#contact", label: "Contact" },
+  { href: "/#faq", label: "FAQ" },
+  { href: "/#contact", label: "Contact" },
 ];
 
 export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
@@ -106,6 +106,11 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && search.trim()) {
+                    window.location.href = `/auctions?search=${encodeURIComponent(search.trim())}`;
+                  }
+                }}
                 placeholder="Search for accounts, items & more..."
                 className="w-full h-8 pl-8 pr-3 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400/50 transition-all"
               />
@@ -207,6 +212,14 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               <div className="relative">
                 <input
                   type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && search.trim()) {
+                      setIsOpen(false); // Close mobile drawer
+                      window.location.href = `/auctions?search=${encodeURIComponent(search.trim())}`;
+                    }
+                  }}
                   placeholder="Search accounts, items..."
                   className="w-full h-9 pl-9 pr-3 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400/50"
                 />
