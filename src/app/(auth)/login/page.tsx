@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-sm space-y-6 border border-border bg-card p-8 rounded-xl shadow-2xl">
+      <div className="w-full max-w-sm space-y-6 border border-border bg-card p-6 sm:p-8 rounded-xl shadow-2xl">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Sign in to your account</h1>
           <p className="text-sm text-muted-foreground">Enter details below to access your auctions dashboard</p>

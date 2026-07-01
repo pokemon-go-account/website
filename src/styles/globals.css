@@ -185,3 +185,31 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* Center and scale reCAPTCHA on small/mobile screens */
+.recaptcha-responsive-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+  margin: 1rem 0;
+  min-height: 78px;
+}
+
+@media (max-width: 350px) {
+  .recaptcha-responsive-container > div {
+    transform: scale(0.85);
+    -webkit-transform: scale(0.85);
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
+  }
+}
+@media (max-width: 300px) {
+  .recaptcha-responsive-container > div {
+    transform: scale(0.75);
+    -webkit-transform: scale(0.75);
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
+  }
+}

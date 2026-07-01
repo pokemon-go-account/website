@@ -6,6 +6,26 @@ export const authConfig = {
     error: "/auth-error",
   },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      let activeBaseUrl = baseUrl;
+      if (process.env.VERCEL_URL && (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1"))) {
+        activeBaseUrl = `https://${process.env.VERCEL_URL}`;
+      }
+      
+      if (url.startsWith("/")) {
+        return `${activeBaseUrl}${url}`;
+      }
+      try {
+        const parsedUrl = new URL(url);
+        const parsedBase = new URL(activeBaseUrl);
+        if (parsedUrl.origin === parsedBase.origin) {
+          return url;
+        }
+      } catch (e) {
+        // Fallback
+      }
+      return activeBaseUrl;
+    },
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role;

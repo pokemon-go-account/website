@@ -25,6 +25,8 @@ export function RegisterForm() {
   const [isPhoneLoading, setIsPhoneLoading] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const recaptchaVerifierRef = useRef<any>(null);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<any>(null);
 
   useEffect(() => {
     if (credState.success) {
@@ -42,6 +44,48 @@ export function RegisterForm() {
       }
     };
   }, []);
+
+  // Render Google reCAPTCHA Enterprise explicitly for credentials tab
+  useEffect(() => {
+    let active = true;
+    let interval: any;
+
+    const renderRecaptcha = () => {
+      const grecaptcha = (window as any).grecaptcha;
+      if (grecaptcha && grecaptcha.enterprise && recaptchaRef.current) {
+        if (recaptchaRef.current.innerHTML === "") {
+          try {
+            const widgetId = grecaptcha.enterprise.render(recaptchaRef.current, {
+              sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LfTJD4tAAAAAHsKOZikKbkNQRahOzidVC8tHKL8",
+              action: "REGISTER",
+              theme: "dark",
+              size: "normal",
+            });
+            widgetIdRef.current = widgetId;
+          } catch (e) {
+            console.error("Error rendering reCAPTCHA:", e);
+          }
+        }
+        return true;
+      }
+      return false;
+    };
+
+    if (activeTab === "credentials") {
+      if (!renderRecaptcha()) {
+        interval = setInterval(() => {
+          if (renderRecaptcha() && active) {
+            clearInterval(interval);
+          }
+        }, 500);
+      }
+    }
+
+    return () => {
+      active = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab]);
 
   const handleSocialMock = async (provider: "google" | "apple") => {
     if (isConfigured && auth) {
@@ -153,7 +197,7 @@ export function RegisterForm() {
 
   return (
     <div className="space-y-6">
-      <Script src="https://www.google.com/recaptcha/enterprise.js" async defer strategy="afterInteractive" />
+      <Script src="https://www.google.com/recaptcha/enterprise.js?render=explicit" async defer strategy="afterInteractive" />
       {/* Configuration status banner */}
       {!isConfigured && (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs text-amber-200/90 flex gap-2.5 items-start leading-relaxed">
@@ -243,10 +287,8 @@ export function RegisterForm() {
             </div>
           </div>
           <div 
-            className="g-recaptcha flex justify-center my-4" 
-            data-sitekey="6LfTJD4tAAAAAHsKOZikKbkNQRahOzidVC8tHKL8" 
-            data-action="REGISTER"
-            data-theme="dark"
+            ref={recaptchaRef}
+            className="recaptcha-responsive-container flex justify-center my-4 min-h-[78px]"
           ></div>
           <Button type="submit" className="w-full font-medium" disabled={isCredPending}>
             {isCredPending ? "Creating account..." : "Sign Up with Password"}
