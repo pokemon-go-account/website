@@ -198,7 +198,10 @@ export async function loginMockOAuth(provider: "google" | "apple") {
     });
 
     return { success: true, error: null };
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof Error && (error.message === "NEXT_REDIRECT" || (error as any).digest?.startsWith("NEXT_REDIRECT"))) {
+      throw error;
+    }
     console.error("Mock OAuth Error:", error);
     return { success: false, error: "Mock OAuth simulation failed." };
   }
@@ -246,6 +249,9 @@ export async function loginWithFirebaseIdToken(idToken: string) {
 
     return { success: true, error: null };
   } catch (error: any) {
+    if (error instanceof Error && (error.message === "NEXT_REDIRECT" || (error as any).digest?.startsWith("NEXT_REDIRECT"))) {
+      throw error;
+    }
     console.error("Firebase auth verification error:", error);
     return { success: false, error: error.message || "Failed to process Firebase authentication." };
   }
@@ -279,6 +285,9 @@ export async function loginMockPhone(phone: string) {
 
     return { success: true, error: null };
   } catch (error: any) {
+    if (error instanceof Error && (error.message === "NEXT_REDIRECT" || (error as any).digest?.startsWith("NEXT_REDIRECT"))) {
+      throw error;
+    }
     console.error("Mock phone login error:", error);
     return { success: false, error: "Mock phone login failed." };
   }
