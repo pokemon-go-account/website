@@ -170,39 +170,6 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
   }
 }
 
-/**
- * Server Action: Mock OAuth simulation for Google / Apple
- */
-export async function loginMockOAuth(provider: "google" | "apple") {
-  try {
-    await connectDB();
-    const mockEmail = `oauth_${provider}_${Math.floor(100000 + Math.random() * 900000)}@gmail.com`;
-    
-    // Create new mock OAuth user in database
-    const user = await User.create({
-      name: `Mock ${provider === 'google' ? 'Google' : 'Apple'} User`,
-      email: mockEmail,
-      role: "USER",
-      isOnboarded: false,
-    });
-
-    const mockPass = "mock-secure-oauth-pass-123456";
-    const salt = await bcrypt.genSalt(10);
-    user.passwordHash = await bcrypt.hash(mockPass, salt);
-    await user.save();
-
-    await signIn("credentials", {
-      email: mockEmail,
-      password: mockPass,
-      redirectTo: "/profile/complete",
-    });
-
-    return { success: true, error: null };
-  } catch (error) {
-    console.error("Mock OAuth Error:", error);
-    return { success: false, error: "Mock OAuth simulation failed." };
-  }
-}
 
 /**
  * Server Action: Process Firebase Client ID Token validation
@@ -246,40 +213,10 @@ export async function loginWithFirebaseIdToken(idToken: string) {
 
     return { success: true, error: null };
   } catch (error: any) {
+    if (error instanceof Error && (error.message === "NEXT_REDIRECT" || (error as any).digest?.startsWith("NEXT_REDIRECT"))) {
+      throw error;
+    }
     console.error("Firebase auth verification error:", error);
     return { success: false, error: error.message || "Failed to process Firebase authentication." };
-  }
-}
-
-/**
- * Server Action: Dev-mode local phone login simulation
- */
-export async function loginMockPhone(phone: string) {
-  try {
-    await connectDB();
-    
-    let user = await User.findOne({ phone: phone.trim() });
-    if (!user) {
-      user = await User.create({
-        phone: phone.trim(),
-        role: "USER",
-        isOnboarded: false,
-      });
-    }
-
-    if (user.isSuspended) {
-      return { success: false, error: "This account is suspended." };
-    }
-
-    await signIn("credentials", {
-      firebaseUid: user._id.toString(),
-      isFirebase: "true",
-      redirectTo: user.isOnboarded ? "/auctions" : "/profile/complete",
-    });
-
-    return { success: true, error: null };
-  } catch (error: any) {
-    console.error("Mock phone login error:", error);
-    return { success: false, error: "Mock phone login failed." };
   }
 }
