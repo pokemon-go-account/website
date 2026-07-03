@@ -51,6 +51,13 @@ export default async function UserProfilePage() {
         <div className="space-y-4 text-xs">
           <div className="flex items-center justify-between py-1 border-b border-border/30">
             <span className="text-muted-foreground flex items-center gap-1.5">
+              <UserIcon className="h-3.5 w-3.5" /> Username
+            </span>
+            <span className="font-semibold text-indigo-400">{user.username || "Not assigned"}</span>
+          </div>
+
+          <div className="flex items-center justify-between py-1 border-b border-border/30">
+            <span className="text-muted-foreground flex items-center gap-1.5">
               <Mail className="h-3.5 w-3.5" /> Email
             </span>
             <span className="font-medium text-foreground">{user.email}</span>

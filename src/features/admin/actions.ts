@@ -413,3 +413,54 @@ export async function manualSyncRegistration(orderId: string) {
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Look up a trainer profile's entire detail and transaction history by their username
+ */
+export async function lookupUserProfile(username: string) {
+  try {
+    await checkAdminSession();
+    await connectDB();
+
+    if (!username || username.trim().length < 3) {
+      return { success: false, error: "Username must be at least 3 characters long." };
+    }
+
+    const user = await User.findOne({ username: { $regex: new RegExp(`^${username.trim()}$`, "i") } }).lean();
+    if (!user) {
+      return { success: false, error: `No user found matching username: "${username.trim()}"` };
+    }
+
+    // Query all related collections concurrently
+    const [listings, bids, registrations] = await Promise.all([
+      Listing.find({ sellerId: user._id }).sort({ createdAt: -1 }).lean(),
+      Bid.find({ bidderId: user._id })
+        .populate({
+          path: "auctionId",
+          populate: { path: "listingId" }
+        })
+        .sort({ createdAt: -1 })
+        .lean(),
+      Registration.find({ userId: user._id })
+        .populate({
+          path: "auctionId",
+          populate: { path: "listingId" }
+        })
+        .sort({ createdAt: -1 })
+        .lean(),
+    ]);
+
+    const serialize = (data: any) => JSON.parse(JSON.stringify(data));
+
+    return {
+      success: true,
+      user: serialize(user),
+      listings: serialize(listings),
+      bids: serialize(bids),
+      registrations: serialize(registrations),
+    };
+  } catch (error: any) {
+    console.error("Admin lookup user profile engine error:", error);
+    return { success: false, error: error.message || "Failed to lookup user profile." };
+  }
+}
