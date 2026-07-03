@@ -18,6 +18,7 @@ interface HeaderClientProps {
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/auctions", label: "Auctions" },
+  { href: "/store", label: "Store" },
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/dashboard/seller/listings/new", label: "Sell With Us" },
   { href: "/#faq", label: "FAQ" },

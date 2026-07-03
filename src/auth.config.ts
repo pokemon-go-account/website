@@ -64,8 +64,11 @@ export const authConfig = {
         return Response.redirect(new URL("/profile/complete", nextUrl));
       }
 
-      // 2. Let public, API, and onboarding routes pass naturally
-      if (isPublicRoute || isProfileCompleteRoute) return true;
+      // 2. Let public and API routes pass naturally
+      if (isPublicRoute) return true;
+
+      // Onboarding route requires login
+      if (isProfileCompleteRoute) return isLoggedIn;
 
       const isAdminRoute = nextUrl.pathname.startsWith("/admin");
       const isSellerRoute = nextUrl.pathname.startsWith("/dashboard/seller");
