@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ShieldCheck, Users, Lock, Headphones } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
@@ -31,13 +32,32 @@ const itemVariants: Variants = {
 };
 
 export function Hero() {
+  const [bgImage, setBgImage] = useState("url('/hero-banner-light.png')");
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setBgImage(isDark ? "url('/hero-banner-dark.png')" : "url('/hero-banner-light.png')");
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="relative w-full overflow-hidden bg-white dark:bg-[#080809]">
       {/* Hero Banner */}
       <div
         className="relative min-h-[460px] md:min-h-[540px] flex items-center"
         style={{
-          backgroundImage: "url('/hero-banner.png')",
+          backgroundImage: bgImage,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -68,7 +88,7 @@ export function Hero() {
             >
               POKÉMON GO<br />
               <span className="text-gray-900 dark:text-white [text-shadow:0_0_40px_rgba(255,255,255,0.1)]">
-                AUCTION
+                AUCTIONS
               </span>
             </motion.h1>
             <motion.p

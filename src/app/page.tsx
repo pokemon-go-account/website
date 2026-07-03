@@ -17,12 +17,9 @@ export default function Home() {
       <footer id="contact" className="bg-gray-100 dark:bg-[#080809] border-t border-gray-200 dark:border-white/10 py-10 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gray-900 dark:bg-white flex items-center justify-center shadow-md text-white dark:text-black font-black text-sm">
-              ⚡
-            </div>
+            <img src="/logo.png" alt="Pokémon GO Auctions" className="h-10 w-auto object-contain" />
             <div>
-              <p className="text-gray-900 dark:text-white font-extrabold text-sm tracking-tight leading-none">POKÉMON GO AUCTION</p>
-              <p className="text-gray-400 dark:text-gray-600 text-[10px] mt-0.5">© 2026 All rights reserved.</p>
+              <p className="text-gray-400 dark:text-gray-600 text-[10px] mt-1">© 2026 All rights reserved.</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center text-xs text-gray-400">

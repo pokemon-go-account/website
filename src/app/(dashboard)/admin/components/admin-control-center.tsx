@@ -23,6 +23,7 @@ import {
   FileKey,
   Unlock,
   Coins,
+  Search,
   ShieldAlert as AlertCircle
 } from "lucide-react";
 import {
@@ -37,7 +38,8 @@ import {
   releaseEscrowFunds,
   triggerForfeitCascade,
   manualSyncRegistration,
-  getWebhookLogs
+  getWebhookLogs,
+  lookupUserProfile
 } from "@/features/admin/actions";
 
 interface AdminControlCenterProps {
@@ -59,13 +61,51 @@ export function AdminControlCenter({
   totalUsers,
   pendingCount
 }: AdminControlCenterProps) {
-  const [activeTab, setActiveTab] = useState<"auditor" | "killswitch" | "escrow" | "cascade" | "webhook">("auditor");
+  const [activeTab, setActiveTab] = useState<"auditor" | "killswitch" | "escrow" | "cascade" | "webhook" | "lookup">("auditor");
   const [pendingListings, setPendingListings] = useState(initialPendingListings);
   const [activeAuctions, setActiveAuctions] = useState(initialActiveAuctions);
   const [concludedAuctions, setConcludedAuctions] = useState(initialConcludedAuctions);
   const [escrowListings, setEscrowListings] = useState(initialEscrowListings);
   const [webhookLogs, setWebhookLogs] = useState(initialLogs);
   const [isPending, setIsPending] = useState(false);
+
+  // Trainer Lookup State
+  const [searchUsername, setSearchUsername] = useState("");
+  const [lookupResult, setLookupResult] = useState<{
+    user: any;
+    listings: any[];
+    bids: any[];
+    registrations: any[];
+  } | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleLookupSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchUsername.trim()) return;
+
+    setIsSearching(true);
+    setLookupError(null);
+    setLookupResult(null);
+
+    try {
+      const res = await lookupUserProfile(searchUsername);
+      if (res.success) {
+        setLookupResult({
+          user: res.user,
+          listings: res.listings,
+          bids: res.bids,
+          registrations: res.registrations,
+        });
+      } else {
+        setLookupError(res.error || "User lookup failed.");
+      }
+    } catch (err: any) {
+      setLookupError(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   // Auditor Tab State
   const [selectedPending, setSelectedPending] = useState<any | null>(initialPendingListings[0] || null);
@@ -305,6 +345,18 @@ export function AdminControlCenter({
         >
           <Terminal className="h-4 w-4" />
           Webhook Watchdog
+        </button>
+        <button
+          onClick={() => setActiveTab("lookup")}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all border",
+            activeTab === "lookup"
+              ? "bg-zinc-900 border-zinc-700 text-white"
+              : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Search className="h-4 w-4" />
+          Trainer Lookup
         </button>
       </div>
 
@@ -856,6 +908,158 @@ export function AdminControlCenter({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* Tab 6: Trainer Profile Lookup */}
+      {activeTab === "lookup" && (
+        <div className="space-y-6">
+          <div className="border-b border-border pb-3">
+            <h2 className="text-lg font-bold text-foreground">Trainer Profile History Lookup</h2>
+            <p className="text-xs text-muted-foreground">Search any trainer by their custom Pokemon username to view their history and credentials details.</p>
+          </div>
+
+          <form onSubmit={handleLookupSearch} className="flex gap-3 max-w-md">
+            <input
+              type="text"
+              placeholder="Enter trainer username (e.g., Swift-Eevee-2384)..."
+              value={searchUsername}
+              onChange={(e) => setSearchUsername(e.target.value)}
+              className="flex-grow h-10 px-4 bg-muted/40 border border-border rounded-xl text-xs text-foreground focus:outline-none focus:border-zinc-700"
+            />
+            <button
+              type="submit"
+              disabled={isSearching || !searchUsername.trim()}
+              className="h-10 px-5 rounded-xl bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+            >
+              {isSearching ? "Searching..." : "Search"}
+            </button>
+          </form>
+
+          {lookupError && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3.5 text-xs text-red-400 max-w-md leading-normal">
+              ⚠️ {lookupError}
+            </div>
+          )}
+
+          {lookupResult && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Profile Details Card */}
+              <div className="border border-border bg-card/25 p-6 rounded-2xl space-y-4 shadow-lg shadow-black/20">
+                <div className="border-b border-border/80 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-extrabold text-base text-foreground">{lookupResult.user.name || "Anonymous Trainer"}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Username: <strong className="text-indigo-400 font-semibold">{lookupResult.user.username}</strong></p>
+                  </div>
+                  <span className={cn(
+                    "px-2.5 py-0.5 rounded-full text-[10px] font-bold border tracking-wider uppercase",
+                    lookupResult.user.isSuspended ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                  )}>
+                    {lookupResult.user.isSuspended ? "Suspended" : "Active"}
+                  </span>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 text-xs text-muted-foreground leading-normal">
+                  <div className="bg-muted/10 border border-border p-3.5 rounded-xl">
+                    <span className="font-semibold block text-zinc-500">Email Coordinate</span>
+                    <span className="text-foreground font-medium mt-1 block truncate">{lookupResult.user.email}</span>
+                  </div>
+                  <div className="bg-muted/10 border border-border p-3.5 rounded-xl">
+                    <span className="font-semibold block text-zinc-500">Telegram Coordinate</span>
+                    <span className="text-foreground font-medium mt-1 block">{lookupResult.user.telegramUsername || "None"}</span>
+                  </div>
+                  <div className="bg-muted/10 border border-border p-3.5 rounded-xl">
+                    <span className="font-semibold block text-zinc-500">System Role</span>
+                    <span className="text-foreground font-medium mt-1 block">{lookupResult.user.role}</span>
+                  </div>
+                  <div className="bg-muted/10 border border-border p-3.5 rounded-xl">
+                    <span className="font-semibold block text-zinc-500">Trainer Registered</span>
+                    <span className="text-foreground font-medium mt-1 block">{new Date(lookupResult.user.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* History Sub-grids */}
+              <div className="grid lg:grid-cols-3 gap-6">
+                
+                {/* 1. Sell / Listings History */}
+                <div className="border border-border bg-card/15 p-5 rounded-2xl space-y-4">
+                  <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 border-b border-border pb-2.5">
+                    Trainer Listings ({lookupResult.listings.length})
+                  </h4>
+                  {lookupResult.listings.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">No accounts listed by this trainer.</p>
+                  ) : (
+                    <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                      {lookupResult.listings.map((l) => (
+                        <div key={l._id} className="border border-border/60 bg-muted/5 p-3 rounded-xl text-xs space-y-1.5">
+                          <div className="font-semibold text-foreground truncate">{l.title}</div>
+                          <div className="text-[10px] text-muted-foreground flex justify-between">
+                            <span>Lvl {l.level} • {l.team}</span>
+                            <span className={cn(
+                              "font-bold uppercase tracking-wider text-[8px] px-1.5 py-0.5 rounded border",
+                              l.status === "APPROVED" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+                              l.status === "PENDING" && "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                              l.status === "REJECTED" && "bg-red-500/10 text-red-500 border-red-500/20"
+                            )}>
+                              {l.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Bidding Activity History */}
+                <div className="border border-border bg-card/15 p-5 rounded-2xl space-y-4">
+                  <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 border-b border-border pb-2.5">
+                    Bidding History ({lookupResult.bids.length})
+                  </h4>
+                  {lookupResult.bids.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">No bids placed by this trainer.</p>
+                  ) : (
+                    <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                      {lookupResult.bids.map((b) => (
+                        <div key={b._id} className="border border-border/60 bg-muted/5 p-3 rounded-xl text-xs space-y-1.5">
+                          <div className="font-semibold text-foreground truncate">{b.auctionId?.listingId?.title || "Unknown Auction"}</div>
+                          <div className="text-[10px] text-muted-foreground flex justify-between">
+                            <span>Bid Amount: <strong className="text-foreground">₹{b.amount.toLocaleString()}</strong></span>
+                            <span>{new Date(b.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Payment / Registration History */}
+                <div className="border border-border bg-card/15 p-5 rounded-2xl space-y-4">
+                  <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 border-b border-border pb-2.5">
+                    Registrations & Payments ({lookupResult.registrations.length})
+                  </h4>
+                  {lookupResult.registrations.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">No event registrations found.</p>
+                  ) : (
+                    <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                      {lookupResult.registrations.map((r) => (
+                        <div key={r._id} className="border border-border/60 bg-muted/5 p-3 rounded-xl text-xs space-y-1.5">
+                          <div className="font-semibold text-foreground truncate">{r.auctionId?.listingId?.title || "Event Registration"}</div>
+                          <div className="text-[10px] text-muted-foreground flex justify-between">
+                            <span>Status: <strong className={cn(
+                              r.status === "PAID" ? "text-emerald-500" : "text-amber-500"
+                            )}>{r.status}</strong></span>
+                            <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+          )}
         </div>
       )}
 

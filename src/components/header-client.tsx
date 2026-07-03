@@ -89,14 +89,8 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
         <div className="flex h-14 items-center justify-between gap-4">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="h-8 w-8 rounded-lg bg-gray-900 dark:bg-white flex items-center justify-center shadow-md">
-              <Shield className="h-4 w-4 text-white dark:text-black fill-white/10 dark:fill-black/10" />
-            </div>
-            <div className="leading-tight block">
-              <p className="text-gray-900 dark:text-white font-extrabold text-xs sm:text-sm tracking-tight leading-none">POKÉMON GO</p>
-              <p className="text-gray-500 dark:text-gray-400 font-bold text-[8px] sm:text-[10px] tracking-widest leading-none">AUCTION</p>
-            </div>
+          <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity">
+            <img src="/logo.png" alt="Pokémon GO Auctions" className="h-10 w-auto object-contain" />
           </Link>
 
           {/* Search bar */}

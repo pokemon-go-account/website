@@ -8,6 +8,7 @@ import { signIn, auth } from "@/auth";
 import { AuthError } from "next-auth";
 import { verifyFirebaseIdToken } from "@/lib/firebase-admin";
 import { verifyRecaptchaToken } from "@/lib/recaptcha";
+import { generateRandomUsername } from "@/utils/username";
 
 const RegisterSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -84,7 +85,9 @@ export async function registerUser(prevState: any, formData: FormData) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    const username = await generateRandomUsername();
     await User.create({
+      username,
       email: email.toLowerCase(),
       passwordHash,
       role: "USER",
@@ -191,7 +194,9 @@ export async function loginWithFirebaseIdToken(idToken: string) {
     
     if (!user) {
       // Create new user profile with onboarding flag false
+      const username = await generateRandomUsername();
       user = await User.create({
+        username,
         name: decoded.name || undefined,
         email: decoded.email?.toLowerCase() || undefined,
         phone: decoded.phone || undefined,
