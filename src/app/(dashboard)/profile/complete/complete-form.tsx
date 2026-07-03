@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { completeUserProfile } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,16 +13,18 @@ export function CompleteProfileForm() {
     error: null,
   } as any);
   const { update } = useSession();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && !isRedirecting) {
+      setIsRedirecting(true);
       alert("Profile finalized! Welcome aboard.");
       // Dynamically update the client-side session cookie to set isOnboarded = true
       update({ isOnboarded: true, role: state.role }).then(() => {
         window.location.href = "/auctions";
       });
     }
-  }, [state.success, state.role, update]);
+  }, [state.success, state.role, update, isRedirecting]);
 
   return (
     <form action={formAction} className="space-y-4">
