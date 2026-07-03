@@ -12,13 +12,10 @@ export default async function ProfileCompletePage() {
     console.error("ProfileCompletePage session retrieval error:", error);
   }
 
-  // If not logged in, redirect to login page
-  if (!session?.user) {
-    redirect("/login");
-  }
+  const user = session?.user;
 
   // If already onboarded, redirect away from the completion route
-  if ((session.user as any).isOnboarded) {
+  if (user && (user as any).isOnboarded) {
     redirect("/auctions");
   }
 

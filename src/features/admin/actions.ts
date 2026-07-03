@@ -8,6 +8,8 @@ import User from "@/models/User";
 import Bid from "@/models/Bid";
 import WebhookLog from "@/models/WebhookLog";
 import Registration from "@/models/Registration";
+import Category from "@/models/Category";
+import Product from "@/models/Product";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -462,5 +464,137 @@ export async function lookupUserProfile(username: string) {
   } catch (error: any) {
     console.error("Admin lookup user profile engine error:", error);
     return { success: false, error: error.message || "Failed to lookup user profile." };
+  }
+}
+
+/**
+ * CRUD Category Operations
+ */
+export async function getCategories() {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const categories = await Category.find().sort({ name: 1 }).lean();
+    return { success: true, categories: JSON.parse(JSON.stringify(categories)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function createCategory(name: string, slug: string) {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const category = await Category.create({ name, slug: slug.toLowerCase() });
+    revalidatePath("/admin/categories");
+    revalidatePath("/store");
+    return { success: true, category: JSON.parse(JSON.stringify(category)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateCategory(id: string, name: string, slug: string) {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const category = await Category.findByIdAndUpdate(
+      id,
+      { name, slug: slug.toLowerCase() },
+      { new: true }
+    );
+    revalidatePath("/admin/categories");
+    revalidatePath("/store");
+    return { success: true, category: JSON.parse(JSON.stringify(category)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteCategory(id: string) {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    
+    // Check if category has products
+    const productCount = await Product.countDocuments({ categoryId: id });
+    if (productCount > 0) {
+      return { success: false, error: "Cannot delete category containing products." };
+    }
+
+    await Category.findByIdAndDelete(id);
+    revalidatePath("/admin/categories");
+    revalidatePath("/store");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * CRUD Product Operations
+ */
+export async function getProducts() {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const products = await Product.find().populate("categoryId", "name slug").sort({ createdAt: -1 }).lean();
+    return { success: true, products: JSON.parse(JSON.stringify(products)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function createProduct(data: {
+  name: string;
+  description?: string;
+  price: number;
+  categoryId: string;
+  imageUrl: string;
+}) {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const product = await Product.create(data);
+    revalidatePath("/admin/products");
+    revalidatePath("/store");
+    return { success: true, product: JSON.parse(JSON.stringify(product)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateProduct(
+  id: string,
+  data: {
+    name: string;
+    description?: string;
+    price: number;
+    categoryId: string;
+    imageUrl: string;
+  }
+) {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const product = await Product.findByIdAndUpdate(id, data, { new: true });
+    revalidatePath("/admin/products");
+    revalidatePath("/store");
+    return { success: true, product: JSON.parse(JSON.stringify(product)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteProduct(id: string) {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    await Product.findByIdAndDelete(id);
+    revalidatePath("/admin/products");
+    revalidatePath("/store");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }

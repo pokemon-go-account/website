@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
-import { Geist } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "Pokemon Go Auctions",
@@ -19,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans", plusJakartaSans.variable)} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
