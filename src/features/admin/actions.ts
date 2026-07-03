@@ -598,3 +598,17 @@ export async function deleteProduct(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Server Action: Upload base64 product image to Cloudinary
+ */
+export async function uploadProductImageAction(base64Data: string) {
+  try {
+    await checkAdminSession();
+    const { uploadToCloudinary } = await import("@/lib/cloudinary");
+    const url = await uploadToCloudinary(base64Data);
+    return { success: true, url };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

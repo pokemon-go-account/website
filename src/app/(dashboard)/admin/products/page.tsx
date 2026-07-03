@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getProducts, getCategories, createProduct, updateProduct, deleteProduct } from "@/features/admin/actions";
+import { getProducts, getCategories, createProduct, updateProduct, deleteProduct, uploadProductImageAction } from "@/features/admin/actions";
 import { Package2, Plus, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +45,7 @@ export default function ManageProductsPage() {
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const {
     register,
@@ -55,6 +56,31 @@ export default function ManageProductsPage() {
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
   });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      const res = await uploadProductImageAction(base64);
+      if (res.success && res.url) {
+        setValue("imageUrl", res.url);
+      } else {
+        setError(res.error || "Failed to upload image. Make sure Cloudinary keys are configured.");
+      }
+      setUploadingImage(false);
+    };
+    reader.onerror = () => {
+      setError("Failed to read image file.");
+      setUploadingImage(false);
+    };
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -331,18 +357,37 @@ export default function ManageProductsPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Image URL</label>
-                <input
-                  type="text"
-                  placeholder="https://images.unsplash.com/... or relative path"
-                  {...register("imageUrl")}
-                  className={cn(
-                    "w-full h-9 px-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors",
-                    errors.imageUrl && "border-red-500/50 focus:border-red-500"
-                  )}
-                />
-                {errors.imageUrl && <p className="text-[10px] text-red-400 font-semibold">{errors.imageUrl.message}</p>}
+              <div className="space-y-2">
+                <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Product Image</label>
+                
+                <div className="flex gap-3">
+                  <label className="flex-1 h-9 rounded-xl border border-dashed border-white/[0.1] hover:border-white/[0.2] bg-white/[0.01] hover:bg-white/[0.03] flex items-center justify-center cursor-pointer transition-colors">
+                    <span className="text-[10px] font-bold text-zinc-400">
+                      {uploadingImage ? "Uploading to Cloudinary..." : "Choose Image File"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-[8px] text-zinc-600 font-bold uppercase tracking-wider">Or enter direct URL</p>
+                  <input
+                    type="text"
+                    placeholder="https://images.unsplash.com/... or uploaded path"
+                    {...register("imageUrl")}
+                    className={cn(
+                      "w-full h-9 px-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors",
+                      errors.imageUrl && "border-red-500/50 focus:border-red-500"
+                    )}
+                  />
+                  {errors.imageUrl && <p className="text-[10px] text-red-400 font-semibold">{errors.imageUrl.message}</p>}
+                </div>
               </div>
 
               <button
