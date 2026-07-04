@@ -171,7 +171,7 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
                     <div>
                       <p className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-wider">Current Bid</p>
                       <p className="text-gray-955 dark:text-white font-extrabold text-lg leading-tight">
-                        ₹{auction.currentHighestBid.toLocaleString()}
+                        ${auction.currentHighestBid.toLocaleString()}
                       </p>
                     </div>
                     {auction.endTime && (

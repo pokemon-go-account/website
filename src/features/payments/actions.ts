@@ -8,7 +8,7 @@ import User from "@/models/User";
 import Razorpay from "razorpay";
 
 /**
- * Server Action: Initiate a Razorpay payment order for bid verification deposit (₹199 / 19900 paise)
+ * Server Action: Initiate a Razorpay payment order for bid verification deposit ($2.50 / 250 cents)
  */
 export async function createRegistrationOrder(auctionId: string) {
   try {
@@ -58,10 +58,10 @@ export async function createRegistrationOrder(auctionId: string) {
 
     const isPlaceholder = keyId === "rzp_test_placeholder" || keySecret === "secret_placeholder";
 
-    let orderId: string;
-    let orderAmount = 19900;
-    let orderCurrency = "INR";
-
+     let orderId: string;
+    let orderAmount = 250; // $2.50 USD in cents
+    let orderCurrency = "USD";
+ 
     if (isPlaceholder) {
       // Generate a mock order ID
       orderId = `order_mock_${Math.random().toString(36).substring(2, 10)}`;
@@ -71,19 +71,19 @@ export async function createRegistrationOrder(auctionId: string) {
         key_id: keyId,
         key_secret: keySecret,
       });
-
+ 
       const orderOptions = {
-        amount: 19900, // 199.00 INR in paise
-        currency: "INR",
+        amount: 250, // 2.50 USD in cents
+        currency: "USD",
         receipt: `receipt_reg_${user._id.toString().slice(-6)}_${auction._id.toString().slice(-6)}`,
       };
-
+ 
       const order = await razorpay.orders.create(orderOptions);
-
+ 
       if (!order || !order.id) {
         return { success: false, error: "Failed to initialize payment gateway order." };
       }
-
+ 
       orderId = order.id;
       orderAmount = typeof order.amount === "number" ? order.amount : parseInt(order.amount as string, 10);
       orderCurrency = order.currency;

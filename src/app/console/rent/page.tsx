@@ -45,7 +45,7 @@ export default function ConsoleRentPage() {
   const buildTelegramReminderUrl = (admin: Admin) => {
     const handle = admin.telegramUsername?.replace("@", "") || "";
     const msg = encodeURIComponent(
-      `⚠️ *RENT REMINDER*\n\nHi ${admin.name || admin.username},\n\nYour weekly ADMIN access rent of ₹200 is due.\nPlease send payment and reply to this message to confirm.\n\nYour access will be revoked if rent is not received.`
+      `⚠️ *RENT REMINDER*\n\nHi ${admin.name || admin.username},\n\nYour weekly ADMIN access rent of $2.50 is due.\nPlease send payment and reply to this message to confirm.\n\nYour access will be revoked if rent is not received.`
     );
     return `https://t.me/${handle}?text=${msg}`;
   };
@@ -56,7 +56,7 @@ export default function ConsoleRentPage() {
         <Banknote className="h-5 w-5 text-amber-400" />
         <div>
           <h1 className="text-xl font-black text-white">Rent Manager</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Track ₹200/week rent payments for all ADMINs</p>
+          <p className="text-xs text-zinc-500 mt-0.5">Track $2.50/week rent payments for all ADMINs</p>
         </div>
       </div>
 
