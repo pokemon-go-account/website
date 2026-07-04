@@ -28,7 +28,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess }: RegisterAuctionB
     const { orderContext } = result;
 
     const confirmMock = confirm(
-      "[Mock Sandbox Mode] We detected placeholder Razorpay keys in .env.local.\n\nWould you like to simulate a successful payment of ₹199 to unlock bidding access for this auction?"
+      "[Mock Sandbox Mode] We detected placeholder Razorpay keys in .env.local.\n\nWould you like to simulate a successful payment of $2.50 to unlock bidding access for this auction?"
     );
 
     if (!confirmMock) {
@@ -64,7 +64,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess }: RegisterAuctionB
         className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm transition-all active:scale-[0.98] border border-zinc-700/50 cursor-pointer"
       >
         <CreditCard className="h-4 w-4 text-white" />
-        Pay Verification Deposit (₹199)
+        Pay Verification Deposit ($2.50)
       </Button>
 
       {/* Premium Dark Selector Modal Overlay */}
@@ -87,7 +87,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess }: RegisterAuctionB
                 Select Deposit Method
               </h2>
               <p className="text-xs text-zinc-400">
-                A verification deposit of ₹199 is required to participate in live bidding.
+                A verification deposit of $2.50 is required to participate in live bidding.
               </p>
             </div>
 

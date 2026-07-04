@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   { q: "How does the escrow transfer workflow operate?", a: "Once an auction reaches completion, our team directly secures the gaming credentials from the seller. We perform comprehensive anti-recovery validation checklines before transferring the profile over to the victorious bidder." },
-  { q: "What happens if a winning bidder refuses to clear payments?", a: "The bidder forfeits their nominal ₹199 entry validation registration deposit, their platform profile gets immediately blacklisted, and the option passes systematically down to the runner-up bidder tier." },
+  { q: "What happens if a winning bidder refuses to clear payments?", a: "The bidder forfeits their nominal $2.50 entry validation registration deposit, their platform profile gets immediately blacklisted, and the option passes systematically down to the runner-up bidder tier." },
   { q: "Are the seller's communication handles public?", a: "Never. To protect users from targeted fishing exploits, direct communication occurs exclusively through our verified intermediate system protocols." },
   { q: "How are sellers verified on the platform?", a: "All sellers go through an identity verification process before listing. We verify their Pokémon GO account ownership and cross-check credentials before any auction goes live." },
   { q: "What payment methods do you accept?", a: "We accept PayPal, Visa, Mastercard, and UPI. All transactions are processed securely with buyer protection guarantees." },

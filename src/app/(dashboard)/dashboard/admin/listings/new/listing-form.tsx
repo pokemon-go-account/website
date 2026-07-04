@@ -346,17 +346,17 @@ export function NewListingForm() {
         <h3 className="text-sm font-medium text-foreground tracking-tight">Auction Economics & Timeline</h3>
         <div className="grid gap-4 sm:grid-cols-4">
           <div className="space-y-1">
-            <Label htmlFor="startingBid">Starting Bid (₹)</Label>
+            <Label htmlFor="startingBid">Starting Bid ($)</Label>
             <Input id="startingBid" type="number" {...register("startingBid", { valueAsNumber: true })} placeholder="1999" className="bg-muted/30" />
             {errors.startingBid && <p className="text-[11px] text-destructive">{errors.startingBid.message}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="reservePrice">Reserve Price (₹)</Label>
+            <Label htmlFor="reservePrice">Reserve Price ($)</Label>
             <Input id="reservePrice" type="number" {...register("reservePrice", { valueAsNumber: true })} placeholder="4999" className="bg-muted/30" />
             {errors.reservePrice && <p className="text-[11px] text-destructive">{errors.reservePrice.message}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="minIncrement">Min Increment (₹)</Label>
+            <Label htmlFor="minIncrement">Min Increment ($)</Label>
             <Input id="minIncrement" type="number" {...register("minIncrement", { valueAsNumber: true })} placeholder="100" className="bg-muted/30" />
             {errors.minIncrement && <p className="text-[11px] text-destructive">{errors.minIncrement.message}</p>}
           </div>

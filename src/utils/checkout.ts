@@ -17,12 +17,12 @@ export function handleTelegramCheckout(items: CartItem[], totalPrice: number) {
     const subtotal = item.price * item.quantity;
     message += `${index + 1}️⃣ *${item.name}*\n`;
     message += `   Quantity: ${item.quantity}\n`;
-    message += `   Price: ₹${item.price.toLocaleString()}\n`;
-    message += `   Subtotal: ₹${subtotal.toLocaleString()}\n\n`;
+    message += `   Price: $${item.price.toLocaleString()}\n`;
+    message += `   Subtotal: $${subtotal.toLocaleString()}\n\n`;
   });
 
   message += `───────────────────\n`;
-  message += `*Total Order Value:* ₹${totalPrice.toLocaleString()}\n`;
+  message += `*Total Order Value:* $${totalPrice.toLocaleString()}\n`;
   message += `───────────────────\n\n`;
   message += `Please confirm my order and initiate secure escrow credentials vaulting.`;
 

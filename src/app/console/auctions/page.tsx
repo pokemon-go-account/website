@@ -173,7 +173,7 @@ export default function ConsoleAuctionsPage() {
                   <p className="text-zinc-500 text-[10px] mt-1">
                     By: <span className="text-zinc-300 font-semibold">@{listing.sellerId?.username || "Unknown"}</span>
                     {" · "}LVL {listing.level} · Team {listing.team}
-                    {" · "}Starting Bid: ₹{listing.startingBid.toLocaleString()}
+                    {" · "}Starting Bid: ${listing.startingBid.toLocaleString()}
                   </p>
                   <p className="text-zinc-600 text-[10px] mt-0.5">
                     Submitted {new Date(listing.createdAt).toLocaleDateString("en-IN")}
@@ -314,7 +314,7 @@ export default function ConsoleAuctionsPage() {
                   <h4 className="font-bold text-white uppercase tracking-wider text-[10px] text-amber-400">Auction Economics</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-zinc-500 font-medium">Starting Bid (₹)</label>
+                      <label className="text-zinc-500 font-medium">Starting Bid ($)</label>
                       <input
                         type="number"
                         value={editForm.startingBid || 0}
@@ -323,7 +323,7 @@ export default function ConsoleAuctionsPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-zinc-500 font-medium">Reserve Price (₹)</label>
+                      <label className="text-zinc-500 font-medium">Reserve Price ($)</label>
                       <input
                         type="number"
                         value={editForm.reservePrice || 0}
@@ -332,7 +332,7 @@ export default function ConsoleAuctionsPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-zinc-500 font-medium">Min Increment (₹)</label>
+                      <label className="text-zinc-500 font-medium">Min Increment ($)</label>
                       <input
                         type="number"
                         value={editForm.minIncrement || 0}
@@ -648,9 +648,9 @@ export default function ConsoleAuctionsPage() {
 
                     <h4 className="font-bold text-white uppercase tracking-wider text-[10px] border-b border-white/[0.05] pt-3 pb-2">Bidding Economics</h4>
                     <div className="space-y-2 text-[11px]">
-                      <div className="flex justify-between"><span className="text-zinc-500">Starting Price:</span><span className="text-white font-bold">₹{selectedListing.startingBid.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Reserve Price:</span><span className="text-white font-bold">₹{selectedListing.reservePrice.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Min Increment:</span><span className="text-white font-semibold">₹{selectedListing.minIncrement.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Starting Price:</span><span className="text-white font-bold">${selectedListing.startingBid.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Reserve Price:</span><span className="text-white font-bold">${selectedListing.reservePrice.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Min Increment:</span><span className="text-white font-semibold">${selectedListing.minIncrement.toLocaleString()}</span></div>
                       <div className="flex justify-between"><span className="text-zinc-500">Auction Window:</span><span className="text-white font-semibold">{selectedListing.durationHours} Hours</span></div>
                     </div>
                   </div>

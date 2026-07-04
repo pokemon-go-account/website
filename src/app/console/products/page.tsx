@@ -258,7 +258,7 @@ export default function ManageProductsPage() {
                       <span className="text-zinc-600 italic">None</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 font-bold text-white">₹{product.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 font-bold text-white">${product.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2 mt-0.5">
                     <button
                       onClick={() => openEditModal(product)}
@@ -324,7 +324,7 @@ export default function ManageProductsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Price (₹)</label>
+                  <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Price ($)</label>
                   <input
                     type="number"
                     placeholder="999"

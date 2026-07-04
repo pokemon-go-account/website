@@ -123,7 +123,7 @@ export default async function AdminDashboardOverview() {
                       ) : (
                         <div className="space-y-1">
                           <div className="font-medium text-foreground">
-                            Current Bid: ₹{auc.currentHighestBid.toLocaleString()}
+                            Current Bid: ${auc.currentHighestBid.toLocaleString()}
                           </div>
                           <div className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <Sparkles className="h-3 w-3 text-gray-500 dark:text-zinc-400" />

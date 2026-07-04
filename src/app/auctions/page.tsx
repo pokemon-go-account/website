@@ -167,7 +167,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                     <div className="space-y-0.5">
                       <span className="text-[10px] text-muted-foreground">Current Highest Bid</span>
                       <div className="font-extrabold text-foreground text-sm">
-                        ₹{auc.currentHighestBid.toLocaleString()}
+                        ${auc.currentHighestBid.toLocaleString()}
                       </div>
                     </div>
                     

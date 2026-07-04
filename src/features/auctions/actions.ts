@@ -118,7 +118,7 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
     });
 
     if (!registration) {
-      return { success: false, error: "Access denied. Verification deposit (₹199) is required to place bids." };
+      return { success: false, error: "Access denied. Verification deposit ($2.50) is required to place bids." };
     }
 
     // 2. Fetch auction and validate listing minIncrement rules

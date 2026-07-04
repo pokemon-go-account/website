@@ -160,7 +160,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
 
   const handlePlaceBid = (amount: number) => {
     if (amount < nextMinBid) {
-      setError(`Minimum bid requirement is ₹${nextMinBid}`);
+      setError(`Minimum bid requirement is $${nextMinBid}`);
       return;
     }
     placeBid(amount);
@@ -233,7 +233,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
       <div className="space-y-1 text-center">
         <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Current Bid</span>
         <h3 className="text-4xl font-black text-white tracking-tight">
-          ₹{activeBid.toLocaleString()}
+          ${activeBid.toLocaleString()}
         </h3>
         
         {highestBidderId === session?.user?.id ? (
@@ -275,7 +275,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               <div className="space-y-1">
                 <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
                 <p className="text-[11px] text-zinc-300 font-light leading-snug">
-                  Congratulations to <strong className="font-bold text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-white">₹{activeBid.toLocaleString()}</strong>!
+                  Congratulations to <strong className="font-bold text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-white">${activeBid.toLocaleString()}</strong>!
                 </p>
               </div>
             </div>
@@ -289,14 +289,14 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
         ) : !isRegistered ? (
           <div className="space-y-3">
             <div className="rounded bg-zinc-900 border border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-400 font-light">
-              A refundable verification deposit of ₹199 is required to participate in bidding.
+              A refundable verification deposit of $2.50 is required to participate in bidding.
             </div>
             <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
           </div>
         ) : (
           <div className="space-y-4">
             <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center font-bold">
-              Minimum Next Bid: <span className="text-white">₹{nextMinBid.toLocaleString()}</span>
+              Minimum Next Bid: <span className="text-white">${nextMinBid.toLocaleString()}</span>
             </div>
 
             {/* Quick Preset Button */}
@@ -319,7 +319,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
             {/* Custom Input */}
             <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
               <div className="relative flex-grow">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-semibold">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-semibold">$</span>
                 <input
                   type="number"
                   value={customBidAmount}
@@ -349,7 +349,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
         </div>
         <button className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
           <span>BUY NOW</span>
-          <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2">₹{(auction.listingId.startingBid * 4).toLocaleString()}</span>
+          <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2">${(auction.listingId.startingBid * 4).toLocaleString()}</span>
         </button>
       </div>
     </div>
@@ -826,7 +826,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                           {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
-                      <span className="font-bold text-white">₹{bid.amount.toLocaleString()}</span>
+                      <span className="font-bold text-white">${bid.amount.toLocaleString()}</span>
                     </div>
                   ))
                 )}
