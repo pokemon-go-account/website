@@ -135,7 +135,7 @@ export function NewListingForm() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="telegramUsername">Your Telegram Handle (Private)</Label>
-            <Input id="telegramUsername" {...register("telegramUsername")} placeholder="@sourav_jha" className="bg-muted/30" />
+            <Input id="telegramUsername" {...register("telegramUsername")} placeholder="@trainer_handle" className="bg-muted/30" />
             {errors.telegramUsername && <p className="text-[11px] text-destructive">{errors.telegramUsername.message}</p>}
           </div>
         </div>
