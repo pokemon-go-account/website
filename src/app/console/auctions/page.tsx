@@ -135,10 +135,10 @@ export default function ConsoleAuctionsPage() {
 
   return (
     <div className="max-w-5xl space-y-8">
-      <div className="border-b border-white/[0.05] pb-5 flex items-center gap-3">
-        <Gavel className="h-5 w-5 text-amber-400" />
+      <div className="border-b border-zinc-200 dark:border-white/[0.05] pb-5 flex items-center gap-3">
+        <Gavel className="h-5 w-5 text-amber-500" />
         <div>
-          <h1 className="text-xl font-black text-white">Auction Approvals</h1>
+          <h1 className="text-xl font-black text-zinc-950 dark:text-white">Auction Approvals</h1>
           <p className="text-xs text-zinc-500 mt-0.5">Review, verify, edit, and approve/reject ADMIN-submitted listings</p>
         </div>
       </div>
@@ -147,8 +147,8 @@ export default function ConsoleAuctionsPage() {
         <div className={cn(
           "rounded-xl border p-3 text-xs flex items-center gap-2",
           message.success 
-            ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400" 
-            : "border-red-500/20 bg-red-500/5 text-red-400"
+            ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400" 
+            : "border-red-500/20 bg-red-500/5 text-red-650 dark:text-red-400"
         )}>
           {message.success ? <CheckCircle className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
           {message.text}
@@ -158,43 +158,43 @@ export default function ConsoleAuctionsPage() {
       {loading ? (
         <p className="text-zinc-500 text-xs italic">Loading pending submissions...</p>
       ) : listings.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/[0.06] py-16 text-center">
+        <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-white/[0.06] py-16 text-center">
           <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
-          <p className="text-white font-bold text-sm">All Clear</p>
-          <p className="text-zinc-500 text-xs mt-1">No pending auction listings to review.</p>
+          <p className="text-zinc-950 dark:text-white font-bold text-sm">All Clear</p>
+          <p className="text-zinc-550 dark:text-zinc-550 text-xs mt-1">No pending auction listings to review.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {listings.map((listing) => (
-            <div key={listing._id} className="rounded-2xl border border-white/[0.05] bg-white/[0.01] p-5 space-y-4 hover:border-white/[0.1] transition-all">
+            <div key={listing._id} className="rounded-2xl border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.01] p-5 space-y-4 hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-white font-bold text-sm">{listing.title}</h3>
+                  <h3 className="text-zinc-900 dark:text-white font-bold text-sm">{listing.title}</h3>
                   <p className="text-zinc-500 text-[10px] mt-1">
-                    By: <span className="text-zinc-300 font-semibold">@{listing.sellerId?.username || "Unknown"}</span>
+                    By: <span className="text-zinc-700 dark:text-zinc-300 font-semibold">@{listing.sellerId?.username || "Unknown"}</span>
                     {" · "}LVL {listing.level} · Team {listing.team}
                     {" · "}Starting Bid: ${listing.startingBid.toLocaleString()}
                   </p>
-                  <p className="text-zinc-600 text-[10px] mt-0.5">
+                  <p className="text-zinc-500 dark:text-zinc-600 text-[10px] mt-0.5">
                     Submitted {new Date(listing.createdAt).toLocaleDateString("en-IN")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleViewClick(listing)}
-                    className="h-8 px-3 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] text-zinc-300 hover:text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                    className="h-8 px-3 rounded-lg border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/[0.05] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     Verify details
                   </button>
                   <button
                     onClick={() => handleEditClick(listing)}
-                    className="h-8 px-3 rounded-lg border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-400 hover:text-violet-300 text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                    className="h-8 px-3 rounded-lg border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                     Edit
                   </button>
-                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400">
                     Pending
                   </span>
                 </div>
@@ -205,7 +205,7 @@ export default function ConsoleAuctionsPage() {
                   placeholder="Optional review notes (required for rejection)..."
                   value={notes[listing._id] || ""}
                   onChange={(e) => setNotes((prev) => ({ ...prev, [listing._id]: e.target.value }))}
-                  className="w-full min-h-[50px] p-2.5 bg-white/[0.02] border border-white/[0.06] rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors leading-normal resize-none"
+                  className="w-full min-h-[50px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal resize-none"
                 />
 
                 <div className="flex gap-2">
@@ -220,7 +220,7 @@ export default function ConsoleAuctionsPage() {
                   <button
                     onClick={() => reject(listing._id)}
                     disabled={processing === listing._id}
-                    className="h-8 px-4 rounded-xl bg-red-600/80 hover:bg-red-500 text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                    className="h-8 px-4 rounded-xl bg-red-655 hover:bg-red-600 text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
                   >
                     <XCircle className="h-3.5 w-3.5" />
                     Reject Application
@@ -234,15 +234,15 @@ export default function ConsoleAuctionsPage() {
 
       {/* Verification / Details Modal */}
       {selectedListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-4xl bg-zinc-950 border border-white/[0.08] rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-xs overflow-y-auto">
+          <div className="relative w-full max-w-4xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto transition-colors duration-300">
             {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-white/[0.05] pb-4">
+            <div className="flex items-start justify-between border-b border-zinc-200 dark:border-white/[0.05] pb-4">
               <div>
                 <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
                   {isEditing ? "Editing Asset Coordinates" : "Verifying Asset Coordinates"}
                 </span>
-                <h2 className="text-lg font-bold text-white mt-1">
+                <h2 className="text-lg font-bold text-zinc-950 dark:text-white mt-1">
                   {isEditing ? `Edit: ${selectedListing.title}` : selectedListing.title}
                 </h2>
                 <p className="text-[10px] text-zinc-500 mt-0.5">
@@ -251,7 +251,7 @@ export default function ConsoleAuctionsPage() {
               </div>
               <button
                 onClick={() => { setSelectedListing(null); setIsEditing(false); }}
-                className="h-8 w-8 rounded-lg border border-white/[0.06] hover:bg-white/[0.05] flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                className="h-8 w-8 rounded-lg border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.05] flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -260,10 +260,10 @@ export default function ConsoleAuctionsPage() {
             {/* Modal Body */}
             {isEditing ? (
               /* Editable Form Mode */
-              <div className="space-y-6 text-xs text-zinc-300">
+              <div className="space-y-6 text-xs text-zinc-700 dark:text-zinc-300">
                 {/* section: Core info */}
                 <div className="space-y-3">
-                  <h4 className="font-bold text-white uppercase tracking-wider text-[10px] text-violet-400">Core Telemetry</h4>
+                  <h4 className="font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider text-[10px]">Core Telemetry</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-zinc-500 font-medium">Listing Title</label>
@@ -271,7 +271,7 @@ export default function ConsoleAuctionsPage() {
                         type="text"
                         value={editForm.title || ""}
                         onChange={(e) => handleInputChange("title", e.target.value)}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white focus:border-zinc-400 dark:focus:border-white outline-none transition-all"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -281,7 +281,7 @@ export default function ConsoleAuctionsPage() {
                           type="number"
                           value={editForm.level || 0}
                           onChange={(e) => handleInputChange("level", parseInt(e.target.value))}
-                          className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                          className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white focus:border-zinc-400 dark:focus:border-white outline-none transition-all"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -289,7 +289,7 @@ export default function ConsoleAuctionsPage() {
                         <select
                           value={editForm.team || "NONE"}
                           onChange={(e) => handleInputChange("team", e.target.value)}
-                          className="w-full h-8 px-2 bg-zinc-900 border border-white/[0.08] rounded-lg text-white"
+                          className="w-full h-8 px-2 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white outline-none cursor-pointer"
                         >
                           <option value="NONE">None</option>
                           <option value="MYSTIC">Mystic</option>
@@ -304,14 +304,14 @@ export default function ConsoleAuctionsPage() {
                     <textarea
                       value={editForm.description || ""}
                       onChange={(e) => handleInputChange("description", e.target.value)}
-                      className="w-full min-h-[60px] p-2.5 bg-white/[0.02] border border-white/[0.06] rounded-lg text-white"
+                      className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-lg text-zinc-950 dark:text-white focus:border-zinc-400 dark:focus:border-white outline-none transition-all"
                     />
                   </div>
                 </div>
 
                 {/* section: Pricing Economics */}
-                <div className="space-y-3 pt-4 border-t border-white/[0.05]">
-                  <h4 className="font-bold text-white uppercase tracking-wider text-[10px] text-amber-400">Auction Economics</h4>
+                <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-white/[0.05]">
+                  <h4 className="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider text-[10px]">Auction Economics</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-zinc-500 font-medium">Starting Bid ($)</label>
@@ -319,7 +319,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.startingBid || 0}
                         onChange={(e) => handleInputChange("startingBid", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -328,7 +328,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.reservePrice || 0}
                         onChange={(e) => handleInputChange("reservePrice", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -337,7 +337,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.minIncrement || 0}
                         onChange={(e) => handleInputChange("minIncrement", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -346,15 +346,15 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.durationHours || 0}
                         onChange={(e) => handleInputChange("durationHours", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* section: Metrics telemetry */}
-                <div className="space-y-3 pt-4 border-t border-white/[0.05]">
-                  <h4 className="font-bold text-white uppercase tracking-wider text-[10px] text-emerald-400">Account Telemetry & Resources</h4>
+                <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-white/[0.05]">
+                  <h4 className="font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[10px]">Account Telemetry & Resources</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-zinc-500 font-medium">Stardust</label>
@@ -362,7 +362,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.stardust || 0}
                         onChange={(e) => handleInputChange("stardust", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -371,7 +371,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.xp || 0}
                         onChange={(e) => handleInputChange("xp", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -380,7 +380,7 @@ export default function ConsoleAuctionsPage() {
                         type="text"
                         value={editForm.region || ""}
                         onChange={(e) => handleInputChange("region", e.target.value)}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -389,7 +389,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.shinyCount || 0}
                         onChange={(e) => handleInputChange("shinyCount", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                   </div>
@@ -401,7 +401,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.legendaryCount || 0}
                         onChange={(e) => handleInputChange("legendaryCount", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -410,7 +410,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.mythicalCount || 0}
                         onChange={(e) => handleInputChange("mythicalCount", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -419,7 +419,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.pokedexCompleted || 0}
                         onChange={(e) => handleInputChange("pokedexCompleted", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -428,7 +428,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.pokeCoins || 0}
                         onChange={(e) => handleInputChange("pokeCoins", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                   </div>
@@ -440,7 +440,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.bestBuddyCount || 0}
                         onChange={(e) => handleInputChange("bestBuddyCount", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -449,7 +449,7 @@ export default function ConsoleAuctionsPage() {
                         type="text"
                         value={editForm.accountStatus || ""}
                         onChange={(e) => handleInputChange("accountStatus", e.target.value)}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -458,7 +458,7 @@ export default function ConsoleAuctionsPage() {
                         type="text"
                         value={editForm.accountType || ""}
                         onChange={(e) => handleInputChange("accountType", e.target.value)}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -467,15 +467,15 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.weeklyDistance || 0}
                         onChange={(e) => handleInputChange("weeklyDistance", parseInt(e.target.value))}
-                        className="w-full h-8 px-3 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* section: inventory items */}
-                <div className="space-y-3 pt-4 border-t border-white/[0.05]">
-                  <h4 className="font-bold text-white uppercase tracking-wider text-[10px] text-blue-400">Inventory Items</h4>
+                <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-white/[0.05]">
+                  <h4 className="font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider text-[10px]">Inventory Items</h4>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 text-[10px]">Rare Candy</label>
@@ -483,7 +483,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.rareCandy || 0}
                         onChange={(e) => handleInputChange("rareCandy", parseInt(e.target.value))}
-                        className="w-full h-8 px-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -492,7 +492,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.fastTm || 0}
                         onChange={(e) => handleInputChange("fastTm", parseInt(e.target.value))}
-                        className="w-full h-8 px-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -501,7 +501,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.chargedTm || 0}
                         onChange={(e) => handleInputChange("chargedTm", parseInt(e.target.value))}
-                        className="w-full h-8 px-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -510,7 +510,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.eliteFastTm || 0}
                         onChange={(e) => handleInputChange("eliteFastTm", parseInt(e.target.value))}
-                        className="w-full h-8 px-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -519,7 +519,7 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.eliteChargedTm || 0}
                         onChange={(e) => handleInputChange("eliteChargedTm", parseInt(e.target.value))}
-                        className="w-full h-8 px-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -528,17 +528,17 @@ export default function ConsoleAuctionsPage() {
                         type="number"
                         value={editForm.incubators || 0}
                         onChange={(e) => handleInputChange("incubators", parseInt(e.target.value))}
-                        className="w-full h-8 px-2 bg-white/[0.02] border border-white/[0.08] rounded-lg text-white"
+                        className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-950 dark:text-white"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* actions footer */}
-                <div className="flex justify-end gap-3 pt-6 border-t border-white/[0.05]">
+                <div className="flex justify-end gap-3 pt-6 border-t border-zinc-200 dark:border-white/[0.05]">
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="h-9 px-4 rounded-xl border border-white/[0.08] hover:bg-white/[0.05] text-zinc-400 hover:text-white font-bold cursor-pointer"
+                    className="h-9 px-4 rounded-xl border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.05] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white font-bold cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -553,46 +553,46 @@ export default function ConsoleAuctionsPage() {
               </div>
             ) : (
               /* Detail View Mode */
-              <div className="space-y-6 text-xs text-zinc-300">
+              <div className="space-y-6 text-xs text-zinc-700 dark:text-zinc-300">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Left: General Stats & Telemetry */}
                   <div className="md:col-span-2 space-y-5">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/[0.01] border border-white/[0.05] rounded-xl p-3">
+                      <div className="bg-zinc-50 dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3">
                         <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Stardust</span>
-                        <span className="text-white text-sm font-bold mt-1 block">{selectedListing.stardust.toLocaleString()}</span>
+                        <span className="text-zinc-900 dark:text-white text-sm font-bold mt-1 block">{selectedListing.stardust.toLocaleString()}</span>
                       </div>
-                      <div className="bg-white/[0.01] border border-white/[0.05] rounded-xl p-3">
+                      <div className="bg-zinc-50 dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3">
                         <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Total XP</span>
-                        <span className="text-white text-sm font-bold mt-1 block">{selectedListing.xp.toLocaleString()}</span>
+                        <span className="text-zinc-900 dark:text-white text-sm font-bold mt-1 block">{selectedListing.xp.toLocaleString()}</span>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
-                      <div className="bg-white/[0.01] border border-white/[0.05] rounded-xl p-3 text-center">
+                      <div className="bg-zinc-50 dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-center">
                         <span className="text-zinc-500 block text-[9px] uppercase font-semibold">Shiny</span>
-                        <span className="text-yellow-500 text-sm font-black mt-1 block">{selectedListing.shinyCount}✨</span>
+                        <span className="text-yellow-600 dark:text-yellow-500 text-sm font-black mt-1 block">{selectedListing.shinyCount}✨</span>
                       </div>
-                      <div className="bg-white/[0.01] border border-white/[0.05] rounded-xl p-3 text-center">
+                      <div className="bg-zinc-50 dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-center">
                         <span className="text-zinc-500 block text-[9px] uppercase font-semibold">Legendary</span>
-                        <span className="text-orange-500 text-sm font-black mt-1 block">{selectedListing.legendaryCount}🏆</span>
+                        <span className="text-orange-600 dark:text-orange-500 text-sm font-black mt-1 block">{selectedListing.legendaryCount}🏆</span>
                       </div>
-                      <div className="bg-white/[0.01] border border-white/[0.05] rounded-xl p-3 text-center">
+                      <div className="bg-zinc-50 dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-center">
                         <span className="text-zinc-500 block text-[9px] uppercase font-semibold">Mythical</span>
-                        <span className="text-purple-500 text-sm font-black mt-1 block">{selectedListing.mythicalCount}🔮</span>
+                        <span className="text-purple-600 dark:text-purple-500 text-sm font-black mt-1 block">{selectedListing.mythicalCount}🔮</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <span className="text-zinc-400 font-bold block">Top Pokémon Highlights</span>
-                      <p className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 text-zinc-300 leading-relaxed font-mono">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-bold block">Top Pokémon Highlights</span>
+                      <p className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-zinc-700 dark:text-zinc-300 leading-relaxed font-mono">
                         {selectedListing.topPokemon || "None listed"}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <span className="text-zinc-400 font-bold block">Description Details</span>
-                      <p className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 text-zinc-300 leading-relaxed whitespace-pre-line">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-bold block">Description Details</span>
+                      <p className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
                         {selectedListing.description}
                       </p>
                     </div>
@@ -600,7 +600,7 @@ export default function ConsoleAuctionsPage() {
                     {/* Screenshot Gallery */}
                     {selectedListing.screenshots && selectedListing.screenshots.length > 0 && (
                       <div className="space-y-2">
-                        <span className="text-zinc-400 font-bold block">Uploaded Gallery Screenshots</span>
+                        <span className="text-zinc-500 dark:text-zinc-400 font-bold block">Uploaded Gallery Screenshots</span>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {selectedListing.screenshots.map((url, index) => (
                             <a
@@ -608,7 +608,7 @@ export default function ConsoleAuctionsPage() {
                               href={url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="block aspect-video rounded-lg overflow-hidden border border-white/[0.08] hover:border-white/30 transition-all bg-zinc-900 group relative"
+                              className="block aspect-video rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.08] hover:border-zinc-450 dark:hover:border-white/30 transition-all bg-zinc-100 dark:bg-zinc-900 group relative"
                             >
                               <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white font-bold transition-all">
@@ -622,56 +622,56 @@ export default function ConsoleAuctionsPage() {
                   </div>
 
                   {/* Right: Technical Telemetry & Pricing */}
-                  <div className="space-y-5 bg-white/[0.01] border border-white/[0.05] rounded-xl p-4 h-fit">
-                    <h4 className="font-bold text-white uppercase tracking-wider text-[10px] border-b border-white/[0.05] pb-2">Technical Telemetry</h4>
+                  <div className="space-y-5 bg-zinc-50 dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-4 h-fit">
+                    <h4 className="font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-[10px] border-b border-zinc-200 dark:border-white/[0.05] pb-2">Technical Telemetry</h4>
                     <div className="space-y-2.5 text-[11px]">
-                      <div className="flex justify-between"><span className="text-zinc-500">Faction Team:</span><span className="text-white font-semibold">{selectedListing.team}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Region Coverage:</span><span className="text-white font-semibold">{selectedListing.region}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Pokedex Completed:</span><span className="text-white font-semibold">{selectedListing.pokedexCompleted}%</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">PokeCoins:</span><span className="text-white font-semibold">{selectedListing.pokeCoins}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Best Buddies:</span><span className="text-white font-semibold">{selectedListing.bestBuddyCount}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Link Method:</span><span className="text-white font-semibold">{selectedListing.accountType}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Account Health:</span><span className="text-emerald-400 font-semibold">{selectedListing.accountStatus}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Registration Date:</span><span className="text-white font-semibold">{selectedListing.startDate}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Weekly Distance:</span><span className="text-white font-semibold">{selectedListing.weeklyDistance} km</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Faction Team:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.team}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Region Coverage:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.region}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Pokedex Completed:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.pokedexCompleted}%</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">PokeCoins:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.pokeCoins}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Best Buddies:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.bestBuddyCount}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Link Method:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.accountType}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Account Health:</span><span className="text-emerald-600 dark:text-emerald-400 font-semibold">{selectedListing.accountStatus}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Registration Date:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.startDate}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Weekly Distance:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.weeklyDistance} km</span></div>
                     </div>
 
-                    <h4 className="font-bold text-white uppercase tracking-wider text-[10px] border-b border-white/[0.05] pt-3 pb-2">Inventory Ledger</h4>
+                    <h4 className="font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-[10px] border-b border-zinc-200 dark:border-white/[0.05] pt-3 pb-2">Inventory Ledger</h4>
                     <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-                      <div className="bg-white/[0.02] border border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-500 block">Rare Candy</span><span className="text-white font-bold">{selectedListing.rareCandy}</span></div>
-                      <div className="bg-white/[0.02] border border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-500 block">Fast TM</span><span className="text-white font-bold">{selectedListing.fastTm}</span></div>
-                      <div className="bg-white/[0.02] border border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-500 block">Charged</span><span className="text-white font-bold">{selectedListing.chargedTm}</span></div>
-                      <div className="bg-white/[0.02] border border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-500 block">Elite Fast</span><span className="text-white font-bold">{selectedListing.eliteFastTm}</span></div>
-                      <div className="bg-white/[0.02] border border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-500 block">Elite Chg</span><span className="text-white font-bold">{selectedListing.eliteChargedTm}</span></div>
-                      <div className="bg-white/[0.02] border border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-500 block">Incubator</span><span className="text-white font-bold">{selectedListing.incubators}</span></div>
+                      <div className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-550 block">Rare Candy</span><span className="text-zinc-900 dark:text-white font-bold">{selectedListing.rareCandy}</span></div>
+                      <div className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-550 block">Fast TM</span><span className="text-zinc-900 dark:text-white font-bold">{selectedListing.fastTm}</span></div>
+                      <div className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-550 block">Charged</span><span className="text-zinc-900 dark:text-white font-bold">{selectedListing.chargedTm}</span></div>
+                      <div className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-550 block">Elite Fast</span><span className="text-zinc-900 dark:text-white font-bold">{selectedListing.eliteFastTm}</span></div>
+                      <div className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-550 block">Elite Chg</span><span className="text-zinc-900 dark:text-white font-bold">{selectedListing.eliteChargedTm}</span></div>
+                      <div className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] p-2 rounded-lg"><span className="text-zinc-550 block">Incubator</span><span className="text-zinc-900 dark:text-white font-bold">{selectedListing.incubators}</span></div>
                     </div>
 
-                    <h4 className="font-bold text-white uppercase tracking-wider text-[10px] border-b border-white/[0.05] pt-3 pb-2">Bidding Economics</h4>
+                    <h4 className="font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-[10px] border-b border-zinc-200 dark:border-white/[0.05] pt-3 pb-2">Bidding Economics</h4>
                     <div className="space-y-2 text-[11px]">
-                      <div className="flex justify-between"><span className="text-zinc-500">Starting Price:</span><span className="text-white font-bold">${selectedListing.startingBid.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Reserve Price:</span><span className="text-white font-bold">${selectedListing.reservePrice.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Min Increment:</span><span className="text-white font-semibold">${selectedListing.minIncrement.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-500">Auction Window:</span><span className="text-white font-semibold">{selectedListing.durationHours} Hours</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Starting Price:</span><span className="text-zinc-900 dark:text-white font-bold">${selectedListing.startingBid.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Reserve Price:</span><span className="text-zinc-900 dark:text-white font-bold">${selectedListing.reservePrice.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Min Increment:</span><span className="text-zinc-900 dark:text-white font-semibold">${selectedListing.minIncrement.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-500">Auction Window:</span><span className="text-zinc-900 dark:text-white font-semibold">{selectedListing.durationHours} Hours</span></div>
                     </div>
                   </div>
                 </div>
 
                 {/* Review note area */}
-                <div className="space-y-3 pt-6 border-t border-white/[0.05]">
-                  <label className="font-bold text-white uppercase tracking-wider text-[10px] block">Review Action Comments</label>
+                <div className="space-y-3 pt-6 border-t border-zinc-200 dark:border-white/[0.05]">
+                  <label className="font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-[10px] block">Review Action Comments</label>
                   <textarea
                     placeholder="Provide review context, feedback notes or rejection reasons..."
                     value={notes[selectedListing._id] || ""}
                     onChange={(e) => setNotes((prev) => ({ ...prev, [selectedListing._id]: e.target.value }))}
-                    className="w-full min-h-[70px] p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors leading-normal"
+                    className="w-full min-h-[70px] p-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal"
                   />
                 </div>
 
                 {/* Action Row */}
-                <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-white/[0.05]">
+                <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-zinc-200 dark:border-white/[0.05]">
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="h-9 px-4 rounded-xl border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-400 hover:text-violet-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="h-9 px-4 rounded-xl border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Edit2 className="h-4 w-4" />
                     Edit Metrics
@@ -680,7 +680,7 @@ export default function ConsoleAuctionsPage() {
                     <button
                       onClick={() => reject(selectedListing._id)}
                       disabled={processing === selectedListing._id}
-                      className="h-9 px-4 rounded-xl bg-red-600/80 hover:bg-red-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="h-9 px-4 rounded-xl bg-red-655 hover:bg-red-600 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                       <XCircle className="h-4 w-4" />
                       Reject

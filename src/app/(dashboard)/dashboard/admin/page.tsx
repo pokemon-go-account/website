@@ -147,7 +147,7 @@ export default async function AdminDashboardOverview() {
                             <div className="font-bold flex items-center gap-1 uppercase tracking-wider text-[9px] text-emerald-500">
                               <Trophy className="h-3.5 w-3.5 text-gray-950 dark:text-white" /> Winner Announced
                             </div>
-                            <div>Name: <span className="font-semibold text-white">{(auc.highestBidderId as any).name}</span></div>
+                            <div>Name: <span className="font-semibold text-zinc-900 dark:text-white">{(auc.highestBidderId as any).name}</span></div>
                             <div className="text-[9px] text-muted-foreground">Email: {(auc.highestBidderId as any).email}</div>
                           </div>
                         ) : (
