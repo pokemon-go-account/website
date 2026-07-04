@@ -17,7 +17,7 @@ import { revalidatePath } from "next/cache";
  */
 async function checkAdminSession() {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role || "")) {
     throw new Error("Unauthorized. Administrative privileges required.");
   }
   return session;

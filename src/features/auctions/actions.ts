@@ -14,8 +14,8 @@ export async function createListing(data: unknown) {
   try {
     // 1. Enforce strict session validation
     const session = await auth();
-    if (!session?.user || (session.user.role !== "SELLER" && session.user.role !== "ADMIN")) {
-      return { success: false, error: "Unauthorized. Seller privileges required." };
+    if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN")) {
+      return { success: false, error: "Unauthorized. Admin privileges required." };
     }
 
     await connectDB();
@@ -38,7 +38,7 @@ export async function createListing(data: unknown) {
     });
 
     // Clear Next.js data cache for the dashboard to show changes
-    revalidatePath("/dashboard/seller");
+    revalidatePath("/dashboard/admin");
 
     return { success: true, error: null };
   } catch (error) {

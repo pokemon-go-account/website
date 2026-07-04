@@ -113,13 +113,13 @@ export function Hero() {
                 BROWSE AUCTIONS
               </Link>
               <Link
-                href="/dashboard/seller/listings/new"
+                href="/store"
                 className="inline-flex items-center gap-2 border-2 border-gray-800/20 dark:border-white/30 hover:border-gray-800/60 dark:hover:border-white/60 bg-transparent text-gray-900 dark:text-white hover:bg-gray-100/50 dark:hover:bg-white/5 font-bold px-6 py-3 rounded-xl text-sm transition-all active:scale-95"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z" />
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z" />
                 </svg>
-                SELL YOUR ITEM
+                BROWSE SERVICES
               </Link>
             </motion.div>
           </motion.div>

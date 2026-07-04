@@ -29,21 +29,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             role: user.role,
             isOnboarded: user.isOnboarded,
+            adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
           } as any;
         }
 
         const parsedCredentials = loginSchema.safeParse(credentials);
-
         if (!parsedCredentials.success) return null;
 
         await connectDB();
         const { email, password } = parsedCredentials.data;
-        
-        // Find user by email only
+
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user || !user.passwordHash) return null;
 
-        // Verify state safety triggers
         if (user.isSuspended) {
           throw new Error("ACCOUNT_SUSPENDED");
         }
@@ -57,6 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           role: user.role,
           isOnboarded: user.isOnboarded,
+          adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
         } as any;
       },
     }),

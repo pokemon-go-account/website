@@ -10,16 +10,16 @@ import { cn } from "@/lib/utils";
 
 export const revalidate = 0; // Dynamic route rendering
 
-export default async function SellerDashboardOverview() {
+export default async function AdminDashboardOverview() {
   // 1. Session verification & Role checking
   const session = await auth();
-  if (!session?.user || (session.user.role !== "SELLER" && session.user.role !== "ADMIN")) {
+  if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN")) {
     redirect("/");
   }
 
   await connectDB();
 
-  // 2. Fetch all listings submitted by this seller
+  // 2. Fetch all listings submitted by this admin/seller
   const sellerListings = await Listing.find({ sellerId: session.user.id })
     .sort({ createdAt: -1 })
     .lean();
@@ -42,14 +42,14 @@ export default async function SellerDashboardOverview() {
       <div className="flex items-center justify-between border-b border-border pb-6">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
-            Seller Dashboard
+            Admin Dashboard
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
             Monitor asset authentication workflows, live bidding, and past auction winners.
           </p>
         </div>
         <Link
-          href="/dashboard/seller/listings/new"
+          href="/dashboard/admin/listings/new"
           className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black px-4 text-xs font-semibold border border-zinc-700/50 gap-1.5 transition-all active:scale-95 cursor-pointer"
         >
           <Plus className="h-3.5 w-3.5" />

@@ -20,7 +20,6 @@ const navLinks = [
   { href: "/auctions", label: "Auctions" },
   { href: "/store", label: "Store" },
   { href: "/#how-it-works", label: "How It Works" },
-  { href: "/dashboard/seller/listings/new", label: "Sell With Us" },
   { href: "/#faq", label: "FAQ" },
   { href: "/#contact", label: "Contact" },
 ];
@@ -126,8 +125,13 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               </Link>
             ))}
             {user?.role === "ADMIN" && (
-              <Link href="/admin" className="text-xs font-medium text-red-500 hover:text-red-400 transition-colors">
-                Admin
+              <Link href="/dashboard/admin" className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">
+                My Dashboard
+              </Link>
+            )}
+            {user?.role === "SUPER_ADMIN" && (
+              <Link href="/console" className="text-xs font-bold text-violet-500 hover:text-violet-400 transition-colors">
+                Console
               </Link>
             )}
           </nav>
@@ -235,11 +239,20 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               ))}
               {user?.role === "ADMIN" && (
                 <Link
-                  href="/admin"
+                  href="/dashboard/admin"
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
                 >
-                  Admin Control
+                  My Dashboard
+                </Link>
+              )}
+              {user?.role === "SUPER_ADMIN" && (
+                <Link
+                  href="/console"
+                  onClick={toggleMenu}
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 transition-colors"
+                >
+                  Console
                 </Link>
               )}
 

@@ -135,7 +135,6 @@ export async function updateUserProfileTelegram(prevState: any, formData: FormDa
 const CompleteProfileSchema = z.object({
   name: z.string().min(2, "Full name must be at least 2 characters"),
   telegramUsername: z.string().min(2, "Telegram username must be at least 2 characters"),
-  role: z.enum(["USER", "SELLER"]),
 });
 
 export async function completeUserProfile(prevState: any, formData: FormData) {
@@ -147,9 +146,8 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
 
     const name = formData.get("name") as string;
     const telegramUsername = formData.get("telegramUsername") as string;
-    const role = formData.get("role") as string;
 
-    const validated = CompleteProfileSchema.safeParse({ name, telegramUsername, role });
+    const validated = CompleteProfileSchema.safeParse({ name, telegramUsername });
     if (!validated.success) {
       return { success: false, error: validated.error.issues[0].message };
     }
@@ -162,11 +160,11 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
     await User.findByIdAndUpdate(session.user.id, {
       name: name.trim(),
       telegramUsername: formattedHandle,
-      role: role as "USER" | "SELLER",
+      role: "USER", // Always USER — ADMIN/SUPER_ADMIN only assigned by SUPER_ADMIN via /console
       isOnboarded: true,
     });
 
-    return { success: true, role: role as "USER" | "SELLER", error: null };
+    return { success: true, role: "USER", error: null };
   } catch (error: any) {
     console.error("Profile onboarding error:", error);
     return { success: false, error: "Failed to finalize profile." };
