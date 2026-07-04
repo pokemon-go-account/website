@@ -87,16 +87,8 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
           <div className="max-w-xs space-y-3">
             <h3 className="text-base font-semibold text-foreground">No auctions scheduled</h3>
             <p className="text-xs text-muted-foreground">
-              Sellers are moderating listings. Check back later or list your own asset!
+              New bidding blocks are scheduled instantly upon verification approval. Check back later!
             </p>
-            <div className="pt-2">
-              <Link
-                href="/dashboard/seller/listings/new"
-                className="inline-flex h-9 items-center justify-center rounded-lg bg-zinc-900 hover:bg-zinc-800 px-4 text-xs font-semibold text-white border border-zinc-700/50"
-              >
-                Create Listing
-              </Link>
-            </div>
           </div>
         </div>
       ) : (

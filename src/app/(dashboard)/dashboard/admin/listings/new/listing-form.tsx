@@ -112,7 +112,7 @@ export function NewListingForm() {
       setServerError(result.error);
       setIsPending(false);
     } else {
-      router.push("/dashboard/seller?success=true");
+      router.push("/dashboard/admin?success=true");
     }
   };
 

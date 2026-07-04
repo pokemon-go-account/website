@@ -12,7 +12,7 @@ const teamColors: Record<string, string> = {
 
 const whyChooseUs = [
   "Largest Pokémon GO Auction Community",
-  "Verified Sellers",
+  "Verified Assets",
   "Fair Auctions",
   "Instant Delivery (Items)",
   "Dedicated Support",
