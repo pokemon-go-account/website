@@ -171,13 +171,13 @@ export default function ManageProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header section */}
-      <div className="flex items-center justify-between border-b border-white/[0.05] pb-5">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.05] pb-5">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
-            <Package2 className="h-4.5 w-4.5 text-zinc-400" />
+          <div className="h-9 w-9 rounded-xl bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.05] flex items-center justify-center">
+            <Package2 className="h-4.5 w-4.5 text-zinc-555 dark:text-zinc-400" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white">Manage Products</h1>
+            <h1 className="text-xl font-black text-zinc-950 dark:text-white">Manage Products</h1>
             <p className="text-xs text-zinc-500 mt-0.5 font-medium">Create and manage direct storefront items</p>
           </div>
         </div>
@@ -185,14 +185,14 @@ export default function ManageProductsPage() {
         <button
           onClick={openAddModal}
           disabled={categories.length === 0}
-          className="h-9 px-4 rounded-xl bg-white hover:bg-zinc-200 disabled:opacity-50 text-black text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-white/5 active:scale-95 transition-all"
+          className="h-9 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 transition-all"
         >
           <Plus className="h-4 w-4" /> Add Product
         </button>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-400 flex items-start gap-2 max-w-2xl leading-normal">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-650 dark:text-red-400 flex items-start gap-2 max-w-2xl leading-normal">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Execution Error:</span> {error}
@@ -201,7 +201,7 @@ export default function ManageProductsPage() {
       )}
 
       {categories.length === 0 && !loading && (
-        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-xs text-yellow-400 flex items-start gap-2 max-w-2xl leading-normal">
+        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-xs text-yellow-500 dark:text-yellow-400 flex items-start gap-2 max-w-2xl leading-normal">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Action Required:</span> You must create at least one category directory under "Manage Categories" before you can add products to the storefront.
@@ -210,9 +210,9 @@ export default function ManageProductsPage() {
       )}
 
       {/* Main product listing table */}
-      <div className="border border-white/[0.05] bg-zinc-950/40 rounded-2xl overflow-hidden backdrop-blur-md">
-        <table className="min-w-full divide-y divide-white/[0.05] text-left text-xs">
-          <thead className="bg-white/[0.02] text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
+      <div className="border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-950/40 rounded-2xl overflow-hidden backdrop-blur-md shadow-xs">
+        <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.05] text-left text-xs">
+          <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
             <tr>
               <th className="px-6 py-4">Product details</th>
               <th className="px-6 py-4">Category</th>
@@ -220,7 +220,7 @@ export default function ManageProductsPage() {
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.05] text-zinc-300">
+          <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.05] text-zinc-700 dark:text-zinc-300">
             {loading ? (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
@@ -235,9 +235,9 @@ export default function ManageProductsPage() {
               </tr>
             ) : (
               products.map((product) => (
-                <tr key={product._id} className="hover:bg-white/[0.01] transition-colors">
+                <tr key={product._id} className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
                   <td className="px-6 py-4 flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-zinc-900 border border-white/[0.03] flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="h-9 w-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.03] flex items-center justify-center overflow-hidden shrink-0">
                       {product.imageUrl ? (
                         <img src={product.imageUrl} alt={product.name} className="max-h-full max-w-full object-contain" />
                       ) : (
@@ -245,31 +245,31 @@ export default function ManageProductsPage() {
                       )}
                     </div>
                     <div>
-                      <p className="font-bold text-white leading-none">{product.name}</p>
+                      <p className="font-bold text-zinc-900 dark:text-white leading-none">{product.name}</p>
                       <p className="text-[10px] text-zinc-500 mt-1 max-w-xs truncate">{product.description || "No description provided."}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-zinc-400">
+                  <td className="px-6 py-4 text-zinc-500 dark:text-zinc-400">
                     {product.categoryId ? (
-                      <span className="px-2 py-0.5 rounded-lg border border-white/[0.05] bg-white/[0.02] text-[10px] font-semibold uppercase tracking-wider">
+                      <span className="px-2 py-0.5 rounded-lg border border-zinc-200 dark:border-white/[0.05] bg-zinc-100 dark:bg-white/[0.02] text-[10px] font-semibold uppercase tracking-wider">
                         {product.categoryId.name}
                       </span>
                     ) : (
-                      <span className="text-zinc-600 italic">None</span>
+                      <span className="text-zinc-655 italic">None</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 font-bold text-white">${product.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white">${product.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2 mt-0.5">
                     <button
                       onClick={() => openEditModal(product)}
-                      className="h-8 w-8 rounded-lg border border-white/[0.08] hover:bg-white/5 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                      className="h-8 w-8 rounded-lg border border-zinc-200 hover:bg-zinc-100 dark:border-white/[0.08] dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
                       title="Edit Product"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDelete(product)}
-                      className="h-8 w-8 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/5 flex items-center justify-center cursor-pointer transition-colors"
+                      className="h-8 w-8 rounded-lg text-zinc-550 hover:text-red-655 hover:bg-red-500/5 flex items-center justify-center cursor-pointer transition-colors"
                       title="Delete Product"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -284,15 +284,15 @@ export default function ManageProductsPage() {
 
       {/* Add/Edit Product Glass Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-xs">
-          <div className="relative w-full max-w-md rounded-2xl border border-white/[0.06] bg-[#09090B] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.05] pb-3">
-              <h3 className="font-extrabold text-sm text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 dark:bg-black/70 backdrop-blur-xs">
+          <div className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.05] pb-3">
+              <h3 className="font-extrabold text-sm text-zinc-955 dark:text-white">
                 {modalMode === "add" ? "Create Warehouse Product" : "Update Warehouse Product"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="h-7 w-7 rounded-lg border border-white/[0.08] hover:bg-white/5 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                className="h-7 w-7 rounded-lg border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -300,13 +300,13 @@ export default function ManageProductsPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Product Name</label>
+                <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Product Name</label>
                 <input
                   type="text"
                   placeholder="e.g., Stardust Boost 1M, Rayquaza Catch"
                   {...register("name")}
                   className={cn(
-                    "w-full h-9 px-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors",
+                    "w-full h-9 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
                     errors.name && "border-red-500/50 focus:border-red-500"
                   )}
                 />
@@ -314,23 +314,23 @@ export default function ManageProductsPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Description</label>
+                <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Description</label>
                 <textarea
                   placeholder="Details of the product or service..."
                   {...register("description")}
-                  className="w-full min-h-[60px] p-2.5 bg-white/[0.02] border border-white/[0.08] rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors leading-normal"
+                  className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-955 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Price ($)</label>
+                  <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Price ($)</label>
                   <input
                     type="number"
                     placeholder="999"
                     {...register("price", { valueAsNumber: true })}
                     className={cn(
-                      "w-full h-9 px-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors",
+                      "w-full h-9 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
                       errors.price && "border-red-500/50 focus:border-red-500"
                     )}
                   />
@@ -338,17 +338,17 @@ export default function ManageProductsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Category Category</label>
+                  <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category</label>
                   <select
                     {...register("categoryId")}
                     className={cn(
-                      "w-full h-9 px-2 bg-[#09090B] border border-white/[0.08] rounded-xl text-white focus:outline-none focus:border-white transition-colors cursor-pointer",
+                      "w-full h-9 px-2 bg-zinc-100 dark:bg-[#09090B] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors cursor-pointer",
                       errors.categoryId && "border-red-500/50 focus:border-red-500"
                     )}
                   >
-                    <option value="" className="text-zinc-600">Select...</option>
+                    <option value="" className="text-zinc-550">Select...</option>
                     {categories.map((cat) => (
-                      <option key={cat._id} value={cat._id} className="text-white bg-zinc-950">
+                      <option key={cat._id} value={cat._id} className="text-zinc-950 dark:text-white bg-white dark:bg-zinc-95">
                         {cat.name}
                       </option>
                     ))}
@@ -358,11 +358,11 @@ export default function ManageProductsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="font-bold text-zinc-400 uppercase tracking-wider text-[10px]">Product Image</label>
+                <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Product Image</label>
                 
                 <div className="flex gap-3">
-                  <label className="flex-1 h-9 rounded-xl border border-dashed border-white/[0.1] hover:border-white/[0.2] bg-white/[0.01] hover:bg-white/[0.03] flex items-center justify-center cursor-pointer transition-colors">
-                    <span className="text-[10px] font-bold text-zinc-400">
+                  <label className="flex-1 h-9 rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.1] hover:border-zinc-400 dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.01] dark:hover:bg-white/[0.03] flex items-center justify-center cursor-pointer transition-colors">
+                    <span className="text-[10px] font-bold text-zinc-500">
                       {uploadingImage ? "Uploading to Cloudinary..." : "Choose Image File"}
                     </span>
                     <input
@@ -376,13 +376,13 @@ export default function ManageProductsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-[8px] text-zinc-600 font-bold uppercase tracking-wider">Or enter direct URL</p>
+                  <p className="text-[8px] text-zinc-500 uppercase tracking-wider font-bold">Or enter direct URL</p>
                   <input
                     type="text"
                     placeholder="https://images.unsplash.com/... or uploaded path"
                     {...register("imageUrl")}
                     className={cn(
-                      "w-full h-9 px-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-white transition-colors",
+                      "w-full h-9 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-955 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
                       errors.imageUrl && "border-red-500/50 focus:border-red-500"
                     )}
                   />
@@ -393,7 +393,7 @@ export default function ManageProductsPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-10 rounded-xl bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-extrabold text-xs shadow-lg shadow-white/5 active:scale-95 transition-all mt-4"
+                className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs shadow-lg active:scale-95 transition-all mt-4"
               >
                 {submitting ? "Saving changes..." : modalMode === "add" ? "Create Product" : "Save Changes"}
               </button>

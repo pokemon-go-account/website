@@ -21,13 +21,13 @@ export default async function ConsolePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="border-b border-white/[0.05] pb-5">
+      <div className="border-b border-zinc-200 dark:border-white/[0.05] pb-5">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-            <ShieldAlert className="h-5 w-5 text-violet-400" />
+            <ShieldAlert className="h-5 w-5 text-violet-500 dark:text-violet-400" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white">Root Console</h1>
+            <h1 className="text-xl font-black text-zinc-950 dark:text-white">Root Console</h1>
             <p className="text-xs text-zinc-500 mt-0.5">Platform-wide control — hidden from all standard users</p>
           </div>
         </div>
@@ -45,10 +45,10 @@ export default async function ConsolePage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {stats.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 space-y-3">
+          <div key={label} className="rounded-2xl border border-zinc-200 bg-white dark:border-white/[0.04] dark:bg-white/[0.01] p-6 space-y-3 shadow-xs">
             <Icon className={`h-5 w-5 ${color}`} />
             <div>
-              <p className="text-3xl font-black text-white">{value}</p>
+              <p className="text-3xl font-black text-zinc-955 dark:text-white">{value}</p>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">{label}</p>
             </div>
           </div>
