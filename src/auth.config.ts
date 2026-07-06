@@ -54,7 +54,7 @@ export const authConfig = {
       const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
       const isProfileCompleteRoute = nextUrl.pathname.startsWith("/profile/complete");
       const isPublicRoute =
-        ["/", "/login", "/register"].includes(nextUrl.pathname) || isApiAuthRoute;
+        ["/", "/login", "/register", "/feedback", "/recovery"].includes(nextUrl.pathname) || isApiAuthRoute;
 
       // 1. Redirect un-onboarded users to complete their profile
       if (isLoggedIn && !isOnboarded && !isProfileCompleteRoute && !isApiAuthRoute) {

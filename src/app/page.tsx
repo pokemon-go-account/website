@@ -27,6 +27,8 @@ export default function Home() {
             <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Contact Us</Link>
             <Link href="/auctions" className="hover:text-gray-900 dark:hover:text-white transition-colors">All Auctions</Link>
+            <Link href="/recovery" className="hover:text-gray-900 dark:hover:text-white transition-colors">Account Recovery</Link>
+            <Link href="/feedback" className="hover:text-gray-900 dark:hover:text-white transition-colors">Feedback</Link>
           </div>
         </div>
       </footer>
