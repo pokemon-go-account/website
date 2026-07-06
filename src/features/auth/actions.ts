@@ -134,7 +134,9 @@ export async function updateUserProfileTelegram(prevState: any, formData: FormDa
 
 const CompleteProfileSchema = z.object({
   name: z.string().min(2, "Full name must be at least 2 characters"),
-  telegramUsername: z.string().min(2, "Telegram username must be at least 2 characters"),
+  preferredContactMethod: z.string().min(1, "Preferred contact method is required"),
+  preferredContactId: z.string().min(2, "Username or Profile Link must be at least 2 characters"),
+  alternateContact: z.string().optional(),
 });
 
 export async function completeUserProfile(prevState: any, formData: FormData) {
@@ -145,21 +147,31 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
     }
 
     const name = formData.get("name") as string;
-    const telegramUsername = formData.get("telegramUsername") as string;
+    const preferredContactMethod = formData.get("preferredContactMethod") as string;
+    const preferredContactId = formData.get("preferredContactId") as string;
+    const alternateContact = (formData.get("alternateContact") as string) || "";
 
-    const validated = CompleteProfileSchema.safeParse({ name, telegramUsername });
+    const validated = CompleteProfileSchema.safeParse({
+      name,
+      preferredContactMethod,
+      preferredContactId,
+      alternateContact,
+    });
     if (!validated.success) {
       return { success: false, error: validated.error.issues[0].message };
     }
 
     await connectDB();
-    const formattedHandle = telegramUsername.trim().startsWith("@")
-      ? telegramUsername.trim()
-      : `@${telegramUsername.trim()}`;
+    const formattedHandle = (preferredContactMethod === "telegram" && !preferredContactId.trim().startsWith("@"))
+      ? `@${preferredContactId.trim()}`
+      : preferredContactId.trim();
 
     await User.findByIdAndUpdate(session.user.id, {
       name: name.trim(),
-      telegramUsername: formattedHandle,
+      telegramUsername: formattedHandle, // compatibility with rest of app
+      preferredContactMethod,
+      preferredContactId: formattedHandle,
+      alternateContact: alternateContact.trim() || undefined,
       role: "USER", // Always USER — ADMIN/SUPER_ADMIN only assigned by SUPER_ADMIN via /console
       isOnboarded: true,
     });

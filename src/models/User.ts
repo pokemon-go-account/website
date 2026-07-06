@@ -9,6 +9,9 @@ export interface IUser extends Document {
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
   isSuspended: boolean;
   telegramUsername?: string;
+  preferredContactMethod?: string;
+  preferredContactId?: string;
+  alternateContact?: string;
   isOnboarded: boolean;
   adminRentPaidUntil?: Date; // Only relevant for ADMIN role
   createdAt: Date;
@@ -25,6 +28,9 @@ const UserSchema: Schema<IUser> = new Schema(
     role: { type: String, enum: ['USER', 'ADMIN', 'SUPER_ADMIN'], default: 'USER' },
     isSuspended: { type: Boolean, default: false },
     telegramUsername: { type: String, trim: true },
+    preferredContactMethod: { type: String, default: 'telegram' },
+    preferredContactId: { type: String, trim: true },
+    alternateContact: { type: String, trim: true },
     isOnboarded: { type: Boolean, default: false },
     adminRentPaidUntil: { type: Date, default: null },
   },
