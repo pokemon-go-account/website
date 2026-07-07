@@ -66,14 +66,14 @@ export async function fetchAuctionRealtime(auctionId: string) {
     }
 
     const bids = await Bid.find({ auctionId })
-      .populate("bidderId", "name")
+      .populate("bidderId", "username")
       .sort({ createdAt: -1 })
       .limit(20)
       .lean();
 
     const formattedBids = bids.map((b: any) => ({
       _id: b._id.toString(),
-      bidderName: b.bidderId?.name || "Anonymous",
+      bidderName: b.bidderId?.username || "Anonymous",
       amount: b.amount,
       createdAt: b.createdAt.toISOString(),
     }));
@@ -82,7 +82,7 @@ export async function fetchAuctionRealtime(auctionId: string) {
       success: true,
       currentHighestBid: auction.currentHighestBid,
       highestBidderId: auction.highestBidderId ? (auction.highestBidderId as any)._id?.toString() || (auction.highestBidderId as any).toString() : null,
-      highestBidderName: (auction.highestBidderId as any)?.name || null,
+      highestBidderName: (auction.highestBidderId as any)?.username || null,
       status: auction.status,
       isRegistered,
       bids: formattedBids,

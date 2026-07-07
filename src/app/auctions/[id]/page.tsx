@@ -32,7 +32,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
 
   // Fetch top 20 recent bids
   const bidDocs = await Bid.find({ auctionId: id })
-    .populate("bidderId", "name")
+    .populate("bidderId", "username")
     .sort({ createdAt: -1 })
     .limit(20)
     .lean();
@@ -80,7 +80,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
 
   const formattedBids = bidDocs.map((b: any) => ({
     _id: b._id.toString(),
-    bidderName: b.bidderId?.name || "Anonymous",
+    bidderName: b.bidderId?.username || "Anonymous",
     amount: b.amount,
     createdAt: b.createdAt.toISOString(),
   }));

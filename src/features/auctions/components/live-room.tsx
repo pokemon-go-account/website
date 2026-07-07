@@ -187,10 +187,10 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
 
   // Team badges mapping
   const teamColors = {
-    MYSTIC: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    VALOR: "bg-red-500/10 text-red-400 border-red-500/20",
-    INSTINCT: "bg-zinc-800 text-zinc-300 border-zinc-700",
-    NONE: "bg-muted text-muted-foreground border-border",
+    MYSTIC: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20",
+    VALOR: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20",
+    INSTINCT: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20",
+    NONE: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
   };
 
   // Parse Pokémon highlights dynamically from the topPokemon string input
@@ -213,56 +213,55 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
       img: mockThumbnails[idx % mockThumbnails.length]
     };
   });
-
   const renderBiddingPanel = () => (
-    <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-5 shadow-xl relative overflow-hidden">
+    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-5 shadow-xs dark:shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-[#6133e1]/10 blur-xl pointer-events-none" />
 
       {/* Countdown Ends In */}
-      <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5 text-zinc-500" />
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
           Auction Ends In
         </span>
-        <span className="text-[10px] text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 animate-pulse">
+        <span className="text-[10px] text-red-500 dark:text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-200 dark:border-red-500/20 animate-pulse">
           {timeLeft}
         </span>
       </div>
 
       {/* Bid Values */}
       <div className="space-y-1 text-center">
-        <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Current Bid</span>
-        <h3 className="text-4xl font-black text-white tracking-tight">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Current Bid</span>
+        <h3 className="text-4xl font-black text-zinc-900 dark:text-white tracking-tight">
           ${activeBid.toLocaleString()}
         </h3>
         
         {highestBidderId === session?.user?.id ? (
-          <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-400 font-bold border border-emerald-500/20 mt-1 uppercase tracking-wider">
+          <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 mt-1 uppercase tracking-wider">
             <ShieldCheck className="h-3 w-3" /> You are highest bidder
           </div>
         ) : (
-          <div className="inline-flex items-center gap-1 rounded bg-zinc-800 px-2.5 py-0.5 text-[9px] text-zinc-400 font-bold border border-zinc-700 mt-1 uppercase tracking-wider">
+          <div className="inline-flex items-center gap-1 rounded bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-[9px] text-zinc-600 dark:text-zinc-400 font-bold border border-zinc-200 dark:border-zinc-700 mt-1 uppercase tracking-wider">
             Outbid / No active bids
           </div>
         )}
       </div>
 
       {/* Counters Info */}
-      <div className="grid grid-cols-2 gap-4 py-2 border-y border-zinc-800/80 text-center text-xs">
+      <div className="grid grid-cols-2 gap-4 py-2 border-y border-zinc-200 dark:border-zinc-800/80 text-center text-xs">
         <div>
-          <span className="text-[9px] text-zinc-500 uppercase">Total Bids</span>
-          <div className="font-bold text-white mt-0.5">{bidHistory.length}</div>
+          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Total Bids</span>
+          <div className="font-bold text-zinc-800 dark:text-white mt-0.5">{bidHistory.length}</div>
         </div>
         <div>
-          <span className="text-[9px] text-zinc-500 uppercase">Watchers</span>
-          <div className="font-bold text-white mt-0.5">32</div>
+          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Watchers</span>
+          <div className="font-bold text-zinc-800 dark:text-white mt-0.5">32</div>
         </div>
       </div>
 
       {/* Bidding Controls Form */}
       <div className="space-y-3">
         {error && (
-          <div className="flex items-start gap-1.5 rounded bg-red-500/10 p-2.5 text-[10px] text-red-400 border border-red-500/20 leading-relaxed">
+          <div className="flex items-start gap-1.5 rounded bg-red-500/10 p-2.5 text-[10px] text-red-500 dark:text-red-400 border border-red-500/20 leading-relaxed">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -273,30 +272,30 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-3">
               <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
               <div className="space-y-1">
-                <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
-                <p className="text-[11px] text-zinc-300 font-light leading-snug">
-                  Congratulations to <strong className="font-bold text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-white">${activeBid.toLocaleString()}</strong>!
+                <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
+                  Congratulations to <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-zinc-900 dark:text-white">${activeBid.toLocaleString()}</strong>!
                 </p>
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-center space-y-2">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center space-y-2">
               <AlertCircle className="h-6 w-6 text-zinc-500 mx-auto" />
-              <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Concluded</h4>
+              <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Concluded</h4>
               <p className="text-[11px] text-zinc-500">This auction expired with no bids.</p>
             </div>
           )
         ) : !isRegistered ? (
           <div className="space-y-3">
-            <div className="rounded bg-zinc-900 border border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-400 font-light">
+            <div className="rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light">
               A refundable verification deposit of $2.50 is required to participate in bidding.
             </div>
             <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center font-bold">
-              Minimum Next Bid: <span className="text-white">${nextMinBid.toLocaleString()}</span>
+            <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center font-bold">
+              Minimum Next Bid: <span className="text-zinc-800 dark:text-white">${nextMinBid.toLocaleString()}</span>
             </div>
 
             {/* Quick Preset Button */}
@@ -311,9 +310,9 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
 
             {/* Divider */}
             <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-zinc-800"></div>
-              <span className="flex-shrink mx-3 text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Or enter custom bid</span>
-              <div className="flex-grow border-t border-zinc-800"></div>
+              <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
+              <span className="flex-shrink mx-3 text-[9px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Or enter custom bid</span>
+              <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
             </div>
 
             {/* Custom Input */}
@@ -325,14 +324,14 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   value={customBidAmount}
                   onChange={(e) => setCustomBidAmount(e.target.value)}
                   placeholder={nextMinBid.toString()}
-                  className="w-full h-10 pl-6 pr-3 bg-black/40 border border-zinc-800 rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#6133e1] transition-colors"
+                  className="w-full h-10 pl-6 pr-3 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-[#6133e1] transition-colors"
                   disabled={!isConnected}
                 />
               </div>
               <button
                 type="submit"
                 disabled={!isConnected}
-                className="h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-95 text-xs text-white font-bold transition-all cursor-pointer"
+                className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all border border-zinc-700/50 cursor-pointer active:scale-95"
               >
                 Place
               </button>
@@ -342,9 +341,9 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
       </div>
 
       {/* Buy Now Option */}
-      <div className="pt-4 border-t border-zinc-800 flex items-center justify-between">
+      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
         <div>
-          <h4 className="text-xs font-bold text-white uppercase tracking-wider">Buy Now price</h4>
+          <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Buy Now price</h4>
           <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
         </div>
         <button className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
@@ -356,33 +355,61 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
   );
 
   return (
-    <div className="min-h-screen bg-[#08080a] text-white py-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#08080a] text-zinc-900 dark:text-white py-6 transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Breadcrumb Navigation */}
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-400">
-          <span className="hover:text-white cursor-pointer transition-colors">Home</span>
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+          <span className="hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors">Home</span>
           <span>&gt;</span>
-          <span className="hover:text-white cursor-pointer transition-colors">Auctions</span>
+          <span className="hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors">Auctions</span>
           <span>&gt;</span>
-          <span className="hover:text-white cursor-pointer transition-colors">Pokémon GO Accounts</span>
+          <span className="hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors">Pokémon GO Accounts</span>
           <span>&gt;</span>
-          <span className="text-zinc-200 font-medium truncate max-w-[200px] sm:max-w-none">{auction.listingId.title}</span>
+          <span className="text-zinc-800 dark:text-zinc-200 font-medium truncate max-w-[200px] sm:max-w-none">{auction.listingId.title}</span>
         </div>
 
         {/* Real-time connection status overlay/banner */}
         <div>
           {!isConnected ? (
-            <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 p-3 text-xs text-zinc-300">
-              <AlertCircle className="h-4 w-4 animate-pulse text-zinc-400" />
+            <div className="flex items-center gap-2 rounded-xl bg-zinc-200 dark:bg-white/5 border border-zinc-200 dark:border-white/10 p-3 text-xs text-zinc-600 dark:text-zinc-300 shadow-xs">
+              <AlertCircle className="h-4 w-4 animate-pulse text-zinc-400 dark:text-zinc-400" />
               Connecting to real-time bidding engine... Live updates paused.
             </div>
           ) : (
-            <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-400">
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-600 dark:text-emerald-400 shadow-xs">
               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
               Secure live WebSocket gateway active.
             </div>
           )}
+        </div>
+
+        {/* Mobile Title Card */}
+        <div className="lg:hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-3 shadow-xs animate-in fade-in duration-300">
+          <span className="inline-block bg-[#6133e1]/10 text-[#6133e1] text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border border-[#6133e1]/20">
+            Premium Grade Asset
+          </span>
+          <h1 className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">
+            {auction.listingId.title}
+          </h1>
+          <div className="grid grid-cols-4 gap-2 text-center text-xs pt-1">
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
+              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Level</div>
+              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.level}</div>
+            </div>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
+              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Team</div>
+              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5 truncate">{auction.listingId.team}</div>
+            </div>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
+              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Shiny</div>
+              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.shinyCount}✨</div>
+            </div>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
+              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Legendary</div>
+              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.legendaryCount}🏆</div>
+            </div>
+          </div>
         </div>
 
         {/* Desktop Title & Details Section (Grid: Left 2 cols, Right 1 col) */}
@@ -392,10 +419,10 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Gallery module */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-md p-4 sm:p-6 space-y-4">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-4 sm:p-6 space-y-4 shadow-xs">
               
               {/* Main Viewer */}
-              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black/40 border border-zinc-800 flex items-center justify-center group">
+              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center group">
                 
                 {/* Team Tag Overlay */}
                 <div className="absolute top-4 left-4 z-10 flex gap-2">
@@ -436,15 +463,15 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                     key={idx}
                     onClick={() => setActiveImgIndex(idx)}
                     className={cn(
-                      "relative h-16 w-20 rounded-lg overflow-hidden border bg-zinc-900 shrink-0 transition-all",
-                      activeImgIndex === idx ? "border-[#6133e1] ring-2 ring-[#6133e1]/50" : "border-zinc-800 hover:border-zinc-700"
+                      "relative h-16 w-20 rounded-lg overflow-hidden border bg-zinc-50 dark:bg-zinc-900 shrink-0 transition-all cursor-pointer",
+                      activeImgIndex === idx ? "border-[#6133e1] ring-2 ring-[#6133e1]/50" : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
                     )}
                   >
                     <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
                   </button>
                 ))}
                 {screenshots.length > 4 && (
-                  <div className="h-16 w-20 rounded-lg border border-zinc-800 bg-[#0d0d12] flex items-center justify-center text-xs font-bold text-zinc-400 shrink-0">
+                  <div className="h-16 w-20 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-[#0d0d12] flex items-center justify-center text-xs font-bold text-zinc-400 shrink-0">
                     +{screenshots.length - 4}
                   </div>
                 )}
@@ -453,32 +480,32 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
 
             {/* Quick Guarantees/Trust Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="rounded-xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3">
-                <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3 shadow-xs">
+                <ShieldCheck className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
                 <div>
-                  <h4 className="text-[11px] font-bold text-white uppercase tracking-wider">100% Safe</h4>
-                  <p className="text-[9px] text-zinc-400">Secure escrow systems</p>
+                  <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">100% Safe</h4>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Secure escrow systems</p>
                 </div>
               </div>
-              <div className="rounded-xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3">
-                <Award className="h-5 w-5 text-purple-400 shrink-0" />
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3 shadow-xs">
+                <Award className="h-5 w-5 text-purple-500 dark:text-purple-400 shrink-0" />
                 <div>
-                  <h4 className="text-[11px] font-bold text-white uppercase tracking-wider">Instant Delivery</h4>
-                  <p className="text-[9px] text-zinc-400">Receive credentials instantly</p>
+                  <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Instant Delivery</h4>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Receive credentials instantly</p>
                 </div>
               </div>
-              <div className="rounded-xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3">
-                <Coins className="h-5 w-5 text-sky-400 shrink-0" />
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3 shadow-xs">
+                <Coins className="h-5 w-5 text-sky-500 dark:text-sky-400 shrink-0" />
                 <div>
-                  <h4 className="text-[11px] font-bold text-white uppercase tracking-wider">Verified Account</h4>
-                  <p className="text-[9px] text-zinc-400">Checked by team admin</p>
+                  <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Verified Account</h4>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Checked by team admin</p>
                 </div>
               </div>
-              <div className="rounded-xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3">
-                <Headset className="h-5 w-5 text-indigo-400 shrink-0" />
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3 shadow-xs">
+                <Headset className="h-5 w-5 text-indigo-500 dark:text-indigo-400 shrink-0" />
                 <div>
-                  <h4 className="text-[11px] font-bold text-white uppercase tracking-wider">24/7 Help</h4>
-                  <p className="text-[9px] text-zinc-400">Continuous technical support</p>
+                  <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">24/7 Help</h4>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Continuous technical support</p>
                 </div>
               </div>
             </div>
@@ -489,10 +516,10 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
             </div>
 
             {/* Detailed Description, Grid Statistics & Info Tabs */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-md overflow-hidden">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md overflow-hidden shadow-xs">
               
               {/* Tab Selector Header */}
-              <div className="flex border-b border-zinc-800 overflow-x-auto bg-black/20">
+              <div className="flex border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto bg-zinc-50 dark:bg-black/20">
                 {(["overview", "highlights", "details", "terms"] as const).map((tab) => (
                   <button
                     key={tab}
@@ -500,8 +527,8 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                     className={cn(
                       "px-6 py-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all shrink-0 cursor-pointer",
                       activeTab === tab 
-                        ? "border-[#6133e1] text-white bg-[#6133e1]/5" 
-                        : "border-transparent text-zinc-400 hover:text-white"
+                        ? "border-[#6133e1] text-zinc-900 dark:text-white bg-[#6133e1]/5" 
+                        : "border-transparent text-zinc-400 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                     )}
                   >
                     {tab === "overview" && "Overview"}
@@ -519,7 +546,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   <div className="space-y-6">
                     <div className="space-y-3">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">About This Account</h3>
-                      <p className="text-sm text-zinc-300 leading-relaxed font-light">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-light">
                         {auction.listingId.description}
                       </p>
                     </div>
@@ -537,7 +564,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                         `Account Region: ${auction.listingId.region}`,
                         `Start Date: ${auction.listingId.startDate || "N/A"}`
                       ].map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-zinc-300">
+                        <div key={idx} className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
                           <Check className="h-4 w-4 text-[#6133e1] shrink-0" />
                           <span>{item}</span>
                         </div>
@@ -545,10 +572,10 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                     </div>
 
                     {/* Security Notice Warning Box */}
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-xs text-zinc-400 flex items-start gap-3">
-                      <AlertTriangle className="h-4.5 w-4.5 text-zinc-400 shrink-0 mt-0.5" />
+                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-4 text-xs text-zinc-500 dark:text-zinc-400 flex items-start gap-3">
+                      <AlertTriangle className="h-4.5 w-4.5 text-zinc-500 shrink-0 mt-0.5" />
                       <div>
-                        <strong className="font-semibold text-white uppercase tracking-wider text-[10px]">Important Security Coordinates:</strong>
+                        <strong className="font-semibold text-zinc-800 dark:text-white uppercase tracking-wider text-[10px]">Important Security Coordinates:</strong>
                         <p className="mt-1 leading-relaxed">
                           We handle full email integration transfers. Credential coordinates (passwords/associated codes) are fully changed during secure trade procedures to guarantee permanent account lock protection.
                         </p>
@@ -561,15 +588,15 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Top Legendary Highlights</h3>
-                      <span className="text-[10px] text-zinc-500 hover:text-white cursor-pointer underline">View All</span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer underline">View All</span>
                     </div>
 
                     {/* Highlight Pokémon Cards Grid */}
                     <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
                       {pokemonHighlights.map((pk, idx) => (
-                        <div key={idx} className="rounded-xl border border-zinc-800 bg-black/40 p-3 space-y-3 flex flex-col items-center justify-between text-center relative group">
+                        <div key={idx} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-black/40 p-3 space-y-3 flex flex-col items-center justify-between text-center relative group">
                           {/* 100% IV Badge */}
-                          <div className="absolute top-2 right-2 bg-black/60 rounded px-1.5 py-0.5 text-[8px] font-bold text-white flex items-center gap-1 border border-zinc-800">
+                          <div className="absolute top-2 right-2 bg-white/85 dark:bg-black/60 rounded px-1.5 py-0.5 text-[8px] font-bold text-zinc-700 dark:text-white flex items-center gap-1 border border-zinc-200 dark:border-zinc-800">
                             <Sparkles className="h-2.5 w-2.5 text-purple-400 fill-purple-400" />
                             <span>100% IV</span>
                           </div>
@@ -579,8 +606,8 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                           </div>
 
                           <div className="space-y-0.5">
-                            <h4 className="text-xs font-bold text-white">{pk.name}</h4>
-                            <span className="text-[10px] text-zinc-400 font-bold">{pk.cp}</span>
+                            <h4 className="text-xs font-bold text-zinc-800 dark:text-white">{pk.name}</h4>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold">{pk.cp}</span>
                           </div>
                         </div>
                       ))}
@@ -610,9 +637,9 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                           { label: "Start Date", value: `${auction.listingId.startDate || "N/A"}` },
                           { label: "Account Region", value: `${auction.listingId.region}` }
                         ].map((row, idx) => (
-                          <div key={idx} className="flex justify-between py-2 border-b border-zinc-800/60">
-                            <span className="text-zinc-400">{row.label}</span>
-                            <span className="font-semibold text-white">{row.value}</span>
+                          <div key={idx} className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800/60">
+                            <span className="text-zinc-400 dark:text-zinc-400">{row.label}</span>
+                            <span className="font-semibold text-zinc-800 dark:text-white">{row.value}</span>
                           </div>
                         ))}
                       </div>
@@ -633,9 +660,9 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                           { label: "Lure Modules", value: `${auction.listingId.lureModules || 0}` },
                           { label: "Premium Raid Pass", value: `${auction.listingId.premiumRaidPass || 0}` }
                         ].map((item, idx) => (
-                          <div key={idx} className="flex justify-between py-2 border-b border-zinc-800/60">
-                            <span className="text-zinc-400">{item.label}</span>
-                            <span className="font-semibold text-white">{item.value}</span>
+                          <div key={idx} className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800/60">
+                            <span className="text-zinc-400 dark:text-zinc-400">{item.label}</span>
+                            <span className="font-semibold text-zinc-800 dark:text-white">{item.value}</span>
                           </div>
                         ))}
                       </div>
@@ -644,15 +671,15 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                 )}
 
                 {activeTab === "terms" && (
-                  <div className="space-y-6 text-xs text-zinc-300 leading-relaxed font-light">
+                  <div className="space-y-6 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-light">
                     <div className="space-y-2">
-                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">Account Handover Terms</h4>
+                      <h4 className="text-sm font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Account Handover Terms</h4>
                       <p>
                         We guarantee a secure transfer pipeline. Upon auction finalization, our system admins check the account credentials, link a secure email coordinates list matching your requests, and deliver details within minutes.
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">Refund Policy</h4>
+                      <h4 className="text-sm font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Refund Policy</h4>
                       <p>
                         A 7-Day Money Back Guarantee protects you from discrepancies. If the account characteristics do not match the statistics listed on the catalog cards, you are eligible for immediate complete refunds.
                       </p>
@@ -665,10 +692,10 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               </div>
             </div>
 
-            {/* Accordion FAQs Panel */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-                <HelpCircle className="h-4.5 w-4.5 text-zinc-500" />
+                   {/* Accordion FAQs Panel */}
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-4 shadow-xs">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+                <HelpCircle className="h-4.5 w-4.5 text-[#6133e1]" />
                 Frequently Asked Questions
               </h3>
               
@@ -679,16 +706,16 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   { q: "How will I receive the account details?", a: "Admins automate the delivery. You will receive a secure system notification (and Telegram coordination details) as soon as deposit and purchase balances are finalized." },
                   { q: "Can I change the email and password?", a: "Yes. Changing email links is a mandatory step in our secure onboarding handbook to ensure that you are the sole controller of the account asset." }
                 ].map((item, idx) => (
-                  <div key={idx} className="border-b border-zinc-800/80 pb-2">
+                  <div key={idx} className="border-b border-zinc-200 dark:border-zinc-800/80 pb-2">
                     <button
                       onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                      className="w-full flex items-center justify-between py-2.5 text-left text-xs font-bold text-zinc-200 hover:text-white transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-between py-2.5 text-left text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
                     >
                       <span>{item.q}</span>
                       <span>{openFaq === idx ? "−" : "+"}</span>
                     </button>
                     {openFaq === idx && (
-                      <p className="text-[11px] text-zinc-400 pb-3 leading-relaxed font-light">
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 pb-3 leading-relaxed font-light">
                         {item.a}
                       </p>
                     )}
@@ -698,15 +725,15 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
             </div>
 
             {/* Trust Assurance Block */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 p-6 flex flex-col sm:flex-row items-center gap-6 justify-between">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 flex flex-col sm:flex-row items-center gap-6 justify-between shadow-xs">
               <div className="flex items-center gap-4">
                 <ShieldAlert className="h-10 w-10 text-[#6133e1] shrink-0" />
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Bid With Complete Confidence</h4>
-                  <p className="text-xs text-zinc-400">Your payments are fully protected under our 7-Day Money Back Guarantee structure.</p>
+                  <h4 className="text-sm font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Bid With Complete Confidence</h4>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Your payments are fully protected under our 7-Day Money Back Guarantee structure.</p>
                 </div>
               </div>
-              <span className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest border border-zinc-700 bg-zinc-900 px-4 py-2 rounded-lg">
+              <span className="text-[10px] text-zinc-700 dark:text-zinc-300 font-bold uppercase tracking-widest border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg">
                 Safe Trade Seal
               </span>
             </div>
@@ -717,22 +744,22 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
           <div className="space-y-6">
             
             {/* Header Title Metadata Info Panel */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-4">
+            <div className="hidden lg:block rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-4 shadow-xs">
               <span className="bg-[#6133e1]/10 text-[#6133e1] text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border border-[#6133e1]/20">
                 Premium Grade Asset
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+              <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white tracking-tight leading-snug">
                 {auction.listingId.title}
               </h2>
               
               {/* Actions Row (Watch & Share) */}
-              <div className="flex items-center justify-end text-xs pb-3 border-b border-zinc-800">
+              <div className="flex items-center justify-end text-xs pb-3 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="flex gap-4">
-                  <button className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer text-[10px]">
+                  <button className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer text-[10px]">
                     <Heart className="h-3.5 w-3.5" />
                     Watch
                   </button>
-                  <button className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer text-[10px]">
+                  <button className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer text-[10px]">
                     <Share2 className="h-3.5 w-3.5" />
                     Share
                   </button>
@@ -741,21 +768,21 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
 
               {/* Statistical Grid summary */}
               <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5">
-                  <div className="text-[9px] text-zinc-500 uppercase">Level</div>
-                  <div className="font-extrabold text-white mt-0.5">{auction.listingId.level}</div>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2.5">
+                  <div className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase">Level</div>
+                  <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.level}</div>
                 </div>
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5">
-                  <div className="text-[9px] text-zinc-500 uppercase">Team</div>
-                  <div className="font-extrabold text-white mt-0.5 truncate">{auction.listingId.team}</div>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2.5">
+                  <div className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase">Team</div>
+                  <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5 truncate">{auction.listingId.team}</div>
                 </div>
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5">
-                  <div className="text-[9px] text-zinc-500 uppercase">Shiny</div>
-                  <div className="font-extrabold text-white mt-0.5">{auction.listingId.shinyCount}✨</div>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2.5">
+                  <div className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase">Shiny</div>
+                  <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.shinyCount}✨</div>
                 </div>
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-2.5">
-                  <div className="text-[9px] text-zinc-500 uppercase">Legendary</div>
-                  <div className="font-extrabold text-white mt-0.5">{auction.listingId.legendaryCount}🏆</div>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2.5">
+                  <div className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase">Legendary</div>
+                  <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.legendaryCount}🏆</div>
                 </div>
               </div>
             </div>
@@ -765,14 +792,12 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               {renderBiddingPanel()}
             </div>
 
-
-
             {/* Delivery Specifications & Payment details */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 p-6 space-y-4">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Shipping & Handover details</h4>
-              <div className="space-y-3 text-xs text-zinc-300 font-light">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 space-y-4 shadow-xs">
+              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Shipping & Handover details</h4>
+              <div className="space-y-3 text-xs text-zinc-600 dark:text-zinc-300 font-light">
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-400" />
+                  <Check className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                   <span>Instant Delivery via admin transfer</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -782,36 +807,36 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               </div>
 
               {/* Payment Methods */}
-              <div className="pt-4 border-t border-zinc-800 space-y-2">
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
                 <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Supported Payments</span>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {["PayPal", "Visa", "Mastercard", "UPI"].map((pm, idx) => (
-                    <span key={idx} className="bg-zinc-900 border border-zinc-800 px-2 py-1 rounded text-[10px] font-medium text-zinc-400">
+                    <span key={idx} className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2 py-1 rounded text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
                       {pm}
                     </span>
                   ))}
-                  <span className="text-[9px] text-zinc-600 mt-1">and more...</span>
+                  <span className="text-[9px] text-zinc-500 dark:text-zinc-500 mt-1">and more...</span>
                 </div>
               </div>
             </div>
 
             {/* Support contact panel */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 p-6 text-center space-y-3">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Have Questions?</h4>
-              <p className="text-[10px] text-zinc-400 leading-normal">Our technical trade team coordinates are available 24/7.</p>
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 text-center space-y-3 shadow-xs">
+              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Have Questions?</h4>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team coordinates are available 24/7.</p>
               <button className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer">
                 Contact Support Coordinates
               </button>
             </div>
 
             {/* Ledger Bids list */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d12]/40 p-6 space-y-4">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 space-y-4 shadow-xs">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                  <Trophy className="h-4 w-4 text-zinc-500" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                  <Trophy className="h-4 w-4 text-[#6133e1]" />
                   Recent Live Bids
                 </h3>
-                <span className="text-[9px] text-zinc-500 hover:text-white cursor-pointer underline">View All</span>
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer underline">View All</span>
               </div>
 
               <div className="space-y-2">
@@ -819,14 +844,14 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   <p className="text-xs text-zinc-500 italic py-2 text-center">No bids recorded yet.</p>
                 ) : (
                   bidHistory.slice(0, 5).map((bid, idx) => (
-                    <div key={bid._id} className="flex justify-between items-center py-2 border-b border-zinc-800/40 text-xs">
+                    <div key={bid._id} className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800/40 text-xs">
                       <div className="space-y-0.5">
-                        <span className="font-semibold text-white">{bid.bidderName}</span>
-                        <div className="text-[9px] text-zinc-500">
+                        <span className="font-semibold text-zinc-800 dark:text-white">{bid.bidderName}</span>
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-400">
                           {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
-                      <span className="font-bold text-white">${bid.amount.toLocaleString()}</span>
+                      <span className="font-bold text-zinc-800 dark:text-white">${bid.amount.toLocaleString()}</span>
                     </div>
                   ))
                 )}
