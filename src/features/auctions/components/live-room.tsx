@@ -93,6 +93,8 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
   const [timeLeft, setTimeLeft] = useState("Loading timer...");
   const [customBidAmount, setCustomBidAmount] = useState("");
   const [isConcluded, setIsConcluded] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [mobileActiveView, setMobileActiveView] = useState<"bid" | "details" | "help">("bid");
   
   // Gallery controls
   const screenshots = auction.listingId.screenshots && auction.listingId.screenshots.length > 0
@@ -298,15 +300,20 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               Minimum Next Bid: <span className="text-zinc-800 dark:text-white">${nextMinBid.toLocaleString()}</span>
             </div>
 
-            {/* Quick Preset Button */}
-            <button
-              onClick={() => handlePlaceBid(nextMinBid)}
-              disabled={!isConnected}
-              className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/95 text-white font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg shadow-[#6133e1]/10"
-            >
-              <Gavel className="h-4 w-4" />
-              PLACE BID
-            </button>
+            {/* Quick Preset Buttons */}
+            <div className="grid grid-cols-3 gap-2">
+              {[nextMinBid, nextMinBid + (auction.listingId?.minIncrement || 100), nextMinBid + 2 * (auction.listingId?.minIncrement || 100)].map((amount) => (
+                <button
+                  key={amount}
+                  type="button"
+                  onClick={() => handlePlaceBid(amount)}
+                  disabled={!isConnected}
+                  className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 shadow-xs"
+                >
+                  +${(amount - activeBid).toLocaleString()}
+                </button>
+              ))}
+            </div>
 
             {/* Divider */}
             <div className="relative flex py-1 items-center">
@@ -355,7 +362,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#08080a] text-zinc-900 dark:text-white py-6 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#08080a] text-zinc-900 dark:text-white py-6 pb-24 lg:pb-6 transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Breadcrumb Navigation */}
@@ -413,7 +420,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
         </div>
 
         {/* Desktop Title & Details Section (Grid: Left 2 cols, Right 1 col) */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="hidden lg:grid gap-8 lg:grid-cols-3">
           
           {/* LEFT CONTAINER (Gallery, Info Tabs, Details lists) */}
           <div className="lg:col-span-2 space-y-6">
@@ -510,10 +517,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
               </div>
             </div>
 
-            {/* Mobile Bidding Control Panel */}
-            <div className="block lg:hidden">
-              {renderBiddingPanel()}
-            </div>
+
 
             {/* Detailed Description, Grid Statistics & Info Tabs */}
             <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md overflow-hidden shadow-xs">
@@ -832,11 +836,11 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
             {/* Ledger Bids list */}
             <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 space-y-4 shadow-xs">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5">
                   <Trophy className="h-4 w-4 text-[#6133e1]" />
                   Recent Live Bids
                 </h3>
-                <span className="text-[9px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer underline">View All</span>
+                <span className="text-[9px] text-zinc-550 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer underline">View All</span>
               </div>
 
               <div className="space-y-2">
@@ -863,6 +867,386 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
         </div>
 
       </div>
+
+        {/* MOBILE FIRST SYSTEMATIC LAYOUT (Visible only on mobile/tablet) */}
+        <div className="lg:hidden space-y-6 animate-in fade-in duration-300">
+          
+          {/* Top View Navigation Tabs */}
+          <div className="flex rounded-xl bg-zinc-100 dark:bg-zinc-900 p-1 border border-zinc-200 dark:border-zinc-800">
+            {(["bid", "details", "help"] as const).map((view) => (
+              <button
+                key={view}
+                type="button"
+                onClick={() => setMobileActiveView(view)}
+                className={cn(
+                  "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-center cursor-pointer capitalize",
+                  mobileActiveView === view
+                    ? "bg-[#6133e1] text-white shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200"
+                )}
+              >
+                {view === "bid" && "Live Bid"}
+                {view === "details" && "Specs & Media"}
+                {view === "help" && "Help & Terms"}
+              </button>
+            ))}
+          </div>
+
+          {/* Active Mobile View Content */}
+          {mobileActiveView === "bid" && (
+            <div className="space-y-4">
+              
+              {/* Bidding Timer & Status Panel */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-sm">
+                <div className="flex justify-between items-center pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-zinc-400" />
+                    Auction Ends In
+                  </span>
+                  <span className="text-[10px] text-red-500 dark:text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-200 dark:border-red-500/20 animate-pulse">
+                    {timeLeft}
+                  </span>
+                </div>
+
+                <div className="space-y-1 text-center py-2">
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Current Bid</span>
+                  <h3 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                    ${activeBid.toLocaleString()}
+                  </h3>
+                  {highestBidderId === session?.user?.id ? (
+                    <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 mt-1 uppercase tracking-wider">
+                      <ShieldCheck className="h-3 w-3" /> You are leading
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1 rounded bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-[9px] text-zinc-650 dark:text-zinc-400 font-bold border border-zinc-200 dark:border-zinc-700 mt-1 uppercase tracking-wider">
+                      Outbid / Place Bid Below
+                    </div>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="flex items-start gap-1.5 rounded bg-red-500/10 p-2.5 text-[10px] text-red-500 dark:text-red-400 border border-red-500/20 leading-relaxed">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {/* Bidding Controls Form */}
+                <div className="pt-2">
+                  {isConcluded ? (
+                    highestBidderName ? (
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-2">
+                        <Trophy className="h-6 w-6 text-[#6133e1] mx-auto animate-bounce" />
+                        <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
+                        <p className="text-[11px] text-zinc-600 dark:text-zinc-300">
+                          Won by <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for <strong className="font-bold text-zinc-900 dark:text-white">${activeBid.toLocaleString()}</strong>
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center">
+                        <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase">Concluded</h4>
+                        <p className="text-[11px] text-zinc-500 mt-1">This auction expired with no bids.</p>
+                      </div>
+                    )
+                  ) : !isRegistered ? (
+                    <div className="space-y-3">
+                      <div className="rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3.5 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light text-center">
+                        A refundable verification deposit of $2.50 is required to participate in bidding.
+                      </div>
+                      <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center font-bold">
+                        Minimum Next Bid: <span className="text-[#6133e1] dark:text-purple-400">${nextMinBid.toLocaleString()}</span>
+                      </div>
+
+                      {/* Presets */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {[nextMinBid, nextMinBid + (auction.listingId?.minIncrement || 100), nextMinBid + 2 * (auction.listingId?.minIncrement || 100)].map((amount) => (
+                          <button
+                            key={amount}
+                            type="button"
+                            onClick={() => handlePlaceBid(amount)}
+                            disabled={!isConnected}
+                            className="h-10 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95"
+                          >
+                            +${(amount - activeBid).toLocaleString()}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Custom Bid Input */}
+                      <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
+                        <div className="relative flex-grow">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 font-semibold text-xs">$</span>
+                          <input
+                            type="number"
+                            value={customBidAmount}
+                            onChange={(e) => setCustomBidAmount(e.target.value)}
+                            placeholder={`Min $${nextMinBid}`}
+                            className="w-full h-10 pl-6 pr-3 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#6133e1] transition-colors font-bold"
+                            disabled={!isConnected}
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={!isConnected}
+                          className="h-10 px-5 rounded-xl bg-[#6133e1] text-white text-xs font-bold transition-all active:scale-95 shadow-md shadow-[#6133e1]/20 cursor-pointer"
+                        >
+                          Bid
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Buy Now Option */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-4 flex flex-col gap-3 shadow-xs">
+                <div className="space-y-0.5">
+                  <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Buy Now price</h4>
+                  <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
+                </div>
+                <button className="w-full h-11 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
+                  <span>BUY NOW</span>
+                  <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2">${(auction.listingId.startingBid * 4).toLocaleString()}</span>
+                </button>
+              </div>
+
+              {/* Bids Ledger list */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                  <Trophy className="h-4 w-4 text-[#6133e1]" />
+                  Live Bid History
+                </h3>
+                <div className="space-y-2">
+                  {bidHistory.length === 0 ? (
+                    <p className="text-xs text-zinc-500 italic py-2 text-center">No bids recorded yet.</p>
+                  ) : (
+                    bidHistory.slice(0, 8).map((bid, idx) => (
+                      <div key={bid._id} className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800/40 text-xs">
+                        <div className="space-y-0.5">
+                          <span className="font-semibold text-zinc-800 dark:text-white">{bid.bidderName}</span>
+                          <div className="text-[9px] text-zinc-500 dark:text-zinc-400">
+                            {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        <span className="font-black text-zinc-900 dark:text-white">${bid.amount.toLocaleString()}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Details tab view */}
+          {mobileActiveView === "details" && (
+            <div className="space-y-4">
+              
+              {/* Media Gallery Card */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-4 space-y-4 shadow-xs">
+                <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center group">
+                  
+                  {/* Team Tag Overlay */}
+                  <div className="absolute top-4 left-4 z-10 flex gap-2">
+                    <span className="bg-[#6133e1] text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md shadow-lg">
+                      Legendary Account
+                    </span>
+                    <span className={cn("text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md shadow-lg border", teamColors[auction.listingId.team])}>
+                      {auction.listingId.team}
+                    </span>
+                  </div>
+
+                  <img src={screenshots[activeImgIndex]} alt="Trainer Account Screen" className="max-h-full max-w-full object-contain" />
+                  
+                  <button
+                    type="button"
+                    onClick={() => setActiveImgIndex((prev) => (prev > 0 ? prev - 1 : screenshots.length - 1))}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700 cursor-pointer"
+                  >
+                    &lt;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveImgIndex((prev) => (prev < screenshots.length - 1 ? prev + 1 : 0))}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700 cursor-pointer"
+                  >
+                    &gt;
+                  </button>
+                </div>
+
+                {/* Thumbnails */}
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {screenshots.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveImgIndex(idx)}
+                      className={cn(
+                        "relative h-12 w-16 rounded-md overflow-hidden border shrink-0 transition-all cursor-pointer",
+                        activeImgIndex === idx ? "border-[#6133e1] ring-2 ring-[#6133e1]/50" : "border-zinc-200 dark:border-zinc-800"
+                      )}
+                    >
+                      <img src={img} alt="thumbnail" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Spec Checklist & Inventory */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-6 shadow-xs">
+                
+                {/* Highlights */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Top Legendary Highlights</h3>
+                  <div className="grid gap-3 grid-cols-2">
+                    {pokemonHighlights.map((pk, idx) => (
+                      <div key={idx} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-black/40 p-3 flex flex-col items-center justify-between text-center relative group">
+                        <div className="absolute top-2 right-2 bg-white/85 dark:bg-black/60 rounded px-1.5 py-0.5 text-[8px] font-bold text-zinc-700 dark:text-white flex items-center gap-1 border border-zinc-200 dark:border-zinc-800">
+                          <Sparkles className="h-2.5 w-2.5 text-purple-400 fill-purple-400" />
+                          <span>100% IV</span>
+                        </div>
+                        
+                        <div className="h-16 w-16 flex items-center justify-center mt-2">
+                          <img src={pk.img} alt={pk.name} className="max-h-full max-w-full object-contain" />
+                        </div>
+
+                        <div className="space-y-0.5 mt-2">
+                          <h4 className="text-[10px] font-bold text-zinc-850 dark:text-white">{pk.name}</h4>
+                          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-bold">{pk.cp}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Attributes specs */}
+                <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-900">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#6133e1]">Account Attributes</h3>
+                  <div className="grid gap-y-2 text-[11px]">
+                    {[
+                      { label: "Trainer Level", value: `${auction.listingId.level}` },
+                      { label: "Faction Team", value: `${auction.listingId.team}` },
+                      { label: "Shiny Pokémon", value: `${auction.listingId.shinyCount}` },
+                      { label: "Legendary Pokémon", value: `${auction.listingId.legendaryCount}` },
+                      { label: "Stardust Balance", value: `${(auction.listingId.stardust || 0).toLocaleString()}` },
+                      { label: "PokéCoins", value: `${(auction.listingId.pokeCoins || 0).toLocaleString()}` },
+                      { label: "Account Status", value: `${auction.listingId.accountStatus || "Safe (No Strikes)"}` },
+                      { label: "Account Type", value: `${auction.listingId.accountType || "Google"}` },
+                      { label: "Account Region", value: `${auction.listingId.region}` }
+                    ].map((row, idx) => (
+                      <div key={idx} className="flex justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-zinc-500 dark:text-zinc-400">{row.label}</span>
+                        <span className="font-semibold text-zinc-800 dark:text-white">{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Resources inventory */}
+                <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-900">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#6133e1]">Items & Inventory</h3>
+                  <div className="grid gap-y-2 text-[11px]">
+                    {[
+                      { label: "Rare Candy", value: `${auction.listingId.rareCandy || 0}` },
+                      { label: "Elite Fast TM", value: `${auction.listingId.eliteFastTm || 0}` },
+                      { label: "Elite Charged TM", value: `${auction.listingId.eliteChargedTm || 0}` },
+                      { label: "Premium Raid Pass", value: `${auction.listingId.premiumRaidPass || 0}` }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-zinc-500 dark:text-zinc-400">{item.label}</span>
+                        <span className="font-semibold text-zinc-800 dark:text-white">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* Help & Terms tab view */}
+          {mobileActiveView === "help" && (
+            <div className="space-y-4">
+              
+              {/* Trust Guarantees */}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { title: "100% Safe", desc: "Secure Escrows", icon: ShieldCheck, color: "text-emerald-500" },
+                  { title: "Fast Delivery", desc: "Credentials Instantly", icon: Award, color: "text-purple-500" },
+                  { title: "Verified Assets", desc: "Admin Hand-Checked", icon: Coins, color: "text-sky-500" },
+                  { title: "24/7 Helpdesk", desc: "Live Chat Support", icon: Headset, color: "text-indigo-500" }
+                ].map((item, idx) => (
+                  <div key={idx} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-4 space-y-2 shadow-xs text-center flex flex-col items-center">
+                    <item.icon className={cn("h-6 w-6 shrink-0", item.color)} />
+                    <div className="space-y-0.5">
+                      <h4 className="text-[10px] font-bold text-zinc-850 dark:text-white uppercase tracking-wider">{item.title}</h4>
+                      <p className="text-[8px] text-zinc-500 dark:text-zinc-400 leading-normal">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Handover terms */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-xs text-xs">
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider border-b border-zinc-150 dark:border-zinc-800 pb-2">Handover Terms</h4>
+                <div className="space-y-3 leading-relaxed text-zinc-650 dark:text-zinc-300 font-light">
+                  <p>
+                    <strong>Secure credentials:</strong> Complete account coordinate logins are shared securely coordinates matching your account requests.
+                  </p>
+                  <p>
+                    <strong>Refund assurance:</strong> A 7-day money-back safeguard applies automatically if the trainer levels, shinies or levels are discrepancy-filled.
+                  </p>
+                </div>
+              </div>
+
+              {/* FAQs Accordion */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 border-b border-zinc-150 dark:border-zinc-800 pb-2">
+                  <HelpCircle className="h-4 w-4 text-[#6133e1]" />
+                  Frequently Asked Questions
+                </h3>
+                <div className="space-y-1">
+                  {[
+                    { q: "Will I get full access to the account?", a: "Yes. You will receive complete credentials including access keys to the linked Google/PTC account coordinates, allowing you to change passwords instantly." },
+                    { q: "Is the account safe from bans?", a: "Absolutely. All listings undergo authentication review by administrators to ensure they are clean, have no active warnings or strikes, and align with safe parameters." }
+                  ].map((item, idx) => (
+                    <div key={idx} className="border-b border-zinc-100 dark:border-zinc-800/80 pb-2">
+                      <button
+                        type="button"
+                        onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                        className="w-full flex items-center justify-between py-2 text-left text-[11px] font-bold text-zinc-800 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
+                      >
+                        <span>{item.q}</span>
+                        <span>{openFaq === idx ? "−" : "+"}</span>
+                      </button>
+                      {openFaq === idx && (
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 pb-2 leading-relaxed font-light">
+                          {item.a}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Support Panel */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 text-center space-y-3 shadow-xs">
+                <h4 className="text-xs font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Have Questions?</h4>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team is available 24/7 coordinates.</p>
+                <button type="button" className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer">
+                  Contact Support Coordinates
+                </button>
+              </div>
+
+            </div>
+          )}
+
+        </div>
+
     </div>
   );
 }

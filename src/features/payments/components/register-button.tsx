@@ -8,9 +8,11 @@ import { CreditCard, Loader2, Send, ShieldAlert, X, Sparkles, MessageSquareCode 
 interface RegisterAuctionButtonProps {
   auctionId: string;
   onSuccess?: () => void;
+  label?: string;
+  className?: string;
 }
 
-export function RegisterAuctionButton({ auctionId, onSuccess }: RegisterAuctionButtonProps) {
+export function RegisterAuctionButton({ auctionId, onSuccess, label, className }: RegisterAuctionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
@@ -61,10 +63,10 @@ export function RegisterAuctionButton({ auctionId, onSuccess }: RegisterAuctionB
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm transition-all active:scale-[0.98] border border-zinc-700/50 cursor-pointer"
+        className={className || "w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm transition-all active:scale-[0.98] border border-zinc-700/50 cursor-pointer"}
       >
         <CreditCard className="h-4 w-4 text-white" />
-        Pay Verification Deposit ($2.50)
+        {label || "Pay Verification Deposit ($2.50)"}
       </Button>
 
       {/* Premium Dark Selector Modal Overlay */}
