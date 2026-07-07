@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { RegisterAuctionButton } from "@/features/payments/components/register-button";
+import { fetchAllAuctionBids } from "@/features/auctions/actions";
 
 interface LiveRoomProps {
   auction: {
@@ -71,9 +72,10 @@ interface LiveRoomProps {
     status: string;
   };
   initialBids?: BidHistoryItem[];
+  initialIsRegistered?: boolean;
 }
 
-export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
+export function LiveRoom({ auction, initialBids = [], initialIsRegistered = false }: LiveRoomProps) {
   const { data: session } = useSession();
   const {
     isConnected,
@@ -89,14 +91,16 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
     setCurrentBid,
     setHighestBidderId,
     setIsRegistered,
-  } = useSocket(auction._id);
+  } = useSocket(auction._id, initialIsRegistered);
 
   const [timeLeft, setTimeLeft] = useState("Loading timer...");
-  const [customBidAmount, setCustomBidAmount] = useState("");
   const [isConcluded, setIsConcluded] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [mobileActiveView, setMobileActiveView] = useState<"bid" | "details" | "help">("bid");
   const [isBidding, setIsBidding] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [fullBidHistory, setFullBidHistory] = useState<BidHistoryItem[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   
   // Gallery controls
   const screenshots = auction.listingId.screenshots && auction.listingId.screenshots.length > 0
@@ -177,15 +181,23 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
     }
   };
 
-  const handleCustomBidSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = parseInt(customBidAmount, 10);
-    if (isNaN(parsed)) {
-      setError("Please enter a valid numeric bid amount.");
-      return;
+  const handleViewAllClick = async () => {
+    setIsHistoryModalOpen(true);
+    setIsHistoryLoading(true);
+    setError(null);
+    try {
+      const res = await fetchAllAuctionBids(auction._id);
+      if (res.success && res.bids) {
+        setFullBidHistory(res.bids);
+      } else {
+        setError(res.error || "Failed to load bid history.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to retrieve complete bid history.");
+    } finally {
+      setIsHistoryLoading(false);
     }
-    handlePlaceBid(parsed);
-    setCustomBidAmount("");
   };
 
   const nextImage = () => {
@@ -326,35 +338,6 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                 </button>
               ))}
             </div>
-
-            {/* Divider */}
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
-              <span className="flex-shrink mx-3 text-[9px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Or enter custom bid</span>
-              <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
-            </div>
-
-            {/* Custom Input */}
-            <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
-              <div className="relative flex-grow">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-semibold">$</span>
-                <input
-                  type="number"
-                  value={customBidAmount}
-                  onChange={(e) => setCustomBidAmount(e.target.value)}
-                  placeholder={nextMinBid.toString()}
-                  className="w-full h-10 pl-6 pr-3 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-[#6133e1] transition-colors"
-                  disabled={!isConnected || isBidding}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={!isConnected || isBidding}
-                className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all border border-zinc-700/50 cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center min-w-[70px]"
-              >
-                {isBidding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Place"}
-              </button>
-            </form>
           </div>
         )}
       </div>
@@ -852,7 +835,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   <Trophy className="h-4 w-4 text-[#6133e1]" />
                   Recent Live Bids
                 </h3>
-                <span className="text-[9px] text-zinc-550 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer underline">View All</span>
+                <button type="button" onClick={handleViewAllClick} className="text-[9px] text-[#6133e1] dark:text-purple-400 hover:underline font-bold bg-transparent border-none cursor-pointer">View All</button>
               </div>
 
               <div className="space-y-2">
@@ -991,27 +974,6 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                         ))}
                       </div>
 
-                      {/* Custom Bid Input */}
-                      <form onSubmit={handleCustomBidSubmit} className="flex gap-2">
-                        <div className="relative flex-grow">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 font-semibold text-xs">$</span>
-                          <input
-                            type="number"
-                            value={customBidAmount}
-                            onChange={(e) => setCustomBidAmount(e.target.value)}
-                            placeholder={`Min $${nextMinBid}`}
-                            className="w-full h-10 pl-6 pr-3 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#6133e1] transition-colors font-bold"
-                            disabled={!isConnected || isBidding}
-                          />
-                        </div>
-                        <button
-                          type="submit"
-                          disabled={!isConnected || isBidding}
-                          className="h-10 px-5 rounded-xl bg-[#6133e1] text-white text-xs font-bold transition-all active:scale-95 shadow-md shadow-[#6133e1]/20 cursor-pointer disabled:opacity-50 flex items-center justify-center min-w-[65px]"
-                        >
-                          {isBidding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Bid"}
-                        </button>
-                      </form>
                     </div>
                   )}
                 </div>
@@ -1031,10 +993,13 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
 
               {/* Bids Ledger list */}
               <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-xs">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 border-b border-zinc-200 dark:border-zinc-800 pb-2">
-                  <Trophy className="h-4 w-4 text-[#6133e1]" />
-                  Live Bid History
-                </h3>
+                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                    <Trophy className="h-4 w-4 text-[#6133e1]" />
+                    Live Bid History
+                  </h3>
+                  <button type="button" onClick={handleViewAllClick} className="text-[9px] text-[#6133e1] dark:text-purple-400 hover:underline font-bold bg-transparent border-none cursor-pointer">View All</button>
+                </div>
                 <div className="space-y-2">
                   {bidHistory.length === 0 ? (
                     <p className="text-xs text-zinc-500 italic py-2 text-center">No bids recorded yet.</p>
@@ -1261,6 +1226,67 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
           )}
 
         </div>
+
+      {/* Bid History Modal */}
+      <AnimatePresence>
+        {isHistoryModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsHistoryModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/95 p-6 shadow-xl space-y-4 max-h-[80vh] flex flex-col z-10 overflow-hidden"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-800 pb-3">
+                <h3 className="font-extrabold text-sm text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-[#6133e1]" />
+                  Full Bid History
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="h-6 w-6 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-white flex items-center justify-center text-xs font-bold bg-transparent border-none cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[250px] flex flex-col">
+                {isHistoryLoading ? (
+                  <div className="flex-grow flex flex-col items-center justify-center py-10 space-y-3">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#6133e1]" />
+                    <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">Loading Bid Ledger...</span>
+                  </div>
+                ) : fullBidHistory.length === 0 ? (
+                  <p className="text-xs text-zinc-500 italic py-6 text-center">No bids placed yet.</p>
+                ) : (
+                  fullBidHistory.map((bid) => (
+                    <div key={bid._id} className="flex justify-between items-center py-2.5 px-3 rounded-lg border border-zinc-100 dark:border-zinc-800/40 bg-zinc-50/50 dark:bg-zinc-900/30 text-xs">
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-zinc-800 dark:text-white">{bid.bidderName}</span>
+                        <div className="text-[9px] text-zinc-550 dark:text-zinc-400">
+                          {new Date(bid.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}{" "}
+                          {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <span className="font-black text-zinc-900 dark:text-white text-sm">${bid.amount.toLocaleString()}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

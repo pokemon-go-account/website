@@ -9,13 +9,13 @@ export interface BidHistoryItem {
   createdAt: string;
 }
 
-export function useSocket(auctionId?: string) {
+export function useSocket(auctionId?: string, initialIsRegistered = false) {
   const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
   const [currentBid, setCurrentBid] = useState<number | null>(null);
   const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
   const [highestBidderName, setHighestBidderName] = useState<string | null>(null);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(initialIsRegistered);
   const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 

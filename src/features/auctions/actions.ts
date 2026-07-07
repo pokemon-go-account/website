@@ -197,3 +197,28 @@ export async function uploadImageAction(base64Data: string) {
     return { success: false, error: error.message || "Failed to upload image." };
   }
 }
+
+/**
+ * Server Action: Fetch the complete, un-truncated bid history for an auction
+ */
+export async function fetchAllAuctionBids(auctionId: string) {
+  try {
+    await connectDB();
+    const bids = await Bid.find({ auctionId })
+      .populate("bidderId", "username")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formattedBids = bids.map((b: any) => ({
+      _id: b._id.toString(),
+      bidderName: b.bidderId?.username || "Anonymous",
+      amount: b.amount,
+      createdAt: b.createdAt.toISOString(),
+    }));
+
+    return { success: true, bids: formattedBids, error: null };
+  } catch (error: any) {
+    console.error("Failed to fetch complete bid history:", error);
+    return { success: false, error: error.message || "Failed to retrieve bid history." };
+  }
+}
