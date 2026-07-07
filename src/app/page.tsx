@@ -17,7 +17,7 @@ export default function Home() {
       <footer id="contact" className="bg-gray-100 dark:bg-[#080809] border-t border-gray-200 dark:border-white/10 py-10 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Pokémon GO Auctions" className="h-10 w-auto object-contain" />
+            <img src="/logo.png" alt="Pokémon GO Services" className="h-10 w-auto object-contain" />
             <div>
               <p className="text-gray-400 dark:text-gray-600 text-[10px] mt-1">© 2026 All rights reserved.</p>
             </div>

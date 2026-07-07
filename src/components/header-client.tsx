@@ -19,6 +19,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/auctions", label: "Auctions" },
   { href: "/store", label: "Store" },
+  { href: "/recovery", label: "Account Recovery" },
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/#faq", label: "FAQ" },
   { href: "/#contact", label: "Contact" },
@@ -90,7 +91,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity">
-            <img src="/logo.png" alt="Pokémon GO Auctions" className="h-10 w-auto object-contain" />
+            <img src="/logo.png" alt="Pokémon GO Services" className="h-10 w-auto object-contain" />
           </Link>
 
           {/* Search bar */}

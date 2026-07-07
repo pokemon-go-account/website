@@ -164,6 +164,8 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
     await connectDB();
     const formattedHandle = (preferredContactMethod === "telegram" && !preferredContactId.trim().startsWith("@"))
       ? `@${preferredContactId.trim()}`
+      : (preferredContactMethod === "reddit" && !preferredContactId.trim().startsWith("u/"))
+      ? `u/${preferredContactId.trim()}`
       : preferredContactId.trim();
 
     await User.findByIdAndUpdate(session.user.id, {

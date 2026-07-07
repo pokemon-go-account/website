@@ -102,7 +102,7 @@ export default async function FeedbackPage() {
               <MessageSquareCode className="h-8 w-8 text-zinc-400 mb-2" />
               <h3 className="text-sm font-semibold text-foreground">No reviews yet</h3>
               <p className="text-xs text-muted-foreground max-w-xs mt-1">
-                Be the first to submit a review about Pokemon Go Auctions!
+                Be the first to submit a review about Pokemon Go Services!
               </p>
             </div>
           ) : (
