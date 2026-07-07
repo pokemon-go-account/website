@@ -127,6 +127,10 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       return { success: false, error: "Auction not found." };
     }
 
+    if (auction.listingId?.sellerId && auction.listingId.sellerId.toString() === user._id.toString()) {
+      return { success: false, error: "You cannot bid on your own auction." };
+    }
+
     if (auction.endTime && new Date() >= new Date(auction.endTime)) {
       return { success: false, error: "Bidding is closed. This auction has concluded." };
     }

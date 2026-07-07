@@ -119,8 +119,7 @@ const STEPS = [
 
 export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [screenshotBase64, setScreenshotBase64] = useState<string>("");
-  const [screenshotName, setScreenshotName] = useState<string>("");
+  const [screenshots, setScreenshots] = useState<{ id: string; base64: string; name: string }[]>([]);
   const [selectedMethod, setSelectedMethod] = useState("telegram");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [emailCheck, setEmailCheck] = useState(false);
@@ -150,8 +149,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
       setTimeout(() => {
         setDrawerOpen(false);
         // Reset local states
-        setScreenshotBase64("");
-        setScreenshotName("");
+        setScreenshots([]);
         setEmailCheck(false);
       }, 2500);
     }
@@ -166,14 +164,18 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setScreenshotName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setScreenshotBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setScreenshots((prev) => [
+            ...prev,
+            { id: Math.random().toString(), base64: reader.result as string, name: file.name },
+          ]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
@@ -474,44 +476,47 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                         className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-10 rounded-xl"
                       />
                     </div>
-
                     {/* Screenshot Upload with base64 conversion */}
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Account Screenshot</Label>
+                      <Label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Account Screenshots</Label>
                       <div
                         onClick={() => fileInputRef.current?.click()}
                         className="border border-dashed border-zinc-300 dark:border-white/[0.08] hover:border-zinc-400 dark:hover:border-white/[0.15] bg-zinc-50 dark:bg-zinc-950/30 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors"
                       >
                         <Upload className="h-5 w-5 text-zinc-400" />
-                        <span className="text-[10px] text-zinc-500 font-semibold">
-                          {screenshotName ? screenshotName : "Click to upload screenshot"}
+                        <span className="text-[10px] text-zinc-550 dark:text-zinc-400 font-semibold text-center">
+                          {screenshots.length > 0 ? `${screenshots.length} screenshot(s) selected` : "Click to upload screenshots (multiple allowed)"}
                         </span>
                         <input
                           ref={fileInputRef}
                           type="file"
+                          multiple
                           accept="image/*"
                           className="hidden"
                           onChange={handleFileChange}
                         />
                       </div>
                       
-                      {/* Hidden base64 input */}
-                      <input type="hidden" name="screenshotBase64" value={screenshotBase64} />
+                      {/* Hidden base64 json input */}
+                      <input type="hidden" name="screenshotsBase64Json" value={JSON.stringify(screenshots.map(s => s.base64))} />
 
-                      {screenshotBase64 && (
-                        <div className="relative mt-2 h-20 w-32 border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-hidden bg-black flex items-center justify-center">
-                          <img src={screenshotBase64} alt="Preview" className="max-h-full max-w-full object-contain" />
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setScreenshotBase64("");
-                              setScreenshotName("");
-                            }}
-                            className="absolute top-1 right-1 h-5 w-5 bg-black/75 hover:bg-black text-white rounded-full flex items-center justify-center cursor-pointer border border-white/10"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
+                      {screenshots.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-2 max-h-[180px] overflow-y-auto pr-1">
+                          {screenshots.map((s) => (
+                            <div key={s.id} className="relative aspect-video border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-hidden bg-black flex items-center justify-center">
+                              <img src={s.base64} alt="Preview" className="max-h-full max-w-full object-contain" />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setScreenshots((prev) => prev.filter((item) => item.id !== s.id));
+                                }}
+                                className="absolute top-1 right-1 h-4 w-4 bg-black/75 hover:bg-black text-white rounded-full flex items-center justify-center cursor-pointer border border-white/10 text-[9px]"
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -535,7 +540,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
                     <Button
                       type="submit"
-                      disabled={isPending || !emailCheck || !screenshotBase64}
+                      disabled={isPending || !emailCheck || screenshots.length === 0}
                       className="w-full h-11 font-extrabold text-xs tracking-wider uppercase rounded-xl transition-all cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black mt-6 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isPending ? "Submitting Order..." : "Confirm & Buy Service"}

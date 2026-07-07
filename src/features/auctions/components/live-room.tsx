@@ -64,7 +64,8 @@ interface LiveRoomProps {
       incubators?: number;
       luckyEggs?: number;
       lureModules?: number;
-      premiumRaidPass?: number;
+      premiumRaidPass: number;
+      sellerId?: string;
     };
     currentHighestBid: number;
     highestBidderId?: any;
@@ -77,6 +78,7 @@ interface LiveRoomProps {
 
 export function LiveRoom({ auction, initialBids = [], initialIsRegistered = false }: LiveRoomProps) {
   const { data: session } = useSession();
+  const isOwner = session?.user?.id === auction.listingId.sellerId;
   const {
     isConnected,
     currentBid,
@@ -308,6 +310,12 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
               <p className="text-[11px] text-zinc-500">This auction expired with no bids.</p>
             </div>
           )
+        ) : isOwner ? (
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center space-y-2">
+            <AlertCircle className="h-6 w-6 text-zinc-550 mx-auto" />
+            <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Owner Console</h4>
+            <p className="text-[11px] text-zinc-500">You are the seller of this listing. Self-bidding is disabled.</p>
+          </div>
         ) : !isRegistered ? (
           <div className="space-y-3">
             <div className="rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light">
@@ -943,6 +951,11 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                         <p className="text-[11px] text-zinc-500 mt-1">This auction expired with no bids.</p>
                       </div>
                     )
+                  ) : isOwner ? (
+                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center">
+                      <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Owner Console</h4>
+                      <p className="text-[11px] text-zinc-500 mt-1">You are the seller of this listing. Self-bidding is disabled.</p>
+                    </div>
                   ) : !isRegistered ? (
                     <div className="space-y-3">
                       <div className="rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3.5 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light text-center">

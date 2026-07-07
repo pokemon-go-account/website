@@ -36,6 +36,7 @@ interface Request {
   userId: { _id: string; name: string; email: string; username?: string } | null;
   accountLevel: number;
   screenshotUrl: string;
+  screenshotUrls?: string[];
   startDate: string;
   creationMethod: string;
   contactMethod: string;
@@ -167,15 +168,39 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                     >
                       <div className="p-5 space-y-5">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {/* Screenshot */}
+                          {/* Screenshots */}
                           <div className="lg:col-span-1 space-y-1.5">
-                            <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Screenshot</p>
-                            <a href={req.screenshotUrl} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-cyan-500 hover:text-cyan-400 font-semibold group transition-colors">
-                              View Image <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                            </a>
-                            <div className="mt-1 h-24 w-36 rounded-xl overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-950">
-                              <img src={req.screenshotUrl} alt="account screenshot" className="h-full w-full object-cover" />
+                            <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                              Screenshots ({req.screenshotUrls?.length || 1})
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {req.screenshotUrls && req.screenshotUrls.length > 0 ? (
+                                req.screenshotUrls.map((url, i) => (
+                                  <div key={i} className="group relative h-16 w-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-950 shadow-xs shrink-0">
+                                    <img src={url} alt={`Screenshot ${i + 1}`} className="h-full w-full object-cover" />
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="group relative h-16 w-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-950 shadow-xs">
+                                  <img src={req.screenshotUrl} alt="account screenshot" className="h-full w-full object-cover" />
+                                  <a
+                                    href={req.screenshotUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           </div>
 
