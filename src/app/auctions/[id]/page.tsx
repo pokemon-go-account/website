@@ -25,31 +25,30 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
   const _registrationCheck = Registration;
 
   const session = await auth();
-  let initialIsRegistered = false;
-  if (session?.user?.id) {
-    const reg = await Registration.findOne({
-      userId: session.user.id,
-      auctionId: id,
-      status: "PAID"
-    }).lean();
-    initialIsRegistered = !!reg;
-  }
 
-  // Fetch the auction and populate the listing details
-  const auctionDoc = await Auction.findById(id)
-    .populate("listingId")
+  // Initiate database queries in parallel
+  const auctionPromise = Auction.findById(id).populate("listingId").lean();
+  const bidsPromise = Bid.find({ auctionId: id })
+    .populate("bidderId", "username")
+    .sort({ createdAt: -1 })
+    .limit(20)
     .lean();
+  const registrationPromise = session?.user?.id
+    ? Registration.findOne({ userId: session.user.id, auctionId: id, status: "PAID" }).lean()
+    : Promise.resolve(null);
+
+  // Await queries concurrently
+  const [auctionDoc, bidDocs, registrationDoc] = await Promise.all([
+    auctionPromise,
+    bidsPromise,
+    registrationPromise
+  ]);
 
   if (!auctionDoc || !auctionDoc.listingId) {
     notFound();
   }
 
-  // Fetch top 20 recent bids
-  const bidDocs = await Bid.find({ auctionId: id })
-    .populate("bidderId", "username")
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .lean();
+  const initialIsRegistered = !!registrationDoc;
 
   // Format database objects into clean props
   const formattedAuction = {
