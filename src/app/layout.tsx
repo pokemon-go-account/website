@@ -28,10 +28,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.getItem('theme') === 'dark') {
-                  document.documentElement.classList.add('dark');
-                } else {
+                var t = localStorage.getItem('theme');
+                if (t === 'light') {
                   document.documentElement.classList.remove('dark');
+                } else {
+                  // Default to dark when no preference is set, or when saved as 'dark'
+                  document.documentElement.classList.add('dark');
                 }
               } catch (_) {}
             `,
