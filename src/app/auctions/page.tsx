@@ -55,24 +55,24 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
 
   // Team border coloring maps
   const teamBorders = {
-    MYSTIC: "hover:border-blue-500/40 border-blue-900/10",
-    VALOR: "hover:border-red-500/40 border-red-900/10",
-    INSTINCT: "hover:border-yellow-500/40 border-yellow-900/10",
-    NONE: "hover:border-zinc-700/50 border-zinc-800",
+    MYSTIC: "hover:border-blue-500/40 border-blue-200 dark:border-blue-900/30",
+    VALOR: "hover:border-red-500/40 border-red-200 dark:border-red-900/30",
+    INSTINCT: "hover:border-yellow-500/40 border-yellow-200 dark:border-yellow-900/30",
+    NONE: "hover:border-zinc-400 dark:hover:border-zinc-700/50 border-zinc-200 dark:border-zinc-800",
   };
 
   const teamColors = {
-    MYSTIC: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    VALOR: "bg-red-500/10 text-red-400 border-red-500/20",
-    INSTINCT: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-    NONE: "bg-zinc-800 text-zinc-400 border-zinc-700",
+    MYSTIC: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20",
+    VALOR: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20",
+    INSTINCT: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20",
+    NONE: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
   };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
       
       {/* Catalog Header */}
-      <div className="border-b border-border pb-6 space-y-2">
+      <div className="border-b border-zinc-200 dark:border-border pb-6 space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
           Bidding Catalog Blocks
         </h1>
@@ -83,7 +83,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
 
       {/* Grid List */}
       {auctions.length === 0 ? (
-        <div className="flex h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/25 text-center p-8">
+        <div className="flex h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-white dark:bg-card/25 text-center p-8 shadow-xs">
           <div className="max-w-xs space-y-3">
             <h3 className="text-base font-semibold text-foreground">No auctions scheduled</h3>
             <p className="text-xs text-muted-foreground">
@@ -103,7 +103,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
               <div
                 key={auc._id.toString()}
                 className={cn(
-                  "relative flex flex-col justify-between rounded-2xl border bg-card/30 backdrop-blur-sm p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:translate-y-[-2px] space-y-6",
+                  "relative flex flex-col justify-between rounded-2xl border bg-white dark:bg-zinc-900/30 backdrop-blur-sm p-6 transition-all duration-300 hover:shadow-lg dark:hover:shadow-primary/5 hover:translate-y-[-2px] space-y-6 shadow-xs",
                   teamBorders[auc.listingId.team as keyof typeof teamBorders]
                 )}
               >
@@ -112,19 +112,19 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                   <div className="flex items-center justify-between">
                     {/* Status Badge */}
                     {isLive && (
-                      <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-500/20">
+                      <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-650 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-500/20">
                         <Flame className="h-3 w-3 animate-pulse" />
                         Live Now
                       </span>
                     )}
                     {isScheduled && (
-                      <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 dark:text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-500/20">
+                      <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-250 dark:border-yellow-500/20">
                         <CalendarDays className="h-3 w-3" />
                         Scheduled
                       </span>
                     )}
                     {isConcluded && (
-                      <span className="inline-flex items-center gap-1 bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-700">
+                      <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-200 dark:border-zinc-700">
                         <Archive className="h-3 w-3" />
                         Concluded
                       </span>
@@ -146,7 +146,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                 </div>
 
                 {/* Middle row: Asset metrics */}
-                <div className="grid grid-cols-3 gap-2 py-3 border-y border-border/60 text-center">
+                <div className="grid grid-cols-3 gap-2 py-3 border-y border-zinc-100 dark:border-border/60 text-center">
                   <div className="space-y-0.5">
                     <div className="text-[9px] text-muted-foreground uppercase font-semibold">Shiny</div>
                     <div className="text-xs font-bold text-yellow-500">{auc.listingId.shinyCount}✨</div>
@@ -186,7 +186,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                     className={cn(
                       "w-full h-9 inline-flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
                       isConcluded
-                        ? "bg-muted text-muted-foreground border border-border"
+                        ? "bg-zinc-100 hover:bg-zinc-200 dark:bg-muted text-zinc-500 dark:text-muted-foreground border border-zinc-250 dark:border-border"
                         : "bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-700/50"
                     )}
                   >
