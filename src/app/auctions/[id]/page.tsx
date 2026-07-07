@@ -4,6 +4,8 @@ import Auction from "@/models/Auction";
 import Bid from "@/models/Bid";
 import User from "@/models/User"; // Registers model for populate
 import Listing from "@/models/Listing"; // Registers model for populate
+import Registration from "@/models/Registration"; // Registers model for registration check
+import { auth } from "@/auth";
 import { LiveRoom } from "@/features/auctions/components/live-room";
 
 interface AuctionPageProps {
@@ -20,6 +22,18 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
   // Explicitly reference models to prevent Turbopack tree-shaking
   const _userCheck = User;
   const _listingCheck = Listing;
+  const _registrationCheck = Registration;
+
+  const session = await auth();
+  let initialIsRegistered = false;
+  if (session?.user?.id) {
+    const reg = await Registration.findOne({
+      userId: session.user.id,
+      auctionId: id,
+      status: "PAID"
+    }).lean();
+    initialIsRegistered = !!reg;
+  }
 
   // Fetch the auction and populate the listing details
   const auctionDoc = await Auction.findById(id)
@@ -85,5 +99,11 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
     createdAt: b.createdAt.toISOString(),
   }));
 
-  return <LiveRoom auction={formattedAuction} initialBids={formattedBids} />;
+  return (
+    <LiveRoom 
+      auction={formattedAuction} 
+      initialBids={formattedBids} 
+      initialIsRegistered={initialIsRegistered} 
+    />
+  );
 }
