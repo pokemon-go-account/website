@@ -25,7 +25,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center text-xs text-gray-400">
             <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</Link>
             <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Contact Us</Link>
+            <Link href="/contact" className="hover:text-gray-900 dark:hover:text-white transition-colors">Contact Us</Link>
             <Link href="/auctions" className="hover:text-gray-900 dark:hover:text-white transition-colors">All Auctions</Link>
             <Link href="/recovery" className="hover:text-gray-900 dark:hover:text-white transition-colors">Account Recovery</Link>
             <Link href="/feedback" className="hover:text-gray-900 dark:hover:text-white transition-colors">Feedback</Link>

@@ -22,7 +22,7 @@ const navLinks = [
   { href: "/recovery", label: "Account Recovery" },
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/#faq", label: "FAQ" },
-  { href: "/#contact", label: "Contact" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
