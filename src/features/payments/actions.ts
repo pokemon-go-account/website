@@ -98,7 +98,7 @@ export async function createRegistrationOrder(auctionId: string) {
           status: "PENDING",
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     // 6. Return payload required for Razorpay checkout window setup
