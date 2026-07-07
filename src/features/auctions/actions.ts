@@ -148,10 +148,10 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
         $set: {
           currentHighestBid: bidAmount,
           highestBidderId: user._id,
-          status: "LIVE" // Transitions to LIVE when a bid is received
+          status: "LIVE"
         }
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedAuction) {

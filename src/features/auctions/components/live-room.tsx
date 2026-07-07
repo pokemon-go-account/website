@@ -23,7 +23,8 @@ import {
   ArrowRight,
   HelpCircle,
   MessageSquare,
-  Award
+  Award,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -95,6 +96,7 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
   const [isConcluded, setIsConcluded] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [mobileActiveView, setMobileActiveView] = useState<"bid" | "details" | "help">("bid");
+  const [isBidding, setIsBidding] = useState(false);
   
   // Gallery controls
   const screenshots = auction.listingId.screenshots && auction.listingId.screenshots.length > 0
@@ -160,12 +162,19 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
   const minIncrement = auction.listingId.minIncrement;
   const nextMinBid = activeBid + minIncrement;
 
-  const handlePlaceBid = (amount: number) => {
+  const handlePlaceBid = async (amount: number) => {
     if (amount < nextMinBid) {
       setError(`Minimum bid requirement is $${nextMinBid}`);
       return;
     }
-    placeBid(amount);
+    setIsBidding(true);
+    try {
+      await placeBid(amount);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsBidding(false);
+    }
   };
 
   const handleCustomBidSubmit = (e: React.FormEvent) => {
@@ -299,7 +308,6 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
             <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center font-bold">
               Minimum Next Bid: <span className="text-zinc-800 dark:text-white">${nextMinBid.toLocaleString()}</span>
             </div>
-
             {/* Quick Preset Buttons */}
             <div className="grid grid-cols-3 gap-2">
               {[nextMinBid, nextMinBid + (auction.listingId?.minIncrement || 100), nextMinBid + 2 * (auction.listingId?.minIncrement || 100)].map((amount) => (
@@ -307,10 +315,14 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   key={amount}
                   type="button"
                   onClick={() => handlePlaceBid(amount)}
-                  disabled={!isConnected}
-                  className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 shadow-xs"
+                  disabled={!isConnected || isBidding}
+                  className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 shadow-xs disabled:opacity-50 flex items-center justify-center"
                 >
-                  +${(amount - activeBid).toLocaleString()}
+                  {isBidding ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#6133e1] dark:text-white" />
+                  ) : (
+                    `+$${(amount - activeBid).toLocaleString()}`
+                  )}
                 </button>
               ))}
             </div>
@@ -332,15 +344,15 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                   onChange={(e) => setCustomBidAmount(e.target.value)}
                   placeholder={nextMinBid.toString()}
                   className="w-full h-10 pl-6 pr-3 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-[#6133e1] transition-colors"
-                  disabled={!isConnected}
+                  disabled={!isConnected || isBidding}
                 />
               </div>
               <button
                 type="submit"
-                disabled={!isConnected}
-                className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all border border-zinc-700/50 cursor-pointer active:scale-95"
+                disabled={!isConnected || isBidding}
+                className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all border border-zinc-700/50 cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center min-w-[70px]"
               >
-                Place
+                {isBidding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Place"}
               </button>
             </form>
           </div>
@@ -960,7 +972,6 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                       <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center font-bold">
                         Minimum Next Bid: <span className="text-[#6133e1] dark:text-purple-400">${nextMinBid.toLocaleString()}</span>
                       </div>
-
                       {/* Presets */}
                       <div className="grid grid-cols-3 gap-2">
                         {[nextMinBid, nextMinBid + (auction.listingId?.minIncrement || 100), nextMinBid + 2 * (auction.listingId?.minIncrement || 100)].map((amount) => (
@@ -968,10 +979,14 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                             key={amount}
                             type="button"
                             onClick={() => handlePlaceBid(amount)}
-                            disabled={!isConnected}
-                            className="h-10 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95"
+                            disabled={!isConnected || isBidding}
+                            className="h-10 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center"
                           >
-                            +${(amount - activeBid).toLocaleString()}
+                            {isBidding ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-[#6133e1] dark:text-white" />
+                            ) : (
+                              `+$${(amount - activeBid).toLocaleString()}`
+                            )}
                           </button>
                         ))}
                       </div>
@@ -986,15 +1001,15 @@ export function LiveRoom({ auction, initialBids = [] }: LiveRoomProps) {
                             onChange={(e) => setCustomBidAmount(e.target.value)}
                             placeholder={`Min $${nextMinBid}`}
                             className="w-full h-10 pl-6 pr-3 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#6133e1] transition-colors font-bold"
-                            disabled={!isConnected}
+                            disabled={!isConnected || isBidding}
                           />
                         </div>
                         <button
                           type="submit"
-                          disabled={!isConnected}
-                          className="h-10 px-5 rounded-xl bg-[#6133e1] text-white text-xs font-bold transition-all active:scale-95 shadow-md shadow-[#6133e1]/20 cursor-pointer"
+                          disabled={!isConnected || isBidding}
+                          className="h-10 px-5 rounded-xl bg-[#6133e1] text-white text-xs font-bold transition-all active:scale-95 shadow-md shadow-[#6133e1]/20 cursor-pointer disabled:opacity-50 flex items-center justify-center min-w-[65px]"
                         >
-                          Bid
+                          {isBidding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Bid"}
                         </button>
                       </form>
                     </div>
