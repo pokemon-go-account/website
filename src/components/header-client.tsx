@@ -126,13 +126,21 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               </Link>
             ))}
             {user?.role === "ADMIN" && (
-              <Link href="/dashboard/admin" className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">
-                My Dashboard
+              <Link
+                href="/dashboard/admin"
+                className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 hover:border-amber-400/60 text-amber-600 dark:text-amber-400 text-[11px] font-bold transition-all shadow-sm"
+              >
+                <Shield className="h-3 w-3" />
+                Admin Dashboard
               </Link>
             )}
             {user?.role === "SUPER_ADMIN" && (
-              <Link href="/console" className="text-xs font-bold text-violet-500 hover:text-violet-400 transition-colors">
-                Console
+              <Link
+                href="/console"
+                className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-violet-500/10 hover:bg-violet-500/20 border border-violet-400/30 hover:border-violet-400/60 text-violet-600 dark:text-violet-400 text-[11px] font-bold transition-all shadow-sm"
+              >
+                <Shield className="h-3 w-3" />
+                Super Console
               </Link>
             )}
           </nav>
@@ -242,18 +250,20 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                 <Link
                   href="/dashboard/admin"
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                  className="flex items-center gap-2.5 rounded-xl mx-1 px-3 py-2.5 text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-500/8 hover:bg-amber-500/15 border border-amber-400/20 hover:border-amber-400/40 transition-all"
                 >
-                  My Dashboard
+                  <Shield className="h-4 w-4" />
+                  Admin Dashboard
                 </Link>
               )}
               {user?.role === "SUPER_ADMIN" && (
                 <Link
                   href="/console"
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 transition-colors"
+                  className="flex items-center gap-2.5 rounded-xl mx-1 px-3 py-2.5 text-sm font-bold text-violet-600 dark:text-violet-400 bg-violet-500/8 hover:bg-violet-500/15 border border-violet-400/20 hover:border-violet-400/40 transition-all"
                 >
-                  Console
+                  <Shield className="h-4 w-4" />
+                  Super Console
                 </Link>
               )}
 
