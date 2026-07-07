@@ -13,6 +13,7 @@ export interface IUser extends Document {
   preferredContactId?: string;
   alternateContact?: string;
   isOnboarded: boolean;
+  isEmailVerified: boolean;
   adminRentPaidUntil?: Date; // Only relevant for ADMIN role
   createdAt: Date;
   updatedAt: Date;
@@ -32,6 +33,7 @@ const UserSchema: Schema<IUser> = new Schema(
     preferredContactId: { type: String, trim: true },
     alternateContact: { type: String, trim: true },
     isOnboarded: { type: Boolean, default: false },
+    isEmailVerified: { type: Boolean, default: false },
     adminRentPaidUntil: { type: Date, default: null },
   },
   { timestamps: true }

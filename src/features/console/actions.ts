@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import User from "@/models/User";
 import AdminRent from "@/models/AdminRent";
 import Listing from "@/models/Listing";
+import Auction from "@/models/Auction";
 import { revalidatePath } from "next/cache";
 import { handleTelegramCheckout } from "@/utils/checkout"; // repurposed for rent reminder
 
@@ -154,12 +155,39 @@ export async function approveListingConsole(listingId: string, notes?: string) {
   try {
     await checkSuperAdminSession();
     await connectDB();
-    await Listing.findByIdAndUpdate(listingId, {
-      status: "APPROVED",
-      adminNotes: notes || "",
-      escrowStage: "APPROVED",
-    });
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return { success: false, error: "Listing not found." };
+    }
+
+    if (listing.status !== "PENDING") {
+      return { success: false, error: `Cannot approve listing with status: ${listing.status}` };
+    }
+
+    listing.status = "APPROVED";
+    listing.adminNotes = notes || "";
+    listing.escrowStage = "APPROVED";
+    await listing.save();
+
+    // Check if corresponding Auction record already exists to prevent duplicate creation
+    const existingAuction = await Auction.findOne({ listingId: listing._id });
+    if (!existingAuction) {
+      const startTime = new Date();
+      const endTime = new Date(startTime.getTime() + (listing.durationHours || 24) * 60 * 60 * 1000);
+
+      await Auction.create({
+        listingId: listing._id,
+        currentHighestBid: listing.startingBid,
+        startTime,
+        endTime,
+        status: "LIVE", // Transition immediately to LIVE for interactive testing
+        registrationFee: 199,
+      });
+    }
+
     revalidatePath("/console/auctions");
+    revalidatePath("/auctions");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
