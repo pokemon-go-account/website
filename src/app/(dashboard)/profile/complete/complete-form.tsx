@@ -43,11 +43,25 @@ const XIcon = () => (
   </svg>
 );
 
+const RedditIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-[#FF4500]">
+    <path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-5.99-1.72l1.2-3.78 3.9 1c.04.94.82 1.7 1.8 1.7 1 0 1.8-.8 1.8-1.8S20.5 3.5 19.5 3.5c-.8 0-1.5.5-1.7 1.2l-4.4-1.1c-.24-.05-.48.09-.54.33l-1.38 4.4C9.25 8.4 7.07 9.04 5.4 10.04c-.56-.76-1.46-1.24-2.46-1.24-1.65 0-3 1.35-3 3 0 1.2.7 2.23 1.7 2.7-.06.33-.1.66-.1 1 0 3.6 4.3 6.5 9.5 6.5 5.2 0 9.5-2.9 9.5-6.5 0-.34-.04-.67-.1-1 1-.47 1.7-1.5 1.7-2.7zm-18.5 2c0-1 .8-1.8 1.8-1.8s1.8.8 1.8 1.8-.8 1.8-1.8 1.8-1.8-.8-1.8-1.8zm11 3.5c-1.5 1.5-4.4 1.5-5.9 0-.2-.2-.2-.5 0-.7.2-.2.5-.2.7 0 1.1 1.1 3.4 1.1 4.5 0 .2-.2.5-.2.7 0 .2.2.2.5 0 .7zm-.3-1.7c-1 0-1.8-.8-1.8-1.8s.8-1.8 1.8-1.8 1.8.8 1.8 1.8-.8 1.8-1.8 1.8z" />
+  </svg>
+);
+
+const FacebookIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-[#1877F2]">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
+
 const socialPlatforms = [
   { id: "telegram", name: "Telegram", icon: TelegramIcon, placeholder: "e.g. @johndoe" },
   { id: "discord", name: "Discord", icon: DiscordIcon, placeholder: "e.g. johndoe" },
   { id: "whatsapp", name: "WhatsApp", icon: WhatsappIcon, placeholder: "e.g. +1 234 567 8900" },
   { id: "instagram", name: "Instagram", icon: InstagramIcon, placeholder: "e.g. @johndoe" },
+  { id: "facebook", name: "Facebook", icon: FacebookIcon, placeholder: "e.g. facebook.com/johndoe" },
+  { id: "reddit", name: "Reddit", icon: RedditIcon, placeholder: "e.g. u/johndoe" },
   { id: "x", name: "X (Twitter)", icon: XIcon, placeholder: "e.g. @johndoe" },
 ];
 

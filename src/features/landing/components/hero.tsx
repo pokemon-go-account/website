@@ -88,14 +88,14 @@ export function Hero() {
             >
               POKÉMON GO<br />
               <span className="text-gray-900 dark:text-white [text-shadow:0_0_40px_rgba(255,255,255,0.1)]">
-                AUCTIONS
+                SERVICES
               </span>
             </motion.h1>
             <motion.p
               variants={itemVariants}
               className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-8 leading-relaxed max-w-md"
             >
-              The trusted marketplace to buy &amp; sell Pokémon GO accounts, rare Pokémon, items and more – through safe and exciting auctions!
+              The ultimate destination for premium Pokémon GO accounts, expert recovery solutions, and high-tier trainer services—secured by our trusted escrow vault.
             </motion.p>
 
             {/* CTA Buttons */}
