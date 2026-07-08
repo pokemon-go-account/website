@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, LogOut, Search, Shield, Sun, Moon } from "lucide-react";
+import { Menu, X, LogOut, Search, Shield, Sun, Moon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useSession, signOut as clientSignOut } from "next-auth/react";
+import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 
 interface HeaderClientProps {
   user?: {
@@ -27,6 +28,7 @@ const navLinks = [
 
 export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
   const { data: session } = useSession();
+  const { currency, setCurrency, isConverting } = useCurrencyStore();
   const sessionUser = session?.user;
 
   const clientUser = sessionUser ? {
@@ -157,6 +159,28 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
+            {/* Currency Selector */}
+            <div className="relative inline-flex items-center">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as Currency)}
+                className="h-8 pl-2 pr-6 rounded-lg border border-zinc-200 dark:border-white/15 bg-zinc-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 text-xs font-semibold focus:outline-none cursor-pointer appearance-none"
+              >
+                <option value="USD" className="bg-white dark:bg-[#0d0d0f] text-foreground">USD ($)</option>
+                <option value="EUR" className="bg-white dark:bg-[#0d0d0f] text-foreground">EUR (€)</option>
+                <option value="INR" className="bg-white dark:bg-[#0d0d0f] text-foreground">INR (₹)</option>
+                <option value="GBP" className="bg-white dark:bg-[#0d0d0f] text-foreground">GBP (£)</option>
+                <option value="JPY" className="bg-white dark:bg-[#0d0d0f] text-foreground">JPY (¥)</option>
+              </select>
+              <div className="absolute right-2 pointer-events-none flex items-center text-gray-400">
+                {isConverting ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <span className="text-[10px]">▼</span>
+                )}
+              </div>
+            </div>
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -198,6 +222,28 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
           {/* Mobile menu button */}
           <div className="flex lg:hidden items-center gap-2">
+            {/* Currency Selector */}
+            <div className="relative inline-flex items-center">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as Currency)}
+                className="h-8 pl-2 pr-6 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 text-xs font-semibold focus:outline-none cursor-pointer appearance-none"
+              >
+                <option value="USD" className="bg-white dark:bg-[#0d0d0f] text-foreground">USD ($)</option>
+                <option value="EUR" className="bg-white dark:bg-[#0d0d0f] text-foreground">EUR (€)</option>
+                <option value="INR" className="bg-white dark:bg-[#0d0d0f] text-foreground">INR (₹)</option>
+                <option value="GBP" className="bg-white dark:bg-[#0d0d0f] text-foreground">GBP (£)</option>
+                <option value="JPY" className="bg-white dark:bg-[#0d0d0f] text-foreground">JPY (¥)</option>
+              </select>
+              <div className="absolute right-2 pointer-events-none flex items-center text-gray-400">
+                {isConverting ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <span className="text-[9px]">▼</span>
+                )}
+              </div>
+            </div>
+
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"

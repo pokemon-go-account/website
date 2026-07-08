@@ -63,6 +63,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
       team: (auctionDoc.listingId as any).team,
       minIncrement: (auctionDoc.listingId as any).minIncrement,
       startingBid: (auctionDoc.listingId as any).startingBid,
+      reservePrice: (auctionDoc.listingId as any).reservePrice || 0,
       region: (auctionDoc.listingId as any).region,
       screenshots: (auctionDoc.listingId as any).screenshots || [],
       stardust: (auctionDoc.listingId as any).stardust || 0,
@@ -90,6 +91,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
     highestBidderId: auctionDoc.highestBidderId?.toString() || null,
     endTime: (auctionDoc.endTime as Date).toISOString(),
     status: auctionDoc.status,
+    registrationFee: auctionDoc.registrationFee || 199,
   };
 
   const formattedBids = bidDocs.map((b: any) => ({
@@ -104,6 +106,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
       auction={formattedAuction} 
       initialBids={formattedBids} 
       initialIsRegistered={initialIsRegistered} 
+      session={session}
     />
   );
 }

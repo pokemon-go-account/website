@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters"),
   description: z.string().optional(),
-  price: z.number().positive("Price must be a positive number"),
+  price: z.number({ message: "Price must be a number" }),
   categoryId: z.string().min(1, "Please select a category"),
   imageUrl: z.string().min(1, "Image URL is required"),
 });
@@ -327,6 +327,7 @@ export default function ManageProductsPage() {
                   <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Price ($)</label>
                   <input
                     type="number"
+                    step="any"
                     placeholder="999"
                     {...register("price", { valueAsNumber: true })}
                     className={cn(

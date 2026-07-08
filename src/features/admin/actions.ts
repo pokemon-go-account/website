@@ -35,6 +35,37 @@ async function checkSuperAdminSession() {
 }
 
 /**
+ * Helper to validate if user can control the auction (SUPER_ADMIN or the ADMIN who created it)
+ */
+async function checkAuctionControlSession(auctionId: string) {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Unauthorized. Please log in.");
+  }
+
+  if (session.user.role === "SUPER_ADMIN") {
+    return session;
+  }
+
+  if (session.user.role === "ADMIN") {
+    const auction = await Auction.findById(auctionId);
+    if (!auction) {
+      throw new Error("Auction not found.");
+    }
+    const listing = await Listing.findById(auction.listingId);
+    if (!listing) {
+      throw new Error("Listing details not found.");
+    }
+    if (listing.sellerId.toString() !== session.user.id) {
+      throw new Error("Unauthorized. You can only control auctions that you started.");
+    }
+    return session;
+  }
+
+  throw new Error("Unauthorized. Administrative privileges required.");
+}
+
+/**
  * Approve a pending listing with optional metadata overwrites, and schedule its auction block
  */
 export async function approveListing(
@@ -142,7 +173,7 @@ export async function rejectListing(listingId: string, notes: string) {
  */
 export async function pauseAuction(auctionId: string) {
   try {
-    await checkAdminSession();
+    await checkAuctionControlSession(auctionId);
     await connectDB();
 
     const auction = await Auction.findById(auctionId);
@@ -165,7 +196,7 @@ export async function pauseAuction(auctionId: string) {
  */
 export async function resumeAuction(auctionId: string) {
   try {
-    await checkAdminSession();
+    await checkAuctionControlSession(auctionId);
     await connectDB();
 
     const auction = await Auction.findById(auctionId);
@@ -188,7 +219,7 @@ export async function resumeAuction(auctionId: string) {
  */
 export async function forceEndAuction(auctionId: string) {
   try {
-    await checkAdminSession();
+    await checkAuctionControlSession(auctionId);
     await connectDB();
 
     const auction = await Auction.findById(auctionId);
@@ -208,11 +239,43 @@ export async function forceEndAuction(auctionId: string) {
 }
 
 /**
+ * Delete an auction and its listing (SUPER_ADMIN only)
+ */
+export async function deleteAuction(auctionId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+      throw new Error("Unauthorized. Super Administrator privileges required.");
+    }
+
+    await connectDB();
+
+    const auction = await Auction.findById(auctionId);
+    if (!auction) return { success: false, error: "Auction not found." };
+
+    // Delete associated listing, bids, and registrations
+    if (auction.listingId) {
+      await Listing.findByIdAndDelete(auction.listingId);
+    }
+    await Bid.deleteMany({ auctionId: auctionId });
+    await Registration.deleteMany({ auctionId: auctionId });
+    await Auction.findByIdAndDelete(auctionId);
+
+    revalidatePath("/admin");
+    revalidatePath("/auctions");
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Rollback the highest bid (Kill Switch Option C)
  */
 export async function rollbackAuctionBid(auctionId: string) {
   try {
-    await checkAdminSession();
+    await checkAuctionControlSession(auctionId);
     await connectDB();
 
     const auction = await Auction.findById(auctionId);
@@ -238,6 +301,87 @@ export async function rollbackAuctionBid(auctionId: string) {
       auction.highestBidderId = undefined;
     }
 
+    await auction.save();
+
+    revalidatePath("/admin");
+    revalidatePath(`/auctions/${auctionId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Update/Edit an Auction and its associated Listing fields (authorized owners/super_admins only)
+ */
+export async function updateAuction(auctionId: string, fields: any) {
+  try {
+    await checkAuctionControlSession(auctionId);
+    await connectDB();
+
+    const auction = await Auction.findById(auctionId);
+    if (!auction) return { success: false, error: "Auction not found." };
+
+    const listing = await Listing.findById(auction.listingId);
+    if (!listing) return { success: false, error: "Listing details not found." };
+
+    // Group of listing fields that are editable
+    const listingFields = [
+      "title",
+      "description",
+      "level",
+      "team",
+      "shinyCount",
+      "legendaryCount",
+      "mythicalCount",
+      "region",
+      "startingBid",
+      "reservePrice",
+      "minIncrement",
+      "durationHours",
+      "stardust",
+      "xp",
+      "pokedexCompleted",
+      "bestBuddyCount",
+      "pokeCoins",
+      "startDate",
+      "accountType",
+      "accountStatus",
+      "weeklyDistance",
+      "topPokemon",
+      "rareCandy",
+      "fastTm",
+      "chargedTm",
+      "eliteFastTm",
+      "eliteChargedTm",
+      "incubators",
+      "luckyEggs",
+      "lureModules",
+      "premiumRaidPass"
+    ];
+
+    for (const field of listingFields) {
+      if (fields[field] !== undefined) {
+        (listing as any)[field] = fields[field];
+      }
+    }
+    await listing.save();
+
+    // Update auction fields
+    if (fields.endTime !== undefined) {
+      auction.endTime = new Date(fields.endTime);
+    }
+    if (fields.registrationFee !== undefined) {
+      auction.registrationFee = fields.registrationFee;
+    }
+    // Sync starting price if no bids have been placed yet
+    if (fields.startingBid !== undefined) {
+      const bidCount = await Bid.countDocuments({ auctionId });
+      if (bidCount === 0) {
+        auction.currentHighestBid = fields.startingBid;
+      }
+    }
     await auction.save();
 
     revalidatePath("/admin");
