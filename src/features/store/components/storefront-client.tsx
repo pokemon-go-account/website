@@ -11,6 +11,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
+  imageUrl?: string;
 }
 
 interface Product {
@@ -34,6 +35,11 @@ interface StorefrontClientProps {
 export function StorefrontClient({ categories, products }: StorefrontClientProps) {
   const { items, isOpen, setIsOpen, addItem, removeItem, updateQuantity, getTotalPrice, getTotalItems } = useCartStore();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Group products by category ID
   const productsByCategory = categories.reduce((acc, cat) => {
@@ -72,7 +78,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
           >
             <ShoppingBag className="h-4 w-4" />
             <span>View Cart</span>
-            {getTotalItems() > 0 && (
+            {mounted && getTotalItems() > 0 && (
               <span className="h-5 min-w-5 px-1.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black text-[10px] font-black flex items-center justify-center animate-pulse">
                 {getTotalItems()}
               </span>
@@ -102,27 +108,42 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
                     key={cat._id}
                     onClick={() => setSelectedCategoryId(cat._id)}
                     className={cn(
-                      "group relative rounded-3xl border p-8 flex flex-col justify-between h-56 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-primary/5 cursor-pointer bg-gradient-to-br bg-white dark:bg-zinc-900/10",
-                      gradient
+                      "group relative rounded-3xl border overflow-hidden flex flex-col justify-between h-56 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-primary/5 cursor-pointer",
+                      cat.imageUrl ? "border-zinc-200/40 dark:border-white/10" : cn("p-8 bg-gradient-to-br bg-white dark:bg-zinc-900/10", gradient)
                     )}
                   >
-                    <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03),transparent_70%)] pointer-events-none" />
+                    {/* Background image if available */}
+                    {cat.imageUrl && (
+                      <>
+                        <div
+                          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                          style={{ backgroundImage: `url(${cat.imageUrl})` }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+                      </>
+                    )}
 
-                    <div className="space-y-4">
-                      {/* Icon */}
-                      <div className="h-12 w-12 rounded-2xl bg-zinc-900/10 dark:bg-white/5 border border-zinc-900/15 dark:border-white/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
-                        {cat.slug === "accounts" ? "🎮" : cat.slug === "stardust" ? "✨" : cat.slug === "coins" ? "🪙" : cat.slug === "items" ? "🎒" : "⭐"}
-                      </div>
+                    {!cat.imageUrl && (
+                      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03),transparent_70%)] pointer-events-none" />
+                    )}
+
+                    <div className={cn("relative space-y-4", cat.imageUrl ? "p-6" : "")}>
+                      {/* Icon / no-image emoji */}
+                      {!cat.imageUrl && (
+                        <div className="h-12 w-12 rounded-2xl bg-zinc-900/10 dark:bg-white/5 border border-zinc-900/15 dark:border-white/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
+                          {cat.slug === "accounts" ? "🎮" : cat.slug === "stardust" ? "✨" : cat.slug === "coins" ? "🪙" : cat.slug === "items" ? "🎒" : "⭐"}
+                        </div>
+                      )}
 
                       <div>
-                        <h3 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">{cat.name}</h3>
-                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 tracking-wider uppercase font-bold">
+                        <h3 className={cn("text-lg font-black tracking-tight", cat.imageUrl ? "text-white" : "text-zinc-900 dark:text-white")}>{cat.name}</h3>
+                        <p className={cn("text-[10px] mt-0.5 tracking-wider uppercase font-bold", cat.imageUrl ? "text-white/60" : "text-zinc-400 dark:text-zinc-500")}>
                           {count} {count === 1 ? "listing" : "listings"} ready
                         </p>
                       </div>
                     </div>
 
-                    <span className="text-xs font-bold text-zinc-900 dark:text-white group-hover:translate-x-1 transition-transform duration-300 inline-flex items-center gap-1.5 mt-4 self-start">
+                    <span className={cn("relative text-xs font-bold group-hover:translate-x-1 transition-transform duration-300 inline-flex items-center gap-1.5 self-start", cat.imageUrl ? "p-6 pt-0 text-white" : "text-zinc-900 dark:text-white")}>
                       Explore Services <ArrowRight className="h-3 w-3" />
                     </span>
                   </div>

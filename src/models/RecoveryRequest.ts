@@ -19,7 +19,7 @@ export interface IRecoveryRequest extends Document {
 const RecoveryRequestSchema: Schema<IRecoveryRequest> = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    accountLevel: { type: Number, required: true, min: 1, max: 50 },
+    accountLevel: { type: Number, required: true, min: 1, max: 100 },
     screenshotUrl: { type: String, required: false },
     screenshotUrls: { type: [String], default: [] },
     startDate: { type: Date, required: true },

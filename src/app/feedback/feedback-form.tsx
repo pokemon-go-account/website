@@ -8,27 +8,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function FeedbackForm() {
+interface FeedbackFormProps {
+  initialFeedback?: {
+    rating: number;
+    comment: string;
+  } | null;
+}
+
+export function FeedbackForm({ initialFeedback }: FeedbackFormProps) {
   const [state, formAction, isPending] = useActionState(submitFeedback, {
     success: false,
     error: null,
   } as any);
 
-  const [rating, setRating] = useState<number>(5);
+  const [rating, setRating] = useState<number>(initialFeedback ? initialFeedback.rating : 5);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
-  const [comment, setComment] = useState<string>("");
+  const [comment, setComment] = useState<string>(initialFeedback ? initialFeedback.comment : "");
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && !initialFeedback) {
       setRating(5);
       setComment("");
     }
-  }, [state.success]);
+  }, [state.success, initialFeedback]);
 
   return (
     <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/50 dark:bg-white/[0.01] backdrop-blur-md p-6 space-y-6 shadow-xl">
       <div className="space-y-1">
-        <h3 className="text-sm font-extrabold text-zinc-900 dark:text-white uppercase tracking-wider">Leave a Review</h3>
+        <h3 className="text-sm font-extrabold text-zinc-900 dark:text-white uppercase tracking-wider">
+          {initialFeedback ? "Edit Your Review" : "Leave a Review"}
+        </h3>
         <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
           Share your experience with our escrow catalog and recovery services.
         </p>
@@ -43,7 +52,9 @@ export function FeedbackForm() {
 
         {state.success && (
           <div className="rounded-xl bg-green-500/10 p-3 text-xs text-green-500 border border-green-500/20 leading-snug">
-            ✅ Feedback submitted successfully! Thank you for your review.
+            {initialFeedback 
+              ? "✅ Review updated successfully!" 
+              : "✅ Feedback submitted successfully! Thank you for your review."}
           </div>
         )}
 
@@ -100,7 +111,9 @@ export function FeedbackForm() {
           disabled={isPending}
           className="w-full h-11 font-extrabold text-xs tracking-wider uppercase rounded-xl transition-all cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black shadow-md"
         >
-          {isPending ? "Submitting..." : "Submit Review"}
+          {isPending 
+            ? (initialFeedback ? "Saving..." : "Submitting...") 
+            : (initialFeedback ? "Save Changes" : "Submit Review")}
         </Button>
       </form>
     </div>
