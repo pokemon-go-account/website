@@ -17,8 +17,19 @@ import { revalidatePath } from "next/cache";
  */
 async function checkAdminSession() {
   const session = await auth();
-  if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role || "")) {
-    throw new Error("Unauthorized. Administrative privileges required.");
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    throw new Error('Unauthorized. Administrative privileges required.');
+  }
+  return session;
+}
+
+/**
+ * Helper to enforce SUPER_ADMIN only access
+ */
+async function checkSuperAdminSession() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== 'SUPER_ADMIN') {
+    throw new Error('Unauthorized. Super Administrator privileges required.');
   }
   return session;
 }
@@ -481,30 +492,28 @@ export async function getCategories() {
   }
 }
 
-export async function createCategory(name: string, slug: string) {
+export async function createCategory(name: string, slug: string, imageUrl?: string) {
   try {
-    await checkAdminSession();
+    await checkSuperAdminSession();
     await connectDB();
-    const category = await Category.create({ name, slug: slug.toLowerCase() });
-    revalidatePath("/admin/categories");
-    revalidatePath("/store");
+    const category = await Category.create({ name, slug: slug.toLowerCase(), imageUrl: imageUrl || '' });
+    revalidatePath('/admin/categories');
+    revalidatePath('/store');
     return { success: true, category: JSON.parse(JSON.stringify(category)) };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function updateCategory(id: string, name: string, slug: string) {
+export async function updateCategory(id: string, name: string, slug: string, imageUrl?: string) {
   try {
-    await checkAdminSession();
+    await checkSuperAdminSession();
     await connectDB();
-    const category = await Category.findByIdAndUpdate(
-      id,
-      { name, slug: slug.toLowerCase() },
-      { new: true }
-    );
-    revalidatePath("/admin/categories");
-    revalidatePath("/store");
+    const updateData: Record<string, string> = { name, slug: slug.toLowerCase() };
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    const category = await Category.findByIdAndUpdate(id, updateData, { new: true });
+    revalidatePath('/admin/categories');
+    revalidatePath('/store');
     return { success: true, category: JSON.parse(JSON.stringify(category)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -513,19 +522,33 @@ export async function updateCategory(id: string, name: string, slug: string) {
 
 export async function deleteCategory(id: string) {
   try {
-    await checkAdminSession();
+    await checkSuperAdminSession();
     await connectDB();
     
     // Check if category has products
     const productCount = await Product.countDocuments({ categoryId: id });
     if (productCount > 0) {
-      return { success: false, error: "Cannot delete category containing products." };
+      return { success: false, error: 'Cannot delete category containing products.' };
     }
 
     await Category.findByIdAndDelete(id);
-    revalidatePath("/admin/categories");
-    revalidatePath("/store");
+    revalidatePath('/admin/categories');
+    revalidatePath('/store');
     return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Server Action: Upload base64 category image to Cloudinary (SUPER_ADMIN only)
+ */
+export async function uploadCategoryImageAction(base64Data: string) {
+  try {
+    await checkSuperAdminSession();
+    const { uploadToCloudinary } = await import('@/lib/cloudinary');
+    const url = await uploadToCloudinary(base64Data);
+    return { success: true, url };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -553,11 +576,11 @@ export async function createProduct(data: {
   imageUrl: string;
 }) {
   try {
-    await checkAdminSession();
+    await checkSuperAdminSession();
     await connectDB();
     const product = await Product.create(data);
-    revalidatePath("/admin/products");
-    revalidatePath("/store");
+    revalidatePath('/admin/products');
+    revalidatePath('/store');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -575,11 +598,11 @@ export async function updateProduct(
   }
 ) {
   try {
-    await checkAdminSession();
+    await checkSuperAdminSession();
     await connectDB();
     const product = await Product.findByIdAndUpdate(id, data, { new: true });
-    revalidatePath("/admin/products");
-    revalidatePath("/store");
+    revalidatePath('/admin/products');
+    revalidatePath('/store');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -588,11 +611,11 @@ export async function updateProduct(
 
 export async function deleteProduct(id: string) {
   try {
-    await checkAdminSession();
+    await checkSuperAdminSession();
     await connectDB();
     await Product.findByIdAndDelete(id);
-    revalidatePath("/admin/products");
-    revalidatePath("/store");
+    revalidatePath('/admin/products');
+    revalidatePath('/store');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -600,12 +623,12 @@ export async function deleteProduct(id: string) {
 }
 
 /**
- * Server Action: Upload base64 product image to Cloudinary
+ * Server Action: Upload base64 product image to Cloudinary (SUPER_ADMIN only)
  */
 export async function uploadProductImageAction(base64Data: string) {
   try {
-    await checkAdminSession();
-    const { uploadToCloudinary } = await import("@/lib/cloudinary");
+    await checkSuperAdminSession();
+    const { uploadToCloudinary } = await import('@/lib/cloudinary');
     const url = await uploadToCloudinary(base64Data);
     return { success: true, url };
   } catch (error: any) {

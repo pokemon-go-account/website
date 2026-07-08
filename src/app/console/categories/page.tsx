@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getCategories, createCategory, updateCategory, deleteCategory } from "@/features/admin/actions";
-import { FolderTree, Plus, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
+import { getCategories, createCategory, updateCategory, deleteCategory, uploadCategoryImageAction } from "@/features/admin/actions";
+import { FolderTree, Plus, Pencil, Trash2, X, AlertTriangle, ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Zod Validation Schema
@@ -15,6 +15,7 @@ const categorySchema = z.object({
     .string()
     .min(2, "Slug must be at least 2 characters")
     .regex(/^[a-z0-9-]+$/, "Slug must only contain lowercase letters, numbers, and hyphens"),
+  imageUrl: z.string().optional(),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -23,6 +24,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
+  imageUrl?: string;
 }
 
 export default function ManageCategoriesPage() {
@@ -35,16 +37,21 @@ export default function ManageCategoriesPage() {
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     reset,
     formState: { errors },
   } = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
   });
+
+  const watchedImageUrl = watch("imageUrl");
 
   const loadData = async () => {
     setLoading(true);
@@ -65,15 +72,43 @@ export default function ManageCategoriesPage() {
   const openAddModal = () => {
     setModalMode("add");
     setSelectedCategory(null);
-    reset({ name: "", slug: "" });
+    setPreviewImageUrl("");
+    reset({ name: "", slug: "", imageUrl: "" });
     setIsModalOpen(true);
   };
 
   const openEditModal = (category: Category) => {
     setModalMode("edit");
     setSelectedCategory(category);
-    reset({ name: category.name, slug: category.slug });
+    setPreviewImageUrl(category.imageUrl || "");
+    reset({ name: category.name, slug: category.slug, imageUrl: category.imageUrl || "" });
     setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      const res = await uploadCategoryImageAction(base64);
+      if (res.success && res.url) {
+        setValue("imageUrl", res.url);
+        setPreviewImageUrl(res.url);
+      } else {
+        setError(res.error || "Failed to upload image. Make sure Cloudinary keys are configured.");
+      }
+      setUploadingImage(false);
+    };
+    reader.onerror = () => {
+      setError("Failed to read image file.");
+      setUploadingImage(false);
+    };
   };
 
   const onSubmit = async (values: CategoryFormValues) => {
@@ -82,9 +117,9 @@ export default function ManageCategoriesPage() {
     
     let res;
     if (modalMode === "add") {
-      res = await createCategory(values.name, values.slug);
+      res = await createCategory(values.name, values.slug, values.imageUrl);
     } else if (modalMode === "edit" && selectedCategory) {
-      res = await updateCategory(selectedCategory._id, values.name, values.slug);
+      res = await updateCategory(selectedCategory._id, values.name, values.slug, values.imageUrl);
     }
 
     if (res?.success) {
@@ -147,21 +182,22 @@ export default function ManageCategoriesPage() {
         <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.05] text-left text-xs">
           <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
             <tr>
-              <th className="px-6 py-4">Category Name</th>
+              <th className="px-6 py-4">Category</th>
               <th className="px-6 py-4">Directory Slug</th>
+              <th className="px-6 py-4">Image</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.05] text-zinc-700 dark:text-zinc-300">
             {loading ? (
               <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-zinc-500 italic">
+                <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
                   Loading categories directory logs...
                 </td>
               </tr>
             ) : categories.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-zinc-500 italic">
+                <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
                   No categories defined. Click "Add Category" to get started.
                 </td>
               </tr>
@@ -170,6 +206,15 @@ export default function ManageCategoriesPage() {
                 <tr key={cat._id} className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
                   <td className="px-6 py-4 font-bold text-zinc-950 dark:text-white">{cat.name}</td>
                   <td className="px-6 py-4 font-mono text-[10px] text-zinc-500">{cat.slug}</td>
+                  <td className="px-6 py-4">
+                    {cat.imageUrl ? (
+                      <div className="h-9 w-14 rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.05] bg-zinc-100 dark:bg-zinc-900">
+                        <img src={cat.imageUrl} alt={cat.name} className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <span className="text-zinc-400 dark:text-zinc-600 text-[10px] italic">No image</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2">
                     <button
                       onClick={() => openEditModal(cat)}
@@ -238,10 +283,58 @@ export default function ManageCategoriesPage() {
                 {errors.slug && <p className="text-[10px] text-red-400 font-semibold">{errors.slug.message}</p>}
               </div>
 
+              {/* Category Image Upload */}
+              <div className="space-y-2">
+                <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category Image</label>
+
+                {/* Preview */}
+                {(previewImageUrl || watchedImageUrl) && (
+                  <div className="relative h-28 w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-white/[0.08] bg-zinc-100 dark:bg-zinc-900">
+                    <img
+                      src={previewImageUrl || watchedImageUrl}
+                      alt="Category preview"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setValue("imageUrl", ""); setPreviewImageUrl(""); }}
+                      className="absolute top-2 right-2 h-6 w-6 rounded-lg bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+
+                <label className="flex h-9 rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.1] hover:border-zinc-400 dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.01] dark:hover:bg-white/[0.03] items-center justify-center gap-2 cursor-pointer transition-colors">
+                  <ImagePlus className="h-3.5 w-3.5 text-zinc-400" />
+                  <span className="text-[10px] font-bold text-zinc-500">
+                    {uploadingImage ? "Uploading to Cloudinary..." : "Choose Image File"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="space-y-1">
+                  <p className="text-[8px] text-zinc-500 uppercase tracking-wider font-bold">Or enter direct URL</p>
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    {...register("imageUrl")}
+                    onChange={(e) => { setValue("imageUrl", e.target.value); setPreviewImageUrl(e.target.value); }}
+                    className="w-full h-9 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors text-[11px]"
+                  />
+                </div>
+              </div>
+
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs shadow-lg active:scale-95 transition-all mt-4"
+                disabled={submitting || uploadingImage}
+                className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs shadow-lg active:scale-95 transition-all mt-4 disabled:opacity-60"
               >
                 {submitting ? "Saving changes..." : modalMode === "add" ? "Create Category" : "Save Changes"}
               </button>

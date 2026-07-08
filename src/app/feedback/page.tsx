@@ -12,6 +12,18 @@ export default async function FeedbackPage() {
   await connectDB();
   const session = await auth();
 
+  // Fetch logged-in user's existing review if any
+  let existingReview = null;
+  if (session?.user?.id) {
+    const reviewDoc = await Feedback.findOne({ userId: session.user.id }).lean();
+    if (reviewDoc) {
+      existingReview = {
+        rating: reviewDoc.rating,
+        comment: reviewDoc.comment,
+      };
+    }
+  }
+
   // Fetch all feedbacks from newest to oldest
   const feedbacks = await Feedback.find().sort({ createdAt: -1 }).lean();
 
@@ -152,7 +164,7 @@ export default async function FeedbackPage() {
           <div className="sticky top-28 space-y-6">
             
             {session?.user ? (
-              <FeedbackForm />
+              <FeedbackForm initialFeedback={existingReview} />
             ) : (
               <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/50 dark:bg-white/[0.01] backdrop-blur-md p-6 text-center space-y-4 shadow-xl">
                 <MessageSquareCode className="h-8 w-8 text-zinc-400 dark:text-zinc-650 mx-auto" />

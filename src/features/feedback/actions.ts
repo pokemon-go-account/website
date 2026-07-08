@@ -53,13 +53,22 @@ export async function submitFeedback(prevState: any, formData: FormData) {
       displayUsername = `Trainer_${session.user.id.substring(0, 6)}`;
     }
 
-    // Create feedback
-    await Feedback.create({
-      username: displayUsername,
-      rating: validated.data.rating,
-      comment: validated.data.comment.trim(),
-      userId: session.user.id,
-    });
+    // Check if feedback already exists for this user
+    const existingFeedback = await Feedback.findOne({ userId: session.user.id });
+    if (existingFeedback) {
+      existingFeedback.rating = validated.data.rating;
+      existingFeedback.comment = validated.data.comment.trim();
+      existingFeedback.username = displayUsername;
+      await existingFeedback.save();
+    } else {
+      // Create feedback
+      await Feedback.create({
+        username: displayUsername,
+        rating: validated.data.rating,
+        comment: validated.data.comment.trim(),
+        userId: session.user.id,
+      });
+    }
 
     revalidatePath("/feedback");
     return { success: true, error: null };

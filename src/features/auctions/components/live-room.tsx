@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useSocket, BidHistoryItem } from "@/hooks/use-socket";
 import { useSession } from "next-auth/react";
@@ -105,6 +105,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
   const [fullBidHistory, setFullBidHistory] = useState<BidHistoryItem[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   const handleShare = async () => {
     try {
@@ -177,6 +178,33 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
   }, [auction.endTime]);
 
   const activeBid = currentBid !== null ? currentBid : auction.currentHighestBid;
+  const prevBidRef = useRef<number>(activeBid);
+  const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
+
+  useEffect(() => {
+    if (prevBidRef.current !== activeBid) {
+      if (!isMuted) {
+        // Play sound
+        const audio = new Audio("/audio/update.mp3");
+        audio.play().catch((err) => console.log("Audio play failed:", err));
+      }
+
+      // Trigger flash animation
+      if (activeBid > prevBidRef.current) {
+        setPriceFlash("up");
+      } else {
+        setPriceFlash("down");
+      }
+
+      // Reset flash animation
+      const timer = setTimeout(() => {
+        setPriceFlash(null);
+      }, 1000);
+
+      prevBidRef.current = activeBid;
+      return () => clearTimeout(timer);
+    }
+  }, [activeBid, isMuted]);
   const minIncrement = auction.listingId.minIncrement;
   const nextMinBid = activeBid + minIncrement;
 
@@ -254,23 +282,57 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
     <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-5 shadow-xs dark:shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-[#6133e1]/10 blur-xl pointer-events-none" />
 
+      {/* Stock market glows */}
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent transition-opacity duration-1000 pointer-events-none",
+        priceFlash === "up" ? "opacity-100" : "opacity-0"
+      )} />
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent transition-opacity duration-1000 pointer-events-none",
+        priceFlash === "down" ? "opacity-100" : "opacity-0"
+      )} />
+
       {/* Countdown Ends In */}
-      <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
-          Auction Ends In
-        </span>
-        <span className="text-[10px] text-red-500 dark:text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-200 dark:border-red-500/20 animate-pulse">
-          {timeLeft}
-        </span>
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800 relative z-10">
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+          </span>
+          <span className="text-[10px] text-zinc-805 dark:text-zinc-200 font-extrabold uppercase tracking-wider">
+            Live Room
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider bg-zinc-105 dark:bg-zinc-800 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-800 flex items-center gap-1">
+            <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+            32 Active
+          </span>
+          <span className="text-[9px] text-red-500 dark:text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-200 dark:border-red-500/20 animate-pulse">
+            {timeLeft}
+          </span>
+        </div>
       </div>
 
       {/* Bid Values */}
-      <div className="space-y-1 text-center">
+      <div className="space-y-1 text-center relative z-10">
         <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Current Bid</span>
-        <h3 className="text-4xl font-black text-zinc-900 dark:text-white tracking-tight">
+        <motion.h3
+          key={activeBid}
+          initial={{ scale: 0.95 }}
+          animate={{
+            scale: priceFlash ? [0.95, 1.05, 1] : 1,
+          }}
+          transition={{ duration: 0.4 }}
+          className={cn(
+            "text-4xl font-black tracking-tight transition-colors duration-300",
+            priceFlash === "up" ? "text-emerald-500 dark:text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" :
+            priceFlash === "down" ? "text-red-500 dark:text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" :
+            "text-zinc-900 dark:text-white"
+          )}
+        >
           ${activeBid.toLocaleString()}
-        </h3>
+        </motion.h3>
         
         {highestBidderId === session?.user?.id ? (
           <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 mt-1 uppercase tracking-wider">
@@ -284,19 +346,28 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
       </div>
 
       {/* Counters Info */}
-      <div className="grid grid-cols-2 gap-4 py-2 border-y border-zinc-200 dark:border-zinc-800/80 text-center text-xs">
+      <div className="grid grid-cols-3 gap-2 py-2 border-y border-zinc-200 dark:border-zinc-800/80 text-center text-xs relative z-10 items-center">
         <div>
           <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Total Bids</span>
           <div className="font-bold text-zinc-800 dark:text-white mt-0.5">{bidHistory.length}</div>
         </div>
-        <div>
+        <div className="border-x border-zinc-200 dark:border-zinc-850">
           <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Watchers</span>
           <div className="font-bold text-zinc-800 dark:text-white mt-0.5">32</div>
+        </div>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setIsMuted(!isMuted)}
+            className="h-7 px-2 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] text-zinc-550 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center gap-1 cursor-pointer transition-colors active:scale-95 bg-transparent"
+          >
+            {isMuted ? "🔇 Muted" : "🔊 Sound"}
+          </button>
         </div>
       </div>
 
       {/* Bidding Controls Form */}
-      <div className="space-y-3">
+      <div className="space-y-3 relative z-10">
         {error && (
           <div className="flex items-start gap-1.5 rounded bg-red-500/10 p-2.5 text-[10px] text-red-500 dark:text-red-400 border border-red-500/20 leading-relaxed">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
@@ -317,14 +388,14 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
             </div>
           ) : (
             <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center space-y-2">
-              <AlertCircle className="h-6 w-6 text-zinc-500 mx-auto" />
+              <AlertCircle className="h-6 w-6 text-zinc-550 mx-auto" />
               <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Concluded</h4>
               <p className="text-[11px] text-zinc-500">This auction expired with no bids.</p>
             </div>
           )
         ) : isOwner ? (
           <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center space-y-2">
-            <AlertCircle className="h-6 w-6 text-zinc-550 mx-auto" />
+            <AlertCircle className="h-6 w-6 text-zinc-555 mx-auto" />
             <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Owner Console</h4>
             <p className="text-[11px] text-zinc-500">You are the seller of this listing. Self-bidding is disabled.</p>
           </div>
@@ -348,7 +419,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                   type="button"
                   onClick={() => handlePlaceBid(amount)}
                   disabled={!isConnected || isBidding}
-                  className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 shadow-xs disabled:opacity-50 flex items-center justify-center"
+                  className="h-11 rounded-xl bg-zinc-55 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 shadow-xs disabled:opacity-50 flex items-center justify-center"
                 >
                   {isBidding ? (
                     <Loader2 className="h-4 w-4 animate-spin text-[#6133e1] dark:text-white" />
@@ -358,6 +429,39 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                 </button>
               ))}
             </div>
+
+            {/* Live Bid Ticker inside Bidding Panel */}
+            {bidHistory.length > 0 && (
+              <div className="space-y-2 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/80">
+                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest font-extrabold block">Live Bid Stream</span>
+                <div className="space-y-1.5 max-h-[120px] overflow-hidden">
+                  <AnimatePresence initial={false}>
+                    {bidHistory.slice(0, 3).map((bid, idx) => (
+                      <motion.div
+                        key={bid._id}
+                        initial={{ opacity: 0, x: -10, y: -10 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className={cn(
+                          "flex items-center justify-between p-2 rounded-xl border text-[11px] font-medium transition-all duration-300",
+                          idx === 0
+                            ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-extrabold shadow-sm"
+                            : "bg-zinc-50/50 dark:bg-zinc-950/20 border-zinc-200 dark:border-zinc-800/40 text-zinc-600 dark:text-zinc-400"
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#6133e1]" />
+                          <span>{bid.bidderName}</span>
+                        </div>
+                        <span className="font-extrabold">${bid.amount.toLocaleString()}</span>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </div>
@@ -940,9 +1044,22 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
 
                 <div className="space-y-1 text-center py-2">
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Current Bid</span>
-                  <h3 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                  <motion.h3
+                    key={activeBid}
+                    initial={{ scale: 0.95 }}
+                    animate={{
+                      scale: priceFlash ? [0.95, 1.05, 1] : 1,
+                    }}
+                    transition={{ duration: 0.4 }}
+                    className={cn(
+                      "text-3xl font-black tracking-tight transition-colors duration-300",
+                      priceFlash === "up" ? "text-emerald-500 dark:text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" :
+                      priceFlash === "down" ? "text-red-500 dark:text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" :
+                      "text-zinc-900 dark:text-white"
+                    )}
+                  >
                     ${activeBid.toLocaleString()}
-                  </h3>
+                  </motion.h3>
                   {highestBidderId === session?.user?.id ? (
                     <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 mt-1 uppercase tracking-wider">
                       <ShieldCheck className="h-3 w-3" /> You are leading
