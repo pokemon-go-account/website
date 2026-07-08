@@ -369,7 +369,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                         name="accountLevel"
                         type="number"
                         min={1}
-                        max={50}
+                        max={100}
                         required
                         placeholder="e.g. 40"
                         className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-10 rounded-xl"

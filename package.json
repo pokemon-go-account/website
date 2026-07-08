@@ -3,7 +3,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "playwright test",
+    "test:laptop": "playwright test --project=laptop-chrome",
+    "test:mobile": "playwright test --project=mobile-pixel5 --project=mobile-iphone14",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@auth/core": "^0.37.4",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import Auction from "@/models/Auction";
+import Listing from "@/models/Listing"; // Registers model to prevent Turbopack tree-shaking
 import { Clock, CheckCircle2 } from "lucide-react";
 
 const teamColors: Record<string, string> = {
@@ -48,7 +49,13 @@ interface LiveAuction {
 async function getLiveAuctions(): Promise<LiveAuction[]> {
   try {
     await connectDB();
-    const auctions = await Auction.find({ status: "LIVE" })
+    // Explicitly reference Listing model to prevent tree-shaking
+    const _modelCheck = Listing;
+    const now = new Date();
+    const auctions = await Auction.find({
+      status: "LIVE",
+      endTime: { $gt: now },
+    })
       .sort({ endTime: 1 })
       .limit(4)
       .populate("listingId", "title level shinyCount legendaryCount team startingBid")

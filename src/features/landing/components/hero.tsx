@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ShieldCheck, Users, Lock, Headphones } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ShieldCheck, Users, Lock, Headphones, Search, X, ArrowRight } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 
 const trustBadges = [
@@ -10,6 +11,16 @@ const trustBadges = [
   { icon: Users, label: "Trusted Community" },
   { icon: Lock, label: "Safe Payments" },
   { icon: Headphones, label: "24/7 Support" },
+];
+
+const QUICK_TAGS = [
+  { label: "✨ Shiny Heavy", query: "shiny" },
+  { label: "🏆 Legendary", query: "legendary" },
+  { label: "💎 Level 50", query: "level 50" },
+  { label: "🔵 Mystic", query: "mystic" },
+  { label: "🔴 Valor", query: "valor" },
+  { label: "⚡ Instinct", query: "instinct" },
+  { label: "🌏 Asia", query: "asia" },
 ];
 
 const containerVariants: Variants = {
@@ -30,6 +41,88 @@ const itemVariants: Variants = {
     transition: { duration: 0.6, ease: "easeOut" },
   },
 };
+
+function HeroSearch() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) {
+      router.push("/auctions");
+    } else {
+      router.push(`/auctions?search=${encodeURIComponent(trimmed)}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSubmit(query);
+  };
+
+  const handleTagClick = (tagQuery: string) => {
+    setQuery(tagQuery);
+    handleSubmit(tagQuery);
+  };
+
+  return (
+    <motion.div variants={itemVariants} className="w-full max-w-md space-y-3">
+      {/* Search input */}
+      <div
+        className={`relative flex items-center rounded-2xl border transition-all duration-200 bg-white/90 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg ${
+          isFocused
+            ? "border-gray-400 dark:border-white/30 shadow-gray-300/40 dark:shadow-white/10 ring-2 ring-gray-900/10 dark:ring-white/10"
+            : "border-gray-200/80 dark:border-white/[0.09] shadow-gray-200/50 dark:shadow-black/40"
+        }`}
+      >
+        <Search
+          className={`absolute left-4 h-4 w-4 shrink-0 transition-colors duration-200 ${
+            isFocused ? "text-gray-700 dark:text-white" : "text-gray-400 dark:text-gray-500"
+          }`}
+        />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search by team, level, region..."
+          className="flex-1 bg-transparent pl-11 pr-10 py-3.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 font-medium focus:outline-none"
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(""); inputRef.current?.focus(); }}
+            className="absolute right-[52px] text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer p-1"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+        <button
+          onClick={() => handleSubmit(query)}
+          className="absolute right-2 h-8 w-8 flex items-center justify-center rounded-xl bg-gray-900 dark:bg-white hover:bg-gray-700 dark:hover:bg-gray-100 text-white dark:text-black transition-all active:scale-95 shadow-sm cursor-pointer"
+        >
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Quick suggestion tags */}
+      <div className="flex flex-wrap gap-2">
+        {QUICK_TAGS.map((tag) => (
+          <button
+            key={tag.query}
+            onClick={() => handleTagClick(tag.query)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold border border-gray-200/80 dark:border-white/[0.09] bg-white/70 dark:bg-zinc-900/60 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-white/30 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-800 backdrop-blur-sm transition-all duration-150 active:scale-95 cursor-pointer shadow-sm"
+          >
+            {tag.label}
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
 
 export function Hero() {
   const [bgImage, setBgImage] = useState("url('/hero-banner-light.png')");
@@ -55,20 +148,17 @@ export function Hero() {
     <section className="relative w-full overflow-hidden bg-white dark:bg-[#080809]">
       {/* Hero Banner */}
       <div
-        className="relative min-h-[460px] md:min-h-[540px] flex items-center"
+        className="relative min-h-[460px] md:min-h-[580px] flex items-center"
         style={{
           backgroundImage: bgImage,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        {/* Light mode: bright fade */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/10 dark:from-[#080809] dark:via-[#080809]/85 dark:to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#080809] via-transparent to-transparent opacity-60" />
-        {/* Dark mode white ambient glow bottom-left */}
         <div className="absolute bottom-0 left-0 w-96 h-48 opacity-0 dark:opacity-20 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.1),transparent_70%)]" />
 
-        {/* Hero content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16">
           <motion.div
             variants={containerVariants}
@@ -93,15 +183,18 @@ export function Hero() {
             </motion.h1>
             <motion.p
               variants={itemVariants}
-              className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-8 leading-relaxed max-w-md"
+              className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-7 leading-relaxed max-w-md"
             >
               The ultimate destination for premium Pokémon GO accounts, expert recovery solutions, and high-tier trainer services—secured by our trusted escrow vault.
             </motion.p>
 
+            {/* Search Bar */}
+            <HeroSearch />
+
             {/* CTA Buttons */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-wrap gap-3"
+              className="flex flex-wrap gap-3 mt-6"
             >
               <Link
                 href="/auctions"

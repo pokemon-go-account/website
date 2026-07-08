@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSocket, BidHistoryItem } from "@/hooks/use-socket";
 import { useSession } from "next-auth/react";
 import { 
@@ -103,6 +104,17 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [fullBidHistory, setFullBidHistory] = useState<BidHistoryItem[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL: ", err);
+    }
+  };
   
   // Gallery controls
   const screenshots = auction.listingId.screenshots && auction.listingId.screenshots.length > 0
@@ -740,9 +752,12 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">Your payments are fully protected under our 7-Day Money Back Guarantee structure.</p>
                 </div>
               </div>
-              <span className="text-[10px] text-zinc-700 dark:text-zinc-300 font-bold uppercase tracking-widest border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg">
+              <Link
+                href="/contact"
+                className="text-[10px] text-zinc-700 dark:text-zinc-300 font-bold uppercase tracking-widest border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-850 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+              >
                 Safe Trade Seal
-              </span>
+              </Link>
             </div>
 
           </div>
@@ -766,9 +781,21 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                     <Heart className="h-3.5 w-3.5" />
                     Watch
                   </button>
-                  <button className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer text-[10px]">
-                    <Share2 className="h-3.5 w-3.5" />
-                    Share
+                  <button 
+                    onClick={handleShare}
+                    className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer text-[10px]"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-500 animate-in zoom-in-50 duration-200" />
+                        <span className="text-emerald-550 dark:text-emerald-450 font-bold">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="h-3.5 w-3.5" />
+                        <span>Share</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

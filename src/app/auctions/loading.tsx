@@ -7,7 +7,7 @@ export default function Loading() {
       {/* Catalog Header Skeleton */}
       <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6 space-y-3">
         <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-800/80 rounded animate-pulse" />
-        <div className="h-4 w-96 bg-zinc-200 dark:bg-zinc-800/50 rounded animate-pulse" />
+        <div className="h-4 max-w-md w-full bg-zinc-200 dark:bg-zinc-800/50 rounded animate-pulse" />
       </div>
 
       {/* Card Grid Skeleton */}

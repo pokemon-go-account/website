@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import Registration from "@/models/Registration";
 import Auction from "@/models/Auction";
 import User from "@/models/User";
+import Listing from "@/models/Listing";
 import Razorpay from "razorpay";
 
 /**
@@ -34,6 +35,14 @@ export async function createRegistrationOrder(auctionId: string) {
     }
     if (auction.status !== "LIVE" && auction.status !== "SCHEDULED") {
       return { success: false, error: "Auction is not open for registration." };
+    }
+
+    const listing = await Listing.findById(auction.listingId);
+    if (!listing) {
+      return { success: false, error: "Listing details not found." };
+    }
+    if (listing.sellerId && listing.sellerId.toString() === user._id.toString()) {
+      return { success: false, error: "You cannot register for your own auction." };
     }
 
     // 3. Check for existing PAID registration

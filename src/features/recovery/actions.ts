@@ -8,7 +8,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 const RecoveryRequestSchema = z.object({
-  accountLevel: z.number().min(1, "Level must be at least 1").max(50, "Level cannot exceed 50"),
+  accountLevel: z.number().min(1, "Level must be at least 1").max(100, "Level cannot exceed 100"),
   startDate: z.string().min(1, "Start Date is required"),
   creationMethod: z.string().min(1, "Account creation method is required"),
   contactMethod: z.string().min(1, "Contact method is required"),

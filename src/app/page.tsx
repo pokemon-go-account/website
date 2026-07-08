@@ -5,6 +5,8 @@ import { HowItWorks } from "@/features/landing/components/how-it-works";
 import { FAQ } from "@/features/landing/components/faq";
 import Link from "next/link";
 
+export const revalidate = 0; // Dynamic rendering
+
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-[#0d0d0f]">

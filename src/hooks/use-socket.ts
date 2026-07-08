@@ -20,7 +20,7 @@ export function useSocket(auctionId?: string, initialIsRegistered = false) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!auctionId || !session?.user?.id) return;
+    if (!auctionId) return;
 
     let isMounted = true;
 

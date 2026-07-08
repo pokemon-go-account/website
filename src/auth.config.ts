@@ -53,8 +53,14 @@ export const authConfig = {
 
       const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
       const isProfileCompleteRoute = nextUrl.pathname.startsWith("/profile/complete");
+
+      // Public routes — never require auth
+      const PUBLIC_PREFIXES = ["/auctions", "/store", "/contact", "/feedback", "/recovery"];
+      const PUBLIC_EXACT = ["/", "/login", "/register"];
       const isPublicRoute =
-        ["/", "/login", "/register", "/feedback", "/recovery", "/contact"].includes(nextUrl.pathname) || isApiAuthRoute;
+        PUBLIC_EXACT.includes(nextUrl.pathname) ||
+        PUBLIC_PREFIXES.some((p) => nextUrl.pathname.startsWith(p)) ||
+        isApiAuthRoute;
 
       // 1. Redirect un-onboarded users to complete their profile
       if (isLoggedIn && !isOnboarded && !isProfileCompleteRoute && !isApiAuthRoute) {
@@ -65,18 +71,33 @@ export const authConfig = {
       if (isPublicRoute) return true;
 
       // 3. Onboarding route requires login
-      if (isProfileCompleteRoute) return isLoggedIn;
+      if (isProfileCompleteRoute) {
+        if (isLoggedIn) return true;
+        const loginUrl = new URL("/login", nextUrl);
+        loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+        return Response.redirect(loginUrl);
+      }
 
       // 4. SUPER_ADMIN console — only SUPER_ADMIN
       const isSuperAdminRoute = nextUrl.pathname.startsWith("/console");
       if (isSuperAdminRoute) {
-        return isLoggedIn && role === "SUPER_ADMIN";
+        if (!isLoggedIn) {
+          const loginUrl = new URL("/login", nextUrl);
+          loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+          return Response.redirect(loginUrl);
+        }
+        if (role === "SUPER_ADMIN") return true;
+        return Response.redirect(new URL("/", nextUrl));
       }
 
       // 5. ADMIN dashboard — only ADMIN with valid rent, or SUPER_ADMIN
       const isAdminDashRoute = nextUrl.pathname.startsWith("/dashboard/admin");
       if (isAdminDashRoute) {
-        if (!isLoggedIn) return false;
+        if (!isLoggedIn) {
+          const loginUrl = new URL("/login", nextUrl);
+          loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+          return Response.redirect(loginUrl);
+        }
         if (role === "SUPER_ADMIN") return true;
         if (role === "ADMIN") {
           // Check rent validity
@@ -85,11 +106,17 @@ export const authConfig = {
           if (rentExpired) return Response.redirect(new URL("/rent-due", nextUrl));
           return true;
         }
-        return false;
+        // Logged in but not an admin role → send home
+        return Response.redirect(new URL("/", nextUrl));
       }
 
-      // 6. Fallback: all other protected routes require login
-      return isLoggedIn;
+      // 6. All other protected routes: require login
+      if (!isLoggedIn) {
+        const loginUrl = new URL("/login", nextUrl);
+        loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+        return Response.redirect(loginUrl);
+      }
+      return true;
     },
   },
   providers: [],
