@@ -322,16 +322,6 @@ test.describe("06 · Header — unauthenticated state and navigation", () => {
     await expect(page.locator('nav a[href="/auctions"]').first()).toBeVisible();
   });
 
-  test("Desktop: Header search input accepts text", async ({ page, isMobile }) => {
-    if (isMobile) return;
-    // The header search is .hidden.md:flex — visible on desktop
-    const headerSearch = page.locator('input[placeholder*="Search for accounts"]').first();
-    await expect(headerSearch).toBeVisible();
-    await headerSearch.fill("valor");
-    await headerSearch.press("Enter");
-    await page.waitForURL((url) => url.pathname === "/auctions", { timeout: 5000 });
-    expect(new URL(page.url()).searchParams.get("search")).toBe("valor");
-  });
 
   test("Mobile: at least 2 buttons exist in mobile header area", async ({
     page,

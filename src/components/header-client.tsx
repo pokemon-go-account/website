@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, LogOut, Search, Shield, Sun, Moon, Loader2 } from "lucide-react";
+import { Menu, X, LogOut, Shield, Sun, Moon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useSession, signOut as clientSignOut } from "next-auth/react";
@@ -56,7 +56,6 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
   };
 
   const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
@@ -106,24 +105,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             <img src="/logo.png" alt="Pokémon GO Services" className="h-10 w-auto object-contain" />
           </Link>
 
-          {/* Search bar */}
-          <div className="hidden md:flex flex-1 max-w-xs">
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && search.trim()) {
-                    window.location.href = `/auctions?search=${encodeURIComponent(search.trim())}`;
-                  }
-                }}
-                placeholder="Search for accounts, items & more..."
-                className="w-full h-8 pl-8 pr-3 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400/50 transition-all"
-              />
-              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
-            </div>
-          </div>
+
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-5">
@@ -271,25 +253,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             variants={menuVariants}
             className="lg:hidden border-t border-gray-200 dark:border-white/10 bg-white/98 dark:bg-[#0d0d0f]/98 backdrop-blur-xl overflow-hidden"
           >
-            {/* Mobile search */}
-            <div className="px-4 pt-4 pb-2">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && search.trim()) {
-                      setIsOpen(false); // Close mobile drawer
-                      window.location.href = `/auctions?search=${encodeURIComponent(search.trim())}`;
-                    }
-                  }}
-                  placeholder="Search accounts, items..."
-                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400/50"
-                />
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
-              </div>
-            </div>
+
 
             <div className="space-y-0.5 px-4 py-3">
               {navLinks.map(({ href, label }) => (

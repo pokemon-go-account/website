@@ -51,7 +51,7 @@ export async function fetchAuctionRealtime(auctionId: string) {
   try {
     await connectDB();
     const auction = await Auction.findById(auctionId)
-      .populate("highestBidderId", "name")
+      .populate("highestBidderId", "name username")
       .lean();
     if (!auction) {
       return { success: false, error: "Auction not found." };
@@ -82,7 +82,7 @@ export async function fetchAuctionRealtime(auctionId: string) {
       success: true,
       currentHighestBid: auction.currentHighestBid,
       highestBidderId: auction.highestBidderId ? (auction.highestBidderId as any)._id?.toString() || (auction.highestBidderId as any).toString() : null,
-      highestBidderName: (auction.highestBidderId as any)?.username || null,
+      highestBidderName: (auction.highestBidderId as any)?.username || (auction.highestBidderId as any)?.name || null,
       status: auction.status,
       endTime: auction.endTime ? auction.endTime.toISOString() : null,
       isRegistered,
