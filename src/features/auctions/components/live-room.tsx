@@ -27,7 +27,8 @@ import {
   Award,
   Loader2,
   Play,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -123,6 +124,7 @@ export function LiveRoom({
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
 
   // Admin Controls states
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
@@ -699,7 +701,10 @@ export function LiveRoom({
           <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Buy Now price</h4>
           <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
         </div>
-        <button className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
+        <button
+          onClick={() => setIsBuyNowOpen(true)}
+          className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer"
+        >
           <span>BUY NOW</span>
           <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2"><PriceDisplay amountInUSD={auction.listingId.startingBid * 4} /></span>
         </button>
@@ -1379,7 +1384,10 @@ export function LiveRoom({
                   <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Buy Now price</h4>
                   <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
                 </div>
-                <button className="w-full h-11 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
+                <button
+                  onClick={() => setIsBuyNowOpen(true)}
+                  className="w-full h-11 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer"
+                >
                   <span>BUY NOW</span>
                   <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2"><PriceDisplay amountInUSD={auction.listingId.startingBid * 4} /></span>
                 </button>
@@ -1938,6 +1946,122 @@ export function LiveRoom({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Buy Now Payment Modal */}
+      {isBuyNowOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/95 p-6 shadow-2xl space-y-6 text-zinc-900 dark:text-white">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setIsBuyNowOpen(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Header */}
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-[#6133e1]" />
+                Complete Purchase
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                You are purchasing this listing instantly. The final Buy Now price is:
+              </p>
+              <div className="text-2xl font-black text-[#6133e1] pt-1">
+                <PriceDisplay amountInUSD={auction.listingId.startingBid * 4} />
+              </div>
+            </div>
+
+            {/* Options List */}
+            <div className="space-y-3">
+              {/* Option 1: Razorpay (Coming Soon) */}
+              <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/40 p-4 opacity-80">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold">Razorpay Card / UPI</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-505">Instant validation via payment gateway</p>
+                  </div>
+                  <span className="bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-300 dark:border-zinc-700/50">
+                    Coming Soon
+                  </span>
+                </div>
+
+                {/* Developer Sandbox Trigger Link */}
+                <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800/50 flex justify-end">
+                  <button
+                    onClick={async () => {
+                      const confirmMock = confirm(
+                        `[Mock Sandbox Mode] Simulate a successful Buy Now payment of $${(auction.listingId.startingBid * 4).toLocaleString()} to instantly conclude this auction and secure your ownership?`
+                      );
+                      if (confirmMock) {
+                        setIsAdminActionLoading(true);
+                        // Trigger server action to complete/end the auction immediately!
+                        const res = await forceEndAuction(auction._id);
+                        if (res.success) {
+                          setStatus("COMPLETED");
+                          setIsConcluded(true);
+                          alert("Congratulations! The instant Buy Now payment has been captured and you have won this listing.");
+                          setIsBuyNowOpen(false);
+                        } else {
+                          alert(res.error || "Failed to finalize buy now payment.");
+                        }
+                        setIsAdminActionLoading(false);
+                      }
+                    }}
+                    className="text-[10px] text-zinc-550 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white font-semibold underline flex items-center gap-1 cursor-pointer bg-transparent border-none"
+                  >
+                    <ShieldAlert className="h-3 w-3" />
+                    Dev Testing: Simulate Payment
+                  </button>
+                </div>
+              </div>
+
+              {/* Option 2: Crypto */}
+              <button
+                onClick={() => window.open("https://t.me/PGA_Crypto_Agent", "_blank", "noopener,noreferrer")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay with Cryptocurrency</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">USDT / BTC / ETH transactions supported</p>
+                  </div>
+                  <span className="bg-emerald-500/10 text-emerald-605 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/20">
+                    Live
+                  </span>
+                </div>
+              </button>
+
+              {/* Option 3: Direct Agent */}
+              <button
+                onClick={() => window.open("https://t.me/PGA_Direct_Agent", "_blank", "noopener,noreferrer")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-1">
+                      Pay Direct to Agent
+                    </h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Connect to agent manual verification</p>
+                  </div>
+                  <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
+                    Manual
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>Verify transaction manually with receipt screenshots.</span>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
