@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Clock, CheckCircle2 } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
+import { PriceDisplay } from "@/components/price-display";
 
 const teamColors: Record<string, string> = {
   MYSTIC: "text-blue-500",
@@ -171,7 +172,7 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
                     <div>
                       <p className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-wider">Current Bid</p>
                       <p className="text-gray-955 dark:text-white font-extrabold text-lg leading-tight">
-                        ${auction.currentHighestBid.toLocaleString()}
+                        <PriceDisplay amountInUSD={auction.currentHighestBid} />
                       </p>
                     </div>
                     {auction.endTime && (

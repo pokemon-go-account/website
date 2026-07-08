@@ -25,12 +25,16 @@ import {
   HelpCircle,
   MessageSquare,
   Award,
-  Loader2
+  Loader2,
+  Play,
+  Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { RegisterAuctionButton } from "@/features/payments/components/register-button";
 import { fetchAllAuctionBids } from "@/features/auctions/actions";
+import { pauseAuction, resumeAuction, forceEndAuction, updateAuction, deleteAuction } from "@/features/admin/actions";
+import { PriceDisplay } from "@/components/price-display";
 
 interface LiveRoomProps {
   auction: {
@@ -45,6 +49,7 @@ interface LiveRoomProps {
       team: "MYSTIC" | "VALOR" | "INSTINCT" | "NONE";
       minIncrement: number;
       startingBid: number;
+      reservePrice?: number;
       region: string;
       screenshots?: string[];
       stardust?: number;
@@ -72,20 +77,32 @@ interface LiveRoomProps {
     highestBidderId?: any;
     endTime: string;
     status: string;
+    registrationFee?: number;
   };
   initialBids?: BidHistoryItem[];
   initialIsRegistered?: boolean;
+  session?: any;
 }
 
-export function LiveRoom({ auction, initialBids = [], initialIsRegistered = false }: LiveRoomProps) {
-  const { data: session } = useSession();
-  const isOwner = session?.user?.id === auction.listingId.sellerId;
+export function LiveRoom({
+  auction,
+  initialBids = [],
+  initialIsRegistered = false,
+  session: propSession,
+}: LiveRoomProps) {
+  const { data: clientSession } = useSession();
+  const session = clientSession || propSession;
+  const isOwner = session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId);
   const {
     isConnected,
     currentBid,
     highestBidderId,
     highestBidderName,
     isRegistered,
+    status,
+    setStatus,
+    endTime,
+    setEndTime,
     bidHistory,
     error,
     placeBid,
@@ -94,7 +111,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
     setCurrentBid,
     setHighestBidderId,
     setIsRegistered,
-  } = useSocket(auction._id, initialIsRegistered);
+  } = useSocket(auction._id, initialIsRegistered, auction.status, auction.endTime);
 
   const [timeLeft, setTimeLeft] = useState("Loading timer...");
   const [isConcluded, setIsConcluded] = useState(false);
@@ -106,6 +123,204 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+
+  // Admin Controls states
+  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const isCreatorAdmin = session?.user?.role === "ADMIN" && session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId);
+  const isAuthorizedAdmin = isSuperAdmin || isCreatorAdmin;
+
+  useEffect(() => {
+    console.log("[LiveRoom Debug] session user:", session?.user);
+    console.log("[LiveRoom Debug] sellerId:", auction.listingId.sellerId);
+    console.log("[LiveRoom Debug] isAuthorizedAdmin:", {
+      role: session?.user?.role,
+      userId: session?.user?.id,
+      sellerId: auction.listingId.sellerId,
+      isSuperAdmin,
+      isCreatorAdmin,
+      isAuthorizedAdmin
+    });
+  }, [session, auction.listingId.sellerId, isSuperAdmin, isCreatorAdmin, isAuthorizedAdmin]);
+
+  const [isAdminEditOpen, setIsAdminEditOpen] = useState(false);
+  const [isAdminActionLoading, setIsAdminActionLoading] = useState(false);
+  const [adminActionError, setAdminActionError] = useState<string | null>(null);
+
+  const [adminEditForm, setAdminEditForm] = useState({
+    title: auction.listingId.title,
+    description: auction.listingId.description,
+    level: auction.listingId.level,
+    team: auction.listingId.team,
+    shinyCount: auction.listingId.shinyCount,
+    legendaryCount: auction.listingId.legendaryCount,
+    mythicalCount: auction.listingId.mythicalCount,
+    region: auction.listingId.region,
+    startingBid: auction.listingId.startingBid,
+    reservePrice: auction.listingId.reservePrice,
+    minIncrement: auction.listingId.minIncrement,
+    stardust: auction.listingId.stardust || 0,
+    xp: auction.listingId.xp || 0,
+    pokedexCompleted: auction.listingId.pokedexCompleted || 0,
+    bestBuddyCount: auction.listingId.bestBuddyCount || 0,
+    pokeCoins: auction.listingId.pokeCoins || 0,
+    startDate: auction.listingId.startDate || "",
+    accountType: auction.listingId.accountType || "",
+    accountStatus: auction.listingId.accountStatus || "",
+    weeklyDistance: auction.listingId.weeklyDistance || 0,
+    topPokemon: auction.listingId.topPokemon || "",
+    rareCandy: auction.listingId.rareCandy || 0,
+    fastTm: auction.listingId.fastTm || 0,
+    chargedTm: auction.listingId.chargedTm || 0,
+    eliteFastTm: auction.listingId.eliteFastTm || 0,
+    eliteChargedTm: auction.listingId.eliteChargedTm || 0,
+    incubators: auction.listingId.incubators || 0,
+    luckyEggs: auction.listingId.luckyEggs || 0,
+    lureModules: auction.listingId.lureModules || 0,
+    premiumRaidPass: auction.listingId.premiumRaidPass || 0,
+    endTime: auction.endTime,
+    registrationFee: auction.registrationFee || 199,
+  });
+
+  const handleSaveAdminEdit = async () => {
+    setIsAdminActionLoading(true);
+    setAdminActionError(null);
+    const res = await updateAuction(auction._id, adminEditForm);
+    if (res.success) {
+      setIsAdminEditOpen(false);
+      if (adminEditForm.endTime) {
+        setEndTime(new Date(adminEditForm.endTime).toISOString());
+      }
+    } else {
+      setAdminActionError(res.error || "Failed to update auction details.");
+    }
+    setIsAdminActionLoading(false);
+  };
+
+  const renderAdminControlPanel = () => {
+    if (!isAuthorizedAdmin) return null;
+
+    return (
+      <div className="rounded-2xl border border-violet-500/30 bg-violet-600/5 backdrop-blur-md p-5 space-y-4 shadow-md relative overflow-hidden animate-in fade-in duration-300">
+        <div className="absolute top-0 right-0 -mr-6 -mt-6 h-20 w-20 rounded-full bg-violet-500/10 blur-xl pointer-events-none" />
+        
+        <div className="flex items-center justify-between border-b border-violet-500/20 pb-3">
+          <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
+            <ShieldAlert className="h-4.5 w-4.5 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-wider">
+              Admin Control Panel
+            </span>
+          </div>
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-450/20">
+            {isSuperAdmin ? "SUPER ADMIN" : "OWNER ADMIN"}
+          </span>
+        </div>
+
+        {adminActionError && (
+          <div className="text-[10px] text-red-500 bg-red-500/10 p-2.5 rounded border border-red-500/20 leading-relaxed">
+            {adminActionError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {/* Pause / Resume Button */}
+          {status === "PAUSED" ? (
+            <button
+              onClick={async () => {
+                setIsAdminActionLoading(true);
+                setAdminActionError(null);
+                const res = await resumeAuction(auction._id);
+                if (res.success) {
+                  setStatus("LIVE");
+                } else {
+                  setAdminActionError(res.error || "Failed to resume auction.");
+                }
+                setIsAdminActionLoading(false);
+              }}
+              disabled={isAdminActionLoading}
+              className="h-10 rounded-xl bg-emerald-605 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" />
+              Resume Bidding
+            </button>
+          ) : (
+            <button
+              onClick={async () => {
+                setIsAdminActionLoading(true);
+                setAdminActionError(null);
+                const res = await pauseAuction(auction._id);
+                if (res.success) {
+                  setStatus("PAUSED");
+                } else {
+                  setAdminActionError(res.error || "Failed to pause auction.");
+                }
+                setIsAdminActionLoading(false);
+              }}
+              disabled={isAdminActionLoading || status === "COMPLETED"}
+              className="h-10 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+            >
+              <AlertCircle className="h-4 w-4" />
+              Pause Bidding
+            </button>
+          )}
+
+          {/* End Auction Button */}
+          <button
+            onClick={async () => {
+              if (!confirm("Are you sure you want to end this auction immediately?")) return;
+              setIsAdminActionLoading(true);
+              setAdminActionError(null);
+              const res = await forceEndAuction(auction._id);
+              if (res.success) {
+                setStatus("COMPLETED");
+                setIsConcluded(true);
+              } else {
+                setAdminActionError(res.error || "Failed to end auction.");
+              }
+              setIsAdminActionLoading(false);
+            }}
+            disabled={isAdminActionLoading || status === "COMPLETED"}
+            className="h-10 rounded-xl bg-red-655 hover:bg-red-600 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+          >
+            <Trophy className="h-4 w-4" />
+            End Auction
+          </button>
+        </div>
+
+        {/* Edit Button */}
+        <button
+          onClick={() => setIsAdminEditOpen(true)}
+          disabled={isAdminActionLoading}
+          className="w-full h-10 rounded-xl border border-violet-500/30 hover:border-violet-500/50 bg-violet-600/10 text-violet-600 dark:text-violet-400 hover:bg-violet-600/20 font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+        >
+          <Gavel className="h-4 w-4" />
+          Edit Auction Details
+        </button>
+
+        {/* Delete Auction Button (SUPER_ADMIN only) */}
+        {isSuperAdmin && (
+          <button
+            onClick={async () => {
+              if (!confirm("⚠️ WARNING: Deleting this auction will permanently remove it, its listing details, bids, and registrations from the platform. This action CANNOT be undone. Are you sure you want to proceed?")) return;
+              setIsAdminActionLoading(true);
+              setAdminActionError(null);
+              const res = await deleteAuction(auction._id);
+              if (res.success) {
+                window.location.href = "/auctions";
+              } else {
+                setAdminActionError(res.error || "Failed to delete auction.");
+                setIsAdminActionLoading(false);
+              }
+            }}
+            disabled={isAdminActionLoading}
+            className="w-full h-10 rounded-xl bg-red-655 hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/10 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50 mt-1"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Auction & Listing
+          </button>
+        )}
+      </div>
+    );
+  };
 
   const handleShare = async () => {
     try {
@@ -146,7 +361,19 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
 
   // Countdown timer logic
   useEffect(() => {
-    const end = new Date(auction.endTime).getTime();
+    if (!endTime) return;
+    if (status === "PAUSED") {
+      setTimeLeft("Bidding Paused");
+      setIsConcluded(false);
+      return;
+    }
+    if (status === "COMPLETED") {
+      setTimeLeft("Auction Concluded");
+      setIsConcluded(true);
+      return;
+    }
+
+    const end = new Date(endTime).getTime();
 
     const updateTimer = () => {
       const now = new Date().getTime();
@@ -175,7 +402,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [auction.endTime]);
+  }, [endTime, status]);
 
   const activeBid = currentBid !== null ? currentBid : auction.currentHighestBid;
   const prevBidRef = useRef<number>(activeBid);
@@ -331,7 +558,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
             "text-zinc-900 dark:text-white"
           )}
         >
-          ${activeBid.toLocaleString()}
+          <PriceDisplay amountInUSD={activeBid} />
         </motion.h3>
         
         {highestBidderId === session?.user?.id ? (
@@ -382,7 +609,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
               <div className="space-y-1">
                 <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
                 <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
-                  Congratulations to <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-zinc-900 dark:text-white">${activeBid.toLocaleString()}</strong>!
+                  Congratulations to <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>!
                 </p>
               </div>
             </div>
@@ -409,7 +636,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
         ) : (
           <div className="space-y-4">
             <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center font-bold">
-              Minimum Next Bid: <span className="text-zinc-800 dark:text-white">${nextMinBid.toLocaleString()}</span>
+              Minimum Next Bid: <span className="text-zinc-800 dark:text-white"><PriceDisplay amountInUSD={nextMinBid} /></span>
             </div>
             {/* Quick Preset Buttons */}
             <div className="grid grid-cols-3 gap-2">
@@ -424,7 +651,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                   {isBidding ? (
                     <Loader2 className="h-4 w-4 animate-spin text-[#6133e1] dark:text-white" />
                   ) : (
-                    `+$${(amount - activeBid).toLocaleString()}`
+                    <>+<PriceDisplay amountInUSD={amount - activeBid} /></>
                   )}
                 </button>
               ))}
@@ -454,7 +681,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                           <span className="h-1.5 w-1.5 rounded-full bg-[#6133e1]" />
                           <span>{bid.bidderName}</span>
                         </div>
-                        <span className="font-extrabold">${bid.amount.toLocaleString()}</span>
+                        <span className="font-extrabold"><PriceDisplay amountInUSD={bid.amount} /></span>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -474,7 +701,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
         </div>
         <button className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
           <span>BUY NOW</span>
-          <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2">${(auction.listingId.startingBid * 4).toLocaleString()}</span>
+          <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2"><PriceDisplay amountInUSD={auction.listingId.startingBid * 4} /></span>
         </button>
       </div>
     </div>
@@ -536,6 +763,11 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
               <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.legendaryCount}🏆</div>
             </div>
           </div>
+        </div>
+
+        {/* Mobile Admin Control Panel */}
+        <div className="lg:hidden mt-4">
+          {renderAdminControlPanel()}
         </div>
 
         {/* Desktop Title & Details Section (Grid: Left 2 cols, Right 1 col) */}
@@ -925,6 +1157,11 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
               </div>
             </div>
 
+            {/* Desktop Admin Control Panel */}
+            <div className="hidden lg:block mb-4">
+              {renderAdminControlPanel()}
+            </div>
+
             {/* Desktop Bidding Control Panel */}
             <div className="hidden lg:block">
               {renderBiddingPanel()}
@@ -989,7 +1226,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                           {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
-                      <span className="font-bold text-zinc-800 dark:text-white">${bid.amount.toLocaleString()}</span>
+                      <span className="font-bold text-zinc-800 dark:text-white"><PriceDisplay amountInUSD={bid.amount} /></span>
                     </div>
                   ))
                 )}
@@ -1058,7 +1295,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                       "text-zinc-900 dark:text-white"
                     )}
                   >
-                    ${activeBid.toLocaleString()}
+                    <PriceDisplay amountInUSD={activeBid} />
                   </motion.h3>
                   {highestBidderId === session?.user?.id ? (
                     <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 mt-1 uppercase tracking-wider">
@@ -1086,7 +1323,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                         <Trophy className="h-6 w-6 text-[#6133e1] mx-auto animate-bounce" />
                         <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
                         <p className="text-[11px] text-zinc-600 dark:text-zinc-300">
-                          Won by <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for <strong className="font-bold text-zinc-900 dark:text-white">${activeBid.toLocaleString()}</strong>
+                          Won by <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>
                         </p>
                       </div>
                     ) : (
@@ -1110,7 +1347,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                   ) : (
                     <div className="space-y-4">
                       <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center font-bold">
-                        Minimum Next Bid: <span className="text-[#6133e1] dark:text-purple-400">${nextMinBid.toLocaleString()}</span>
+                        Minimum Next Bid: <span className="text-[#6133e1] dark:text-purple-400"><PriceDisplay amountInUSD={nextMinBid} /></span>
                       </div>
                       {/* Presets */}
                       <div className="grid grid-cols-3 gap-2">
@@ -1125,7 +1362,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                             {isBidding ? (
                               <Loader2 className="h-4 w-4 animate-spin text-[#6133e1] dark:text-white" />
                             ) : (
-                              `+$${(amount - activeBid).toLocaleString()}`
+                              <>+<PriceDisplay amountInUSD={amount - activeBid} /></>
                             )}
                           </button>
                         ))}
@@ -1144,7 +1381,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                 </div>
                 <button className="w-full h-11 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer">
                   <span>BUY NOW</span>
-                  <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2">${(auction.listingId.startingBid * 4).toLocaleString()}</span>
+                  <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2"><PriceDisplay amountInUSD={auction.listingId.startingBid * 4} /></span>
                 </button>
               </div>
 
@@ -1435,7 +1672,7 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                           {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
-                      <span className="font-black text-zinc-900 dark:text-white text-sm">${bid.amount.toLocaleString()}</span>
+                      <span className="font-black text-zinc-900 dark:text-white text-sm"><PriceDisplay amountInUSD={bid.amount} /></span>
                     </div>
                   ))
                 )}
@@ -1445,6 +1682,262 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
         )}
       </AnimatePresence>
 
+      {/* Admin Edit Modal */}
+      <AnimatePresence>
+        {isAdminEditOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAdminEditOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-2xl rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/95 p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col z-10 overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-800 pb-3">
+                <h3 className="font-extrabold text-sm text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <Gavel className="h-4 w-4 text-[#6133e1]" />
+                  Edit Auction & Listing Details
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAdminEditOpen(false)}
+                  className="h-6 w-6 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-white flex items-center justify-center text-xs font-bold bg-transparent border-none cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {adminActionError && (
+                <div className="text-[10px] text-red-500 bg-red-500/10 p-2.5 rounded border border-red-500/20 leading-relaxed">
+                  {adminActionError}
+                </div>
+              )}
+
+              <div className="space-y-4 text-xs">
+                {/* 1. Core Metadata */}
+                <div className="space-y-2">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Core Information</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Listing Title</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.title}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, title: e.target.value })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-zinc-500 font-medium">Trainer Level</label>
+                        <input
+                          type="number"
+                          value={adminEditForm.level}
+                          onChange={(e) => setAdminEditForm({ ...adminEditForm, level: parseInt(e.target.value) || 0 })}
+                          className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-zinc-500 font-medium">Team faction</label>
+                        <select
+                          value={adminEditForm.team}
+                          onChange={(e) => setAdminEditForm({ ...adminEditForm, team: e.target.value as any })}
+                          className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none cursor-pointer"
+                        >
+                          <option value="NONE">None</option>
+                          <option value="MYSTIC">Mystic</option>
+                          <option value="VALOR">Valor</option>
+                          <option value="INSTINCT">Instinct</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-zinc-500 font-medium">Description</label>
+                    <textarea
+                      value={adminEditForm.description}
+                      onChange={(e) => setAdminEditForm({ ...adminEditForm, description: e.target.value })}
+                      className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Bidding Parameters */}
+                <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Bidding Economics</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Starting Bid ($)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.startingBid}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, startingBid: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Reserve Price ($)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.reservePrice}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, reservePrice: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Min Increment ($)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.minIncrement}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, minIncrement: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Entry Fee ($)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.registrationFee}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, registrationFee: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Auction Expiration Date/Time</label>
+                      <input
+                        type="datetime-local"
+                        value={new Date(new Date(adminEditForm.endTime).getTime() - new Date().getTimezoneOffset()*60*1000).toISOString().slice(0, 16)}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, endTime: new Date(e.target.value).toISOString() })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Top Pokémon Highlights (Comma Separated)</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.topPokemon}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, topPokemon: e.target.value })}
+                        placeholder="Mewtwo(3950), Kyogre(3800)"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Account Telemetry */}
+                <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Account Stats & Telemetry</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Stardust</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.stardust}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, stardust: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Total XP</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.xp}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, xp: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Region</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.region}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, region: e.target.value })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shiny Count</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shinyCount}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyCount: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Legendary Count</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.legendaryCount}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, legendaryCount: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Mythical Count</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.mythicalCount}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, mythicalCount: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Pokedex Completed %</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.pokedexCompleted}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokedexCompleted: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">PokeCoins</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.pokeCoins}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokeCoins: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="flex justify-end gap-2 pt-4 border-t border-zinc-150 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setIsAdminEditOpen(false)}
+                  className="h-9 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white font-bold cursor-pointer bg-transparent"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveAdminEdit}
+                  disabled={isAdminActionLoading}
+                  className="h-9 px-5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {isAdminActionLoading ? "Saving..." : "Save Details"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

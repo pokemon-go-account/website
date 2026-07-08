@@ -1,4 +1,35 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
+import fs from "fs";
+
+// Load env.local manually to mutate process.env before starting webServer
+try {
+  const envPath = path.resolve(__dirname, ".env.local");
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, "utf-8");
+    for (const line of envContent.split("\n")) {
+      const match = line.match(/^\s*([^#=]+)\s*=\s*(.*)\s*$/);
+      if (match) {
+        const key = match[1].trim();
+        let value = match[2].trim();
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+        process.env[key] = value;
+      }
+    }
+  }
+} catch (err) {
+  console.error("Failed to pre-load env.local inside Playwright config:", err);
+}
+
+// Redirect MONGODB_URI to use a separate test database instead of production
+if (process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = process.env.MONGODB_URI.replace(
+    /\/pokemon-auction-mvp(\?|$)/,
+    "/pokemon-auction-test$1"
+  );
+}
 
 export default defineConfig({
   testDir: "./tests",

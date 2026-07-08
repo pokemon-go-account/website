@@ -84,6 +84,7 @@ export async function fetchAuctionRealtime(auctionId: string) {
       highestBidderId: auction.highestBidderId ? (auction.highestBidderId as any)._id?.toString() || (auction.highestBidderId as any).toString() : null,
       highestBidderName: (auction.highestBidderId as any)?.username || null,
       status: auction.status,
+      endTime: auction.endTime ? auction.endTime.toISOString() : null,
       isRegistered,
       bids: formattedBids,
     };

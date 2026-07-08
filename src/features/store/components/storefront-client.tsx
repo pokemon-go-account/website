@@ -6,6 +6,7 @@ import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLe
 import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
+import { PriceDisplay } from "@/components/price-display";
 
 interface Category {
   _id: string;
@@ -221,7 +222,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
                     <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-white/[0.04] flex items-center justify-between">
                       <div>
                         <p className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Price</p>
-                        <p className="text-zinc-900 dark:text-white font-black text-sm mt-0.5">${product.price.toLocaleString()}</p>
+                        <p className="text-zinc-900 dark:text-white font-black text-sm mt-0.5"><PriceDisplay amountInUSD={product.price} /></p>
                       </div>
 
                       <button
@@ -310,7 +311,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
 
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold text-zinc-900 dark:text-white truncate leading-snug">{item.name}</h4>
-                          <p className="text-[10px] text-zinc-500 font-semibold mt-0.5">${item.price.toLocaleString()} each</p>
+                          <p className="text-[10px] text-zinc-500 font-semibold mt-0.5"><PriceDisplay amountInUSD={item.price} /> each</p>
                         </div>
 
                         {/* Adjuster */}
@@ -348,7 +349,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
                 <div className="border-t border-zinc-200 dark:border-white/[0.05] pt-4 mt-6 space-y-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-zinc-500 font-medium">Total Value:</span>
-                    <span className="text-zinc-900 dark:text-white font-black text-lg">${getTotalPrice().toLocaleString()}</span>
+                    <span className="text-zinc-900 dark:text-white font-black text-lg"><PriceDisplay amountInUSD={getTotalPrice()} /></span>
                   </div>
 
                   <button

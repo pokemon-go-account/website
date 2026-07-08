@@ -9,13 +9,20 @@ export interface BidHistoryItem {
   createdAt: string;
 }
 
-export function useSocket(auctionId?: string, initialIsRegistered = false) {
+export function useSocket(
+  auctionId?: string,
+  initialIsRegistered = false,
+  initialStatus = "SCHEDULED",
+  initialEndTime = ""
+) {
   const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
   const [currentBid, setCurrentBid] = useState<number | null>(null);
   const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
   const [highestBidderName, setHighestBidderName] = useState<string | null>(null);
   const [isRegistered, setIsRegistered] = useState(initialIsRegistered);
+  const [status, setStatus] = useState<string>(initialStatus);
+  const [endTime, setEndTime] = useState<string>(initialEndTime);
   const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +42,8 @@ export function useSocket(auctionId?: string, initialIsRegistered = false) {
         setHighestBidderId(res.highestBidderId ?? null);
         setHighestBidderName(res.highestBidderName ?? null);
         setIsRegistered(!!res.isRegistered);
+        if (res.status) setStatus(res.status);
+        if (res.endTime) setEndTime(res.endTime);
         if (res.bids) {
           setBidHistory(res.bids);
         }
@@ -84,6 +93,10 @@ export function useSocket(auctionId?: string, initialIsRegistered = false) {
     highestBidderId,
     highestBidderName,
     isRegistered,
+    status,
+    setStatus,
+    endTime,
+    setEndTime,
     bidHistory,
     error,
     placeBid,

@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
           <main className="flex-1 flex flex-col">
             {children}
           </main>
+          <Footer />
         </SessionProvider>
         <Analytics />
       </body>

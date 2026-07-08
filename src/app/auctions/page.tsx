@@ -1,5 +1,6 @@
 import Link from "next/link";
 import connectDB from "@/lib/db";
+import { PriceDisplay } from "@/components/price-display";
 import Auction from "@/models/Auction";
 import Listing from "@/models/Listing"; // Registers model for populate
 import Product from "@/models/Product";
@@ -176,7 +177,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
             <div className="space-y-0.5">
               <span className="text-[10px] text-muted-foreground">Current Highest Bid</span>
               <div className="font-extrabold text-foreground text-sm">
-                ${auc.currentHighestBid.toLocaleString()}
+                <PriceDisplay amountInUSD={auc.currentHighestBid} />
               </div>
             </div>
             
@@ -321,7 +322,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                     <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-border/60">
                       <div>
                         <span className="text-[10px] text-muted-foreground block">Direct Purchase Price</span>
-                        <span className="text-base font-extrabold text-foreground">${prod.price.toLocaleString()}</span>
+                        <span className="text-base font-extrabold text-foreground"><PriceDisplay amountInUSD={prod.price} /></span>
                       </div>
                       <Link
                         href="/store"
