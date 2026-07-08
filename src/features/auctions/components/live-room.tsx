@@ -36,6 +36,7 @@ import { RegisterAuctionButton } from "@/features/payments/components/register-b
 import { fetchAllAuctionBids } from "@/features/auctions/actions";
 import { pauseAuction, resumeAuction, forceEndAuction, updateAuction, deleteAuction } from "@/features/admin/actions";
 import { PriceDisplay } from "@/components/price-display";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 interface LiveRoomProps {
   auction: {
@@ -76,6 +77,7 @@ interface LiveRoomProps {
     };
     currentHighestBid: number;
     highestBidderId?: any;
+    highestBidderName?: string | null;
     endTime: string;
     status: string;
     registrationFee?: number;
@@ -94,6 +96,7 @@ export function LiveRoom({
   const { data: clientSession } = useSession();
   const session = clientSession || propSession;
   const isOwner = session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId);
+  const { convert } = useCurrencyStore();
   const {
     isConnected,
     currentBid,
@@ -112,7 +115,7 @@ export function LiveRoom({
     setCurrentBid,
     setHighestBidderId,
     setIsRegistered,
-  } = useSocket(auction._id, initialIsRegistered, auction.status, auction.endTime);
+  } = useSocket(auction._id, initialIsRegistered, auction.status, auction.endTime, auction.highestBidderName);
 
   const [timeLeft, setTimeLeft] = useState("Loading timer...");
   const [isConcluded, setIsConcluded] = useState(false);
@@ -182,6 +185,45 @@ export function LiveRoom({
     endTime: auction.endTime,
     registrationFee: auction.registrationFee || 199,
   });
+
+  useEffect(() => {
+    if (isAdminEditOpen) {
+      setAdminEditForm({
+        title: auction.listingId.title,
+        description: auction.listingId.description,
+        level: auction.listingId.level,
+        team: auction.listingId.team,
+        shinyCount: auction.listingId.shinyCount,
+        legendaryCount: auction.listingId.legendaryCount,
+        mythicalCount: auction.listingId.mythicalCount,
+        region: auction.listingId.region,
+        startingBid: auction.listingId.startingBid,
+        reservePrice: auction.listingId.reservePrice,
+        minIncrement: auction.listingId.minIncrement,
+        stardust: auction.listingId.stardust || 0,
+        xp: auction.listingId.xp || 0,
+        pokedexCompleted: auction.listingId.pokedexCompleted || 0,
+        bestBuddyCount: auction.listingId.bestBuddyCount || 0,
+        pokeCoins: auction.listingId.pokeCoins || 0,
+        startDate: auction.listingId.startDate || "",
+        accountType: auction.listingId.accountType || "",
+        accountStatus: auction.listingId.accountStatus || "",
+        weeklyDistance: auction.listingId.weeklyDistance || 0,
+        topPokemon: auction.listingId.topPokemon || "",
+        rareCandy: auction.listingId.rareCandy || 0,
+        fastTm: auction.listingId.fastTm || 0,
+        chargedTm: auction.listingId.chargedTm || 0,
+        eliteFastTm: auction.listingId.eliteFastTm || 0,
+        eliteChargedTm: auction.listingId.eliteChargedTm || 0,
+        incubators: auction.listingId.incubators || 0,
+        luckyEggs: auction.listingId.luckyEggs || 0,
+        lureModules: auction.listingId.lureModules || 0,
+        premiumRaidPass: auction.listingId.premiumRaidPass || 0,
+        endTime: auction.endTime,
+        registrationFee: auction.registrationFee || 199,
+      });
+    }
+  }, [isAdminEditOpen, auction]);
 
   const handleSaveAdminEdit = async () => {
     setIsAdminActionLoading(true);
@@ -331,6 +373,31 @@ export function LiveRoom({
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy URL: ", err);
+    }
+  };
+
+  const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram") => {
+    const buyNowPrice = auction.listingId.startingBid * 4;
+    const formattedPrice = convert(buyNowPrice).formatted;
+    const message = `Hi Pokémon GO Services! I would like to complete the Buy Now instant purchase for the following auction:
+- Auction ID: ${auction._id}
+- Account Title: ${auction.listingId.title}
+- Buy Now Price: ${formattedPrice}
+Please let me know how to proceed with the payment!`;
+
+    try {
+      await navigator.clipboard.writeText(message);
+    } catch (err) {
+      console.error("Clipboard copy failed:", err);
+    }
+
+    if (platform === "telegram") {
+      window.open(`https://t.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    } else if (platform === "reddit") {
+      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Instant%20Escrow%20Purchase&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    } else if (platform === "instagram") {
+      alert("📋 We have copied your order details to your clipboard! Paste it in the Instagram DM to proceed.");
+      window.open("https://www.instagram.com/pokemongoservicesadmin/", "_blank", "noopener,noreferrer");
     }
   };
   
@@ -1852,7 +1919,7 @@ export function LiveRoom({
                         type="number"
                         value={adminEditForm.stardust}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, stardust: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1861,7 +1928,7 @@ export function LiveRoom({
                         type="number"
                         value={adminEditForm.xp}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, xp: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1870,7 +1937,7 @@ export function LiveRoom({
                         type="text"
                         value={adminEditForm.region}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, region: e.target.value })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1879,7 +1946,7 @@ export function LiveRoom({
                         type="number"
                         value={adminEditForm.shinyCount}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyCount: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1890,7 +1957,7 @@ export function LiveRoom({
                         type="number"
                         value={adminEditForm.legendaryCount}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, legendaryCount: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1899,7 +1966,7 @@ export function LiveRoom({
                         type="number"
                         value={adminEditForm.mythicalCount}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, mythicalCount: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1908,7 +1975,7 @@ export function LiveRoom({
                         type="number"
                         value={adminEditForm.pokedexCompleted}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, pokedexCompleted: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1917,7 +1984,146 @@ export function LiveRoom({
                         type="number"
                         value={adminEditForm.pokeCoins}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, pokeCoins: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Best Buddy Count</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.bestBuddyCount}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, bestBuddyCount: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Account Status</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.accountStatus}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, accountStatus: e.target.value })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Account Type</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.accountType}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, accountType: e.target.value })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Start Date</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.startDate}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, startDate: e.target.value })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1 col-span-2">
+                      <label className="text-zinc-500 font-medium">Weekly Distance Traveled (km)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.weeklyDistance}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, weeklyDistance: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Items & Resources Inventory */}
+                <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Items & Resources inventory</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Rare Candy</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.rareCandy}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, rareCandy: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Fast TM</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.fastTm}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, fastTm: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Charged TM</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.chargedTm}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, chargedTm: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Elite Fast TM</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.eliteFastTm}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, eliteFastTm: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Elite Charged TM</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.eliteChargedTm}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, eliteChargedTm: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Incubators</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.incubators}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, incubators: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Lucky Eggs</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.luckyEggs}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, luckyEggs: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Lure Modules</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.lureModules}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, lureModules: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Premium Raid Pass</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.premiumRaidPass}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, premiumRaidPass: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1976,78 +2182,50 @@ export function LiveRoom({
 
             {/* Options List */}
             <div className="space-y-3">
-              {/* Option 1: Razorpay (Coming Soon) */}
-              <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/40 p-4 opacity-80">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold">Razorpay Card / UPI</h3>
-                    <p className="text-[11px] text-zinc-555 dark:text-zinc-505">Instant validation via payment gateway</p>
-                  </div>
-                  <span className="bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-300 dark:border-zinc-700/50">
-                    Coming Soon
-                  </span>
-                </div>
-
-                {/* Developer Sandbox Trigger Link */}
-                <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800/50 flex justify-end">
-                  <button
-                    onClick={async () => {
-                      const confirmMock = confirm(
-                        `[Mock Sandbox Mode] Simulate a successful Buy Now payment of $${(auction.listingId.startingBid * 4).toLocaleString()} to instantly conclude this auction and secure your ownership?`
-                      );
-                      if (confirmMock) {
-                        setIsAdminActionLoading(true);
-                        // Trigger server action to complete/end the auction immediately!
-                        const res = await forceEndAuction(auction._id);
-                        if (res.success) {
-                          setStatus("COMPLETED");
-                          setIsConcluded(true);
-                          alert("Congratulations! The instant Buy Now payment has been captured and you have won this listing.");
-                          setIsBuyNowOpen(false);
-                        } else {
-                          alert(res.error || "Failed to finalize buy now payment.");
-                        }
-                        setIsAdminActionLoading(false);
-                      }
-                    }}
-                    className="text-[10px] text-zinc-550 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white font-semibold underline flex items-center gap-1 cursor-pointer bg-transparent border-none"
-                  >
-                    <ShieldAlert className="h-3 w-3" />
-                    Dev Testing: Simulate Payment
-                  </button>
-                </div>
-              </div>
-
-              {/* Option 2: Crypto */}
+              {/* Option 1: Pay via Telegram */}
               <button
-                onClick={() => window.open("https://t.me/PGA_Crypto_Agent", "_blank", "noopener,noreferrer")}
+                onClick={() => handleSocialRedirect("telegram")}
                 className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay with Cryptocurrency</h3>
-                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">USDT / BTC / ETH transactions supported</p>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Telegram</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
                   </div>
-                  <span className="bg-emerald-500/10 text-emerald-605 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/20">
-                    Live
+                  <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
+                    Active
                   </span>
                 </div>
               </button>
 
-              {/* Option 3: Direct Agent */}
+              {/* Option 2: Pay via Reddit */}
               <button
-                onClick={() => window.open("https://t.me/PGA_Direct_Agent", "_blank", "noopener,noreferrer")}
+                onClick={() => handleSocialRedirect("reddit")}
                 className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-1">
-                      Pay Direct to Agent
-                    </h3>
-                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Connect to agent manual verification</p>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Reddit</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
                   </div>
-                  <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                    Manual
+                  <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-500/20">
+                    Active
+                  </span>
+                </div>
+              </button>
+
+              {/* Option 3: Pay via Instagram */}
+              <button
+                onClick={() => handleSocialRedirect("instagram")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Instagram</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
+                  </div>
+                  <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
+                    Active
                   </span>
                 </div>
               </button>

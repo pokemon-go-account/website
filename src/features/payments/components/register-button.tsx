@@ -55,8 +55,25 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
     setIsPending(false);
   };
 
-  const handleTelegramRedirect = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
+  const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram") => {
+    const message = `Hi Pokémon GO Services! I would like to pay the $2.50 verification deposit to register for:
+- Auction ID: ${auctionId}
+Please let me know how to proceed with the payment!`;
+
+    try {
+      await navigator.clipboard.writeText(message);
+    } catch (err) {
+      console.error("Clipboard copy failed:", err);
+    }
+
+    if (platform === "telegram") {
+      window.open(`https://t.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    } else if (platform === "reddit") {
+      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Deposit%20Verification&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    } else if (platform === "instagram") {
+      alert("📋 We have copied your deposit details to your clipboard! Paste it in the Instagram DM to proceed.");
+      window.open("https://www.instagram.com/pokemongoservicesadmin/", "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -95,65 +112,50 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
 
             {/* Options List */}
             <div className="space-y-3">
-              {/* Option 1: Razorpay (Coming Soon) */}
-              <div className="relative overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 opacity-75">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-zinc-300">Razorpay Card / UPI</h3>
-                    <p className="text-[11px] text-zinc-500">Instant validation via payment gateway</p>
-                  </div>
-                  <span className="bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-700/50">
-                    Coming Soon
-                  </span>
-                </div>
-
-                {/* Developer Sandbox Trigger Link */}
-                <div className="mt-3 pt-3 border-t border-zinc-800/50 flex justify-end">
-                  <button
-                    onClick={handleDevSandboxPayment}
-                    disabled={isPending}
-                    className="text-[10px] text-zinc-400 hover:text-white font-semibold underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                  >
-                    {isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <ShieldAlert className="h-3 w-3" />
-                    )}
-                    Dev Testing: Simulate Payment
-                  </button>
-                </div>
-              </div>
-
-              {/* Option 2: Crypto */}
+              {/* Option 1: Pay via Telegram */}
               <button
-                onClick={() => handleTelegramRedirect("https://t.me/PGA_Crypto_Agent")}
+                onClick={() => handleSocialRedirect("telegram")}
                 className="w-full text-left overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 p-4 transition-all hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-white">Pay with Cryptocurrency</h3>
-                    <p className="text-[11px] text-zinc-400">USDT / BTC / ETH transactions supported</p>
+                    <h3 className="text-sm font-semibold text-white">Pay via Telegram</h3>
+                    <p className="text-[11px] text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
                   </div>
-                  <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/20">
-                    Live
+                  <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
+                    Active
                   </span>
                 </div>
               </button>
 
-              {/* Option 3: Direct Agent */}
+              {/* Option 2: Pay via Reddit */}
               <button
-                onClick={() => handleTelegramRedirect("https://t.me/PGA_Direct_Agent")}
+                onClick={() => handleSocialRedirect("reddit")}
                 className="w-full text-left overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 p-4 transition-all hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-1">
-                      Pay Direct to Agent
-                    </h3>
-                    <p className="text-[11px] text-zinc-400">Connect to agent manual verification</p>
+                    <h3 className="text-sm font-semibold text-white">Pay via Reddit</h3>
+                    <p className="text-[11px] text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
                   </div>
-                  <span className="bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                    Manual
+                  <span className="bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-500/20">
+                    Active
+                  </span>
+                </div>
+              </button>
+
+              {/* Option 3: Pay via Instagram */}
+              <button
+                onClick={() => handleSocialRedirect("instagram")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 p-4 transition-all hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-white">Pay via Instagram</h3>
+                    <p className="text-[11px] text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
+                  </div>
+                  <span className="bg-pink-500/10 text-pink-400 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
+                    Active
                   </span>
                 </div>
               </button>

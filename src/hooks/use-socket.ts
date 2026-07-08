@@ -13,13 +13,14 @@ export function useSocket(
   auctionId?: string,
   initialIsRegistered = false,
   initialStatus = "SCHEDULED",
-  initialEndTime = ""
+  initialEndTime = "",
+  initialHighestBidderName: string | null = null
 ) {
   const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
   const [currentBid, setCurrentBid] = useState<number | null>(null);
   const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
-  const [highestBidderName, setHighestBidderName] = useState<string | null>(null);
+  const [highestBidderName, setHighestBidderName] = useState<string | null>(initialHighestBidderName);
   const [isRegistered, setIsRegistered] = useState(initialIsRegistered);
   const [status, setStatus] = useState<string>(initialStatus);
   const [endTime, setEndTime] = useState<string>(initialEndTime);

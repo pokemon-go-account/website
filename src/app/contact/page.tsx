@@ -29,9 +29,17 @@ const TelegramIcon = () => (
   </svg>
 );
 
-const DiscordIcon = () => (
+const RedditIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+    <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10s10-4.48 10-10c0-5.52-4.48-10-10-10zm4.5 9c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-9 0c.83 0 1.5-.67 1.5-1.5S8.33 7.5 7.5 7.5 6 8.17 6 9s.67 1.5 1.5 1.5zm4.5 4.5c-1.84 0-3.4-.98-4.22-2.42-.1-.17-.07-.38.07-.5.15-.12.37-.1.5.07.72 1.25 2.02 2.05 3.65 2.05s2.93-.8 3.65-2.05c.13-.17.35-.2.5-.07.14.12.17.33.07.5-.82 1.44-2.38 2.42-4.22 2.42z" />
+  </svg>
+);
+
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
   </svg>
 );
 
@@ -39,8 +47,8 @@ const INFO_CARDS = [
   {
     icon: Clock,
     title: "Response Time",
-    value: "Within 24 hours",
-    sub: "Mon–Sat, 9 AM – 9 PM IST",
+    value: "24/7 Support",
+    sub: "Always online, instant response",
     color: "text-amber-400",
     bg: "bg-amber-500/10 border-amber-500/20",
   },
@@ -65,27 +73,27 @@ const INFO_CARDS = [
 const SOCIALS = [
   {
     name: "Telegram",
-    handle: "@pokemongo_support",
-    href: "https://t.me/pokemongo_support",
+    handle: "@pokemongoservicesadmin",
+    href: "https://t.me/pokemongoservicesadmin",
     icon: TelegramIcon,
     color: "text-[#24A1DE]",
     bg: "bg-[#24A1DE]/10 border-[#24A1DE]/20 hover:bg-[#24A1DE]/15",
   },
   {
-    name: "Discord",
-    handle: "Join our server",
-    href: "#",
-    icon: DiscordIcon,
-    color: "text-[#5865F2]",
-    bg: "bg-[#5865F2]/10 border-[#5865F2]/20 hover:bg-[#5865F2]/15",
+    name: "Reddit",
+    handle: "/u/PokemonGo-Services",
+    href: "https://www.reddit.com/user/PokemonGo-Services/",
+    icon: RedditIcon,
+    color: "text-[#FF4500]",
+    bg: "bg-[#FF4500]/10 border-[#FF4500]/20 hover:bg-[#FF4500]/15",
   },
   {
-    name: "Email",
-    handle: "support@pokego.trade",
-    href: "mailto:support@pokego.trade",
-    icon: Mail,
-    color: "text-violet-400",
-    bg: "bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/15",
+    name: "Instagram",
+    handle: "@pokemongoservicesadmin",
+    href: "https://www.instagram.com/pokemongoservicesadmin/",
+    icon: InstagramIcon,
+    color: "text-[#E1306C]",
+    bg: "bg-[#E1306C]/10 border-[#E1306C]/20 hover:bg-[#E1306C]/15",
   },
 ];
 
