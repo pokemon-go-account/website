@@ -122,7 +122,7 @@ export function RegisterForm() {
         >
           <AlertCircle className="h-4.5 w-4.5 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold text-amber-600 dark:text-amber-400">Firebase Keys Missing:</span> Google and Apple button actions will show configuration warnings until keys are configured in your `.env.local`.
+            <span className="font-semibold text-amber-600 dark:text-amber-400">Firebase Keys Missing:</span> Google button action will show configuration warnings until keys are configured in your `.env.local`.
           </div>
         </motion.div>
       )}
@@ -141,44 +141,25 @@ export function RegisterForm() {
 
       {/* Social Login Section */}
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!!isSocialLoading}
-            onClick={() => handleSocialLogin("google")}
-            className="w-full h-10 gap-2 border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center cursor-pointer shadow-md dark:shadow-lg dark:shadow-black/20"
-          >
-            {isSocialLoading === "google" ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-            ) : (
-              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5c0-3.31 2.69-6 6-6c1.523 0 2.9.57 3.96 1.505l3.1-3.1C19.16 3.16 16.78 2 14 2a10.5 10.5 0 0 0 0 21c5.82 0 10.28-4.09 10.28-10.5c0-.687-.06-1.3-.22-1.9L12.24 10.285Z"
-                />
-              </svg>
-            )}
-            Google
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!!isSocialLoading}
-            onClick={() => handleSocialLogin("apple")}
-            className="w-full h-10 gap-2 border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center cursor-pointer shadow-md dark:shadow-lg dark:shadow-black/20"
-          >
-            {isSocialLoading === "apple" ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-            ) : (
-              <svg className="h-4 w-4 fill-current shrink-0" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.82M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.21.67-2.93 1.49-.62.69-1.16 1.84-1.01 2.96 1.12.09 2.27-.56 2.95-1.39Z" />
-              </svg>
-            )}
-            Apple
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!!isSocialLoading}
+          onClick={() => handleSocialLogin("google")}
+          className="w-full h-10 gap-2 border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center cursor-pointer shadow-md dark:shadow-lg dark:shadow-black/20"
+        >
+          {isSocialLoading === "google" ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+          ) : (
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5c0-3.31 2.69-6 6-6c1.523 0 2.9.57 3.96 1.505l3.1-3.1C19.16 3.16 16.78 2 14 2a10.5 10.5 0 0 0 0 21c5.82 0 10.28-4.09 10.28-10.5c0-.687-.06-1.3-.22-1.9L12.24 10.285Z"
+              />
+            </svg>
+          )}
+          Sign Up with Google
+        </Button>
       </div>
 
       {/* Decorative Divider */}

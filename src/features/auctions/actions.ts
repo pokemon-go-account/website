@@ -122,9 +122,18 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
     }
 
     // 2. Fetch auction and validate listing minIncrement rules
-    const auction = await Auction.findById(auctionId).populate<{ listingId: any }>("listingId");
+    const auction = await Auction.findById(auctionId);
     if (!auction) {
       return { success: false, error: "Auction not found." };
+    }
+
+    const listing = await Listing.findById(auction.listingId);
+    if (!listing) {
+      return { success: false, error: "Listing details not found." };
+    }
+
+    if (listing.sellerId && listing.sellerId.toString() === user._id.toString()) {
+      return { success: false, error: "You cannot bid on your own auction." };
     }
 
     if (auction.endTime && new Date() >= new Date(auction.endTime)) {
@@ -135,7 +144,7 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       return { success: false, error: "Auction is not accepting bids." };
     }
 
-    const minIncrement = auction.listingId?.minIncrement || 100;
+    const minIncrement = listing.minIncrement || 100;
 
     // 3. Concurrency check & atomic transaction update
     const updatedAuction = await Auction.findOneAndUpdate(

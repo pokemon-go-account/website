@@ -32,6 +32,7 @@ if (typeof window !== "undefined") {
 }
 
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 const appleProvider = new OAuthProvider("apple.com");
 
 export {

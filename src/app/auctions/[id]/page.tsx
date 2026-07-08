@@ -84,6 +84,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
       luckyEggs: (auctionDoc.listingId as any).luckyEggs || 0,
       lureModules: (auctionDoc.listingId as any).lureModules || 0,
       premiumRaidPass: (auctionDoc.listingId as any).premiumRaidPass || 0,
+      sellerId: (auctionDoc.listingId as any).sellerId?.toString() || "",
     },
     currentHighestBid: auctionDoc.currentHighestBid,
     highestBidderId: auctionDoc.highestBidderId?.toString() || null,

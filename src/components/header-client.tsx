@@ -28,12 +28,22 @@ const navLinks = [
 export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
   const { data: session } = useSession();
   const sessionUser = session?.user;
-  
-  const user = propUser || (sessionUser ? {
+
+  const clientUser = sessionUser ? {
     name: sessionUser.name,
     email: sessionUser.email,
-    role: (sessionUser as any).role || "USER",
-  } : undefined);
+    role: (sessionUser as any).role as string | undefined,
+  } : undefined;
+
+  // Prefer client-side user once it is loaded and has a role to guarantee reactivity,
+  // falling back to server-provided propUser for instant SSR render without flickering.
+  const user = (clientUser?.role ? clientUser : propUser) || clientUser || propUser;
+
+  useEffect(() => {
+    console.log("[HeaderClient Debug] propUser:", propUser);
+    console.log("[HeaderClient Debug] clientUser:", clientUser);
+    console.log("[HeaderClient Debug] resolved user:", user);
+  }, [propUser, clientUser, user]);
 
   const handleSignOut = async () => {
     if (signOutAction) {
@@ -125,7 +135,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                 <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gray-900 dark:bg-white transition-all group-hover:w-full" />
               </Link>
             ))}
-            {user?.role === "ADMIN" && (
+            {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
               <Link
                 href="/dashboard/admin"
                 className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 hover:border-amber-400/60 text-amber-600 dark:text-amber-400 text-[11px] font-bold transition-all shadow-sm"
@@ -187,7 +197,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2">
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -197,7 +207,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             </button>
             <button
               onClick={toggleMenu}
-              className="flex items-center justify-center rounded-lg h-9 w-9 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-gray-950 dark:hover:text-white cursor-pointer"
+              className="flex items-center justify-center rounded-lg h-9 w-9 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-gray-955 dark:hover:text-white cursor-pointer"
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -213,7 +223,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="md:hidden border-t border-gray-200 dark:border-white/10 bg-white/98 dark:bg-[#0d0d0f]/98 backdrop-blur-xl overflow-hidden"
+            className="lg:hidden border-t border-gray-200 dark:border-white/10 bg-white/98 dark:bg-[#0d0d0f]/98 backdrop-blur-xl overflow-hidden"
           >
             {/* Mobile search */}
             <div className="px-4 pt-4 pb-2">
@@ -246,7 +256,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                   {label}
                 </Link>
               ))}
-              {user?.role === "ADMIN" && (
+              {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
                 <Link
                   href="/dashboard/admin"
                   onClick={toggleMenu}

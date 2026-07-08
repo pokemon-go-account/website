@@ -12,8 +12,27 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Pokemon Go Services",
   description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
+  openGraph: {
+    title: "Pokemon Go Services",
+    description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
+    images: [
+      {
+        url: "/og-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Pokemon Go Services Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pokemon Go Services",
+    description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
+    images: ["/og-logo.png"],
+  },
 };
 
 export default function RootLayout({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSocket, BidHistoryItem } from "@/hooks/use-socket";
 import { useSession } from "next-auth/react";
 import { 
@@ -64,7 +65,8 @@ interface LiveRoomProps {
       incubators?: number;
       luckyEggs?: number;
       lureModules?: number;
-      premiumRaidPass?: number;
+      premiumRaidPass: number;
+      sellerId?: string;
     };
     currentHighestBid: number;
     highestBidderId?: any;
@@ -77,6 +79,7 @@ interface LiveRoomProps {
 
 export function LiveRoom({ auction, initialBids = [], initialIsRegistered = false }: LiveRoomProps) {
   const { data: session } = useSession();
+  const isOwner = session?.user?.id === auction.listingId.sellerId;
   const {
     isConnected,
     currentBid,
@@ -101,6 +104,17 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [fullBidHistory, setFullBidHistory] = useState<BidHistoryItem[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL: ", err);
+    }
+  };
   
   // Gallery controls
   const screenshots = auction.listingId.screenshots && auction.listingId.screenshots.length > 0
@@ -308,6 +322,12 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
               <p className="text-[11px] text-zinc-500">This auction expired with no bids.</p>
             </div>
           )
+        ) : isOwner ? (
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center space-y-2">
+            <AlertCircle className="h-6 w-6 text-zinc-550 mx-auto" />
+            <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Owner Console</h4>
+            <p className="text-[11px] text-zinc-500">You are the seller of this listing. Self-bidding is disabled.</p>
+          </div>
         ) : !isRegistered ? (
           <div className="space-y-3">
             <div className="rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light">
@@ -732,9 +752,12 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">Your payments are fully protected under our 7-Day Money Back Guarantee structure.</p>
                 </div>
               </div>
-              <span className="text-[10px] text-zinc-700 dark:text-zinc-300 font-bold uppercase tracking-widest border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg">
+              <Link
+                href="/contact"
+                className="text-[10px] text-zinc-700 dark:text-zinc-300 font-bold uppercase tracking-widest border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-850 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+              >
                 Safe Trade Seal
-              </span>
+              </Link>
             </div>
 
           </div>
@@ -758,9 +781,21 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                     <Heart className="h-3.5 w-3.5" />
                     Watch
                   </button>
-                  <button className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer text-[10px]">
-                    <Share2 className="h-3.5 w-3.5" />
-                    Share
+                  <button 
+                    onClick={handleShare}
+                    className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer text-[10px]"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-500 animate-in zoom-in-50 duration-200" />
+                        <span className="text-emerald-550 dark:text-emerald-450 font-bold">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="h-3.5 w-3.5" />
+                        <span>Share</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -943,6 +978,11 @@ export function LiveRoom({ auction, initialBids = [], initialIsRegistered = fals
                         <p className="text-[11px] text-zinc-500 mt-1">This auction expired with no bids.</p>
                       </div>
                     )
+                  ) : isOwner ? (
+                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center">
+                      <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Owner Console</h4>
+                      <p className="text-[11px] text-zinc-500 mt-1">You are the seller of this listing. Self-bidding is disabled.</p>
+                    </div>
                   ) : !isRegistered ? (
                     <div className="space-y-3">
                       <div className="rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3.5 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light text-center">
