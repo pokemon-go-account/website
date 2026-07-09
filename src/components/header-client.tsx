@@ -173,7 +173,11 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             </button>
             {user ? (
               <div className="flex items-center gap-3">
-                <Link href="/profile" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <Link href="/orders" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-955 dark:hover:text-white transition-colors">
+                  My Orders
+                </Link>
+                <span className="text-gray-300 dark:text-zinc-800">|</span>
+                <Link href="/profile" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-955 dark:hover:text-white transition-colors">
                   {user.name || user.email}
                 </Link>
                 <button
@@ -292,6 +296,9 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                   <div className="space-y-2 px-2">
                     <Link href="/profile" onClick={toggleMenu} className="block text-xs text-gray-500 dark:text-gray-400 py-1">
                       {user.name || user.email} ({user.role})
+                    </Link>
+                    <Link href="/orders" onClick={toggleMenu} className="block text-xs text-gray-500 dark:text-gray-400 py-1">
+                      My Orders
                     </Link>
                     <button
                       onClick={() => { toggleMenu(); handleSignOut(); }}

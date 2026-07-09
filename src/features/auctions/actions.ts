@@ -94,12 +94,33 @@ export async function fetchAuctionRealtime(auctionId: string) {
   }
 }
 
+const bidLimiter = new Map<string, number[]>();
+
+function checkBidRateLimit(userId: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const timestamps = bidLimiter.get(userId) || [];
+  const activeTimestamps = timestamps.filter((t) => now - t < windowMs);
+  if (activeTimestamps.length > 0 && now - activeTimestamps[activeTimestamps.length - 1] < 1000) {
+    return true;
+  }
+  if (activeTimestamps.length >= limit) {
+    return true;
+  }
+  activeTimestamps.push(now);
+  bidLimiter.set(userId, activeTimestamps);
+  return false;
+}
+
 export async function placeAuctionBid(auctionId: string, bidAmount: number) {
   try {
     // 1. Session verification & active status check
     const session = await auth();
     if (!session?.user || !session.user.id) {
       return { success: false, error: "Unauthorized. Please sign in to bid." };
+    }
+
+    if (checkBidRateLimit(session.user.id, 30, 60 * 1000)) {
+      return { success: false, error: "Rate limit exceeded. Please slow down your bidding." };
     }
 
     await connectDB();
@@ -199,6 +220,27 @@ export async function uploadImageAction(base64Data: string) {
       return { success: false, error: "Unauthorized." };
     }
 
+    if (!base64Data || typeof base64Data !== "string") {
+      return { success: false, error: "Invalid image data." };
+    }
+
+    // Check size limit: 5MB (approx. 7,000,000 characters for base64)
+    if (base64Data.length > 7000000) {
+      return { success: false, error: "Image file is too large. Maximum limit is 5MB." };
+    }
+
+    // Extract and validate mime type
+    const matches = base64Data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/);
+    if (!matches) {
+      return { success: false, error: "Invalid image encoding format." };
+    }
+
+    const mimeType = matches[1];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(mimeType.toLowerCase())) {
+      return { success: false, error: "Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed." };
+    }
+
     const { uploadToCloudinary } = await import("@/lib/cloudinary");
     const secureUrl = await uploadToCloudinary(base64Data);
     return { success: true, url: secureUrl, error: null };
@@ -230,5 +272,64 @@ export async function fetchAllAuctionBids(auctionId: string) {
   } catch (error: any) {
     console.error("Failed to fetch complete bid history:", error);
     return { success: false, error: error.message || "Failed to retrieve bid history." };
+  }
+}
+
+/**
+ * Server Action: Persist a pending Buy Now order when checkout is clicked
+ */
+export async function createBuyNowOrderAction(auctionId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in first." };
+    }
+
+    await connectDB();
+
+    const auction = await Auction.findById(auctionId);
+    if (!auction) {
+      return { success: false, error: "Auction not found." };
+    }
+
+    const listing = await Listing.findById(auction.listingId);
+    if (!listing) {
+      return { success: false, error: "Listing details not found." };
+    }
+
+    const buyNowPrice = listing.startingBid * 4;
+
+    const Order = (await import("@/models/Order")).default;
+
+    // Check if user already initiated buy now for this auction to avoid duplicates
+    const existingOrder = await Order.findOne({
+      userId: session.user.id,
+      auctionId: auction._id,
+      orderType: "BUY_NOW",
+    });
+
+    if (existingOrder) {
+      return { success: true, orderId: existingOrder._id.toString() };
+    }
+
+    const order = await Order.create({
+      userId: session.user.id,
+      items: [
+        {
+          name: `${listing.title} (Buy Now Account)`,
+          price: buyNowPrice,
+          quantity: 1,
+        },
+      ],
+      totalPrice: buyNowPrice,
+      status: "PENDING",
+      orderType: "BUY_NOW",
+      auctionId: auction._id,
+    });
+
+    return { success: true, orderId: order._id.toString() };
+  } catch (error: any) {
+    console.error("Failed to create Buy Now order:", error);
+    return { success: false, error: error.message || "Failed to initiate Buy Now purchase." };
   }
 }

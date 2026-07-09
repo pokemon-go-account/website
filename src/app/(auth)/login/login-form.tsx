@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useEffect, useRef } from "react";
 import Script from "next/script";
+import Link from "next/link";
 import { loginUser, loginWithFirebaseIdToken } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,6 +192,12 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <Label htmlFor="password" className="text-zinc-655 dark:text-zinc-400 font-medium text-xs">Password</Label>
+            <Link
+              href="/forgot-password"
+              className="text-[11px] text-indigo-650 dark:text-indigo-400 font-bold hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
           <div className="relative group/input">
             <Input 

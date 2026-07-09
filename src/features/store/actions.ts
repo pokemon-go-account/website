@@ -3,6 +3,8 @@
 import connectDB from "@/lib/db";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
+import Order from "@/models/Order";
+import { auth } from "@/auth";
 
 /**
  * Fetch all categories for the storefront
@@ -30,5 +32,39 @@ export async function getStoreProducts() {
     return { success: true, products: JSON.parse(JSON.stringify(products)) };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to load products." };
+  }
+}
+
+/**
+ * Record a pending direct storefront checkout order in the database
+ */
+export async function createStorefrontOrderAction(items: any[], totalPrice: number) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in first." };
+    }
+
+    await connectDB();
+
+    const formattedItems = items.map((item) => ({
+      productId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    }));
+
+    const order = await Order.create({
+      userId: session.user.id,
+      items: formattedItems,
+      totalPrice,
+      status: "PENDING",
+      orderType: "STOREFRONT",
+    });
+
+    return { success: true, orderId: order._id.toString() };
+  } catch (error: any) {
+    console.error("Failed to create storefront order:", error);
+    return { success: false, error: error.message || "Failed to record order." };
   }
 }

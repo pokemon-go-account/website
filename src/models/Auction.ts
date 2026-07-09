@@ -8,6 +8,7 @@ export interface IAuction extends Document {
   endTime?: Date;
   status: 'SCHEDULED' | 'LIVE' | 'COMPLETED' | 'PAUSED' | 'CANCELLED';
   registrationFee: number;
+  viewers?: number;
 }
 
 const AuctionSchema: Schema<IAuction> = new Schema(
@@ -23,6 +24,7 @@ const AuctionSchema: Schema<IAuction> = new Schema(
       default: 'SCHEDULED' 
     },
     registrationFee: { type: Number, default: 199 }, // Default entry fee constraint
+    viewers: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

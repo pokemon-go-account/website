@@ -15,6 +15,8 @@ export interface IUser extends Document {
   isOnboarded: boolean;
   isEmailVerified: boolean;
   adminRentPaidUntil?: Date; // Only relevant for ADMIN role
+  resetOtp?: string;
+  resetOtpExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +37,8 @@ const UserSchema: Schema<IUser> = new Schema(
     isOnboarded: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
     adminRentPaidUntil: { type: Date, default: null },
+    resetOtp: { type: String, default: null },
+    resetOtpExpires: { type: Date, default: null },
   },
   { timestamps: true }
 );

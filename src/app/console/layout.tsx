@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import Link from "next/link";
-import { ShieldAlert, Users, Gavel, Banknote, FolderTree, Package2, LogOut, KeyRound, MessageSquare } from "lucide-react";
+import { ShieldAlert, Users, Gavel, Banknote, FolderTree, Package2, LogOut, KeyRound, MessageSquare, CreditCard, ShoppingBag } from "lucide-react";
 
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -14,6 +14,8 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
     { href: "/console/users", label: "Promote Users", icon: Users },
     { href: "/console/auctions", label: "Auction Approvals", icon: Gavel },
     { href: "/console/rent", label: "Rent Manager", icon: Banknote },
+    { href: "/console/registrations", label: "Bidder Regs.", icon: CreditCard },
+    { href: "/console/orders", label: "Orders Manager", icon: ShoppingBag },
     { href: "/console/categories", label: "Categories", icon: FolderTree },
     { href: "/console/products", label: "Products", icon: Package2 },
     { href: "/console/recovery", label: "Recovery Reqs.", icon: KeyRound },

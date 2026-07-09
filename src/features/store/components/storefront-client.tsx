@@ -7,6 +7,8 @@ import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
+import { createStorefrontOrderAction } from "@/features/store/actions";
 
 interface Category {
   _id: string;
@@ -37,10 +39,46 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const { items, isOpen, setIsOpen, addItem, removeItem, updateQuantity, getTotalPrice, getTotalItems } = useCartStore();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { convert } = useCurrencyStore();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram") => {
+    try {
+      await createStorefrontOrderAction(items, getTotalPrice());
+    } catch (err) {
+      console.error("Failed to persist storefront order:", err);
+    }
+
+    const itemsList = items
+      .map((item) => `- ${item.name} x ${item.quantity} (${convert(item.price).formatted} each)`)
+      .join("\n");
+    const totalPrice = getTotalPrice();
+    const formattedTotal = convert(totalPrice).formatted;
+
+    const message = `Hi Pokémon GO Services! I would like to purchase the following items via secure escrow:
+${itemsList}
+Total Price: ${formattedTotal}
+Please let me know how to proceed with the payment!`;
+
+    try {
+      await navigator.clipboard.writeText(message);
+    } catch (err) {
+      console.error("Clipboard copy failed:", err);
+    }
+
+    if (platform === "telegram") {
+      window.open(`https://t.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    } else if (platform === "reddit") {
+      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Storefront%20Escrow%20Order&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    } else if (platform === "instagram") {
+      alert("📋 We have copied your order details to your clipboard! Paste it in the Instagram DM to proceed.");
+      window.open("https://www.instagram.com/pokemongoservicesadmin/", "_blank", "noopener,noreferrer");
+    }
+  };
 
   // Group products by category ID
   const productsByCategory = categories.reduce((acc, cat) => {
@@ -225,19 +263,45 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
                         <p className="text-zinc-900 dark:text-white font-black text-sm mt-0.5"><PriceDisplay amountInUSD={product.price} /></p>
                       </div>
 
-                      <button
-                        onClick={() =>
-                          addItem({
-                            id: product._id,
-                            name: product.name,
-                            price: product.price,
-                            imageUrl: product.imageUrl,
-                          })
+                      {(() => {
+                        const cartItem = items.find((item) => item.id === product._id);
+                        if (cartItem) {
+                          return (
+                            <div className="flex items-center gap-1.5 border border-zinc-200 dark:border-white/[0.05] bg-zinc-100 dark:bg-zinc-950/40 rounded-lg p-0.5">
+                              <button
+                                onClick={() => updateQuantity(product._id, cartItem.quantity - 1)}
+                                className="h-6 w-6 rounded bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-650 dark:text-zinc-355 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="text-xs font-black text-zinc-900 dark:text-white min-w-4 text-center select-none px-0.5">
+                                {cartItem.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQuantity(product._id, cartItem.quantity + 1)}
+                                className="h-6 w-6 rounded bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-650 dark:text-zinc-355 hover:text-zinc-955 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+                          );
                         }
-                        className="h-8 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-[10px] font-bold transition-all active:scale-95 cursor-pointer shadow-md"
-                      >
-                        Add to Cart
-                      </button>
+                        return (
+                          <button
+                            onClick={() =>
+                              addItem({
+                                id: product._id,
+                                name: product.name,
+                                price: product.price,
+                                imageUrl: product.imageUrl,
+                              })
+                            }
+                            className="h-8 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-[10px] font-bold transition-all active:scale-95 cursor-pointer shadow-md"
+                          >
+                            Add to Cart
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}
@@ -353,11 +417,11 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
                   </div>
 
                   <button
-                    onClick={() => handleTelegramCheckout(items, getTotalPrice())}
+                    onClick={() => setIsCheckoutOpen(true)}
                     className="w-full h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all"
                   >
-                    <span>Submit Escrow Order</span>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">(via Telegram)</span>
+                    <span>Checkout / Buy Now</span>
+                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">(Escrow Checkout)</span>
                   </button>
                 </div>
               )}
@@ -365,6 +429,93 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
           </>
         )}
       </AnimatePresence>
+
+      {/* Checkout Payment Modal */}
+      {isCheckoutOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-6 text-zinc-900 dark:text-white">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setIsCheckoutOpen(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Header */}
+            <div className="space-y-1.5 text-left">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-[#6133e1]" />
+                Complete Checkout
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                You are purchasing direct store items via secure escrow. The total price is:
+              </p>
+              <div className="text-2xl font-black text-[#6133e1] pt-1">
+                <PriceDisplay amountInUSD={getTotalPrice()} />
+              </div>
+            </div>
+
+            {/* Options List */}
+            <div className="space-y-3">
+              {/* Option 1: Pay via Telegram */}
+              <button
+                onClick={() => handleSocialRedirect("telegram")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Telegram</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
+                  </div>
+                  <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
+                    Active
+                  </span>
+                </div>
+              </button>
+
+              {/* Option 2: Pay via Reddit */}
+              <button
+                onClick={() => handleSocialRedirect("reddit")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Reddit</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
+                  </div>
+                  <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-500/20">
+                    Active
+                  </span>
+                </div>
+              </button>
+
+              {/* Option 3: Pay via Instagram */}
+              <button
+                onClick={() => handleSocialRedirect("instagram")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Instagram</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
+                  </div>
+                  <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
+                    Active
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
+              <span>Verify transaction manually with receipt screenshots.</span>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

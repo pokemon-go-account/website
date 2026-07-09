@@ -4,7 +4,7 @@ import { ShieldCheck, Users, Lock, Headphones } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 
 const stats = [
-  { value: "8,000+", label: "Accounts Sold" },
+  { value: "18,000+", label: "Services Sold" },
   { value: "15,000+", label: "Happy Customers" },
   { value: "100%", label: "Successful Deliveries" },
 ];
