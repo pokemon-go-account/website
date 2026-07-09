@@ -72,6 +72,20 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "No order ID associated with payment." }, { status: 400 });
       }
 
+      const amount = paymentEntity?.amount;
+      const currency = paymentEntity?.currency;
+
+      if (amount !== 250 || currency !== "USD") {
+        await logWebhookEvent(
+          eventId,
+          eventType,
+          rawBody,
+          "FAILED",
+          `Invalid payment details. Amount: ${amount}, Currency: ${currency}. Expected 250 USD.`
+        );
+        return NextResponse.json({ error: "Invalid payment amount or currency." }, { status: 400 });
+      }
+
       await connectDB();
 
       // Look up target registration tracking record

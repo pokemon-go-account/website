@@ -61,10 +61,10 @@ export default async function FeedbackPage() {
       }
     }
     
-    // Mask raw Mongo ID or empty usernames as Trainer_xxxxxx
+    // Mask raw Mongo ID or empty usernames as Trainer-xxxxxx
     if (/^[0-9a-fA-F]{24}$/.test(resolvedUsername) || !resolvedUsername) {
       const idStr = user?._id?.toString() || item.userId?.toString() || item._id?.toString() || "user";
-      resolvedUsername = `Trainer_${idStr.substring(0, 6)}`;
+      resolvedUsername = `Trainer-${idStr.substring(0, 6)}`;
     }
 
     return {

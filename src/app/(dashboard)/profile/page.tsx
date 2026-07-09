@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { ProfileForm } from "./profile-form";
-import { EmailVerificationBanner } from "./email-verification-banner";
-import { User as UserIcon, Shield, Mail, Send, CheckCircle2, AlertTriangle } from "lucide-react";
+import { User as UserIcon, Shield, Mail, Send } from "lucide-react";
 
 export const revalidate = 0; // Dynamic route
 
@@ -33,10 +32,7 @@ export default async function UserProfilePage() {
         </p>
       </div>
 
-      {/* Email verification banner — only shown when not verified */}
-      {!(user as any).isEmailVerified && user.email && (
-        <EmailVerificationBanner email={user.email} />
-      )}
+
 
       {/* Info Card */}
       <div className="rounded-2xl border border-border bg-card/30 backdrop-blur-sm p-6 space-y-6 shadow-sm">
@@ -68,15 +64,6 @@ export default async function UserProfilePage() {
             </span>
             <div className="flex items-center gap-2">
               <span className="font-medium text-foreground">{user.email}</span>
-              {(user as any).isEmailVerified ? (
-                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                  <CheckCircle2 className="h-2.5 w-2.5" /> Verified
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                  <AlertTriangle className="h-2.5 w-2.5" /> Unverified
-                </span>
-              )}
             </div>
           </div>
 

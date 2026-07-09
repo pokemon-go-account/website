@@ -86,13 +86,75 @@ export async function registerUser(prevState: any, formData: FormData) {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const username = await generateRandomUsername();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     await User.create({
       username,
       email: email.toLowerCase(),
       passwordHash,
       role: "USER",
       isOnboarded: false,
+      isEmailVerified: false,
+      verificationOtp: otp,
+      verificationOtpExpires: otpExpires,
+      lastOtpSentAt: new Date(),
+      otpAttempts: 0,
     });
+
+    console.log(`\n========================================\n[OTP Sandbox Register Debug] OTP for ${email}: ${otp}\n========================================\n`);
+
+    try {
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        const { Resend } = await import("resend");
+        const resend = new Resend(resendApiKey);
+        await resend.emails.send({
+          from: 'verify account <noreply@forgotpass.pokemongoservices.com>',
+          to: email.toLowerCase(),
+          subject: 'Verify your email address - Pokemon GO Services',
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 30px auto; padding: 32px; border: 1px solid #e4e4e7; border-radius: 20px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <div style="display: inline-block; padding: 12px; background-color: #fffbeb; border-radius: 50%; margin-bottom: 12px;">
+                  <span style="font-size: 24px;">✉️</span>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 800; color: #18181b; margin: 0; letter-spacing: -0.5px;">Verification Code</h2>
+                <p style="font-size: 13px; color: #71717a; margin: 4px 0 0 0;">Confirm your registration</p>
+              </div>
+
+              <div style="height: 1px; background-color: #f4f4f5; margin: 20px 0;"></div>
+
+              <p style="font-size: 14px; color: #3f3f46; line-height: 1.6; margin: 0 0 16px 0;">
+                Hello Trainer,
+              </p>
+              <p style="font-size: 14px; color: #3f3f46; line-height: 1.6; margin: 0 0 24px 0;">
+                Thank you for registering. Please enter the following 6-digit verification code in your browser to complete your registration and activate your account:
+              </p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <div style="display: inline-block; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #f59e0b; background-color: #fffbeb; padding: 12px 32px; border-radius: 12px; border: 1.5px solid #fef3c7; text-align: center; font-family: monospace;">
+                  ${otp}
+                </div>
+                <p style="font-size: 11px; color: #a1a1aa; font-weight: 700; margin: 12px 0 0 0; text-transform: uppercase; tracking-wider;">
+                  Expires in 24 hours
+                </p>
+              </div>
+
+              <div style="height: 1px; background-color: #f4f4f5; margin: 28px 0 20px 0;"></div>
+
+              <div style="text-align: center;">
+                <p style="font-size: 11px; color: #a1a1aa; margin: 0 0 4px 0;">
+                  Pokémon GO Marketplace & Services Group
+                </p>
+              </div>
+            </div>
+          `,
+        });
+      }
+    } catch (emailErr) {
+      console.error("Failed to send verification OTP email via Resend:", emailErr);
+    }
 
     return { success: true, error: null };
   } catch (error) {
@@ -274,7 +336,7 @@ export async function requestPasswordResetOtp(email: string) {
         const { Resend } = await import("resend");
         const resend = new Resend(resendApiKey);
         const { data, error: sendError } = await resend.emails.send({
-          from: 'Pokemon GO Services <no-reply@forgotpass.pokemongoservices.com>',
+          from: 'verify account <noreply@forgotpass.pokemongoservices.com>',
           to: email.trim().toLowerCase(),
           subject: 'Your Password Reset OTP Code',
           html: `
@@ -404,5 +466,171 @@ export async function resetPasswordWithOtp(email: string, otp: string, newPasswo
   } catch (error: any) {
     console.error("Failed to reset password:", error);
     return { success: false, error: error.message || "Failed to update password." };
+  }
+}
+
+/** Verify Registration OTP */
+export async function verifyRegisterOtp(prevState: any, formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in." };
+    }
+
+    const otp = formData.get("otp") as string | null;
+    if (!otp || !otp.trim() || otp.trim().length !== 6) {
+      return { success: false, error: "Please enter a valid 6-digit OTP code." };
+    }
+
+    await connectDB();
+
+    const user = await User.findById(session.user.id);
+    if (!user) {
+      return { success: false, error: "User not found." };
+    }
+
+    if (user.isEmailVerified) {
+      return { success: true, error: null };
+    }
+
+    // Lock check: if they have exceeded 15 failed attempts, block verification
+    if (user.otpAttempts >= 15) {
+      user.isSuspended = true;
+      await user.save();
+      return { success: false, error: "Maximum verification attempts exceeded. Your account has been locked. Please contact support." };
+    }
+
+    if (user.verificationOtp !== otp.trim() || !user.verificationOtpExpires || new Date() > user.verificationOtpExpires) {
+      user.otpAttempts += 1;
+      
+      if (user.otpAttempts >= 15) {
+        user.isSuspended = true;
+        await user.save();
+        return { success: false, error: "Maximum verification attempts exceeded. Your account has been locked. Please contact support." };
+      }
+      
+      await user.save();
+      const remainingAttempts = 15 - user.otpAttempts;
+      return { success: false, error: `Invalid or expired OTP code. ${remainingAttempts} attempts remaining before account lock.` };
+    }
+
+    user.isEmailVerified = true;
+    user.verificationOtp = undefined;
+    user.verificationOtpExpires = undefined;
+    user.otpAttempts = 0; // reset attempts
+    await user.save();
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Failed to verify registration OTP:", error);
+    return { success: false, error: error.message || "Failed to verify OTP." };
+  }
+}
+
+/** Resend Registration OTP */
+export async function resendRegisterOtp() {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id || !session.user.email) {
+      return { success: false, error: "Unauthorized. Please sign in." };
+    }
+
+    await connectDB();
+
+    const user = await User.findById(session.user.id);
+    if (!user) {
+      return { success: false, error: "User not found." };
+    }
+
+    if (user.isEmailVerified) {
+      return { success: false, error: "Email is already verified." };
+    }
+
+    // Lock check
+    if (user.otpAttempts >= 15) {
+      return { success: false, error: "Maximum verification attempts exceeded. Your account has been locked. Please contact support." };
+    }
+
+    // Rate limiting: 1 OTP per 5 minutes
+    const now = new Date();
+    if (user.lastOtpSentAt) {
+      const timeDiff = now.getTime() - user.lastOtpSentAt.getTime();
+      const minutesDiff = timeDiff / (1000 * 60);
+      if (minutesDiff < 5) {
+        const remainingSeconds = Math.ceil((5 - minutesDiff) * 60);
+        return { 
+          success: false, 
+          error: `Please wait ${remainingSeconds} seconds before requesting a new code.` 
+        };
+      }
+    }
+
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    user.verificationOtp = otp;
+    user.verificationOtpExpires = otpExpires;
+    user.lastOtpSentAt = now;
+    await user.save();
+
+    console.log(`\n========================================\n[OTP Sandbox Resend Debug] New OTP for ${session.user.email}: ${otp}\n========================================\n`);
+
+    try {
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        const { Resend } = await import("resend");
+        const resend = new Resend(resendApiKey);
+        await resend.emails.send({
+          from: 'verify account <noreply@forgotpass.pokemongoservices.com>',
+          to: session.user.email.toLowerCase(),
+          subject: 'Verify your email address - Pokemon GO Services',
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 30px auto; padding: 32px; border: 1px solid #e4e4e7; border-radius: 20px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <div style="display: inline-block; padding: 12px; background-color: #fffbeb; border-radius: 50%; margin-bottom: 12px;">
+                  <span style="font-size: 24px;">✉️</span>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 800; color: #18181b; margin: 0; letter-spacing: -0.5px;">Verification Code</h2>
+                <p style="font-size: 13px; color: #71717a; margin: 4px 0 0 0;">Confirm your registration</p>
+              </div>
+
+              <div style="height: 1px; background-color: #f4f4f5; margin: 20px 0;"></div>
+
+              <p style="font-size: 14px; color: #3f3f46; line-height: 1.6; margin: 0 0 16px 0;">
+                Hello Trainer,
+              </p>
+              <p style="font-size: 14px; color: #3f3f46; line-height: 1.6; margin: 0 0 24px 0;">
+                Please enter the following 6-digit verification code in your browser to complete your registration and activate your account:
+              </p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <div style="display: inline-block; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #f59e0b; background-color: #fffbeb; padding: 12px 32px; border-radius: 12px; border: 1.5px solid #fef3c7; text-align: center; font-family: monospace;">
+                  ${otp}
+                </div>
+                <p style="font-size: 11px; color: #a1a1aa; font-weight: 700; margin: 12px 0 0 0; text-transform: uppercase; tracking-wider;">
+                  Expires in 24 hours
+                </p>
+              </div>
+
+              <div style="height: 1px; background-color: #f4f4f5; margin: 28px 0 20px 0;"></div>
+
+              <div style="text-align: center;">
+                <p style="font-size: 11px; color: #a1a1aa; margin: 0 0 4px 0;">
+                  Pokémon GO Marketplace & Services Group
+                </p>
+              </div>
+            </div>
+          `,
+        });
+      }
+    } catch (emailErr) {
+      console.error("Failed to send verification OTP email via Resend:", emailErr);
+    }
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Failed to resend verification OTP:", error);
+    return { success: false, error: error.message || "Failed to resend verification OTP." };
   }
 }

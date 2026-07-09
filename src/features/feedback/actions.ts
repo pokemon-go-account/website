@@ -70,7 +70,7 @@ export async function submitFeedback(prevState: any, formData: FormData) {
       // Fallback to name but make it look like a username (e.g. JohnDoe)
       displayUsername = user.name.replace(/\s+/g, "");
     } else {
-      displayUsername = `Trainer_${session.user.id.substring(0, 6)}`;
+      displayUsername = `Trainer-${session.user.id.substring(0, 6)}`;
     }
 
     // Check if feedback already exists for this user
