@@ -288,19 +288,25 @@ export async function loginWithFirebaseIdToken(idToken: string) {
     }
 
     // Sign in via NextAuth credentials provider bypass
-    await signIn("credentials", {
-      firebaseUid: user._id.toString(),
-      isFirebase: "true",
-      redirectTo: user.isOnboarded ? "/auctions" : "/profile/complete",
-    });
-
-    return { success: true, error: null };
-  } catch (error: any) {
-    if (error instanceof Error && (error.message === "NEXT_REDIRECT" || (error as any).digest?.startsWith("NEXT_REDIRECT"))) {
+    try {
+      await signIn("credentials", {
+        firebaseUid: user._id.toString(),
+        isFirebase: "true",
+        redirectTo: user.isOnboarded ? "/auctions" : "/profile/complete",
+      });
+    } catch (error: any) {
+      if (error.message === "NEXT_REDIRECT" || error.digest?.startsWith("NEXT_REDIRECT")) {
+        const parts = (error.digest || "").split(";");
+        const redirectTo = parts[2] || (user.isOnboarded ? "/auctions" : "/profile/complete");
+        return { success: true, redirectTo, error: null };
+      }
       throw error;
     }
-    console.error("Firebase auth verification error:", error);
-    return { success: false, error: error.message || "Failed to process Firebase authentication." };
+
+    return { success: true, redirectTo: user.isOnboarded ? "/auctions" : "/profile/complete", error: null };
+  } catch (error: any) {
+    console.error("Firebase social login action error:", error);
+    return { success: false, error: "Authentication failed." };
   }
 }
 

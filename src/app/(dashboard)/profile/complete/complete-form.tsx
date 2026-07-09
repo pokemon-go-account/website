@@ -84,7 +84,7 @@ export function CompleteProfileForm() {
       update({ isOnboarded: true, role: "USER" }).then(() => {
         // Use absolute URL to avoid any server/proxy rewrite interception
         const base = process.env.NEXT_PUBLIC_APP_URL || "";
-        window.location.replace(`${base}/auctions`);
+        window.location.replace(`${base}/`);
       });
     }
   }, [state.success, update, isRedirecting]);
