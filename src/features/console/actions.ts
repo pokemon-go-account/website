@@ -222,3 +222,190 @@ export async function updateListingConsole(listingId: string, fields: any) {
     return { success: false, error: error.message };
   }
 }
+
+/** Get all bidder registrations */
+export async function getRegistrationsConsole() {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Registration = (await import("@/models/Registration")).default;
+    
+    const registrations = await Registration.find()
+      .populate("userId", "name username email telegramUsername")
+      .populate({
+        path: "auctionId",
+        populate: { path: "listingId", select: "title startingBid" }
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+      
+    return { success: true, registrations: JSON.parse(JSON.stringify(registrations)) };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch registrations." };
+  }
+}
+
+/** Verify a pending registration manually */
+export async function verifyRegistrationConsole(registrationId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Registration = (await import("@/models/Registration")).default;
+    
+    await Registration.findByIdAndUpdate(registrationId, { status: "PAID" });
+    revalidatePath("/console/registrations");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to verify registration." };
+  }
+}
+
+/** Mark registration status as failed */
+export async function failRegistrationConsole(registrationId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Registration = (await import("@/models/Registration")).default;
+    
+    await Registration.findByIdAndUpdate(registrationId, { status: "FAILED" });
+    revalidatePath("/console/registrations");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fail registration." };
+  }
+}
+
+/** Delete a registration document */
+export async function deleteRegistrationConsole(registrationId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Registration = (await import("@/models/Registration")).default;
+    
+    await Registration.findByIdAndDelete(registrationId);
+    revalidatePath("/console/registrations");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to delete registration." };
+  }
+}
+
+/** Get all storefront and buy-now orders */
+export async function getOrdersConsole() {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Order = (await import("@/models/Order")).default;
+    
+    const orders = await Order.find()
+      .populate("userId", "name username email telegramUsername")
+      .sort({ createdAt: -1 })
+      .lean();
+      
+    return { success: true, orders: JSON.parse(JSON.stringify(orders)) };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch orders." };
+  }
+}
+
+/** Mark an order as completed */
+export async function completeOrderConsole(orderId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Order = (await import("@/models/Order")).default;
+    
+    await Order.findByIdAndUpdate(orderId, { status: "COMPLETED" });
+    revalidatePath("/console/orders");
+    revalidatePath("/feedback"); // revalidate to update review capability
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to complete order." };
+  }
+}
+
+/** Mark an order as failed */
+export async function failOrderConsole(orderId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Order = (await import("@/models/Order")).default;
+    
+    await Order.findByIdAndUpdate(orderId, { status: "FAILED" });
+    revalidatePath("/console/orders");
+    revalidatePath("/feedback");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fail order." };
+  }
+}
+
+/** Delete an order document */
+export async function deleteOrderConsole(orderId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Order = (await import("@/models/Order")).default;
+    
+    await Order.findByIdAndDelete(orderId);
+    revalidatePath("/console/orders");
+    revalidatePath("/feedback");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to delete order." };
+  }
+}
+
+/** Create or update registration manually by Super Admin */
+export async function createRegistrationManuallyConsole(username: string, auctionId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    if (!username || !username.trim()) {
+      return { success: false, error: "Username is required." };
+    }
+    if (!auctionId || !auctionId.trim()) {
+      return { success: false, error: "Auction ID is required." };
+    }
+
+    const user = await User.findOne({
+      username: { $regex: new RegExp(`^${username.trim()}$`, "i") },
+    });
+    if (!user) {
+      return { success: false, error: `User with username "${username}" not found.` };
+    }
+
+    const auction = await Auction.findById(auctionId);
+    if (!auction) {
+      return { success: false, error: `Auction with ID "${auctionId}" not found.` };
+    }
+
+    const Registration = (await import("@/models/Registration")).default;
+
+    await Registration.findOneAndUpdate(
+      { userId: user._id, auctionId: auction._id },
+      {
+        $set: {
+          status: "PAID",
+          razorpayOrderId: `manual_tele_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        },
+      },
+      { upsert: true }
+    );
+
+    revalidatePath("/console/registrations");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to manually register bidder:", error);
+    return { success: false, error: error.message || "Failed to create manual registration." };
+  }
+}

@@ -8,6 +8,7 @@ import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
+import { createStorefrontOrderAction } from "@/features/store/actions";
 
 interface Category {
   _id: string;
@@ -46,6 +47,12 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   }, []);
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram") => {
+    try {
+      await createStorefrontOrderAction(items, getTotalPrice());
+    } catch (err) {
+      console.error("Failed to persist storefront order:", err);
+    }
+
     const itemsList = items
       .map((item) => `- ${item.name} x ${item.quantity} (${convert(item.price).formatted} each)`)
       .join("\n");

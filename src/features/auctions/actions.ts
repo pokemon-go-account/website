@@ -232,3 +232,62 @@ export async function fetchAllAuctionBids(auctionId: string) {
     return { success: false, error: error.message || "Failed to retrieve bid history." };
   }
 }
+
+/**
+ * Server Action: Persist a pending Buy Now order when checkout is clicked
+ */
+export async function createBuyNowOrderAction(auctionId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in first." };
+    }
+
+    await connectDB();
+
+    const auction = await Auction.findById(auctionId);
+    if (!auction) {
+      return { success: false, error: "Auction not found." };
+    }
+
+    const listing = await Listing.findById(auction.listingId);
+    if (!listing) {
+      return { success: false, error: "Listing details not found." };
+    }
+
+    const buyNowPrice = listing.startingBid * 4;
+
+    const Order = (await import("@/models/Order")).default;
+
+    // Check if user already initiated buy now for this auction to avoid duplicates
+    const existingOrder = await Order.findOne({
+      userId: session.user.id,
+      auctionId: auction._id,
+      orderType: "BUY_NOW",
+    });
+
+    if (existingOrder) {
+      return { success: true, orderId: existingOrder._id.toString() };
+    }
+
+    const order = await Order.create({
+      userId: session.user.id,
+      items: [
+        {
+          name: `${listing.title} (Buy Now Account)`,
+          price: buyNowPrice,
+          quantity: 1,
+        },
+      ],
+      totalPrice: buyNowPrice,
+      status: "PENDING",
+      orderType: "BUY_NOW",
+      auctionId: auction._id,
+    });
+
+    return { success: true, orderId: order._id.toString() };
+  } catch (error: any) {
+    console.error("Failed to create Buy Now order:", error);
+    return { success: false, error: error.message || "Failed to initiate Buy Now purchase." };
+  }
+}

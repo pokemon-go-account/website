@@ -14,6 +14,7 @@ export default async function FeedbackPage() {
 
   // Fetch logged-in user's existing review if any
   let existingReview = null;
+  let hasPurchased = false;
   if (session?.user?.id) {
     const reviewDoc = await Feedback.findOne({ userId: session.user.id }).lean();
     if (reviewDoc) {
@@ -21,6 +22,22 @@ export default async function FeedbackPage() {
         rating: reviewDoc.rating,
         comment: reviewDoc.comment,
       };
+    }
+
+    const Order = (await import("@/models/Order")).default;
+    const Auction = (await import("@/models/Auction")).default;
+
+    const completedOrdersCount = await Order.countDocuments({
+      userId: session.user.id,
+      status: "COMPLETED",
+    });
+    const completedAuctionsCount = await Auction.countDocuments({
+      highestBidderId: session.user.id,
+      status: "COMPLETED",
+    });
+
+    if (completedOrdersCount > 0 || completedAuctionsCount > 0) {
+      hasPurchased = true;
     }
   }
 
@@ -164,7 +181,25 @@ export default async function FeedbackPage() {
           <div className="sticky top-28 space-y-6">
             
             {session?.user ? (
-              <FeedbackForm initialFeedback={existingReview} />
+              hasPurchased ? (
+                <FeedbackForm initialFeedback={existingReview} />
+              ) : (
+                <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/50 dark:bg-white/[0.01] backdrop-blur-md p-6 text-center space-y-4 shadow-xl">
+                  <ShieldAlert className="h-8 w-8 text-amber-500 mx-auto" />
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-extrabold text-zinc-900 dark:text-white uppercase tracking-wider">Purchase Required</h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal max-w-xs mx-auto">
+                      Only Trainers who have completed a direct storefront purchase or won a live auction are eligible to leave feedback.
+                    </p>
+                  </div>
+                  <Link
+                    href="/store"
+                    className="w-full h-11 inline-flex items-center justify-center font-extrabold text-xs tracking-wider uppercase rounded-xl cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black transition-all shadow-md active:scale-98"
+                  >
+                    Browse Storefront
+                  </Link>
+                </div>
+              )
             ) : (
               <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/50 dark:bg-white/[0.01] backdrop-blur-md p-6 text-center space-y-4 shadow-xl">
                 <MessageSquareCode className="h-8 w-8 text-zinc-400 dark:text-zinc-650 mx-auto" />

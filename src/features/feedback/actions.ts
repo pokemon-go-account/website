@@ -39,6 +39,26 @@ export async function submitFeedback(prevState: any, formData: FormData) {
       return { success: false, error: "Please complete your profile onboarding before submitting feedback." };
     }
 
+    // Verify user has purchased something (either a completed order or won a completed auction)
+    const Order = (await import("@/models/Order")).default;
+    const Auction = (await import("@/models/Auction")).default;
+
+    const completedOrdersCount = await Order.countDocuments({
+      userId: session.user.id,
+      status: "COMPLETED",
+    });
+    const completedAuctionsCount = await Auction.countDocuments({
+      highestBidderId: session.user.id,
+      status: "COMPLETED",
+    });
+
+    if (completedOrdersCount === 0 && completedAuctionsCount === 0) {
+      return {
+        success: false,
+        error: "Only Trainers who have completed a direct storefront purchase or won a live auction are eligible to leave feedback.",
+      };
+    }
+
     // Determine display username (expose username, never real name)
     let displayUsername = "";
     if (user.username) {

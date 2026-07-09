@@ -26,8 +26,16 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
 
   const session = await auth();
 
-  // Initiate database queries in parallel
-  const auctionPromise = Auction.findById(id).populate("listingId").populate("highestBidderId", "name username").lean();
+  // Increment viewers count and initiate database queries in parallel
+  const auctionPromise = Auction.findByIdAndUpdate(
+    id,
+    { $inc: { viewers: 1 } },
+    { new: true }
+  )
+    .populate("listingId")
+    .populate("highestBidderId", "name username")
+    .lean();
+
   const bidsPromise = Bid.find({ auctionId: id })
     .populate("bidderId", "username")
     .sort({ createdAt: -1 })
@@ -93,6 +101,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
     endTime: (auctionDoc.endTime as Date).toISOString(),
     status: auctionDoc.status,
     registrationFee: auctionDoc.registrationFee || 199,
+    viewers: auctionDoc.viewers || 0,
   };
 
   const formattedBids = bidDocs.map((b: any) => ({

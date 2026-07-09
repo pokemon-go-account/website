@@ -33,7 +33,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { RegisterAuctionButton } from "@/features/payments/components/register-button";
-import { fetchAllAuctionBids } from "@/features/auctions/actions";
+import { fetchAllAuctionBids, createBuyNowOrderAction } from "@/features/auctions/actions";
 import { pauseAuction, resumeAuction, forceEndAuction, updateAuction, deleteAuction } from "@/features/admin/actions";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -81,6 +81,7 @@ interface LiveRoomProps {
     endTime: string;
     status: string;
     registrationFee?: number;
+    viewers?: number;
   };
   initialBids?: BidHistoryItem[];
   initialIsRegistered?: boolean;
@@ -244,17 +245,17 @@ export function LiveRoom({
     if (!isAuthorizedAdmin) return null;
 
     return (
-      <div className="rounded-2xl border border-violet-500/30 bg-violet-600/5 backdrop-blur-md p-5 space-y-4 shadow-md relative overflow-hidden animate-in fade-in duration-300">
+      <div className="rounded-2xl border border-violet-200 dark:border-violet-500/30 bg-violet-50/55 dark:bg-violet-600/5 backdrop-blur-md p-5 space-y-4 shadow-md relative overflow-hidden animate-in fade-in duration-300">
         <div className="absolute top-0 right-0 -mr-6 -mt-6 h-20 w-20 rounded-full bg-violet-500/10 blur-xl pointer-events-none" />
         
-        <div className="flex items-center justify-between border-b border-violet-500/20 pb-3">
-          <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
+        <div className="flex items-center justify-between border-b border-violet-200 dark:border-violet-500/20 pb-3">
+          <div className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
             <ShieldAlert className="h-4.5 w-4.5 animate-pulse" />
             <span className="text-[10px] font-black uppercase tracking-wider">
               Admin Control Panel
             </span>
           </div>
-          <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-450/20">
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-450/20">
             {isSuperAdmin ? "SUPER ADMIN" : "OWNER ADMIN"}
           </span>
         </div>
@@ -281,7 +282,7 @@ export function LiveRoom({
                 setIsAdminActionLoading(false);
               }}
               disabled={isAdminActionLoading}
-              className="h-10 rounded-xl bg-emerald-605 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+              className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
             >
               <Play className="h-4 w-4" />
               Resume Bidding
@@ -323,7 +324,7 @@ export function LiveRoom({
               setIsAdminActionLoading(false);
             }}
             disabled={isAdminActionLoading || status === "COMPLETED"}
-            className="h-10 rounded-xl bg-red-655 hover:bg-red-600 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+            className="h-10 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
           >
             <Trophy className="h-4 w-4" />
             End Auction
@@ -334,7 +335,7 @@ export function LiveRoom({
         <button
           onClick={() => setIsAdminEditOpen(true)}
           disabled={isAdminActionLoading}
-          className="w-full h-10 rounded-xl border border-violet-500/30 hover:border-violet-500/50 bg-violet-600/10 text-violet-600 dark:text-violet-400 hover:bg-violet-600/20 font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+          className="w-full h-10 rounded-xl border border-violet-200 dark:border-violet-500/30 hover:border-violet-300 dark:hover:border-violet-500/50 bg-violet-50 dark:bg-violet-600/10 text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-600/20 font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
         >
           <Gavel className="h-4 w-4" />
           Edit Auction Details
@@ -356,7 +357,7 @@ export function LiveRoom({
               }
             }}
             disabled={isAdminActionLoading}
-            className="w-full h-10 rounded-xl bg-red-655 hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/10 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50 mt-1"
+            className="w-full h-10 rounded-xl bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/10 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50 mt-1"
           >
             <Trash2 className="h-4 w-4" />
             Delete Auction & Listing
@@ -377,6 +378,12 @@ export function LiveRoom({
   };
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram") => {
+    try {
+      await createBuyNowOrderAction(auction._id);
+    } catch (err) {
+      console.error("Failed to persist Buy Now order:", err);
+    }
+
     const buyNowPrice = auction.listingId.startingBid * 4;
     const formattedPrice = convert(buyNowPrice).formatted;
     const message = `Hi Pokémon GO Services! I would like to complete the Buy Now instant purchase for the following auction:
@@ -602,7 +609,7 @@ Please let me know how to proceed with the payment!`;
         <div className="flex items-center gap-2">
           <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider bg-zinc-105 dark:bg-zinc-800 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-800 flex items-center gap-1">
             <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-            32 Active
+            {auction.viewers || 1} Viewers
           </span>
           <span className="text-[9px] text-red-500 dark:text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-200 dark:border-red-500/20 animate-pulse">
             {timeLeft}
@@ -648,8 +655,8 @@ Please let me know how to proceed with the payment!`;
           <div className="font-bold text-zinc-800 dark:text-white mt-0.5">{bidHistory.length}</div>
         </div>
         <div className="border-x border-zinc-200 dark:border-zinc-850">
-          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Watchers</span>
-          <div className="font-bold text-zinc-800 dark:text-white mt-0.5">32</div>
+          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Viewers</span>
+          <div className="font-bold text-zinc-800 dark:text-white mt-0.5">{auction.viewers || 1}</div>
         </div>
         <div className="flex justify-center">
           <button
