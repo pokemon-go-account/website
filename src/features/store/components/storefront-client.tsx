@@ -59,7 +59,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
     const totalPrice = getTotalPrice();
     const formattedTotal = convert(totalPrice).formatted;
 
-    const message = `Hi Pokémon GO Services! I would like to purchase the following items via secure escrow:
+    const message = `Hi Pokémon GO Services! I would like to purchase the following items via secure middleman:
 ${itemsList}
 Total Price: ${formattedTotal}
 Please let me know how to proceed with the payment!`;
@@ -73,7 +73,7 @@ Please let me know how to proceed with the payment!`;
     if (platform === "telegram") {
       window.open(`https://t.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } else if (platform === "reddit") {
-      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Storefront%20Escrow%20Order&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Storefront%20Order&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } else if (platform === "instagram") {
       alert("📋 We have copied your order details to your clipboard! Paste it in the Instagram DM to proceed.");
       window.open("https://www.instagram.com/pokemongoservicesadmin/", "_blank", "noopener,noreferrer");
@@ -354,7 +354,7 @@ Please let me know how to proceed with the payment!`;
                     <div>
                       <h4 className="text-xs font-bold text-zinc-500">Cart is empty</h4>
                       <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1 max-w-xs mx-auto leading-normal">
-                        Browse our storefront listings on the left and add assets to queue your escrow checkout.
+                        Browse our storefront listings on the left and add assets to queue your middleman checkout.
                       </p>
                     </div>
                   </div>
@@ -421,7 +421,7 @@ Please let me know how to proceed with the payment!`;
                     className="w-full h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all"
                   >
                     <span>Checkout / Buy Now</span>
-                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">(Escrow Checkout)</span>
+                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">(Middleman Checkout)</span>
                   </button>
                 </div>
               )}
@@ -450,7 +450,7 @@ Please let me know how to proceed with the payment!`;
                 Complete Checkout
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                You are purchasing direct store items via secure escrow. The total price is:
+                You are purchasing direct store items via secure middleman. The total price is:
               </p>
               <div className="text-2xl font-black text-[#6133e1] pt-1">
                 <PriceDisplay amountInUSD={getTotalPrice()} />

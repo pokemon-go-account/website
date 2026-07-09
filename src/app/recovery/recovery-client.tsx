@@ -234,7 +234,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
             <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold pt-1">
               <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Protected by Secure Escrow Appeals Vault</span>
+              <span>Protected by Secure Middleman Appeals Vault</span>
             </div>
           </div>
         </div>

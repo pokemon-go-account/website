@@ -7,7 +7,7 @@ const steps = [
   { icon: Search, step: "Browse", description: "Find the perfect account or item from our curated auction listings." },
   { icon: Gavel, step: "Bid", description: "Place your bid and compete with trainers from around the world." },
   { icon: Trophy, step: "Win", description: "Win the auction and secure your prized Pokémon GO asset." },
-  { icon: Package, step: "Receive", description: "Receive your purchase safely with our secure escrow delivery." },
+  { icon: Package, step: "Receive", description: "Receive your purchase safely with our secure middleman delivery." },
 ];
 
 const containerVariants: Variants = {

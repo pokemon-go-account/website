@@ -97,3 +97,126 @@ export async function submitFeedback(prevState: any, formData: FormData) {
     return { success: false, error: "Failed to submit feedback. Please try again." };
   }
 }
+
+/** Submit Feedback for a Specific Order */
+export async function submitOrderFeedback(orderId: string, rating: number, comment: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "You must be signed in to submit a review." };
+    }
+
+    const validated = FeedbackSubmissionSchema.safeParse({ rating, comment });
+    if (!validated.success) {
+      return { success: false, error: validated.error.issues[0].message };
+    }
+
+    await connectDB();
+
+    // Verify user has this order and it's COMPLETED (or won auction that's completed)
+    const Order = (await import("@/models/Order")).default;
+    const Auction = (await import("@/models/Auction")).default;
+
+    const order = await Order.findOne({ _id: orderId, userId: session.user.id });
+    const auction = await Auction.findOne({ _id: orderId, highestBidderId: session.user.id, status: "COMPLETED" });
+
+    if (!order && !auction) {
+      return { success: false, error: "Invalid purchase or order not found." };
+    }
+
+    // Check if feedback already exists for this order
+    const existing = await Feedback.findOne({ userId: session.user.id, orderId });
+    if (existing) {
+      return { success: false, error: "You have already reviewed this order." };
+    }
+
+    // Fetch user details for username display
+    const user = await User.findById(session.user.id).lean();
+    if (!user) {
+      return { success: false, error: "User not found." };
+    }
+
+    let displayUsername = "";
+    if (user.username) {
+      displayUsername = user.username;
+    } else if (user.telegramUsername) {
+      displayUsername = user.telegramUsername.replace("@", "");
+    } else if (user.name) {
+      displayUsername = user.name.replace(/\s+/g, "");
+    } else {
+      displayUsername = `Trainer-${session.user.id.substring(0, 6)}`;
+    }
+
+    await Feedback.create({
+      username: displayUsername,
+      rating: validated.data.rating,
+      comment: validated.data.comment.trim(),
+      userId: session.user.id,
+      orderId,
+    });
+
+    revalidatePath("/orders");
+    revalidatePath("/feedback");
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Order feedback submission error:", error);
+    return { success: false, error: "Failed to submit review." };
+  }
+}
+
+/** Edit Feedback for a Specific Order */
+export async function editOrderFeedback(feedbackId: string, rating: number, comment: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized." };
+    }
+
+    const validated = FeedbackSubmissionSchema.safeParse({ rating, comment });
+    if (!validated.success) {
+      return { success: false, error: validated.error.issues[0].message };
+    }
+
+    await connectDB();
+
+    const review = await Feedback.findOne({ _id: feedbackId, userId: session.user.id });
+    if (!review) {
+      return { success: false, error: "Review not found or unauthorized." };
+    }
+
+    review.rating = validated.data.rating;
+    review.comment = validated.data.comment.trim();
+    await review.save();
+
+    revalidatePath("/orders");
+    revalidatePath("/feedback");
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Order feedback edit error:", error);
+    return { success: false, error: "Failed to edit review." };
+  }
+}
+
+/** Delete Feedback for a Specific Order */
+export async function deleteOrderFeedback(feedbackId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized." };
+    }
+
+    await connectDB();
+
+    const review = await Feedback.findOneAndDelete({ _id: feedbackId, userId: session.user.id });
+    if (!review) {
+      return { success: false, error: "Review not found or unauthorized." };
+    }
+
+    revalidatePath("/orders");
+    revalidatePath("/feedback");
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Order feedback deletion error:", error);
+    return { success: false, error: "Failed to delete review." };
+  }
+}
