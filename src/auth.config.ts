@@ -7,12 +7,12 @@ export const authConfig = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // Use the canonical production URL if set (avoids Vercel preview URL being used)
+      // In production use the canonical domain; in dev always use baseUrl (localhost)
       const canonicalBase =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        (process.env.NODE_ENV === "production" && process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : baseUrl);
+        process.env.NODE_ENV === "production"
+          ? process.env.NEXT_PUBLIC_APP_URL ||
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : baseUrl)
+          : baseUrl;
 
       if (url.startsWith("/")) return `${canonicalBase}${url}`;
       try {
