@@ -103,6 +103,7 @@ export default function OrdersConsolePage() {
       order.userId?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.userId?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.userId?._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.items.some((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTab && matchesQuery;
@@ -215,6 +216,14 @@ export default function OrdersConsolePage() {
                         <div className="text-zinc-500 font-mono text-[10px]">
                           @{order.userId?.username || "no_username"}
                         </div>
+                        <div className="text-zinc-450 dark:text-zinc-500 font-mono text-[9px] select-all leading-none my-0.5">
+                          Order ID: {order._id}
+                        </div>
+                        {order.userId?._id && (
+                          <div className="text-zinc-450 dark:text-zinc-500 font-mono text-[9px] select-all leading-none mb-1">
+                            User ID: {order.userId._id}
+                          </div>
+                        )}
                         <div className="text-zinc-500 dark:text-zinc-400 text-[10px]">
                           {order.userId?.email}
                         </div>

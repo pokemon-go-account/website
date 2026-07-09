@@ -10,6 +10,41 @@ import Bid from "@/models/Bid";
 import User from "@/models/User";
 import Registration from "@/models/Registration";
 
+/**
+ * Automatically transitions expired auctions to COMPLETED and starts scheduled auctions
+ */
+export async function expireStaleAuctions() {
+  try {
+    await connectDB();
+    const now = new Date();
+
+    // 1. Transition LIVE/SCHEDULED auctions that have passed their endTime to COMPLETED
+    await Auction.updateMany(
+      {
+        status: { $in: ["LIVE", "SCHEDULED"] },
+        endTime: { $lte: now }
+      },
+      {
+        $set: { status: "COMPLETED" }
+      }
+    );
+
+    // 2. Transition SCHEDULED auctions that have reached their startTime to LIVE
+    await Auction.updateMany(
+      {
+        status: "SCHEDULED",
+        startTime: { $lte: now },
+        endTime: { $gt: now }
+      },
+      {
+        $set: { status: "LIVE" }
+      }
+    );
+  } catch (error) {
+    console.error("Failed to automatically expire/start auctions:", error);
+  }
+}
+
 export async function createListing(data: unknown) {
   try {
     // 1. Enforce strict session validation
@@ -162,24 +197,49 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       return { success: false, error: "Bidding is closed. This auction has concluded." };
     }
 
-    if (auction.status !== "LIVE" && auction.status !== "SCHEDULED") {
-      return { success: false, error: "Auction is not accepting bids." };
+    if (auction.status !== "LIVE") {
+      return { success: false, error: "Bidding is only allowed on active, live auctions." };
     }
 
     const minIncrement = listing.minIncrement || 100;
+    const isFirstBid = !auction.highestBidderId;
+    const minRequiredBid = isFirstBid ? auction.currentHighestBid : (auction.currentHighestBid + minIncrement);
 
-    // 3. Concurrency check & atomic transaction update
+    if (bidAmount < minRequiredBid) {
+      return { 
+        success: false, 
+        error: isFirstBid 
+          ? `The starting bid must be at least $${minRequiredBid}.`
+          : `Bid must be at least $${minRequiredBid} (minimum increment of $${minIncrement} required).`
+      };
+    }
+
+    // 3. Concurrency check & atomic transaction update (verifying status, active time, and bid amount)
+    const query: any = {
+      _id: auctionId,
+      status: "LIVE",
+      $or: [
+        { endTime: { $exists: false } },
+        { endTime: { $gt: new Date() } }
+      ]
+    };
+
+    if (isFirstBid) {
+      // Ensure no bidder has placed a bid yet and amount is at least starting bid
+      query.$or.push({ highestBidderId: { $exists: false } }, { highestBidderId: null });
+      query.currentHighestBid = { $lte: bidAmount };
+    } else {
+      // Subsequent bids: must be at least currentHighestBid + minIncrement
+      query.highestBidderId = auction.highestBidderId;
+      query.currentHighestBid = { $lte: bidAmount - minIncrement };
+    }
+
     const updatedAuction = await Auction.findOneAndUpdate(
-      {
-        _id: auctionId,
-        currentHighestBid: { $lte: bidAmount - minIncrement },
-        status: { $in: ["LIVE", "SCHEDULED"] }
-      },
+      query,
       {
         $set: {
           currentHighestBid: bidAmount,
-          highestBidderId: user._id,
-          status: "LIVE"
+          highestBidderId: user._id
         }
       },
       { returnDocument: 'after' }

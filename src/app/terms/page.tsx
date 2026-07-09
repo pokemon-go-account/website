@@ -67,9 +67,9 @@ export default function TermsOfServicePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">6. Escrow & Payment</h2>
+            <h2 className="text-base font-black text-zinc-900 dark:text-white">6. Middleman Service & Payment</h2>
             <p>
-              Winning bidders are required to complete payment within 24 hours of auction conclusion. All funds are held in escrow until successful delivery verification. Disputes must be raised within 48 hours of delivery. After this period, funds are released to the seller.
+              Winning bidders are required to complete payment within 24 hours of auction conclusion. All funds are held in secure custody by our middleman system until successful delivery verification. Disputes must be raised within 48 hours of delivery. After this period, funds are released to the seller.
             </p>
           </section>
 

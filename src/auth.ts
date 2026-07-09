@@ -29,6 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             role: user.role,
             isOnboarded: user.isOnboarded,
+            isEmailVerified: user.isEmailVerified,
             adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
           } as any;
         }
@@ -55,6 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           role: user.role,
           isOnboarded: user.isOnboarded,
+          isEmailVerified: user.isEmailVerified,
           adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
         } as any;
       },

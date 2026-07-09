@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import connectDB from "@/lib/db";
 import Auction from "@/models/Auction";
+import { expireStaleAuctions } from "@/features/auctions/actions";
 import Bid from "@/models/Bid";
 import User from "@/models/User"; // Registers model for populate
 import Listing from "@/models/Listing"; // Registers model for populate
@@ -18,6 +19,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
   const { id } = await params;
 
   await connectDB();
+  await expireStaleAuctions();
 
   // Explicitly reference models to prevent Turbopack tree-shaking
   const _userCheck = User;

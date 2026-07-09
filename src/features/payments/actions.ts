@@ -98,17 +98,23 @@ export async function createRegistrationOrder(auctionId: string) {
       orderCurrency = order.currency;
     }
 
-    // 5. Persist PENDING registration status in database (idempotent upsert)
-    await Registration.findOneAndUpdate(
-      { userId: user._id, auctionId: auction._id },
-      {
-        $set: {
-          razorpayOrderId: orderId,
-          status: "PENDING",
-        },
-      },
-      { upsert: true, returnDocument: 'after' }
-    );
+    // 5. Persist PENDING registration status in database safely
+    const existing = await Registration.findOne({ userId: user._id, auctionId: auction._id });
+    if (existing) {
+      if (existing.status === "PAID") {
+        return { success: false, error: "You are already registered for this auction." };
+      }
+      existing.razorpayOrderId = orderId;
+      existing.status = "PENDING";
+      await existing.save();
+    } else {
+      await Registration.create({
+        userId: user._id,
+        auctionId: auction._id,
+        razorpayOrderId: orderId,
+        status: "PENDING",
+      });
+    }
 
     // 6. Return payload required for Razorpay checkout window setup
     return {

@@ -485,8 +485,15 @@ export async function triggerForfeitCascade(auctionId: string) {
       return { success: false, error: "This auction ended with no winning bidder." };
     }
 
-    // 1. Suspend primary winner
-    await User.findByIdAndUpdate(primaryWinnerId, { isSuspended: true });
+    // 1. Increment forfeit warning count on primary winner and suspend if >= 3
+    const user = await User.findById(primaryWinnerId);
+    if (user) {
+      user.forfeitCount = (user.forfeitCount || 0) + 1;
+      if (user.forfeitCount >= 3) {
+        user.isSuspended = true;
+      }
+      await user.save();
+    }
 
     // 2. Fetch all bids and find second-highest unique bidder
     const bids = await Bid.find({ auctionId }).sort({ amount: -1 }).lean();

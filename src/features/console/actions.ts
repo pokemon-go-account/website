@@ -409,3 +409,34 @@ export async function createRegistrationManuallyConsole(username: string, auctio
     return { success: false, error: error.message || "Failed to create manual registration." };
   }
 }
+
+/** Allow a standard user to cancel their own PENDING order */
+export async function cancelOrderUser(orderId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in." };
+    }
+
+    await connectDB();
+    const Order = (await import("@/models/Order")).default;
+
+    const order = await Order.findOne({ _id: orderId, userId: session.user.id });
+    if (!order) {
+      return { success: false, error: "Order not found." };
+    }
+
+    if (order.status !== "PENDING") {
+      return { success: false, error: "Only PENDING orders can be cancelled." };
+    }
+
+    order.status = "FAILED";
+    await order.save();
+
+    revalidatePath("/orders");
+    revalidatePath("/console/orders");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to cancel order." };
+  }
+}

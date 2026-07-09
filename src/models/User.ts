@@ -14,9 +14,14 @@ export interface IUser extends Document {
   alternateContact?: string;
   isOnboarded: boolean;
   isEmailVerified: boolean;
+  verificationOtp?: string;
+  verificationOtpExpires?: Date;
+  lastOtpSentAt?: Date;
+  otpAttempts: number;
   adminRentPaidUntil?: Date; // Only relevant for ADMIN role
   resetOtp?: string;
   resetOtpExpires?: Date;
+  forfeitCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,9 +41,14 @@ const UserSchema: Schema<IUser> = new Schema(
     alternateContact: { type: String, trim: true },
     isOnboarded: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
+    verificationOtp: { type: String, default: null },
+    verificationOtpExpires: { type: Date, default: null },
+    lastOtpSentAt: { type: Date, default: null },
+    otpAttempts: { type: Number, default: 0 },
     adminRentPaidUntil: { type: Date, default: null },
     resetOtp: { type: String, default: null },
     resetOtpExpires: { type: Date, default: null },
+    forfeitCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

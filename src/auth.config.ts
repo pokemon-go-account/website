@@ -8,7 +8,7 @@ export const authConfig = {
   callbacks: {
     async redirect({ url, baseUrl }) {
       let activeBaseUrl = baseUrl;
-      if (process.env.VERCEL_URL && (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1"))) {
+      if (process.env.NODE_ENV === "production" && process.env.VERCEL_URL) {
         activeBaseUrl = `https://${process.env.VERCEL_URL}`;
       }
       if (url.startsWith("/")) return `${activeBaseUrl}${url}`;
@@ -25,10 +25,12 @@ export const authConfig = {
         token.role = user.role;
         token.id = user.id;
         token.isOnboarded = (user as any).isOnboarded;
+        token.isEmailVerified = (user as any).isEmailVerified;
         token.adminRentPaidUntil = (user as any).adminRentPaidUntil ?? null;
       }
       if (trigger === "update" && session) {
         if (session.isOnboarded !== undefined) token.isOnboarded = session.isOnboarded;
+        if (session.isEmailVerified !== undefined) token.isEmailVerified = session.isEmailVerified;
         if (session.role) token.role = session.role;
         if (session.adminRentPaidUntil !== undefined) token.adminRentPaidUntil = session.adminRentPaidUntil;
       }
@@ -40,6 +42,7 @@ export const authConfig = {
         session.user.role = (token.role as string) || "USER";
         session.user.id = (token.id as string) || "";
         (session.user as any).isOnboarded = !!token.isOnboarded;
+        (session.user as any).isEmailVerified = !!token.isEmailVerified;
         (session.user as any).adminRentPaidUntil = token.adminRentPaidUntil ?? null;
       }
       return session;
@@ -49,10 +52,12 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const role = auth?.user?.role as string | undefined;
       const isOnboarded = (auth?.user as any)?.isOnboarded;
+      const isEmailVerified = (auth?.user as any)?.isEmailVerified;
       const adminRentPaidUntil = (auth?.user as any)?.adminRentPaidUntil;
 
       const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
       const isProfileCompleteRoute = nextUrl.pathname.startsWith("/profile/complete");
+      const isVerifyOtpRoute = nextUrl.pathname.startsWith("/verify-otp");
 
       // Public routes — never require auth
       const PUBLIC_PREFIXES = ["/auctions", "/store", "/contact", "/feedback", "/recovery"];
@@ -62,42 +67,44 @@ export const authConfig = {
         PUBLIC_PREFIXES.some((p) => nextUrl.pathname.startsWith(p)) ||
         isApiAuthRoute;
 
-      // 1. Redirect un-onboarded users to complete their profile
-      if (isLoggedIn && !isOnboarded && !isProfileCompleteRoute && !isApiAuthRoute) {
-        return Response.redirect(new URL("/profile/complete", nextUrl));
-      }
-
-      // 2. Public routes always pass
-      if (isPublicRoute) return true;
-
-      // 3. Onboarding route requires login
-      if (isProfileCompleteRoute) {
-        if (isLoggedIn) return true;
+      // 1. Unauthenticated users
+      if (!isLoggedIn) {
+        if (isPublicRoute) return true;
         const loginUrl = new URL("/login", nextUrl);
         loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
         return Response.redirect(loginUrl);
       }
 
-      // 4. SUPER_ADMIN console — only SUPER_ADMIN
+      // 2. Logged in but email is not verified
+      if (!isEmailVerified) {
+        if (isVerifyOtpRoute || isApiAuthRoute) return true;
+        return Response.redirect(new URL("/verify-otp", nextUrl));
+      }
+
+      // 3. Logged in and verified, but not onboarded
+      if (!isOnboarded) {
+        if (isProfileCompleteRoute || isApiAuthRoute) return true;
+        return Response.redirect(new URL("/profile/complete", nextUrl));
+      }
+
+      // 4. Public routes always pass for logged-in verified users
+      if (isPublicRoute) return true;
+
+      // 5. Onboarding/Verification route check (already passed verification/onboarding checks above, send away if trying to visit again)
+      if (isVerifyOtpRoute) {
+        return Response.redirect(new URL("/auctions", nextUrl));
+      }
+
+      // 6. SUPER_ADMIN console — only SUPER_ADMIN
       const isSuperAdminRoute = nextUrl.pathname.startsWith("/console");
       if (isSuperAdminRoute) {
-        if (!isLoggedIn) {
-          const loginUrl = new URL("/login", nextUrl);
-          loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
-          return Response.redirect(loginUrl);
-        }
         if (role === "SUPER_ADMIN") return true;
         return Response.redirect(new URL("/", nextUrl));
       }
 
-      // 5. ADMIN dashboard — only ADMIN with valid rent, or SUPER_ADMIN
+      // 7. ADMIN dashboard — only ADMIN with valid rent, or SUPER_ADMIN
       const isAdminDashRoute = nextUrl.pathname.startsWith("/dashboard/admin");
       if (isAdminDashRoute) {
-        if (!isLoggedIn) {
-          const loginUrl = new URL("/login", nextUrl);
-          loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
-          return Response.redirect(loginUrl);
-        }
         if (role === "SUPER_ADMIN") return true;
         if (role === "ADMIN") {
           // Check rent validity
@@ -110,12 +117,6 @@ export const authConfig = {
         return Response.redirect(new URL("/", nextUrl));
       }
 
-      // 6. All other protected routes: require login
-      if (!isLoggedIn) {
-        const loginUrl = new URL("/login", nextUrl);
-        loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
-        return Response.redirect(loginUrl);
-      }
       return true;
     },
   },

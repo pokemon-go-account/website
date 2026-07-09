@@ -2,7 +2,6 @@ import Link from "next/link";
 import connectDB from "@/lib/db";
 import Feedback from "@/models/Feedback";
 import User from "@/models/User";
-import { FeedbackForm } from "./feedback-form";
 import { auth } from "@/auth";
 import { Star, MessageSquareCode, Award, ShieldAlert, Sparkles, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -61,10 +60,10 @@ export default async function FeedbackPage() {
       }
     }
     
-    // Mask raw Mongo ID or empty usernames as Trainer_xxxxxx
+    // Mask raw Mongo ID or empty usernames as Trainer-xxxxxx
     if (/^[0-9a-fA-F]{24}$/.test(resolvedUsername) || !resolvedUsername) {
       const idStr = user?._id?.toString() || item.userId?.toString() || item._id?.toString() || "user";
-      resolvedUsername = `Trainer_${idStr.substring(0, 6)}`;
+      resolvedUsername = `Trainer-${idStr.substring(0, 6)}`;
     }
 
     return {
@@ -151,126 +150,58 @@ export default async function FeedbackPage() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        {/* Left 2 Columns: Feedbacks List */}
-        <div className="lg:col-span-2 space-y-6">
-          {feedbacks.length === 0 ? (
-            <div className="flex h-[250px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/25 text-center p-8">
-              <MessageSquareCode className="h-8 w-8 text-zinc-400 mb-2" />
-              <h3 className="text-sm font-semibold text-foreground">No reviews yet</h3>
-              <p className="text-xs text-muted-foreground max-w-xs mt-1">
-                Be the first to submit a review about Pokemon Go Services!
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {feedbacks.map((item: any) => (
-                <div
-                  key={item._id.toString()}
-                  className="rounded-2xl border border-zinc-200/60 dark:border-white/[0.04] bg-white/40 dark:bg-white/[0.01] hover:border-zinc-300 dark:hover:border-white/[0.08] p-5 transition-all duration-300 flex flex-col justify-between space-y-4"
-                >
-                  <div className="space-y-3">
-                    {/* Upper row: User Avatar initials & rating */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={cn("h-7 w-7 rounded-lg border text-xs font-black flex items-center justify-center select-none uppercase shadow-xs", getAvatarColorClass(item.username))}>
-                          {item.username.substring(0, 2)}
-                        </div>
-                        <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 tracking-tight">
-                          {item.username}
-                        </span>
+      <div className="space-y-6">
+        {feedbacks.length === 0 ? (
+          <div className="flex h-[250px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/25 text-center p-8">
+            <MessageSquareCode className="h-8 w-8 text-zinc-400 mb-2" />
+            <h3 className="text-sm font-semibold text-foreground">No reviews yet</h3>
+            <p className="text-xs text-muted-foreground max-w-xs mt-1">
+              No reviews have been posted yet.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {feedbacks.map((item: any) => (
+              <div
+                key={item._id.toString()}
+                className="rounded-2xl border border-zinc-200/60 dark:border-white/[0.04] bg-white/40 dark:bg-white/[0.01] hover:border-zinc-300 dark:hover:border-white/[0.08] p-5 transition-all duration-300 flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  {/* Upper row: User Avatar initials & rating */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={cn("h-7 w-7 rounded-lg border text-xs font-black flex items-center justify-center select-none uppercase shadow-xs", getAvatarColorClass(item.username))}>
+                        {item.username.substring(0, 2)}
                       </div>
-                      {renderStars(item.rating)}
+                      <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 tracking-tight">
+                        {item.username}
+                      </span>
                     </div>
-
-                    {/* Review text */}
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
-                      "{item.comment}"
-                    </p>
+                    {renderStars(item.rating)}
                   </div>
 
-                  {/* Footer metadata */}
-                  <div className="pt-2.5 border-t border-zinc-100 dark:border-white/[0.04] flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">
-                    <span className="flex items-center gap-1 text-[9px] text-[#24A1DE] uppercase tracking-wider">
-                      <Award className="h-3 w-3" /> Verified User
-                    </span>
-                    <span>
-                      {new Date(item.createdAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Feedback Form / CTA */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-28 space-y-6">
-            
-            {session?.user ? (
-              hasPurchased ? (
-                <FeedbackForm initialFeedback={existingReview} />
-              ) : (
-                <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/50 dark:bg-white/[0.01] backdrop-blur-md p-6 text-center space-y-4 shadow-xl">
-                  <ShieldAlert className="h-8 w-8 text-amber-500 mx-auto" />
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-extrabold text-zinc-900 dark:text-white uppercase tracking-wider">Purchase Required</h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal max-w-xs mx-auto">
-                      Only Trainers who have completed a direct storefront purchase or won a live auction are eligible to leave feedback.
-                    </p>
-                  </div>
-                  <Link
-                    href="/store"
-                    className="w-full h-11 inline-flex items-center justify-center font-extrabold text-xs tracking-wider uppercase rounded-xl cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black transition-all shadow-md active:scale-98"
-                  >
-                    Browse Storefront
-                  </Link>
-                </div>
-              )
-            ) : (
-              <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/50 dark:bg-white/[0.01] backdrop-blur-md p-6 text-center space-y-4 shadow-xl">
-                <MessageSquareCode className="h-8 w-8 text-zinc-400 dark:text-zinc-650 mx-auto" />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-extrabold text-zinc-900 dark:text-white uppercase tracking-wider">Have something to say?</h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal max-w-xs mx-auto">
-                    Only verified registered Trainers are allowed to submit testimonials to maintain credibility.
+                  {/* Review text */}
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
+                    "{item.comment}"
                   </p>
                 </div>
-                <Link
-                  href="/login?callbackUrl=/feedback"
-                  className="w-full h-11 inline-flex items-center justify-center font-extrabold text-xs tracking-wider uppercase rounded-xl cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black transition-all shadow-md active:scale-98"
-                >
-                  Sign In to Review
-                </Link>
-              </div>
-            )}
 
-            {/* Additional info sidebox */}
-            <div className="rounded-2xl border border-zinc-200/50 dark:border-white/[0.03] bg-zinc-50/50 dark:bg-white/[0.005] p-5 space-y-3.5">
-              <h4 className="text-[10px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Escrow Safety Policy</h4>
-              <div className="space-y-2.5 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                <p className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                  <span>Real-time feedback collected only from authenticated accounts.</span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                  <span>Personal identity, emails, and names are fully masked for privacy.</span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                  <span>100% money back guarantee on recovery services if retrieval is unsuccessful.</span>
-                </p>
+                {/* Footer metadata */}
+                <div className="pt-2.5 border-t border-zinc-100 dark:border-white/[0.04] flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">
+                  <span className="flex items-center gap-1 text-[9px] text-[#24A1DE] uppercase tracking-wider">
+                    <Award className="h-3 w-3" /> Verified User
+                  </span>
+                  <span>
+                    {new Date(item.createdAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                </div>
               </div>
-            </div>
-
+            ))}
           </div>
-        </div>
-
+        )}
       </div>
 
     </div>
   );
 }
+

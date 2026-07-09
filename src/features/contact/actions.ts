@@ -48,8 +48,14 @@ export async function submitContactMessage(prevState: any, formData: FormData) {
       return { success: false, error: validated.error.issues[0].message };
     }
 
+    const session = await auth();
+    const userId = session?.user?.id || undefined;
+
     await connectDB();
-    await ContactMessage.create(validated.data);
+    await ContactMessage.create({
+      ...validated.data,
+      userId,
+    });
 
     revalidatePath("/console/contact");
     return { success: true, error: null };
