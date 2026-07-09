@@ -16,6 +16,7 @@ type Status = "UNREAD" | "READ" | "REPLIED";
 
 interface Message {
   _id: string;
+  userId?: string;
   name: string;
   email: string;
   subject: string;
@@ -130,11 +131,15 @@ export function ContactMessagesClient({ initialMessages }: { initialMessages: Me
                       className="overflow-hidden border-t border-zinc-200 dark:border-white/[0.04]"
                     >
                       <div className="p-5 space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                           <div>
                             <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">From</p>
                             <p className="font-bold text-zinc-900 dark:text-white">{msg.name}</p>
                             <a href={`mailto:${msg.email}`} className="text-violet-600 dark:text-violet-400 hover:underline underline-offset-2">{msg.email}</a>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">Sender User ID</p>
+                            <p className="font-bold font-mono text-zinc-900 dark:text-white select-all text-[11px]">{msg.userId || "Guest Visitor"}</p>
                           </div>
                           <div>
                             <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">Subject</p>

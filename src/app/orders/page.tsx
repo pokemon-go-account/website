@@ -122,6 +122,10 @@ export default async function UserOrdersPage() {
                     >
                       {purchase.orderType === "STOREFRONT" ? "STORE" : purchase.orderType}
                     </span>
+                    <span className="text-[10px] text-zinc-450 dark:text-zinc-400 font-mono bg-zinc-100 dark:bg-white/[0.03] px-2 py-0.5 rounded select-all border border-zinc-200 dark:border-white/[0.04]">
+                      ID: {purchase.id}
+                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-800">•</span>
                     <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">
                       Order Placed: {formattedDate}
                     </span>
