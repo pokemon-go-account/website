@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createRegistrationOrder } from "@/features/payments/actions";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Loader2, Send, ShieldAlert, X, Sparkles, MessageSquare } from "lucide-react";
+import { CreditCard, X, Sparkles, MessageSquare } from "lucide-react";
 
 interface RegisterAuctionButtonProps {
   auctionId: string;
@@ -14,46 +13,8 @@ interface RegisterAuctionButtonProps {
 
 export function RegisterAuctionButton({ auctionId, onSuccess, label, className }: RegisterAuctionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, setIsPending] = useState(false);
 
-  // Trigger dev sandbox payment flow
-  const handleDevSandboxPayment = async () => {
-    setIsPending(true);
-    const result = await createRegistrationOrder(auctionId);
 
-    if (!result.success || !result.orderContext) {
-      alert(result.error || "Failed to initiate registration order.");
-      setIsPending(false);
-      return;
-    }
-
-    const { orderContext } = result;
-
-    const confirmMock = confirm(
-      "[Mock Sandbox Mode] We detected placeholder Razorpay keys in .env.local.\n\nWould you like to simulate a successful payment of $2.50 to unlock bidding access for this auction?"
-    );
-
-    if (!confirmMock) {
-      setIsPending(false);
-      return;
-    }
-
-    const { simulateMockPayment } = await import("@/features/payments/actions");
-    const simResult = await simulateMockPayment(orderContext.id);
-
-    if (simResult.success) {
-      alert("Payment captured! Bidding access is now successfully unlocked.");
-      setIsOpen(false);
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        window.location.reload();
-      }
-    } else {
-      alert(simResult.error || "Mock payment simulation failed.");
-    }
-    setIsPending(false);
-  };
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram") => {
     const message = `Hi Pokémon GO Services! I would like to pay the $2.50 verification deposit to register for:

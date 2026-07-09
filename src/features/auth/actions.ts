@@ -214,7 +214,11 @@ export async function loginWithFirebaseIdToken(idToken: string) {
         phone: decoded.phone || undefined,
         role: "USER",
         isOnboarded: false,
+        isEmailVerified: !!decoded.email, // OAuth providers verify the email
       });
+    } else if (decoded.email && !user.isEmailVerified) {
+      user.isEmailVerified = true;
+      await user.save();
     }
 
     if (user.isSuspended) {
@@ -235,5 +239,170 @@ export async function loginWithFirebaseIdToken(idToken: string) {
     }
     console.error("Firebase auth verification error:", error);
     return { success: false, error: error.message || "Failed to process Firebase authentication." };
+  }
+}
+
+/** Request Password Reset OTP */
+export async function requestPasswordResetOtp(email: string) {
+  try {
+    if (!email || !email.trim()) {
+      return { success: false, error: "Email address is required." };
+    }
+
+    await connectDB();
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return { success: false, error: "No account with this email address exists." };
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    user.resetOtp = otp;
+    user.resetOtpExpires = expires;
+    await user.save();
+
+    // Log to terminal console for local sandbox dev environment
+    console.log(`\n========================================\n[OTP Sandbox Debug] Password reset requested for: ${email}\nYour OTP is: ${otp}\n========================================\n`);
+
+    // Send email using Resend
+    try {
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        const { Resend } = await import("resend");
+        const resend = new Resend(resendApiKey);
+        const { data, error: sendError } = await resend.emails.send({
+          from: 'Pokemon GO Services <no-reply@forgotpass.pokemongoservices.com>',
+          to: email.trim().toLowerCase(),
+          subject: 'Your Password Reset OTP Code',
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 30px auto; padding: 32px; border: 1px solid #e4e4e7; border-radius: 20px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+              
+              <div style="text-align: center; margin-bottom: 24px;">
+                <div style="display: inline-block; padding: 12px; background-color: #f3efff; border-radius: 50%; margin-bottom: 12px;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6133e1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"></path>
+                  </svg>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 800; color: #18181b; margin: 0; letter-spacing: -0.5px;">Verification Code</h2>
+                <p style="font-size: 13px; color: #71717a; margin: 4px 0 0 0;">Confirm your request to reset credentials</p>
+              </div>
+
+              <div style="height: 1px; background-color: #f4f4f5; margin: 20px 0;"></div>
+
+              <p style="font-size: 14px; color: #3f3f46; line-height: 1.6; margin: 0 0 16px 0;">
+                Hello Trainer,
+              </p>
+              <p style="font-size: 14px; color: #3f3f46; line-height: 1.6; margin: 0 0 24px 0;">
+                We received a security request to update your account password. Please enter the following 6-digit verification code in your browser to proceed:
+              </p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <div style="display: inline-block; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #6133e1; background-color: #f8f6ff; padding: 12px 32px; border-radius: 12px; border: 1.5px solid #dcd3ff; text-align: center; font-family: monospace;">
+                  ${otp}
+                </div>
+                <p style="font-size: 11px; color: #a1a1aa; font-weight: 700; margin: 12px 0 0 0; text-transform: uppercase; tracking-wider;">
+                  Expires in 15 minutes
+                </p>
+              </div>
+
+              <div style="font-size: 12px; color: #71717a; line-height: 1.5; margin: 24px 0 0 0; padding: 12px 16px; border-radius: 8px; background-color: #fafafa; border: 1px solid #f4f4f5;">
+                <strong>⚠️ Security Warning:</strong> If you did not request this update, please ignore this email. Your password is safe and no changes will be made until this code is verified.
+              </div>
+
+              <div style="height: 1px; background-color: #f4f4f5; margin: 28px 0 20px 0;"></div>
+
+              <div style="text-align: center;">
+                <p style="font-size: 11px; color: #a1a1aa; margin: 0 0 4px 0;">
+                  Pokémon GO Marketplace & Services Group
+                </p>
+                <p style="font-size: 10px; color: #d4d4d8; margin: 0;">
+                  Secure Escrow Systems
+                </p>
+              </div>
+
+            </div>
+          `,
+        });
+
+        if (sendError) {
+          console.error("Resend API delivery error:", sendError);
+        } else {
+          console.log("Resend API delivery success:", data);
+        }
+      } else {
+        console.warn("RESEND_API_KEY is not defined in environment variables. Email sending skipped; OTP logged to console.");
+      }
+    } catch (emailErr) {
+      console.error("Failed to send OTP email via Resend:", emailErr);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to request password reset OTP:", error);
+    return { success: false, error: error.message || "Failed to send OTP." };
+  }
+}
+
+/** Verify Password Reset OTP */
+export async function verifyPasswordResetOtp(email: string, otp: string) {
+  try {
+    if (!email || !email.trim()) {
+      return { success: false, error: "Email is required." };
+    }
+    if (!otp || !otp.trim()) {
+      return { success: false, error: "OTP is required." };
+    }
+
+    await connectDB();
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user || user.resetOtp !== otp.trim() || !user.resetOtpExpires || new Date() > user.resetOtpExpires) {
+      return { success: false, error: "Invalid or expired OTP." };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to verify password reset OTP:", error);
+    return { success: false, error: error.message || "Failed to verify OTP." };
+  }
+}
+
+/** Reset Password using Verified OTP */
+export async function resetPasswordWithOtp(email: string, otp: string, newPassword: string) {
+  try {
+    if (!email || !email.trim()) {
+      return { success: false, error: "Email is required." };
+    }
+    if (!otp || !otp.trim()) {
+      return { success: false, error: "OTP validation session required." };
+    }
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: "New password must be at least 6 characters." };
+    }
+
+    await connectDB();
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user || user.resetOtp !== otp.trim() || !user.resetOtpExpires || new Date() > user.resetOtpExpires) {
+      return { success: false, error: "Session expired or invalid OTP verification." };
+    }
+
+    // Hash the new password using the same standard bcrypt config
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    user.passwordHash = passwordHash;
+    user.resetOtp = undefined;
+    user.resetOtpExpires = undefined;
+    await user.save();
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to reset password:", error);
+    return { success: false, error: error.message || "Failed to update password." };
   }
 }

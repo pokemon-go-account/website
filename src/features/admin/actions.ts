@@ -20,6 +20,16 @@ async function checkAdminSession() {
   if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
     throw new Error('Unauthorized. Administrative privileges required.');
   }
+  if (session.user.role === 'ADMIN') {
+    const rentPaidUntil = (session.user as any).adminRentPaidUntil;
+    if (!rentPaidUntil) {
+      throw new Error('Administrative rent has expired or is invalid.');
+    }
+    const rentExpired = new Date(rentPaidUntil) < new Date();
+    if (rentExpired) {
+      throw new Error('Administrative rent has expired. Access suspended.');
+    }
+  }
   return session;
 }
 
@@ -583,7 +593,8 @@ export async function lookupUserProfile(username: string) {
       return { success: false, error: "Username must be at least 3 characters long." };
     }
 
-    const user = await User.findOne({ username: { $regex: new RegExp(`^${username.trim()}$`, "i") } }).lean();
+    const escapedUsername = username.trim().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const user = await User.findOne({ username: { $regex: new RegExp(`^${escapedUsername}$`, "i") } }).lean();
     if (!user) {
       return { success: false, error: `No user found matching username: "${username.trim()}"` };
     }

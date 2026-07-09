@@ -94,12 +94,33 @@ export async function fetchAuctionRealtime(auctionId: string) {
   }
 }
 
+const bidLimiter = new Map<string, number[]>();
+
+function checkBidRateLimit(userId: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const timestamps = bidLimiter.get(userId) || [];
+  const activeTimestamps = timestamps.filter((t) => now - t < windowMs);
+  if (activeTimestamps.length > 0 && now - activeTimestamps[activeTimestamps.length - 1] < 1000) {
+    return true;
+  }
+  if (activeTimestamps.length >= limit) {
+    return true;
+  }
+  activeTimestamps.push(now);
+  bidLimiter.set(userId, activeTimestamps);
+  return false;
+}
+
 export async function placeAuctionBid(auctionId: string, bidAmount: number) {
   try {
     // 1. Session verification & active status check
     const session = await auth();
     if (!session?.user || !session.user.id) {
       return { success: false, error: "Unauthorized. Please sign in to bid." };
+    }
+
+    if (checkBidRateLimit(session.user.id, 30, 60 * 1000)) {
+      return { success: false, error: "Rate limit exceeded. Please slow down your bidding." };
     }
 
     await connectDB();
@@ -197,6 +218,27 @@ export async function uploadImageAction(base64Data: string) {
     const session = await auth();
     if (!session?.user) {
       return { success: false, error: "Unauthorized." };
+    }
+
+    if (!base64Data || typeof base64Data !== "string") {
+      return { success: false, error: "Invalid image data." };
+    }
+
+    // Check size limit: 5MB (approx. 7,000,000 characters for base64)
+    if (base64Data.length > 7000000) {
+      return { success: false, error: "Image file is too large. Maximum limit is 5MB." };
+    }
+
+    // Extract and validate mime type
+    const matches = base64Data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/);
+    if (!matches) {
+      return { success: false, error: "Invalid image encoding format." };
+    }
+
+    const mimeType = matches[1];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(mimeType.toLowerCase())) {
+      return { success: false, error: "Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed." };
     }
 
     const { uploadToCloudinary } = await import("@/lib/cloudinary");

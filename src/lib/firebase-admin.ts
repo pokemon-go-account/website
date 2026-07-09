@@ -80,6 +80,9 @@ export async function verifyFirebaseIdToken(token: string): Promise<FirebaseDeco
   }
 
   // Graceful Sandbox Fallback: Decode the JWT manually without checking signature
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Firebase Service Account is not configured. Unauthorized sandbox bypass attempt.");
+  }
   console.warn("Firebase Service Account is not configured. Falling back to sandbox/manual token decoding.");
   try {
     const payloadBase64 = token.split(".")[1];

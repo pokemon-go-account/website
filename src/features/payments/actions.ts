@@ -164,15 +164,28 @@ export async function checkUserRegistrationStatus(auctionId: string) {
  */
 export async function simulateMockPayment(orderId: string) {
   try {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Mock payments are disabled in production." };
+    }
+
     const session = await auth();
     if (!session?.user || !session.user.id) {
       return { success: false, error: "Unauthorized." };
+    }
+
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    if (keyId !== "rzp_test_placeholder") {
+      return { success: false, error: "Mock payments are only allowed in sandbox environments." };
     }
 
     await connectDB();
     const registration = await Registration.findOne({ razorpayOrderId: orderId });
     if (!registration) {
       return { success: false, error: "Registration order not found." };
+    }
+
+    if (registration.userId.toString() !== session.user.id) {
+      return { success: false, error: "Unauthorized. You do not own this registration order." };
     }
 
     if (registration.status === "PAID") {
