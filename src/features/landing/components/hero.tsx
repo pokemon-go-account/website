@@ -14,13 +14,12 @@ const trustBadges = [
 ];
 
 const QUICK_TAGS = [
-  { label: "✨ Shiny Heavy", query: "shiny" },
-  { label: "🏆 Legendary", query: "legendary" },
-  { label: "💎 Level 50", query: "level 50" },
-  { label: "🔵 Mystic", query: "mystic" },
-  { label: "🔴 Valor", query: "valor" },
-  { label: "⚡ Instinct", query: "instinct" },
-  { label: "🌏 Asia", query: "asia" },
+  { label: "Coins", query: "coins" },
+  { label: "Level 50", query: "level 50" },
+  { label: "PVP", query: "pvp" },
+  { label: "Raid Service", query: "raid service" },
+  { label: "Auction", query: "auction" },
+  { label: "Stardust", query: "stardust" },
 ];
 
 const containerVariants: Variants = {

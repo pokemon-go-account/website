@@ -16,7 +16,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
 
 
 
-  const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram") => {
+  const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
     const message = `Hi Pokémon GO Services! I would like to pay the $2.50 verification deposit to register for:
 - Auction ID: ${auctionId}
 Please let me know how to proceed with the payment!`;
@@ -34,6 +34,9 @@ Please let me know how to proceed with the payment!`;
     } else if (platform === "instagram") {
       alert("📋 We have copied your deposit details to your clipboard! Paste it in the Instagram DM to proceed.");
       window.open("https://www.instagram.com/pokemongoservicesadmin/", "_blank", "noopener,noreferrer");
+    } else if (platform === "facebook") {
+      alert("📋 We have copied your deposit details to your clipboard! Paste it in the Facebook message to proceed.");
+      window.open("https://www.facebook.com/share/1LdWHj4HQz/?mibextid=wwXIfr", "_blank", "noopener,noreferrer");
     }
   };
 
@@ -111,7 +114,7 @@ Please let me know how to proceed with the payment!`;
               {/* Option 3: Pay via Instagram */}
               <button
                 onClick={() => handleSocialRedirect("instagram")}
-                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200/85 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -119,6 +122,22 @@ Please let me know how to proceed with the payment!`;
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
                   </div>
                   <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
+                    Active
+                  </span>
+                </div>
+              </button>
+
+              {/* Option 4: Pay via Facebook */}
+              <button
+                onClick={() => handleSocialRedirect("facebook")}
+                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200/85 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Facebook</h3>
+                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Message us on Facebook to complete deposit verification</p>
+                  </div>
+                  <span className="bg-blue-600/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
                     Active
                   </span>
                 </div>
