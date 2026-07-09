@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import { auth } from "@/auth";
+import { ChatWidget } from "@/features/chat/components/chat-widget";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -74,6 +75,7 @@ export default async function RootLayout({
             {children}
           </main>
           <Footer />
+          <ChatWidget />
         </SessionProvider>
         <Analytics />
       </body>
