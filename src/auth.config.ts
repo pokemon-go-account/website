@@ -7,17 +7,20 @@ export const authConfig = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      let activeBaseUrl = baseUrl;
-      if (process.env.NODE_ENV === "production" && process.env.VERCEL_URL) {
-        activeBaseUrl = `https://${process.env.VERCEL_URL}`;
-      }
-      if (url.startsWith("/")) return `${activeBaseUrl}${url}`;
+      // Use the canonical production URL if set (avoids Vercel preview URL being used)
+      const canonicalBase =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.NODE_ENV === "production" && process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : baseUrl);
+
+      if (url.startsWith("/")) return `${canonicalBase}${url}`;
       try {
         const parsedUrl = new URL(url);
-        const parsedBase = new URL(activeBaseUrl);
+        const parsedBase = new URL(canonicalBase);
         if (parsedUrl.origin === parsedBase.origin) return url;
       } catch (_) {}
-      return activeBaseUrl;
+      return canonicalBase;
     },
 
     async jwt({ token, user, trigger, session }) {
