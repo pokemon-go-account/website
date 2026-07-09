@@ -619,7 +619,9 @@ Please let me know how to proceed with the payment!`;
 
       {/* Bid Values */}
       <div className="space-y-1 text-center relative z-10">
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Current Bid</span>
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">
+          {highestBidderId ? "Current Bid" : "Starting Bid"}
+        </span>
         <motion.h3
           key={activeBid}
           initial={{ scale: 0.95 }}
@@ -1359,7 +1361,9 @@ Please let me know how to proceed with the payment!`;
                 </div>
 
                 <div className="space-y-1 text-center py-2">
-                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Current Bid</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">
+                    {highestBidderId ? "Current Bid" : "Starting Bid"}
+                  </span>
                   <motion.h3
                     key={activeBid}
                     initial={{ scale: 0.95 }}

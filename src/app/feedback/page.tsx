@@ -1,6 +1,7 @@
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import Feedback from "@/models/Feedback";
+import User from "@/models/User";
 import { FeedbackForm } from "./feedback-form";
 import { auth } from "@/auth";
 import { Star, MessageSquareCode, Award, ShieldAlert, Sparkles, MessageCircle } from "lucide-react";
@@ -41,8 +42,36 @@ export default async function FeedbackPage() {
     }
   }
 
-  // Fetch all feedbacks from newest to oldest
-  const feedbacks = await Feedback.find().sort({ createdAt: -1 }).lean();
+  // Fetch all feedbacks from newest to oldest and format usernames
+  const feedbacksDoc = await Feedback.find()
+    .populate("userId", "username telegramUsername name")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const feedbacks = feedbacksDoc.map((item: any) => {
+    let resolvedUsername = item.username || "";
+    const user = item.userId;
+    if (user && typeof user === "object") {
+      if (user.username) {
+        resolvedUsername = user.username;
+      } else if (user.telegramUsername) {
+        resolvedUsername = user.telegramUsername.replace("@", "");
+      } else if (user.name) {
+        resolvedUsername = user.name.replace(/\s+/g, "");
+      }
+    }
+    
+    // Mask raw Mongo ID or empty usernames as Trainer_xxxxxx
+    if (/^[0-9a-fA-F]{24}$/.test(resolvedUsername) || !resolvedUsername) {
+      const idStr = user?._id?.toString() || item.userId?.toString() || item._id?.toString() || "user";
+      resolvedUsername = `Trainer_${idStr.substring(0, 6)}`;
+    }
+
+    return {
+      ...item,
+      username: resolvedUsername,
+    };
+  });
 
   // Calculate statistics
   const totalReviews = feedbacks.length;

@@ -57,8 +57,8 @@ export function useSocket(
     // Initial query
     pollAuctionState();
 
-    // Setup high-speed polling interval
-    const interval = setInterval(pollAuctionState, 1500);
+    // Setup polling interval (5 seconds to prevent server overload)
+    const interval = setInterval(pollAuctionState, 5000);
 
     return () => {
       isMounted = false;
