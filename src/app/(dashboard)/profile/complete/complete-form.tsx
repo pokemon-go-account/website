@@ -82,7 +82,9 @@ export function CompleteProfileForm() {
     if (state.success && !isRedirecting) {
       setIsRedirecting(true);
       update({ isOnboarded: true, role: "USER" }).then(() => {
-        window.location.href = "/auctions";
+        // Use absolute URL to avoid any server/proxy rewrite interception
+        const base = process.env.NEXT_PUBLIC_APP_URL || "";
+        window.location.replace(`${base}/auctions`);
       });
     }
   }, [state.success, update, isRedirecting]);
