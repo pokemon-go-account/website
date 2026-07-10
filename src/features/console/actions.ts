@@ -254,7 +254,14 @@ export async function verifyRegistrationConsole(registrationId: string) {
     
     const Registration = (await import("@/models/Registration")).default;
     
-    await Registration.findByIdAndUpdate(registrationId, { status: "PAID" });
+    const reg = await Registration.findByIdAndUpdate(registrationId, { status: "PAID" });
+    if (reg) {
+      const User = (await import("@/models/User")).default;
+      await User.findByIdAndUpdate(reg.userId, {
+        hasPaidVerificationDeposit: true,
+        $set: { walletBalance: -2.5 }
+      });
+    }
     revalidatePath("/console/registrations");
     return { success: true };
   } catch (error: any) {
@@ -320,8 +327,14 @@ export async function completeOrderConsole(orderId: string) {
     await connectDB();
     
     const Order = (await import("@/models/Order")).default;
+    const User = (await import("@/models/User")).default;
     
-    await Order.findByIdAndUpdate(orderId, { status: "COMPLETED" });
+    const order = await Order.findByIdAndUpdate(orderId, { status: "COMPLETED" });
+    if (order && order.walletDiscountApplied && order.walletDiscountApplied > 0) {
+      await User.findByIdAndUpdate(order.userId, {
+        $set: { walletBalance: 0 }
+      });
+    }
     revalidatePath("/console/orders");
     revalidatePath("/feedback"); // revalidate to update review capability
     return { success: true };
@@ -401,6 +414,10 @@ export async function createRegistrationManuallyConsole(username: string, auctio
       },
       { upsert: true }
     );
+
+    user.hasPaidVerificationDeposit = true;
+    user.walletBalance = -2.5;
+    await user.save();
 
     revalidatePath("/console/registrations");
     return { success: true };

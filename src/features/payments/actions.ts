@@ -45,15 +45,9 @@ export async function createRegistrationOrder(auctionId: string) {
       return { success: false, error: "You cannot register for your own auction." };
     }
 
-    // 3. Check for existing PAID registration
-    const existingPaid = await Registration.findOne({
-      userId: user._id,
-      auctionId: auction._id,
-      status: "PAID",
-    });
-
-    if (existingPaid) {
-      return { success: false, error: "You are already registered for this auction." };
+    // 3. Check if user already paid the one-time verification deposit
+    if (user.hasPaidVerificationDeposit) {
+      return { success: false, error: "You have already paid the one-time verification deposit." };
     }
 
     // 4. Instantiate Razorpay SDK (Or simulate Sandbox Mode if placeholders are active)
@@ -101,8 +95,8 @@ export async function createRegistrationOrder(auctionId: string) {
     // 5. Persist PENDING registration status in database safely
     const existing = await Registration.findOne({ userId: user._id, auctionId: auction._id });
     if (existing) {
-      if (existing.status === "PAID") {
-        return { success: false, error: "You are already registered for this auction." };
+      if (existing.status === "PAID" || user.hasPaidVerificationDeposit) {
+        return { success: false, error: "You have already paid the verification deposit." };
       }
       existing.razorpayOrderId = orderId;
       existing.status = "PENDING";
@@ -152,13 +146,9 @@ export async function checkUserRegistrationStatus(auctionId: string) {
     }
 
     await connectDB();
-    const registration = await Registration.findOne({
-      userId: session.user.id,
-      auctionId,
-      status: "PAID",
-    }).lean();
+    const user = await User.findById(session.user.id).lean();
 
-    return { isRegistered: !!registration };
+    return { isRegistered: !!(user && (user as any).hasPaidVerificationDeposit) };
   } catch (err) {
     console.error("Verification status query error:", err);
     return { isRegistered: false };
@@ -200,6 +190,11 @@ export async function simulateMockPayment(orderId: string) {
 
     registration.status = "PAID";
     await registration.save();
+
+    await User.findByIdAndUpdate(registration.userId, {
+      hasPaidVerificationDeposit: true,
+      $set: { walletBalance: -2.5 }
+    });
 
     return { success: true };
   } catch (err) {

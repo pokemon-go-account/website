@@ -14,6 +14,8 @@ export interface IUser extends Document {
   alternateContact?: string;
   isOnboarded: boolean;
   isEmailVerified: boolean;
+  hasPaidVerificationDeposit: boolean;
+  walletBalance: number;
   verificationOtp?: string;
   verificationOtpExpires?: Date;
   lastOtpSentAt?: Date;
@@ -41,6 +43,8 @@ const UserSchema: Schema<IUser> = new Schema(
     alternateContact: { type: String, trim: true },
     isOnboarded: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
+    hasPaidVerificationDeposit: { type: Boolean, default: false },
+    walletBalance: { type: Number, default: 0 },
     verificationOtp: { type: String, default: null },
     verificationOtpExpires: { type: Date, default: null },
     lastOtpSentAt: { type: Date, default: null },

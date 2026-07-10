@@ -106,6 +106,12 @@ export async function POST(req: Request) {
       registration.status = "PAID";
       await registration.save();
 
+      const User = (await import("@/models/User")).default;
+      await User.findByIdAndUpdate(registration.userId, {
+        hasPaidVerificationDeposit: true,
+        $set: { walletBalance: -2.5 }
+      });
+
       console.log(`Successfully verified deposit registration for order: ${orderId}`);
       await logWebhookEvent(eventId, eventType, rawBody, "PROCESSED");
     } else {

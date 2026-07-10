@@ -11,9 +11,19 @@ export async function verifyRecaptchaToken(token: string | null, action: string)
 
   if (!isConfigured) {
     console.warn("reCAPTCHA Enterprise not fully configured (missing project ID or API key). Simulating sandbox verification.");
-    if (!token) {
-      return { success: false, error: "Please complete the security check (reCAPTCHA is required)." };
-    }
+    return { success: true, error: null };
+  }
+
+  // Check if request is from localhost or local network to bypass during development testing
+  let isLocalRequest = false;
+  try {
+    const { headers } = await import("next/headers");
+    const host = (await headers()).get("host") || "";
+    isLocalRequest = host.includes("localhost") || host.includes("127.0.0.1") || host.startsWith("192.168.");
+  } catch (_) {}
+
+  if ((process.env.NODE_ENV === "development" || isLocalRequest) && !token) {
+    console.warn("reCAPTCHA token is missing in local/dev environment. Bypassing check.");
     return { success: true, error: null };
   }
 

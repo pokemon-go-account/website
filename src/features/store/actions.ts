@@ -47,6 +47,15 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
 
     await connectDB();
 
+    const User = (await import("@/models/User")).default;
+    const user = await User.findById(session.user.id);
+    const walletBalance = user?.walletBalance || 0;
+    
+    // Wallet credit is stored as negative number (e.g., -2.5)
+    const hasCredit = walletBalance < 0;
+    const discount = hasCredit ? Math.min(totalPrice, Math.abs(walletBalance)) : 0;
+    const finalPrice = Math.max(0, totalPrice - discount);
+
     const formattedItems = items.map((item) => ({
       productId: item.id,
       name: item.name,
@@ -57,7 +66,8 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
     const order = await Order.create({
       userId: session.user.id,
       items: formattedItems,
-      totalPrice,
+      totalPrice: finalPrice,
+      walletDiscountApplied: discount,
       status: "PENDING",
       orderType: "STOREFRONT",
     });

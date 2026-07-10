@@ -9,6 +9,7 @@ export interface IOrder extends Document {
     quantity: number;
   }>;
   totalPrice: number;
+  walletDiscountApplied?: number;
   status: "PENDING" | "COMPLETED" | "FAILED";
   orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION";
   auctionId?: mongoose.Types.ObjectId;
@@ -28,6 +29,7 @@ const OrderSchema = new Schema<IOrder>(
       },
     ],
     totalPrice: { type: Number, required: true },
+    walletDiscountApplied: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ["PENDING", "COMPLETED", "FAILED"],

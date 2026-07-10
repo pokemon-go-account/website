@@ -96,8 +96,8 @@ export async function fetchAuctionRealtime(auctionId: string) {
     const userId = session?.user?.id;
     let isRegistered = false;
     if (userId) {
-      const reg = await Registration.findOne({ userId, auctionId, status: "PAID" }).lean();
-      isRegistered = !!reg;
+      const user = await User.findById(userId).lean();
+      isRegistered = !!(user && (user as any).hasPaidVerificationDeposit);
     }
 
     const bids = await Bid.find({ auctionId })
@@ -168,13 +168,7 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
     }
 
     // 1b. Verify user registration status
-    const registration = await Registration.findOne({
-      userId: user._id,
-      auctionId,
-      status: "PAID",
-    });
-
-    if (!registration) {
+    if (!user.hasPaidVerificationDeposit) {
       return { success: false, error: "Access denied. Verification deposit ($2.50) is required to place bids." };
     }
 

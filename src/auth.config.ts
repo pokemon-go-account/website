@@ -30,12 +30,16 @@ export const authConfig = {
         token.isOnboarded = (user as any).isOnboarded;
         token.isEmailVerified = (user as any).isEmailVerified;
         token.adminRentPaidUntil = (user as any).adminRentPaidUntil ?? null;
+        token.hasPaidVerificationDeposit = (user as any).hasPaidVerificationDeposit;
+        token.walletBalance = (user as any).walletBalance;
       }
       if (trigger === "update" && session) {
         if (session.isOnboarded !== undefined) token.isOnboarded = session.isOnboarded;
         if (session.isEmailVerified !== undefined) token.isEmailVerified = session.isEmailVerified;
         if (session.role) token.role = session.role;
         if (session.adminRentPaidUntil !== undefined) token.adminRentPaidUntil = session.adminRentPaidUntil;
+        if (session.hasPaidVerificationDeposit !== undefined) token.hasPaidVerificationDeposit = session.hasPaidVerificationDeposit;
+        if (session.walletBalance !== undefined) token.walletBalance = session.walletBalance;
       }
       return token;
     },
@@ -47,6 +51,8 @@ export const authConfig = {
         (session.user as any).isOnboarded = !!token.isOnboarded;
         (session.user as any).isEmailVerified = !!token.isEmailVerified;
         (session.user as any).adminRentPaidUntil = token.adminRentPaidUntil ?? null;
+        (session.user as any).hasPaidVerificationDeposit = !!token.hasPaidVerificationDeposit;
+        (session.user as any).walletBalance = Number(token.walletBalance) || 0;
       }
       return session;
     },
