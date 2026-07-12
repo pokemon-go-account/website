@@ -102,7 +102,7 @@ export const authConfig = {
 
       // 5. Onboarding/Verification route check (already passed verification/onboarding checks above, send away if trying to visit again)
       if (isVerifyOtpRoute) {
-        return Response.redirect(new URL("/auctions", nextUrl));
+        return Response.redirect(new URL("/", nextUrl));
       }
 
       // 6. SUPER_ADMIN console — only SUPER_ADMIN

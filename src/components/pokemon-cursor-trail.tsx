@@ -84,7 +84,7 @@ export function PokemonCursorTrail() {
         .pokemon-trail-image-particle {
           position: fixed;
           pointer-events: none;
-          z-index: -1;
+          z-index: 9999;
           width: 48px;
           height: 48px;
           object-fit: contain;

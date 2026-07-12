@@ -294,18 +294,18 @@ export async function loginWithFirebaseIdToken(idToken: string) {
       await signIn("credentials", {
         firebaseUid: user._id.toString(),
         isFirebase: "true",
-        redirectTo: user.isOnboarded ? "/auctions" : "/profile/complete",
+        redirectTo: user.isOnboarded ? "/" : "/profile/complete",
       });
     } catch (error: any) {
       if (error.message === "NEXT_REDIRECT" || error.digest?.startsWith("NEXT_REDIRECT")) {
         const parts = (error.digest || "").split(";");
-        const redirectTo = parts[2] || (user.isOnboarded ? "/auctions" : "/profile/complete");
+        const redirectTo = parts[2] || (user.isOnboarded ? "/" : "/profile/complete");
         return { success: true, redirectTo, error: null };
       }
       throw error;
     }
 
-    return { success: true, redirectTo: user.isOnboarded ? "/auctions" : "/profile/complete", error: null };
+    return { success: true, redirectTo: user.isOnboarded ? "/" : "/profile/complete", error: null };
   } catch (error: any) {
     console.error("Firebase social login action error:", error);
     return { success: false, error: "Authentication failed." };

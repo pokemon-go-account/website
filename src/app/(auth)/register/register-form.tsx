@@ -104,7 +104,7 @@ export function RegisterForm() {
       const res = await loginWithFirebaseIdToken(idToken);
       
       if (res.success) {
-        window.location.href = "/auctions";
+        window.location.href = res.redirectTo || "/";
       } else {
         setAuthError(res.error || `Failed to register/log in with ${provider}.`);
       }

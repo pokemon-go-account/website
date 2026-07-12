@@ -16,7 +16,7 @@ export default async function ProfileCompletePage() {
 
   // If already onboarded, redirect away from the completion route
   if (user && (user as any).isOnboarded) {
-    redirect("/auctions");
+    redirect("/");
   }
 
   return (
