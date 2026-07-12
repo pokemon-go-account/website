@@ -197,7 +197,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
             className={cn(
               "w-full h-8 inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
               isConcluded
-                ? "bg-zinc-100 hover:bg-zinc-200 dark:bg-[#151515] text-zinc-500 dark:text-zinc-400 border border-zinc-250 dark:border-white/[0.06]"
+                ? "border border-zinc-300 hover:border-zinc-400 dark:border-white/[0.1] dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-zinc-900 dark:text-white shadow-xs"
                 : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 border border-transparent"
             )}
           >
