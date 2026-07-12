@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Mail, ShieldCheck, ChevronRight, MessageSquare, Globe } from "lucide-react";
 
 // Facebook SVG
 function FacebookIcon({ className }: { className?: string }) {
@@ -22,51 +23,136 @@ function DiscordIcon({ className }: { className?: string }) {
 
 export function Footer() {
   return (
-    <footer id="contact" className="bg-zinc-100 dark:bg-[#080809] border-t border-zinc-200 dark:border-white/10 py-10 px-4 mt-auto">
-      <div className="max-w-7xl mx-auto flex flex-col gap-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Pokémon GO Services" className="h-10 w-auto object-contain" />
-            <div>
-              <p className="text-zinc-400 dark:text-zinc-600 text-[10px] mt-1">© 2026 All rights reserved.</p>
+    <footer className="relative bg-zinc-100 dark:bg-[#070709] border-t border-zinc-200 dark:border-white/[0.08] mt-auto">
+      {/* Decorative top border gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-[#6133e1] to-purple-600 opacity-80" />
+
+      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 pb-12 border-b border-zinc-200 dark:border-white/5">
+          
+          {/* Brand/About Section */}
+          <div className="lg:col-span-4 space-y-4">
+            <Link href="/" className="inline-flex items-center gap-2.5 group">
+              <img src="/logo.png" alt="Pokémon GO Services Logo" className="h-9 w-auto object-contain transition-transform group-hover:scale-105 duration-300" />
+              <span className="font-extrabold text-sm tracking-wider uppercase bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-700 dark:from-white dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">
+                Pokémon GO Services
+              </span>
+            </Link>
+            <p className="text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed font-light max-w-sm">
+              The premier marketplace and recovery network for high-tier Pokémon GO assets. Trusted globally for safe escrow, real-time live bidding, and certified trainers.
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <a
+                href="https://discord.gg/Zt2yE3qKY"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 w-8 rounded-lg bg-zinc-200/50 dark:bg-white/[0.04] hover:bg-[#5865F2]/10 dark:hover:bg-[#5865F2]/20 border border-zinc-300 dark:border-white/[0.06] flex items-center justify-center text-zinc-600 dark:text-zinc-450 hover:text-[#5865F2] dark:hover:text-[#5865F2] transition-all cursor-pointer"
+                title="Join our Discord Server"
+              >
+                <DiscordIcon className="h-4 w-4" />
+              </a>
+              <a
+                href="https://www.facebook.com/share/1LdWHj4HQz/?mibextid=wwXIfr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 w-8 rounded-lg bg-zinc-200/50 dark:bg-white/[0.04] hover:bg-[#1877F2]/10 dark:hover:bg-[#1877F2]/20 border border-zinc-300 dark:border-white/[0.06] flex items-center justify-center text-zinc-600 dark:text-zinc-450 hover:text-[#1877F2] dark:hover:text-[#1877F2] transition-all cursor-pointer"
+                title="Follow us on Facebook"
+              >
+                <FacebookIcon className="h-4 w-4" />
+              </a>
             </div>
           </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center text-xs text-zinc-400">
-            <Link href="/terms" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Terms of Service</Link>
-            <Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Contact Us</Link>
-            <Link href="/auctions" className="hover:text-zinc-900 dark:hover:text-white transition-colors">All Auctions</Link>
-            <Link href="/recovery" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Account Recovery</Link>
-            <Link href="/feedback" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Feedback</Link>
+
+          {/* Quick Links Column */}
+          <div className="lg:col-span-2 space-y-4">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              Navigation
+            </h4>
+            <ul className="space-y-2 text-xs">
+              {[
+                { name: "Live Auctions", href: "/auctions" },
+                { name: "Account Recovery", href: "/recovery" },
+                { name: "Feedback Portal", href: "/feedback" },
+                { name: "Contact Support", href: "/contact" },
+              ].map((link) => (
+                <li key={link.name}>
+                  <Link
+                    href={link.href}
+                    className="flex items-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors group"
+                  >
+                    <ChevronRight className="h-3 w-3 opacity-0 -ml-3 group-hover:opacity-100 group-hover:ml-0 transition-all text-[#6133e1] dark:text-purple-400 mr-1" />
+                    <span>{link.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal / Trust Column */}
+          <div className="lg:col-span-2 space-y-4">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              Legal & Trust
+            </h4>
+            <ul className="space-y-2 text-xs">
+              {[
+                { name: "Terms of Service", href: "/terms" },
+                { name: "Privacy Policy", href: "/privacy" },
+                { name: "Security Protocols", href: "/contact" },
+                { name: "FAQ", href: "/#faq" },
+              ].map((link) => (
+                <li key={link.name}>
+                  <Link
+                    href={link.href}
+                    className="flex items-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors group"
+                  >
+                    <ChevronRight className="h-3 w-3 opacity-0 -ml-3 group-hover:opacity-100 group-hover:ml-0 transition-all text-[#6133e1] dark:text-purple-400 mr-1" />
+                    <span>{link.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact Support Channels Column */}
+          <div className="lg:col-span-4 space-y-4">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              Direct Contact
+            </h4>
+            <div className="space-y-3">
+              {[
+                { label: "Support", email: "support@pokemongoservices.com" },
+                { label: "Business", email: "business@pokemongoservices.com" },
+                { label: "Info", email: "info@pokemongoservices.com" },
+              ].map((channel) => (
+                <a
+                  key={channel.email}
+                  href={`mailto:${channel.email}`}
+                  className="flex items-start gap-2.5 p-2 rounded-lg border border-zinc-200 dark:border-white/[0.04] bg-zinc-50 dark:bg-white/[0.01] hover:border-zinc-300 dark:hover:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.03] transition-all group"
+                >
+                  <Mail className="h-4 w-4 text-zinc-400 group-hover:text-[#6133e1] dark:group-hover:text-purple-400 transition-colors mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-bold uppercase text-zinc-400 dark:text-zinc-550 leading-none mb-0.5">{channel.label}</p>
+                    <p className="text-xs font-semibold text-[#6133e1] dark:text-[#a78bfa] truncate group-hover:text-zinc-950 dark:group-hover:text-white transition-colors">{channel.email}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between pt-8 gap-4 text-zinc-400 dark:text-zinc-650 text-[10px] sm:text-xs">
+          <p>© {new Date().getFullYear()} Pokémon GO Services. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] sm:text-xs">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-zinc-450 dark:text-zinc-650" />
+              SSL Encrypted Verification
+            </span>
           </div>
         </div>
 
-        {/* Social / Community Links */}
-        <div className="flex items-center justify-center gap-4 pt-1 border-t border-zinc-200 dark:border-white/5">
-          <a
-            href="https://www.facebook.com/share/1LdWHj4HQz/?mibextid=wwXIfr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-[#1877F2] transition-colors group"
-            aria-label="Follow us on Facebook"
-          >
-            <FacebookIcon className="h-4 w-4 text-zinc-400 group-hover:text-[#1877F2] transition-colors" />
-            <span>Facebook</span>
-          </a>
-          <span className="text-zinc-300 dark:text-zinc-700">·</span>
-          <a
-            href="https://discord.gg/Zt2yE3qKY"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-[#5865F2] transition-colors group"
-            aria-label="Join our Discord server"
-          >
-            <DiscordIcon className="h-4 w-4 text-zinc-400 group-hover:text-[#5865F2] transition-colors" />
-            <span>Discord Community &amp; Support</span>
-          </a>
-        </div>
       </div>
     </footer>
   );
 }
-
