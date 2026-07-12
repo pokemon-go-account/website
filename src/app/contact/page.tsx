@@ -274,6 +274,45 @@ export default function ContactPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="lg:col-span-5 space-y-4"
           >
+            {/* Email Channels */}
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 shadow-xs space-y-4">
+              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Email Addresses</h3>
+              <div className="space-y-2.5">
+                {[
+                  {
+                    name: "Support Desk",
+                    email: "support@pokemongoservices.com",
+                    desc: "Auction issues, payments & active orders",
+                  },
+                  {
+                    name: "Business Operations",
+                    email: "business@pokemongoservices.com",
+                    desc: "Partnerships, careers & marketing",
+                  },
+                  {
+                    name: "General Info",
+                    email: "info@pokemongoservices.com",
+                    desc: "General questions & service details",
+                  },
+                ].map((item) => (
+                  <a
+                    key={item.email}
+                    href={`mailto:${item.email}`}
+                    className="flex items-center gap-3 p-3 rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-[#151515] transition-all hover:border-[#6133e1]/30 hover:bg-zinc-100 dark:hover:bg-[#181818] group cursor-pointer"
+                  >
+                    <div className="h-8 w-8 rounded-md bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center shrink-0 text-zinc-550 group-hover:text-[#6133e1] dark:group-hover:text-purple-400 transition-colors">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{item.name}</p>
+                      <p className="text-[10px] font-semibold text-[#6133e1] dark:text-[#a78bfa]">{item.email}</p>
+                      <p className="text-[9px] text-zinc-500 dark:text-zinc-450 truncate mt-0.5">{item.desc}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+
             {/* Direct contact channels */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 shadow-xs space-y-4">
               <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Direct Channels</h3>

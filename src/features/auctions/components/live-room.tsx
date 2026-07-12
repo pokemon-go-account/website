@@ -830,19 +830,12 @@ Please let me know how to proceed with the payment!`;
         </div>
 
         {/* Real-time connection status overlay/banner */}
-        <div>
-          {!isConnected ? (
-            <div className="flex items-center gap-2 rounded-xl bg-zinc-200 dark:bg-white/5 border border-zinc-200 dark:border-white/10 p-3 text-xs text-zinc-600 dark:text-zinc-300 shadow-xs">
-              <AlertCircle className="h-4 w-4 animate-pulse text-zinc-400 dark:text-zinc-400" />
-              Connecting to real-time bidding engine... Live updates paused.
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-600 dark:text-emerald-400 shadow-xs">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-              Secure live WebSocket gateway active.
-            </div>
-          )}
-        </div>
+        {!isConnected && (
+          <div className="flex items-center gap-2 rounded-xl bg-zinc-200 dark:bg-white/5 border border-zinc-200 dark:border-white/10 p-3 text-xs text-zinc-600 dark:text-zinc-300 shadow-xs">
+            <AlertCircle className="h-4 w-4 animate-pulse text-zinc-400 dark:text-zinc-400" />
+            Connecting to real-time bidding engine... Live updates paused.
+          </div>
+        )}
 
         {/* Mobile Title Card */}
         <div className="lg:hidden rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-3 shadow-xs animate-in fade-in duration-300">
