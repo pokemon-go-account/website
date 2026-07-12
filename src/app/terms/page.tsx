@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-zinc-900 dark:text-white">
+    <div className="min-h-screen bg-transparent text-zinc-900 dark:text-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24 space-y-12">
         {/* Header */}
         <div className="space-y-4 border-b border-zinc-200 dark:border-white/[0.06] pb-10">

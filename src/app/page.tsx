@@ -3,17 +3,19 @@ import { Features } from "@/features/landing/components/features";
 import { FeaturedAuctions } from "@/features/landing/components/featured-auctions";
 import { FeaturedStoreItems } from "@/features/landing/components/featured-store-items";
 import { FAQ } from "@/features/landing/components/faq";
+import { FeedbackShowcase } from "@/features/landing/components/feedback-showcase";
 
 export const revalidate = 0; // Dynamic rendering
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-white dark:bg-[#0d0d0f]">
+    <div className="flex min-h-screen flex-col bg-transparent">
       <Hero />
       <Features />
       <FeaturedAuctions />
       <FeaturedStoreItems />
       <FAQ />
+      <FeedbackShowcase />
     </div>
   );
 }

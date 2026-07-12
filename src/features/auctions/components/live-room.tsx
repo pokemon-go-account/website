@@ -727,6 +727,9 @@ Please let me know how to proceed with the payment!`;
               A refundable verification deposit of $2.50 is required to participate in bidding.
             </div>
             <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center leading-relaxed">
+              This verification deposit is completely refundable. It will automatically act as store credit and be deducted from the total amount of any future purchase you make from our store, including products and services.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -149,27 +149,22 @@ export default function ManageCategoriesPage() {
   return (
     <div className="space-y-6">
       {/* Header section */}
-      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.05] pb-5">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.05] flex items-center justify-center">
-            <FolderTree className="h-4.5 w-4.5 text-zinc-555 dark:text-zinc-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-zinc-950 dark:text-white">Manage Categories</h1>
-            <p className="text-xs text-zinc-500 mt-0.5 font-medium">Create and organize services storefront directories</p>
-          </div>
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <div>
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Manage Categories</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Create and organize storefront service directories.</p>
         </div>
 
         <button
           onClick={openAddModal}
-          className="h-9 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 transition-all"
+          className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" /> Add Category
         </button>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-650 dark:text-red-400 flex items-start gap-2 max-w-2xl leading-normal">
+        <div className="rounded-md border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-650 dark:text-red-400 flex items-start gap-2 max-w-2xl leading-normal">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Execution Error:</span> {error}
@@ -178,9 +173,9 @@ export default function ManageCategoriesPage() {
       )}
 
       {/* Main categories listing table */}
-      <div className="border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-950/40 rounded-2xl overflow-hidden backdrop-blur-md shadow-xs">
-        <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.05] text-left text-xs">
-          <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
+      <div className="border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] rounded-lg overflow-hidden shadow-xs">
+        <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-left text-xs">
+          <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
             <tr>
               <th className="px-6 py-4">Category</th>
               <th className="px-6 py-4">Directory Slug</th>
@@ -242,41 +237,41 @@ export default function ManageCategoriesPage() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 dark:bg-black/70 backdrop-blur-xs">
           <div className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-4 transition-all">
-            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.05] pb-3">
-              <h3 className="font-extrabold text-sm text-zinc-950 dark:text-white">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-3">
+              <h3 className="font-semibold text-sm text-zinc-950 dark:text-white">
                 {modalMode === "add" ? "Create Category Directory" : "Update Category Directory"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="h-7 w-7 rounded-lg border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                className="h-7 w-7 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-955 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category Name</label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category Name</label>
                 <input
                   type="text"
                   placeholder="e.g., Rare Items, Accounts Level 40"
                   {...register("name")}
                   className={cn(
-                    "w-full h-9 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
+                    "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
                     errors.name && "border-red-500/50 focus:border-red-500"
                   )}
                 />
                 {errors.name && <p className="text-[10px] text-red-400 font-semibold">{errors.name.message}</p>}
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">URL Slug</label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">URL Slug</label>
                 <input
                   type="text"
                   placeholder="e.g., rare-items, accounts-lvl-40"
                   {...register("slug")}
                   className={cn(
-                    "w-full h-9 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors font-mono text-[11px]",
+                    "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors font-mono text-[11px]",
                     errors.slug && "border-red-500/50 focus:border-red-500"
                   )}
                 />
@@ -285,11 +280,11 @@ export default function ManageCategoriesPage() {
 
               {/* Category Image Upload */}
               <div className="space-y-2">
-                <label className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category Image</label>
+                <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category Image</label>
 
                 {/* Preview */}
                 {(previewImageUrl || watchedImageUrl) && (
-                  <div className="relative h-28 w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-white/[0.08] bg-zinc-100 dark:bg-zinc-900">
+                  <div className="relative h-28 w-full rounded-md overflow-hidden border border-zinc-200 dark:border-white/[0.08] bg-zinc-100 dark:bg-zinc-900">
                     <img
                       src={previewImageUrl || watchedImageUrl}
                       alt="Category preview"
@@ -298,16 +293,16 @@ export default function ManageCategoriesPage() {
                     <button
                       type="button"
                       onClick={() => { setValue("imageUrl", ""); setPreviewImageUrl(""); }}
-                      className="absolute top-2 right-2 h-6 w-6 rounded-lg bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
+                      className="absolute top-2 right-2 h-6 w-6 rounded-md bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
                     >
                       <X className="h-3 w-3" />
                     </button>
                   </div>
                 )}
 
-                <label className="flex h-9 rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.1] hover:border-zinc-400 dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.01] dark:hover:bg-white/[0.03] items-center justify-center gap-2 cursor-pointer transition-colors">
+                <label className="flex h-8 rounded-md border border-dashed border-zinc-200 dark:border-white/[0.1] hover:border-zinc-400 dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.01] dark:hover:bg-white/[0.03] items-center justify-center gap-2 cursor-pointer transition-colors">
                   <ImagePlus className="h-3.5 w-3.5 text-zinc-400" />
-                  <span className="text-[10px] font-bold text-zinc-500">
+                  <span className="text-[10px] font-semibold text-zinc-500">
                     {uploadingImage ? "Uploading to Cloudinary..." : "Choose Image File"}
                   </span>
                   <input
@@ -320,13 +315,13 @@ export default function ManageCategoriesPage() {
                 </label>
 
                 <div className="space-y-1">
-                  <p className="text-[8px] text-zinc-500 uppercase tracking-wider font-bold">Or enter direct URL</p>
+                  <p className="text-[8px] text-zinc-500 uppercase tracking-wider font-semibold">Or enter direct URL</p>
                   <input
                     type="text"
                     placeholder="https://..."
                     {...register("imageUrl")}
                     onChange={(e) => { setValue("imageUrl", e.target.value); setPreviewImageUrl(e.target.value); }}
-                    className="w-full h-9 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors text-[11px]"
+                    className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors text-[11px]"
                   />
                 </div>
               </div>
@@ -334,7 +329,7 @@ export default function ManageCategoriesPage() {
               <button
                 type="submit"
                 disabled={submitting || uploadingImage}
-                className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs shadow-lg active:scale-95 transition-all mt-4 disabled:opacity-60"
+                className="w-full h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-semibold text-xs transition-all mt-4 disabled:opacity-60"
               >
                 {submitting ? "Saving changes..." : modalMode === "add" ? "Create Category" : "Save Changes"}
               </button>

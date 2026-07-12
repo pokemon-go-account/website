@@ -123,7 +123,8 @@ export function FAQ() {
   const displayedFaqs = showAll ? faqs : faqs.slice(0, 5);
 
   return (
-    <section id="faq" className="bg-white dark:bg-[#080809] border-t border-zinc-100 dark:border-white/[0.06] py-16 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <section id="faq" className="relative w-full overflow-hidden border-t border-zinc-100 dark:border-white/[0.06] py-16 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <div className="absolute inset-0 bg-white dark:bg-[#080809] z-[-2] pointer-events-none" />
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-10">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-600 dark:text-violet-400 border border-violet-500/20 mb-3">

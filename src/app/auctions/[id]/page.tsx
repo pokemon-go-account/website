@@ -32,7 +32,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
   const auctionPromise = Auction.findByIdAndUpdate(
     id,
     { $inc: { viewers: 1 } },
-    { new: true }
+    { returnDocument: "after" }
   )
     .populate("listingId")
     .populate("highestBidderId", "name username")

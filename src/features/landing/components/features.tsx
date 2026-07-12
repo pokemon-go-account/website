@@ -4,7 +4,7 @@ import { ShieldCheck, Users, Lock, Headphones } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 
 const stats = [
-  { value: "18,000+", label: "Services Sold" },
+  { value: "28,000+", label: "Services Sold" },
   { value: "15,000+", label: "Happy Customers" },
   { value: "100%", label: "Successful Deliveries" },
 ];
@@ -37,7 +37,8 @@ const cardVariants: Variants = {
 
 export function Features() {
   return (
-    <section className="bg-white dark:bg-[#080809] border-b border-gray-100 dark:border-white/[0.06]">
+    <section className="relative w-full overflow-hidden border-b border-gray-100 dark:border-white/[0.06]">
+      <div className="absolute inset-0 bg-white dark:bg-[#080809] z-[-2] pointer-events-none" />
 
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

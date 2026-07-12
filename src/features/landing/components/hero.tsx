@@ -14,12 +14,12 @@ const trustBadges = [
 ];
 
 const QUICK_TAGS = [
-  { label: "Coins", query: "coins" },
-  { label: "Level 50", query: "level 50" },
-  { label: "PVP", query: "pvp" },
-  { label: "Raid Service", query: "raid service" },
-  { label: "Auction", query: "auction" },
-  { label: "Stardust", query: "stardust" },
+  { label: "🪙 Coins", query: "coins" },
+  { label: "⭐ Level 80", query: "level 80" },
+  { label: "⚔️ PVP", query: "pvp" },
+  { label: "🐉 Raid Service", query: "raid service" },
+  { label: "🏛️ Auction", query: "auction" },
+  { label: "✨ Stardust", query: "stardust" },
 ];
 
 const containerVariants: Variants = {
@@ -124,12 +124,12 @@ function HeroSearch() {
 }
 
 export function Hero() {
-  const [bgImage, setBgImage] = useState("url('/hero-banner-light.png')");
+  const [bgImage, setBgImage] = useState("url('/try.jpg')");
 
   useEffect(() => {
     const checkTheme = () => {
       const isDark = document.documentElement.classList.contains("dark");
-      setBgImage(isDark ? "url('/hero-banner-dark.png')" : "url('/hero-banner-light.png')");
+      setBgImage(isDark ? "url('/try.jpg')" : "url('/try.jpg')");
     };
 
     checkTheme();
@@ -144,10 +144,10 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden bg-white dark:bg-[#080809]">
-      {/* Hero Banner */}
+    <section className="relative w-full overflow-hidden bg-transparent">
+      {/* Hero Banner Background placed behind particles */}
       <div
-        className="relative min-h-[460px] md:min-h-[580px] flex items-center"
+        className="absolute inset-0 z-[-2] pointer-events-none"
         style={{
           backgroundImage: bgImage,
           backgroundSize: "cover",
@@ -157,7 +157,10 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/10 dark:from-[#080809] dark:via-[#080809]/85 dark:to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#080809] via-transparent to-transparent opacity-60" />
         <div className="absolute bottom-0 left-0 w-96 h-48 opacity-0 dark:opacity-20 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.1),transparent_70%)]" />
+      </div>
 
+      {/* Hero Content Area */}
+      <div className="relative min-h-[460px] md:min-h-[580px] flex items-center">
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16">
           <motion.div
             variants={containerVariants}
@@ -219,7 +222,8 @@ export function Hero() {
       </div>
 
       {/* Trust Badges Bar */}
-      <div className="bg-gray-50 dark:bg-[#0d0d0f] border-t border-gray-200 dark:border-white/[0.06]">
+      <div className="relative bg-transparent border-t border-gray-200 dark:border-white/[0.06]">
+        <div className="absolute inset-0 bg-gray-50 dark:bg-[#0d0d0f] z-[-2] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}

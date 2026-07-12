@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const callbackUrl = typeof params.callbackUrl === "string" ? params.callbackUrl : undefined;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 dark:bg-black px-4 py-16 sm:px-6 lg:px-8 overflow-hidden transition-colors duration-300">
+    <div className="relative flex min-h-screen items-center justify-center bg-transparent px-4 py-16 sm:px-6 lg:px-8 overflow-hidden transition-colors duration-300">
       {/* Background Decorative Auras */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[350px] h-[350px] bg-violet-500/5 dark:bg-violet-500/10 rounded-full blur-[100px] pointer-events-none" />

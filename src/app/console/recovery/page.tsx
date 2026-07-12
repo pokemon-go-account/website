@@ -15,36 +15,29 @@ export default async function ConsoleRecoveryPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-              <KeyRound className="h-4 w-4 text-cyan-400" />
-            </div>
-            <h1 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">Recovery Requests</h1>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 ml-9">
-            View and manage all Pokémon GO account recovery service orders from trainers.
-          </p>
-        </div>
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Recovery Requests</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          View and manage all Pokémon GO account recovery service orders from trainers.
+        </p>
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Summary stats KPI Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-200 dark:bg-white/[0.06] rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06]">
         {[
           { label: "Total Requests", value: stats.total, color: "text-zinc-900 dark:text-white" },
           { label: "Pending",        value: stats.pending,    color: "text-amber-500" },
-          { label: "In Progress",    value: stats.inProgress, color: "text-blue-400" },
+          { label: "In Progress",    value: stats.inProgress, color: "text-zinc-650 dark:text-zinc-300" },
           { label: "Completed",      value: stats.completed,  color: "text-emerald-500" },
         ].map((s) => (
           <div
             key={s.label}
-            className="rounded-xl border border-zinc-200/70 dark:border-white/[0.05] bg-white/50 dark:bg-white/[0.01] p-4 space-y-1 text-left"
+            className="bg-white dark:bg-[#111111] px-5 py-4 text-left"
           >
-            <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">{s.label}</p>
-            <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">{s.label}</p>
+            <p className={`text-2xl font-semibold mt-1 ${s.color}`}>{s.value}</p>
           </div>
         ))}
       </div>

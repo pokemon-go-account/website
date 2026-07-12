@@ -46,7 +46,6 @@ interface Request {
   status: Status;
   createdAt: string;
 }
-
 export function RecoveryRequestsClient({ initialRequests }: { initialRequests: Request[] }) {
   const [requests, setRequests] = useState<Request[]>(initialRequests);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -89,16 +88,16 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
               key={s}
               onClick={() => setFilter(s)}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer",
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold tracking-tight transition-all cursor-pointer",
                 isActive
                   ? "border-zinc-300 dark:border-white/10 bg-zinc-100 dark:bg-white/[0.06] text-zinc-900 dark:text-white"
-                  : "border-zinc-200 dark:border-white/[0.04] text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/[0.08]"
+                  : "border-zinc-200 dark:border-white/[0.06] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
               )}
             >
               {s === "ALL" ? "All" : cfg?.label}
               <span className={cn(
-                "ml-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-black border",
-                isActive ? "bg-zinc-200 dark:bg-white/10 border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white" : "bg-zinc-100 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.05] text-zinc-400 dark:text-zinc-600"
+                "ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium border",
+                isActive ? "bg-zinc-200 dark:bg-white/10 border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white" : "bg-zinc-100 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.05] text-zinc-400 dark:text-zinc-500"
               )}>
                 {counts[s]}
               </span>
@@ -109,7 +108,7 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
 
       {/* Requests list */}
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-sm text-zinc-400 dark:text-zinc-600">
+        <div className="text-center py-20 text-sm text-zinc-400 dark:text-zinc-650 italic">
           No recovery requests found.
         </div>
       ) : (
@@ -123,7 +122,7 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
               <motion.div
                 key={req._id}
                 layout
-                className="rounded-2xl border border-zinc-200/70 dark:border-white/[0.05] bg-white/60 dark:bg-white/[0.015] overflow-hidden transition-colors"
+                className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] overflow-hidden"
               >
                 {/* Row header (always visible) */}
                 <button
@@ -132,24 +131,24 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                 >
                   <div className="flex items-center gap-4 min-w-0">
                     {/* Status badge */}
-                    <span className={cn("flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-widest border px-2 py-0.5 rounded-full shrink-0", cfg.bg, cfg.color)}>
-                      <StatusIcon className="h-2.5 w-2.5" />
+                    <span className={cn("flex items-center gap-1 text-[10px] font-semibold border px-2.5 py-0.5 rounded-md shrink-0", cfg.bg, cfg.color)}>
+                      <StatusIcon className="h-3 w-3" />
                       {cfg.label}
                     </span>
 
                     {/* User info */}
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
                         {req.userId?.name || req.userId?.email || "Unknown User"}
                       </p>
-                      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">
+                      <p className="text-[11px] text-zinc-555 dark:text-zinc-400 truncate mt-0.5">
                         {req.userId?.email || "—"} · Lvl {req.accountLevel}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:block">
+                    <span className="text-xs text-zinc-450 dark:text-zinc-500 hidden sm:block">
                       {new Date(req.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </span>
                     <ChevronDown className={cn("h-4 w-4 text-zinc-400 transition-transform duration-200", isOpen && "rotate-180")} />
@@ -167,16 +166,16 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                       className="overflow-hidden border-t border-zinc-200 dark:border-white/[0.04]"
                     >
                       <div className="p-5 space-y-5">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                           {/* Screenshots */}
                           <div className="lg:col-span-1 space-y-1.5">
-                            <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
                               Screenshots ({req.screenshotUrls?.length || 1})
                             </p>
-                            <div className="flex flex-wrap gap-2 mt-1">
+                            <div className="flex flex-wrap gap-2 mt-1.5">
                               {req.screenshotUrls && req.screenshotUrls.length > 0 ? (
                                 req.screenshotUrls.map((url, i) => (
-                                  <div key={i} className="group relative h-16 w-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-950 shadow-xs shrink-0">
+                                  <div key={i} className="group relative h-16 w-24 rounded-md overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-950 shrink-0">
                                     <img src={url} alt={`Screenshot ${i + 1}`} className="h-full w-full object-cover" />
                                     <a
                                       href={url}
@@ -189,7 +188,7 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                                   </div>
                                 ))
                               ) : (
-                                <div className="group relative h-16 w-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-950 shadow-xs">
+                                <div className="group relative h-16 w-24 rounded-md overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-950">
                                   <img src={req.screenshotUrl} alt="account screenshot" className="h-full w-full object-cover" />
                                   <a
                                     href={req.screenshotUrl}
@@ -206,20 +205,20 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
 
                           {/* Account details */}
                           <div className="space-y-3">
-                            <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Account Info</p>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Account Info</p>
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <Layers className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-600 shrink-0" />
+                                <Layers className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">Level {req.accountLevel}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Calendar className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-600 shrink-0" />
+                                <Calendar className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">
                                   Started: {new Date(req.startDate).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <ShieldCheck className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-600 shrink-0" />
+                                <ShieldCheck className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">
                                   Created via: {CREATION_METHOD_LABELS[req.creationMethod] || req.creationMethod}
                                 </span>
@@ -235,21 +234,21 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
 
                           {/* Contact info */}
                           <div className="space-y-3">
-                            <p className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Contact</p>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Contact</p>
                             <div className="space-y-2">
                               <div className="flex items-start gap-2">
-                                <MessageSquare className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-600 shrink-0 mt-0.5" />
+                                <MessageSquare className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
                                 <div>
                                   <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{CONTACT_LABELS[req.contactMethod] || req.contactMethod}</p>
-                                  <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{req.contactId}</p>
+                                  <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{req.contactId}</p>
                                 </div>
                               </div>
                               {req.alternateContact && (
                                 <div className="flex items-start gap-2">
-                                  <Phone className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-600 shrink-0 mt-0.5" />
+                                  <Phone className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
                                   <div>
                                     <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Alt. contact</p>
-                                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{req.alternateContact}</p>
+                                    <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{req.alternateContact}</p>
                                   </div>
                                 </div>
                               )}
@@ -259,7 +258,7 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
 
                         {/* Status updater */}
                         <div className="pt-3 border-t border-zinc-200 dark:border-white/[0.04] flex flex-wrap items-center gap-2">
-                          <span className="text-[9px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mr-1">Update Status:</span>
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mr-1">Update Status:</span>
                           {(["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"] as Status[]).map((s) => {
                             const c = STATUS_CONFIG[s];
                             const SIcon = c.icon;
@@ -271,7 +270,7 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                                 disabled={isActive || updating === req._id}
                                 onClick={() => handleStatusChange(req._id, s)}
                                 className={cn(
-                                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer disabled:cursor-not-allowed",
+                                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed",
                                   isActive
                                     ? cn(c.bg, c.color, "opacity-100")
                                     : "border-zinc-200 dark:border-white/[0.05] text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/10 opacity-80"

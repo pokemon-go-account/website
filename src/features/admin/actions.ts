@@ -673,7 +673,7 @@ export async function updateCategory(id: string, name: string, slug: string, ima
     await connectDB();
     const updateData: Record<string, string> = { name, slug: slug.toLowerCase() };
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-    const category = await Category.findByIdAndUpdate(id, updateData, { new: true });
+    const category = await Category.findByIdAndUpdate(id, updateData, { returnDocument: "after" });
     revalidatePath('/admin/categories');
     revalidatePath('/store');
     return { success: true, category: JSON.parse(JSON.stringify(category)) };
@@ -762,7 +762,7 @@ export async function updateProduct(
   try {
     await checkSuperAdminSession();
     await connectDB();
-    const product = await Product.findByIdAndUpdate(id, data, { new: true });
+    const product = await Product.findByIdAndUpdate(id, data, { returnDocument: "after" });
     revalidatePath('/admin/products');
     revalidatePath('/store');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };

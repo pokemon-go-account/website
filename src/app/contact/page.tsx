@@ -104,7 +104,7 @@ export default function ContactPage() {
   } as any);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] text-zinc-900 dark:text-white transition-colors duration-300">
+    <div className="min-h-screen bg-transparent text-zinc-900 dark:text-white transition-colors duration-300">
       {/* Decorative auras */}
       <div className="fixed top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-violet-500/5 dark:bg-violet-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="fixed bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-cyan-500/5 dark:bg-cyan-500/8 rounded-full blur-[120px] pointer-events-none" />

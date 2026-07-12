@@ -135,7 +135,7 @@ export async function updateRecoveryRequestStatus(requestId: string, status: "PE
     const updated = await RecoveryRequest.findByIdAndUpdate(
       requestId,
       { status },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!updated) {

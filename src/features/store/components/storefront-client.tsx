@@ -124,7 +124,7 @@ Please let me know how to proceed with the payment!`;
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300">
+    <div className="relative min-h-screen bg-transparent text-zinc-900 dark:text-white transition-colors duration-300">
       {/* Top action/cart bar */}
       <div className="sticky top-[53px] z-40 w-full bg-white/80 dark:bg-black/60 backdrop-blur-md border-b border-zinc-200 dark:border-white/[0.05] py-4 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
