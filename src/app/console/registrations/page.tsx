@@ -42,7 +42,6 @@ export default function RegistrationsConsolePage() {
   const [alert, setAlert] = useState<{ text: string; ok: boolean } | null>(null);
 
   const [manualUsername, setManualUsername] = useState("");
-  const [manualAuctionId, setManualAuctionId] = useState("");
   const [formPending, setFormPending] = useState(false);
 
   const loadData = async () => {
@@ -102,14 +101,13 @@ export default function RegistrationsConsolePage() {
 
   const handleManualRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualUsername.trim() || !manualAuctionId.trim()) return;
+    if (!manualUsername.trim()) return;
     setFormPending(true);
     setAlert(null);
-    const res = await createRegistrationManuallyConsole(manualUsername.trim(), manualAuctionId.trim());
+    const res = await createRegistrationManuallyConsole(manualUsername.trim());
     if (res.success) {
-      setAlert({ text: `Successfully registered and marked paid bidder @${manualUsername.trim()} for auction ${manualAuctionId.trim()}!`, ok: true });
+      setAlert({ text: `Successfully registered and marked paid bidder @${manualUsername.trim()} globally!`, ok: true });
       setManualUsername("");
-      setManualAuctionId("");
       loadData();
     } else {
       setAlert({ text: res.error || "Manual registration failed.", ok: false });
@@ -159,7 +157,7 @@ export default function RegistrationsConsolePage() {
           <CreditCard className="h-4 w-4 text-zinc-400" />
           <h3 className="text-xs font-semibold uppercase tracking-wider">Register Bidder Manually</h3>
         </div>
-        <form onSubmit={handleManualRegisterSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <form onSubmit={handleManualRegisterSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end max-w-xl">
           <div className="space-y-1.5">
             <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Bidder Username</label>
             <input
@@ -171,20 +169,9 @@ export default function RegistrationsConsolePage() {
               className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Target Auction ID</label>
-            <input
-              type="text"
-              value={manualAuctionId}
-              onChange={(e) => setManualAuctionId(e.target.value)}
-              placeholder="e.g. 64b8d77f24021..."
-              required
-              className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
-            />
-          </div>
           <button
             type="submit"
-            disabled={formPending || !manualUsername.trim() || !manualAuctionId.trim()}
+            disabled={formPending || !manualUsername.trim()}
             className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-150 dark:text-zinc-900 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Check className="h-3.5 w-3.5" />
@@ -286,12 +273,20 @@ export default function RegistrationsConsolePage() {
 
                       {/* Auction coordinate */}
                       <td className="px-6 py-4 max-w-[200px]">
-                        <div className="font-semibold text-zinc-900 dark:text-white truncate">
-                          {reg.auctionId?.listingId?.title || "Unknown listing"}
-                        </div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5">
-                          Auction ID: {reg.auctionId?._id?.substring(0, 12)}...
-                        </div>
+                        {reg.auctionId ? (
+                          <>
+                            <div className="font-semibold text-zinc-900 dark:text-white truncate">
+                              {reg.auctionId?.listingId?.title || "Unknown listing"}
+                            </div>
+                            <div className="text-[10px] text-zinc-500 mt-0.5">
+                              Auction ID: {reg.auctionId?._id?.substring(0, 12)}...
+                            </div>
+                          </>
+                        ) : (
+                          <div className="font-semibold text-emerald-600 dark:text-emerald-500">
+                            Global (All Auctions)
+                          </div>
+                        )}
                       </td>
 
                       {/* Payment/Deposit Order ID */}
