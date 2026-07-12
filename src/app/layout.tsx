@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Pokemon Go Services",
   description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     title: "Pokemon Go Services",
     description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
