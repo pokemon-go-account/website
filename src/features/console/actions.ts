@@ -378,16 +378,13 @@ export async function deleteOrderConsole(orderId: string) {
 }
 
 /** Create or update registration manually by Super Admin */
-export async function createRegistrationManuallyConsole(username: string, auctionId: string) {
+export async function createRegistrationManuallyConsole(username: string, auctionId?: string) {
   try {
     await checkSuperAdminSession();
     await connectDB();
 
     if (!username || !username.trim()) {
       return { success: false, error: "Username is required." };
-    }
-    if (!auctionId || !auctionId.trim()) {
-      return { success: false, error: "Auction ID is required." };
     }
 
     const user = await User.findOne({
@@ -397,15 +394,19 @@ export async function createRegistrationManuallyConsole(username: string, auctio
       return { success: false, error: `User with username "${username}" not found.` };
     }
 
-    const auction = await Auction.findById(auctionId);
-    if (!auction) {
-      return { success: false, error: `Auction with ID "${auctionId}" not found.` };
+    let finalAuctionId: any = null;
+    if (auctionId && auctionId.trim()) {
+      const auction = await Auction.findById(auctionId);
+      if (!auction) {
+        return { success: false, error: `Auction with ID "${auctionId}" not found.` };
+      }
+      finalAuctionId = auction._id;
     }
 
     const Registration = (await import("@/models/Registration")).default;
 
     await Registration.findOneAndUpdate(
-      { userId: user._id, auctionId: auction._id },
+      { userId: user._id, auctionId: finalAuctionId },
       {
         $set: {
           status: "PAID",
