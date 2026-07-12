@@ -186,30 +186,30 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
       
       {/* Upper Hero Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center border-b border-zinc-200 dark:border-white/[0.05] pb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center border-b border-zinc-200 dark:border-white/[0.06] pb-10">
         
         {/* Left Side: Text Details */}
         <div className="lg:col-span-7 space-y-6 text-left">
-          <div className="inline-flex items-center gap-1.5 bg-[#24A1DE]/10 border border-[#24A1DE]/20 text-[#24A1DE] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-1.5 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] text-zinc-900 dark:text-white px-3 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider">
             <HeartHandshake className="h-3.5 w-3.5" />
             Trainer Support Desk
           </div>
 
           <div className="space-y-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent leading-none">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-zinc-900 dark:text-white leading-none">
               {product.name}
             </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl leading-relaxed">
               {product.description}
             </p>
           </div>
 
           {/* Pricing & Checkout card */}
-          <div className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.06] rounded-2xl p-6 space-y-4 max-w-md">
-            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.05] pb-3">
+          <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-6 space-y-4 max-w-md shadow-xs">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-3">
               <div>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest font-semibold">Service Fee</span>
-                <div className="text-2xl font-black text-zinc-900 dark:text-white mt-0.5">
+                <span className="text-[10px] text-zinc-450 dark:text-zinc-500 uppercase tracking-wider font-semibold">Service Fee</span>
+                <div className="text-2xl font-semibold text-zinc-900 dark:text-white mt-0.5">
                   ${product.price.toLocaleString()}
                 </div>
               </div>
@@ -219,21 +219,21 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                     <Star key={s} className="h-3 w-3 fill-yellow-400 stroke-yellow-400" />
                   ))}
                 </div>
-                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold mt-1">4.9/5 Trainer Satisfaction</span>
+                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-semibold mt-1">4.9/5 Trainer Satisfaction</span>
               </div>
             </div>
 
             {/* Buy button */}
             <button
               onClick={handleBuyClick}
-              className="w-full h-12 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black font-extrabold text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-200 active:scale-98 cursor-pointer shadow-md"
+              className="w-full h-10 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] cursor-pointer"
             >
               <KeyRound className="h-4 w-4" />
               <span>Buy Recovery Service</span>
             </button>
 
             <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold pt-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" />
+              <ShieldCheck className="h-3.5 w-3.5 text-zinc-400" />
               <span>Protected by Secure Appeals Vault</span>
             </div>
           </div>
@@ -241,13 +241,12 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
         {/* Right Side: Graphic Banner Image */}
         <div className="lg:col-span-5 flex justify-center">
-          <div className="relative group rounded-3xl border border-zinc-200/80 dark:border-white/[0.06] overflow-hidden bg-zinc-100 dark:bg-zinc-950/60 p-2 shadow-2xl max-w-md w-full">
+          <div className="relative group rounded-lg border border-zinc-200 dark:border-white/[0.06] overflow-hidden bg-zinc-100 dark:bg-zinc-950/60 p-2 shadow-xs max-w-md w-full">
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="w-full h-auto object-cover rounded-2xl group-hover:scale-[1.01] transition-transform duration-500"
+              className="w-full h-auto object-cover rounded-md group-hover:scale-[1.01] transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/5 via-transparent to-purple-500/5 pointer-events-none" />
           </div>
         </div>
 
@@ -255,7 +254,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
       {/* Benefits grid */}
       <div className="space-y-6">
-        <h2 className="text-xl font-extrabold text-foreground tracking-tight border-l-4 border-cyan-400 pl-3">
+        <h2 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight border-l-4 border-zinc-900 dark:border-white pl-3">
           Why Trainers Trust Our Support Service
         </h2>
 
@@ -265,13 +264,13 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
             return (
               <div
                 key={index}
-                className="rounded-2xl border border-zinc-200/60 dark:border-white/[0.03] bg-white/40 dark:bg-white/[0.005] p-5 hover:border-zinc-300 dark:hover:border-white/[0.06] transition-all space-y-3 text-left"
+                className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all space-y-3 text-left shadow-xs"
               >
-                <div className="h-8 w-8 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/10 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-md bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center text-zinc-700 dark:text-zinc-300">
                   <Icon className="h-4 w-4" />
                 </div>
-                <h3 className="text-xs font-bold text-zinc-900 dark:text-white tracking-tight">{benefit.title}</h3>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">{benefit.desc}</p>
+                <h3 className="text-xs font-semibold text-zinc-900 dark:text-white tracking-tight">{benefit.title}</h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-450 leading-relaxed">{benefit.desc}</p>
               </div>
             );
           })}
@@ -279,10 +278,10 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
       </div>
 
       {/* Step by step recovery workflow */}
-      <div className="rounded-3xl border border-zinc-200/60 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.005] p-8 space-y-8 text-left">
+      <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-8 space-y-8 text-left shadow-xs">
         <div className="space-y-1">
-          <h2 className="text-lg font-black text-foreground uppercase tracking-wider">How The Recovery Workflow Works</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">How The Recovery Workflow Works</h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             A step-by-step breakdown of how our recovery team escalates and retrieves your Trainer account.
           </p>
         </div>
@@ -290,13 +289,13 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
             <div key={index} className="relative space-y-3">
-              <div className="text-3xl font-black bg-gradient-to-b from-cyan-400 to-transparent bg-clip-text text-transparent leading-none">
+              <div className="text-3xl font-black text-zinc-200 dark:text-zinc-800 leading-none">
                 {step.num}
               </div>
-              <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{step.title}</h3>
+              <h3 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{step.title}</h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">{step.desc}</p>
               {index < 3 && (
-                <div className="hidden lg:block absolute top-4 right-[-15px] text-zinc-300 dark:text-zinc-800">
+                <div className="hidden lg:block absolute top-4 right-[-15px] text-zinc-350 dark:text-zinc-850">
                   <ArrowRight className="h-4 w-4" />
                 </div>
               )}
@@ -324,18 +323,18 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white dark:bg-[#09090B]/90 backdrop-blur-xl border-l border-zinc-200 dark:border-white/[0.06] p-6 flex flex-col justify-between shadow-2xl transition-colors duration-300 overflow-y-auto"
+              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white dark:bg-[#111111] border-l border-zinc-200 dark:border-white/[0.06] p-6 flex flex-col justify-between shadow-xl transition-colors duration-300 overflow-y-auto"
             >
               <div className="space-y-6 text-left">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.05] pb-4">
+                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-4">
                   <div className="flex items-center gap-2">
-                    <KeyRound className="h-5 w-5 text-zinc-900 dark:text-white" />
-                    <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Buy Recovery Service</h3>
+                    <KeyRound className="h-4 w-4 text-zinc-900 dark:text-white" />
+                    <h3 className="font-semibold text-sm text-zinc-900 dark:text-white">Buy Recovery Service</h3>
                   </div>
                   <button
                     onClick={() => setDrawerOpen(false)}
-                    className="h-8 w-8 rounded-lg border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                    className="h-8 w-8 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-white/[0.04] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -343,11 +342,11 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
                 {state.success ? (
                   <div className="py-20 text-center space-y-4">
-                    <div className="h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-500">
-                      <CheckCircle2 className="h-6 w-6" />
+                    <div className="h-10 w-10 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-500">
+                      <CheckCircle2 className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Order Placed Successfully!</h4>
+                      <h4 className="text-xs font-semibold text-zinc-900 dark:text-white">Order Placed Successfully!</h4>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 max-w-xs mx-auto leading-relaxed">
                         Our recovery team will reach out to you via your preferred social method ({activePlatform.name}) shortly.
                       </p>
@@ -356,14 +355,14 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                 ) : (
                   <form action={formAction} className="space-y-4">
                     {state.error && (
-                      <div className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive border border-destructive/20 leading-snug">
+                      <div className="rounded-md bg-red-500/5 p-3 text-xs text-red-500 border border-red-500/10 leading-snug">
                         {state.error}
                       </div>
                     )}
 
                     {/* Account Level */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="accountLevel" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Account Level</Label>
+                      <Label htmlFor="accountLevel" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Level</Label>
                       <Input
                         id="accountLevel"
                         name="accountLevel"
@@ -372,18 +371,18 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                         max={100}
                         required
                         placeholder="e.g. 40"
-                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-10 rounded-xl"
+                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-8 px-3 rounded-md"
                       />
                     </div>
 
                     {/* Account Creation Method */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="creationMethod" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Account Creation Method</Label>
+                      <Label htmlFor="creationMethod" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Creation Method</Label>
                       <select
                         id="creationMethod"
                         name="creationMethod"
                         required
-                        className="w-full h-10 px-3 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs font-medium focus:outline-hidden"
+                        className="w-full h-8 px-3 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold focus:outline-hidden transition-colors cursor-pointer"
                       >
                         {creationMethods.map((m) => (
                           <option key={m.id} value={m.id} className="dark:bg-zinc-950 dark:text-white">
@@ -395,28 +394,28 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
                     {/* Start Date */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="startDate" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Account Creation Start Date</Label>
+                      <Label htmlFor="startDate" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Creation Start Date</Label>
                       <Input
                         id="startDate"
                         name="startDate"
                         type="date"
                         required
-                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-10 rounded-xl"
+                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-8 px-3 rounded-md"
                       />
                     </div>
 
                     {/* Preferred Contact Method dropdown */}
                     <div className="space-y-1.5" ref={dropdownRef}>
-                      <Label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                      <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                         Preferred Contact Method
                       </Label>
                       <div className="relative">
                         <button
                           type="button"
                           onClick={() => setDropdownOpen(!dropdownOpen)}
-                          className="w-full h-10 px-3 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-white/[0.02] cursor-pointer transition-colors"
+                          className="w-full h-8 px-3 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-white/[0.02] cursor-pointer transition-colors"
                         >
-                          <div className="flex items-center gap-2.5 text-zinc-800 dark:text-white font-medium">
+                          <div className="flex items-center gap-2.5 text-zinc-850 dark:text-white font-semibold">
                             <ActiveIcon />
                             <span>{activePlatform.name}</span>
                           </div>
@@ -426,7 +425,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                         <input type="hidden" name="contactMethod" value={selectedMethod} />
 
                         {dropdownOpen && (
-                          <div className="absolute z-50 w-full mt-1.5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-zinc-950/95 backdrop-blur-md shadow-lg overflow-hidden py-1">
+                          <div className="absolute z-50 w-full mt-1.5 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-zinc-950/95 backdrop-blur-md shadow-lg overflow-hidden py-1">
                             {socialPlatforms.map((platform) => {
                               const PlatformIcon = platform.icon;
                               return (
@@ -438,8 +437,8 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                                     setDropdownOpen(false);
                                   }}
                                   className={cn(
-                                    "w-full h-9 px-3 text-left text-[11px] font-medium flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors cursor-pointer",
-                                    selectedMethod === platform.id ? "text-zinc-900 bg-zinc-50 dark:text-white dark:bg-white/[0.02]" : "text-zinc-500 dark:text-zinc-400"
+                                    "w-full h-8 px-3 text-left text-[11px] font-semibold flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors cursor-pointer",
+                                    selectedMethod === platform.id ? "text-zinc-900 bg-zinc-50 dark:text-white dark:bg-white/[0.02]" : "text-zinc-500 dark:text-zinc-455"
                                   )}
                                 >
                                   <PlatformIcon />
@@ -454,36 +453,36 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
                     {/* Social ID */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="contactId" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Social Username / Link</Label>
+                      <Label htmlFor="contactId" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Social Username / Link</Label>
                       <Input
                         id="contactId"
                         name="contactId"
                         type="text"
                         required
                         placeholder={activePlatform.placeholder}
-                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-10 rounded-xl"
+                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-8 px-3 rounded-md"
                       />
                     </div>
 
                     {/* Alternate Contact */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="alternateContact" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Additional Contact (Optional)</Label>
+                      <Label htmlFor="alternateContact" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Additional Contact (Optional)</Label>
                       <Input
                         id="alternateContact"
                         name="alternateContact"
                         type="text"
                         placeholder="Add another social profile or handle"
-                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-10 rounded-xl"
+                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-8 px-3 rounded-md"
                       />
                     </div>
                     {/* Screenshot Upload with base64 conversion */}
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Account Screenshots</Label>
+                      <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Screenshots</Label>
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="border border-dashed border-zinc-300 dark:border-white/[0.08] hover:border-zinc-400 dark:hover:border-white/[0.15] bg-zinc-50 dark:bg-zinc-950/30 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors"
+                        className="border border-dashed border-zinc-350 dark:border-white/[0.08] hover:border-zinc-400 dark:hover:border-white/[0.15] bg-zinc-50 dark:bg-zinc-950/30 rounded-md p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors"
                       >
-                        <Upload className="h-5 w-5 text-zinc-400" />
+                        <Upload className="h-4 w-4 text-zinc-455" />
                         <span className="text-[10px] text-zinc-550 dark:text-zinc-400 font-semibold text-center">
                           {screenshots.length > 0 ? `${screenshots.length} screenshot(s) selected` : "Click to upload screenshots (multiple allowed)"}
                         </span>
@@ -503,7 +502,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                       {screenshots.length > 0 && (
                         <div className="grid grid-cols-3 gap-2 mt-2 max-h-[180px] overflow-y-auto pr-1">
                           {screenshots.map((s) => (
-                            <div key={s.id} className="relative aspect-video border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-hidden bg-black flex items-center justify-center">
+                            <div key={s.id} className="relative aspect-video border border-zinc-200 dark:border-white/[0.06] rounded-md overflow-hidden bg-black flex items-center justify-center">
                               <img src={s.base64} alt="Preview" className="max-h-full max-w-full object-contain" />
                               <button
                                 type="button"
@@ -532,7 +531,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                       <input type="hidden" name="hasEmailAccess" value={emailCheck ? "true" : "false"} />
                       <Label
                         htmlFor="hasEmailAccess"
-                        className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal font-medium select-none cursor-pointer"
+                        className="text-[10px] text-zinc-550 dark:text-zinc-400 leading-normal font-semibold select-none cursor-pointer"
                       >
                         I confirm that I still have access to the registered email address of the Pokémon GO account to be recovered.
                       </Label>
@@ -541,7 +540,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                     <Button
                       type="submit"
                       disabled={isPending || !emailCheck || screenshots.length === 0}
-                      className="w-full h-11 font-extrabold text-xs tracking-wider uppercase rounded-xl transition-all cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black mt-6 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isPending ? "Submitting Order..." : "Confirm & Buy Service"}
                     </Button>

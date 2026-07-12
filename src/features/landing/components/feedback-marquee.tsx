@@ -58,15 +58,15 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
   };
 
   const Card = ({ item }: { item: FeedbackItem }) => (
-    <div className="w-[320px] shrink-0 mx-3 rounded-2xl border border-zinc-200/60 dark:border-white/[0.04] bg-white dark:bg-[#111113] p-5 shadow-xs flex flex-col justify-between hover:border-zinc-300 dark:hover:border-white/[0.09] transition-all duration-300 select-none">
+    <div className="w-[320px] shrink-0 mx-3 rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 shadow-xs flex flex-col justify-between hover:border-zinc-300 dark:hover:border-white/10 transition-all duration-300 select-none">
       <div className="space-y-3">
         {/* Upper row: User Avatar initials & rating */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={cn("h-7 w-7 rounded-lg border text-xs font-black flex items-center justify-center uppercase shadow-xs", getAvatarColorClass(item.username))}>
+            <div className={cn("h-7 w-7 rounded-md border text-xs font-semibold flex items-center justify-center uppercase shadow-xs", getAvatarColorClass(item.username))}>
               {item.username.substring(0, 2)}
             </div>
-            <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 tracking-tight">
+            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
               {item.username}
             </span>
           </div>
@@ -74,14 +74,14 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
         </div>
 
         {/* Review text */}
-        <p className="text-xs text-zinc-650 dark:text-zinc-400 leading-relaxed italic">
+        <p className="text-xs text-zinc-550 dark:text-zinc-450 leading-relaxed italic font-medium">
           "{item.comment}"
         </p>
       </div>
 
       {/* Footer metadata */}
-      <div className="pt-2.5 mt-3 border-t border-zinc-100 dark:border-white/[0.04] flex items-center justify-between text-[9px] text-zinc-400 dark:text-zinc-500 font-semibold">
-        <span className="flex items-center gap-0.5 text-[#24a1de] uppercase tracking-wider">
+      <div className="pt-2.5 mt-3 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between text-[9px] text-zinc-400 dark:text-zinc-500 font-semibold">
+        <span className="flex items-center gap-0.5 text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           <Award className="h-3 w-3" /> Verified Trainer
         </span>
       </div>
@@ -113,14 +113,14 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
 
       {/* Header section */}
       <div className="text-center space-y-2 max-w-xl mx-auto px-4">
-        <span className="inline-flex items-center gap-1.5 bg-[#6133e1]/10 text-[#6133e1] text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md border border-[#6133e1]/20">
-          <Star className="h-3 w-3 fill-current" />
+        <span className="inline-flex items-center gap-1.5 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] text-zinc-900 dark:text-white text-[10px] font-semibold px-2.5 py-1 rounded-md">
+          <Star className="h-3 w-3 fill-current text-zinc-900 dark:text-white" />
           Testimonials
         </span>
-        <h2 className="text-gray-900 dark:text-white font-extrabold text-2xl tracking-tight">
+        <h2 className="text-zinc-900 dark:text-white font-semibold text-xl tracking-tight">
           Real Feedback from Real Trainers
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <p className="text-zinc-550 dark:text-zinc-450 text-xs">
           Hear what trainers worldwide say about our secure accounts, custom catching, and live auction trades.
         </p>
       </div>
@@ -128,8 +128,8 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
       {/* Marquee Rows Container */}
       <div className="flex flex-col gap-6 relative">
         {/* Soft edge gradients overlay */}
-        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-gray-50 via-gray-50/50 to-transparent dark:from-[#0d0d0f] dark:via-[#0d0d0f]/50 dark:to-transparent z-10 pointer-events-none" />
-        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-gray-50 via-gray-50/50 to-transparent dark:from-[#0d0d0f] dark:via-[#0d0d0f]/50 dark:to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white via-white/50 to-transparent dark:from-[#09090B] dark:via-[#09090B]/50 dark:to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white via-white/50 to-transparent dark:from-[#09090B] dark:via-[#09090B]/50 dark:to-transparent z-10 pointer-events-none" />
 
         {/* Row 1: Leftward moving cards */}
         <div className="flex w-max">
@@ -152,32 +152,32 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
 
       {/* Stats Counter Area */}
       <div className="max-w-4xl mx-auto px-4">
-        <div className="rounded-3xl border border-zinc-200/80 dark:border-white/[0.05] bg-white dark:bg-[#111113]/60 p-6 sm:p-8 shadow-xs">
-          <div className="grid grid-cols-3 divide-x divide-zinc-200 dark:divide-white/[0.05] text-center">
+        <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 shadow-xs">
+          <div className="grid grid-cols-3 divide-x divide-zinc-200 dark:divide-white/[0.06] text-center">
             
             <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#6133e1] to-[#a188f5] bg-clip-text text-transparent block">
+              <span className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white block">
                 2K+
               </span>
-              <span className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider block">
+              <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider block">
                 Happy Trainers
               </span>
             </div>
 
             <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#6133e1] to-[#a188f5] bg-clip-text text-transparent block">
+              <span className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white block">
                 10K+
               </span>
-              <span className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider block">
+              <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider block">
                 Trades Completed
               </span>
             </div>
 
             <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#6133e1] to-[#a188f5] bg-clip-text text-transparent block">
+              <span className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white block">
                 4.8★
               </span>
-              <span className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider block">
+              <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider block">
                 Average Rating
               </span>
             </div>

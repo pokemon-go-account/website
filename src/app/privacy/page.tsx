@@ -11,15 +11,15 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-transparent text-zinc-900 dark:text-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24 space-y-12">
         {/* Header */}
-        <div className="space-y-4 border-b border-zinc-200 dark:border-white/[0.06] pb-10">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">Legal Document</p>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400 bg-clip-text text-transparent">
+        <div className="space-y-3 border-b border-zinc-200 dark:border-white/[0.06] pb-8">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Legal Document</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
             Privacy Policy
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            Last updated: <strong className="text-zinc-700 dark:text-zinc-300">July 2025</strong>
+            Last updated: <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">July 2025</strong>
           </p>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-loose">
+          <p className="text-sm text-zinc-650 dark:text-zinc-400 leading-relaxed">
             We are committed to protecting your personal information and your right to privacy. This policy explains what information we collect, how we use it, and your rights regarding your data.
           </p>
         </div>
@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
         <div className="space-y-10 text-sm leading-loose text-zinc-600 dark:text-zinc-400">
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">1. Information We Collect</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">1. Information We Collect</h2>
             <p>We collect the following types of information:</p>
             <ul className="list-disc pl-5 space-y-2">
               <li><strong className="text-zinc-700 dark:text-zinc-300">Account Information:</strong> Name, email address, and profile details you provide during registration or via OAuth (Google sign-in).</li>
@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">2. How We Use Your Information</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">2. How We Use Your Information</h2>
             <p>We use the collected information to:</p>
             <ul className="list-disc pl-5 space-y-2">
               <li>Operate, maintain, and improve the platform.</li>
@@ -53,7 +53,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">3. Sharing of Information</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">3. Sharing of Information</h2>
             <p>
               We do <strong className="text-zinc-700 dark:text-zinc-300">not</strong> sell, trade, or rent your personal information to third parties. We may share information only in the following circumstances:
             </p>
@@ -65,28 +65,28 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">4. Cookies & Tracking</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">4. Cookies & Tracking</h2>
             <p>
               We use cookies and similar tracking technologies to maintain your session, remember your preferences (such as dark/light theme), and analyze platform usage. You can control cookie settings through your browser, though disabling certain cookies may affect platform functionality.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">5. Data Retention</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">5. Data Retention</h2>
             <p>
               We retain your personal information for as long as your account is active or as needed to provide services. Transaction records may be retained for up to 7 years for legal and financial compliance. You may request deletion of your account and associated data at any time by contacting us.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">6. Data Security</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">6. Data Security</h2>
             <p>
               We implement industry-standard security measures including encrypted connections (HTTPS), hashed credentials, and access controls to protect your information. However, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">7. Your Rights</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">7. Your Rights</h2>
             <p>Depending on your jurisdiction, you may have the right to:</p>
             <ul className="list-disc pl-5 space-y-2">
               <li>Access the personal data we hold about you.</li>
@@ -99,28 +99,28 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">8. Third-Party Links</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">8. Third-Party Links</h2>
             <p>
               Our platform may contain links to third-party websites. We are not responsible for the privacy practices of those sites and encourage you to review their privacy policies independently.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">9. Children&apos;s Privacy</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">9. Children&apos;s Privacy</h2>
             <p>
               Our Service is not directed to individuals under the age of 18. We do not knowingly collect personal information from minors. If you become aware that a child has provided us with personal data, please contact us immediately.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">10. Changes to this Policy</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">10. Changes to this Policy</h2>
             <p>
               We may update this Privacy Policy from time to time. We will notify you of significant changes via email or a prominent notice on our platform. Continued use of the Service after such changes constitutes your acceptance of the updated policy.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">11. Contact Us</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">11. Contact Us</h2>
             <p>
               For privacy-related inquiries or to exercise your rights, please reach out via our{" "}
               <Link href="/contact" className="text-zinc-900 dark:text-white font-bold underline underline-offset-2 hover:opacity-70 transition-opacity">

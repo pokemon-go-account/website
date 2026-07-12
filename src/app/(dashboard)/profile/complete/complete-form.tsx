@@ -106,14 +106,14 @@ export function CompleteProfileForm() {
   return (
     <form action={formAction} className="space-y-5 text-left">
       {state.error && (
-        <div className="rounded-xl bg-destructive/10 p-3.5 text-xs text-destructive border border-destructive/20 leading-snug">
+        <div className="rounded-md bg-red-500/5 p-3 text-xs text-red-500 border border-red-500/10 leading-snug">
           {state.error}
         </div>
       )}
 
       {/* Full Name field */}
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+        <Label htmlFor="name" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
           Full Name
         </Label>
         <Input
@@ -122,25 +122,25 @@ export function CompleteProfileForm() {
           type="text"
           required
           placeholder="e.g. John Doe"
-          className="h-11 bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.15] focus:border-zinc-400 dark:focus:border-white/[0.3] rounded-xl text-sm transition-all shadow-xs"
+          className="h-8 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs px-3 rounded-md focus-visible:ring-zinc-900/10 transition-colors shadow-xs"
         />
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 pl-1">
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 pl-1 leading-relaxed font-medium">
           Enter your full name.
         </p>
       </div>
 
       {/* Preferred Contact Method dropdown */}
       <div className="space-y-2" ref={dropdownRef}>
-        <Label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+        <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
           Preferred Contact Method
         </Label>
         <div className="relative">
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-full h-11 px-4 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-sm flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-white/[0.02] cursor-pointer transition-colors shadow-xs"
+            className="w-full h-8 px-3 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-white/[0.02] cursor-pointer transition-colors shadow-xs"
           >
-            <div className="flex items-center gap-3 text-zinc-800 dark:text-white font-medium">
+            <div className="flex items-center gap-2.5 text-zinc-800 dark:text-white font-semibold">
               <ActiveIcon />
               <span>{activePlatform.name}</span>
             </div>
@@ -152,7 +152,7 @@ export function CompleteProfileForm() {
 
           {/* Dropdown Options */}
           {dropdownOpen && (
-            <div className="absolute z-50 w-full mt-1.5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-zinc-950/95 backdrop-blur-md shadow-lg overflow-hidden py-1">
+            <div className="absolute z-50 w-full mt-1.5 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-zinc-950/95 backdrop-blur-md shadow-lg overflow-hidden py-1">
               {socialPlatforms.map((platform) => {
                 const PlatformIcon = platform.icon;
                 return (
@@ -164,8 +164,8 @@ export function CompleteProfileForm() {
                       setDropdownOpen(false);
                     }}
                     className={cn(
-                      "w-full h-10 px-4 text-left text-xs font-medium flex items-center gap-3 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors cursor-pointer",
-                      selectedMethod === platform.id ? "text-zinc-900 bg-zinc-50 dark:text-white dark:bg-white/[0.02]" : "text-zinc-500 dark:text-zinc-400"
+                      "w-full h-8 px-3 text-left text-xs font-semibold flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors cursor-pointer",
+                      selectedMethod === platform.id ? "text-zinc-900 bg-zinc-50 dark:text-white dark:bg-white/[0.02]" : "text-zinc-500 dark:text-zinc-405"
                     )}
                   >
                     <PlatformIcon />
@@ -180,7 +180,7 @@ export function CompleteProfileForm() {
 
       {/* Username or Profile Link field */}
       <div className="space-y-2">
-        <Label htmlFor="preferredContactId" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+        <Label htmlFor="preferredContactId" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
           Username or Profile Link
         </Label>
         <Input
@@ -189,9 +189,9 @@ export function CompleteProfileForm() {
           type="text"
           required
           placeholder={activePlatform.placeholder}
-          className="h-11 bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.15] focus:border-zinc-400 dark:focus:border-white/[0.3] rounded-xl text-sm transition-all shadow-xs"
+          className="h-8 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs px-3 rounded-md focus-visible:ring-zinc-900/10 transition-colors shadow-xs"
         />
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1">
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1 font-medium">
           We'll use this to contact you if we need to discuss your account, purchases, sales, or other marketplace-related matters.
         </p>
       </div>
@@ -201,14 +201,14 @@ export function CompleteProfileForm() {
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-zinc-200 dark:border-white/[0.06]" />
         </div>
-        <span className="relative z-10 px-3 bg-white dark:bg-[#0c0c0e] text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+        <span className="relative z-10 px-3 bg-white dark:bg-[#111111] text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
           Optional
         </span>
       </div>
 
       {/* Additional Contact (Optional) field */}
       <div className="space-y-2">
-        <Label htmlFor="alternateContact" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+        <Label htmlFor="alternateContact" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
           Additional Contact (Optional)
         </Label>
         <Input
@@ -216,9 +216,9 @@ export function CompleteProfileForm() {
           name="alternateContact"
           type="text"
           placeholder="Add another social profile or messaging app"
-          className="h-11 bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.15] focus:border-zinc-400 dark:focus:border-white/[0.3] rounded-xl text-sm transition-all shadow-xs"
+          className="h-8 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs px-3 rounded-md focus-visible:ring-zinc-900/10 transition-colors shadow-xs"
         />
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1">
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1 font-medium">
           Share another way for us to contact you, if available.
         </p>
       </div>
@@ -226,7 +226,7 @@ export function CompleteProfileForm() {
       <Button
         type="submit"
         disabled={isPending}
-        className="w-full h-11 font-extrabold text-xs tracking-wider uppercase rounded-xl transition-all cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black mt-6 shadow-md"
+        className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer mt-6"
       >
         {isPending ? "Finalizing Profile..." : "Continue →"}
       </Button>

@@ -123,18 +123,18 @@ export function FAQ() {
   const displayedFaqs = showAll ? faqs : faqs.slice(0, 5);
 
   return (
-    <section id="faq" className="relative w-full overflow-hidden border-t border-zinc-100 dark:border-white/[0.06] py-16 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-      <div className="absolute inset-0 bg-white dark:bg-[#080809] z-[-2] pointer-events-none" />
+    <section id="faq" className="relative w-full overflow-hidden border-t border-zinc-200 dark:border-white/[0.06] py-16 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <div className="absolute inset-0 bg-white dark:bg-[#09090B] z-[-2] pointer-events-none" />
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-600 dark:text-violet-400 border border-violet-500/20 mb-3">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-50 dark:bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/[0.08] mb-3">
             <HelpCircle className="h-3.5 w-3.5" />
             Support Center
           </span>
-          <h2 className="text-zinc-900 dark:text-white font-extrabold text-2xl sm:text-3xl tracking-tight mb-2">
+          <h2 className="text-zinc-900 dark:text-white font-semibold text-xl sm:text-2xl tracking-tight mb-2">
             Frequently Asked Questions
           </h2>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm max-w-md mx-auto leading-relaxed">
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs max-w-md mx-auto leading-relaxed">
             Have questions about auctions, storefront orders, checkout systems, or account handover coordinates? We have answers.
           </p>
         </div>
@@ -145,19 +145,19 @@ export function FAQ() {
             return (
               <div
                 key={idx}
-                className={`overflow-hidden rounded-2xl border transition-all duration-300 ${
+                className={`overflow-hidden rounded-md border transition-all duration-200 ${
                   isOpen
-                    ? "border-violet-500/30 dark:border-violet-500/20 bg-zinc-50 dark:bg-[#111113]"
-                    : "border-zinc-200 dark:border-white/[0.07] bg-white dark:bg-[#0d0d0f] hover:border-zinc-300 dark:hover:border-white/[0.12]"
+                    ? "border-zinc-300 dark:border-white/15 bg-zinc-50/50 dark:bg-black/10"
+                    : "border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] hover:border-zinc-300 dark:hover:border-white/10"
                 }`}
               >
                 <button
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="flex w-full items-center justify-between px-5 py-4.5 text-left text-sm font-semibold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                  className="flex w-full items-center justify-between px-5 py-4 text-left text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   <span className="pr-4">{faq.q}</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-300 ml-4 ${isOpen ? "rotate-180 text-violet-500" : ""}`}
+                    className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-300 ml-4 ${isOpen ? "rotate-180 text-zinc-900 dark:text-white" : ""}`}
                   />
                 </button>
                 <AnimatePresence initial={false}>
@@ -168,7 +168,7 @@ export function FAQ() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.22, ease: "easeInOut" }}
                     >
-                      <div className="border-t border-zinc-100 dark:border-white/[0.06] px-5 py-4 text-xs sm:text-sm leading-relaxed text-zinc-500 dark:text-zinc-450 font-light">
+                      <div className="border-t border-zinc-200 dark:border-white/[0.06] px-5 py-4 text-xs sm:text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 font-medium">
                         {faq.a}
                       </div>
                     </motion.div>
@@ -185,7 +185,7 @@ export function FAQ() {
               setShowAll(!showAll);
               setOpenIdx(null);
             }}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-150 text-white dark:text-black font-extrabold text-xs px-6 py-2.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            className="inline-flex h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
           >
             <MessageSquare className="h-4 w-4 shrink-0" />
             {showAll ? "Show Less Questions" : "View All Questions (25)"}

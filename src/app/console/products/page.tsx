@@ -287,7 +287,7 @@ export default function ManageProductsPage() {
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="h-7 w-7 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-955 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                className="h-7 w-7 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -313,7 +313,7 @@ export default function ManageProductsPage() {
                 <textarea
                   placeholder="Details of the product or service..."
                   {...register("description")}
-                  className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal"
+                  className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal"
                 />
               </div>
 
@@ -338,7 +338,7 @@ export default function ManageProductsPage() {
                   <select
                     {...register("categoryId")}
                     className={cn(
-                      "w-full h-8 px-2 bg-zinc-100 dark:bg-[#09090B] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors cursor-pointer",
+                      "w-full h-8 px-2 bg-zinc-100 dark:bg-[#09090B] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors cursor-pointer",
                       errors.categoryId && "border-red-500/50 focus:border-red-500"
                     )}
                   >
@@ -378,7 +378,7 @@ export default function ManageProductsPage() {
                     placeholder="https://images.unsplash.com/... or uploaded path"
                     {...register("imageUrl")}
                     className={cn(
-                      "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-655 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
+                      "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-655 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
                       errors.imageUrl && "border-red-500/50 focus:border-red-500"
                     )}
                   />

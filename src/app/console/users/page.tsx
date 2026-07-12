@@ -77,7 +77,7 @@ export default function ConsoleUsersPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Enter exact username..."
-          className="flex-1 h-8 px-3 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white text-xs placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+          className="flex-1 h-8 px-3 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-900 dark:text-white text-xs placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
         />
         <button
           type="submit"

@@ -23,13 +23,13 @@ export function ProfileForm({ currentTelegram }: ProfileFormProps) {
   return (
     <form action={formAction} className="space-y-4">
       {state.error && (
-        <div className="rounded bg-destructive/10 p-2.5 text-[11px] text-destructive border border-destructive/20 leading-tight">
+        <div className="rounded-md bg-red-500/5 p-3 text-xs text-red-500 border border-red-500/10 leading-tight">
           {state.error}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <Label htmlFor="telegramUsername" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <Label htmlFor="telegramUsername" className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Update Telegram Username
         </Label>
         <div className="flex gap-2">
@@ -40,9 +40,9 @@ export function ProfileForm({ currentTelegram }: ProfileFormProps) {
             required
             defaultValue={currentTelegram}
             placeholder="@yourname"
-            className="flex-1 h-9 bg-muted/40 border-border text-xs focus:outline-none text-foreground"
+            className="flex-1 h-8 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus-visible:ring-zinc-900/10 rounded-md"
           />
-          <Button type="submit" disabled={isPending} className="h-9 text-xs font-semibold px-4 cursor-pointer bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/50 text-white">
+          <Button type="submit" disabled={isPending} className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer shrink-0">
             {isPending ? "Saving..." : "Update"}
           </Button>
         </div>

@@ -130,13 +130,13 @@ export default async function UserOrdersPage() {
                 year: "numeric",
               });
 
-              const typeConfig = {
+              const typeConfig = (({
                 AUCTION: { label: "Auction Win", className: "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400" },
                 BUY_NOW: { label: "Buy Now", className: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" },
                 STOREFRONT: { label: "Store", className: "bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400" },
-              }[purchase.orderType] ?? { label: purchase.orderType, className: "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400" };
+              } as Record<string, { label: string; className: string }>)[purchase.orderType]) ?? { label: purchase.orderType, className: "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400" };
 
-              const statusConfig = {
+              const statusConfig = (({
                 COMPLETED: {
                   label: "Completed",
                   icon: ShieldCheck,
@@ -152,7 +152,7 @@ export default async function UserOrdersPage() {
                   icon: XCircle,
                   className: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
                 },
-              }[purchase.status] ?? { label: purchase.status, icon: Clock, className: "bg-zinc-100 dark:bg-white/[0.04] text-zinc-500" };
+              } as Record<string, { label: string; icon: any; className: string }>)[purchase.status]) ?? { label: purchase.status, icon: Clock, className: "bg-zinc-100 dark:bg-white/[0.04] text-zinc-500" };
 
               const StatusIcon = statusConfig.icon;
 

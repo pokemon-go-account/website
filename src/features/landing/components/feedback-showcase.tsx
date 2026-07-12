@@ -52,8 +52,8 @@ export async function FeedbackShowcase() {
   const feedbacks = await getRealFeedbacks();
 
   return (
-    <section className="relative w-full overflow-hidden border-t border-gray-100 dark:border-white/[0.06] py-16">
-      <div className="absolute inset-0 bg-gray-50 dark:bg-[#0d0d0f] z-[-2] pointer-events-none" />
+    <section className="relative w-full overflow-hidden border-t border-zinc-200 dark:border-white/[0.06] py-16">
+      <div className="absolute inset-0 bg-white dark:bg-[#09090B] z-[-2] pointer-events-none" />
       <FeedbackMarquee feedbacks={feedbacks} />
     </section>
   );

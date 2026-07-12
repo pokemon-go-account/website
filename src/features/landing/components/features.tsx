@@ -37,8 +37,8 @@ const cardVariants: Variants = {
 
 export function Features() {
   return (
-    <section className="relative w-full overflow-hidden border-b border-gray-100 dark:border-white/[0.06]">
-      <div className="absolute inset-0 bg-white dark:bg-[#080809] z-[-2] pointer-events-none" />
+    <section className="relative w-full overflow-hidden border-b border-zinc-200 dark:border-white/[0.06]">
+      <div className="absolute inset-0 bg-white dark:bg-[#09090B] z-[-2] pointer-events-none" />
 
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -53,14 +53,12 @@ export function Features() {
             <motion.div
               key={label}
               variants={cardVariants}
-              className="relative rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-gray-50 dark:bg-[#111113] overflow-hidden px-6 py-7 text-center group hover:border-gray-300 dark:hover:border-white/20 transition-all duration-300"
+              className="relative rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-[#111111] overflow-hidden px-6 py-6 text-center group hover:border-zinc-300 dark:hover:border-white/10 transition-all duration-300"
             >
-              {/* Subtle white glow in dark */}
-              <div className="absolute inset-0 opacity-0 dark:group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04),transparent_70%)]" />
-              <p className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-2">
+              <p className="text-2xl font-semibold text-zinc-900 dark:text-white tracking-tight leading-none mb-2">
                 {value}
               </p>
-              <p className="text-gray-500 dark:text-gray-500 text-sm font-medium tracking-wide">
+              <p className="text-zinc-550 dark:text-zinc-500 text-xs font-semibold tracking-wide">
                 {label}
               </p>
             </motion.div>

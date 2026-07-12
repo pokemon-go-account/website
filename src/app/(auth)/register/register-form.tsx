@@ -131,9 +131,9 @@ export function RegisterForm() {
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 text-xs text-amber-600 dark:text-amber-200/90 flex gap-2.5 items-start leading-relaxed backdrop-blur-sm"
+          className="rounded-md border border-amber-500/10 bg-amber-500/5 p-3 text-xs text-amber-600 dark:text-amber-200/90 flex gap-2.5 items-start leading-relaxed"
         >
-          <AlertCircle className="h-4.5 w-4.5 text-amber-500 shrink-0 mt-0.5" />
+          <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <span className="font-semibold text-amber-600 dark:text-amber-400">Firebase Keys Missing:</span> Google button action will show configuration warnings until keys are configured in your `.env.local`.
           </div>
@@ -145,7 +145,7 @@ export function RegisterForm() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive border border-destructive/20 flex gap-2 items-start"
+          className="rounded-md bg-red-500/5 p-3 text-xs text-red-500 border border-red-500/10 flex gap-2 items-start"
         >
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span className="leading-normal">{authError || credState.error}</span>
@@ -159,10 +159,10 @@ export function RegisterForm() {
           variant="outline"
           disabled={!!isSocialLoading}
           onClick={() => handleSocialLogin("google")}
-          className="w-full h-10 gap-2 border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center cursor-pointer shadow-md dark:shadow-lg dark:shadow-black/20"
+          className="w-full h-8 px-4 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] text-xs font-semibold text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           {isSocialLoading === "google" ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-muted border-t-foreground" />
           ) : (
             <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
               <path
@@ -178,10 +178,10 @@ export function RegisterForm() {
       {/* Decorative Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-zinc-200 dark:border-white/5" />
+          <span className="w-full border-t border-zinc-200 dark:border-white/[0.06]" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white dark:bg-[#121215] px-3 text-zinc-400 dark:text-muted-foreground font-medium tracking-wide">
+        <div className="relative flex justify-center text-[10px] uppercase">
+          <span className="bg-white dark:bg-[#111111] px-3 text-zinc-400 dark:text-zinc-500 font-semibold tracking-wider">
             Or sign up with credentials
           </span>
         </div>
@@ -190,7 +190,7 @@ export function RegisterForm() {
       {/* Standard Form */}
       <form action={credFormAction} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="identifier" className="text-zinc-650 dark:text-zinc-400 font-medium text-xs">Email Address</Label>
+          <Label htmlFor="identifier" className="text-zinc-650 dark:text-zinc-400 font-semibold text-xs">Email Address</Label>
           <div className="relative group/input">
             <Input 
               id="identifier" 
@@ -198,14 +198,14 @@ export function RegisterForm() {
               type="email" 
               required 
               placeholder="name@example.com" 
-              className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/5 text-sm pl-9 h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:border-indigo-500/50 focus-visible:ring-indigo-500/20 transition-all rounded-xl" 
+              className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs pl-9 h-8 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus-visible:ring-zinc-900/10 transition-colors rounded-md" 
             />
-            <Mail className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400 dark:text-zinc-600 group-focus-within/input:text-indigo-500 transition-colors" />
+            <Mail className="absolute left-3 top-2 h-4 w-4 text-zinc-400 dark:text-zinc-600 transition-colors" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-zinc-655 dark:text-zinc-400 font-medium text-xs">Password</Label>
+          <Label htmlFor="password" className="text-zinc-655 dark:text-zinc-400 font-semibold text-xs">Password</Label>
           <div className="relative group/input">
             <Input 
               id="password" 
@@ -213,9 +213,9 @@ export function RegisterForm() {
               type="password" 
               required 
               placeholder="••••••••"
-              className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/5 text-sm pl-9 h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:border-indigo-500/50 focus-visible:ring-indigo-500/20 transition-all rounded-xl" 
+              className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs pl-9 h-8 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus-visible:ring-zinc-900/10 transition-colors rounded-md" 
             />
-            <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400 dark:text-zinc-600 group-focus-within/input:text-indigo-500 transition-colors" />
+            <Lock className="absolute left-3 top-2 h-4 w-4 text-zinc-400 dark:text-zinc-600 transition-colors" />
           </div>
         </div>
 
@@ -230,17 +230,17 @@ export function RegisterForm() {
         <Button 
           type="submit" 
           disabled={isCredPending || !!isSocialLoading}
-          className="w-full h-10 font-bold bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white border-0 transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/25 active:scale-[0.98] cursor-pointer rounded-xl flex items-center justify-center gap-1.5"
+          className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
         >
           {isCredPending ? (
             <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               Creating account...
             </>
           ) : (
             <>
               Sign Up with Password
-              <ArrowRight className="h-4 w-4 group-hover/button:translate-x-0.5 transition-transform" />
+              <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </>
           )}
         </Button>

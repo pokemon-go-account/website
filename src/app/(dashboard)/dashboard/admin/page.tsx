@@ -39,18 +39,18 @@ export default async function AdminDashboardOverview() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-8">
       {/* Dashboard Header */}
-      <div className="flex items-center justify-between border-b border-border pb-6">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
+          <h1 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
             Admin Dashboard
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-zinc-500 mt-1">
             Monitor asset authentication workflows, live bidding, and past auction winners.
           </p>
         </div>
         <Link
           href="/dashboard/admin/listings/new"
-          className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black px-4 text-xs font-semibold border border-zinc-700/50 gap-1.5 transition-all active:scale-95 cursor-pointer"
+          className="inline-flex h-8 items-center justify-center rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 px-3 text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer"
         >
           <Plus className="h-3.5 w-3.5" />
           New Listing
@@ -59,18 +59,18 @@ export default async function AdminDashboardOverview() {
 
       {/* Listings & Auction Results Table */}
       {sellerListings.length === 0 ? (
-        <div className="flex h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/25 text-center p-8">
+        <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-center p-8">
           <div className="max-w-xs space-y-2">
-            <h3 className="text-sm font-semibold text-foreground">No listings submitted yet</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">No listings submitted yet</h3>
+            <p className="text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed font-medium">
               Submit your high-tier Trainer account coordinates to prompt verification moderations.
             </p>
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card/20 backdrop-blur-sm shadow-sm">
-          <table className="min-w-full divide-y divide-border text-left text-xs">
-            <thead className="bg-muted/40 text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] shadow-xs">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-left text-xs">
+            <thead className="bg-zinc-50 dark:bg-black/10 text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="px-6 py-4">Asset Coordinate</th>
                 <th className="px-6 py-4">Verification Status</th>
@@ -78,17 +78,17 @@ export default async function AdminDashboardOverview() {
                 <th className="px-6 py-4">Auction Winner / Notes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border text-foreground">
+            <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.06] text-zinc-900 dark:text-white">
               {sellerListings.map((listing) => {
                 const auc = auctionMap.get(listing._id.toString());
                 const isConcluded = auc && new Date() >= new Date(auc.endTime);
 
                 return (
-                  <tr key={listing._id.toString()} className="hover:bg-muted/10 transition-colors">
+                  <tr key={listing._id.toString()} className="hover:bg-zinc-50/50 dark:hover:bg-black/10 transition-colors">
                     {/* Title & Level */}
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-foreground text-sm">{listing.title}</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5 flex gap-2">
+                      <div className="font-semibold text-zinc-900 dark:text-white text-xs">{listing.title}</div>
+                      <div className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-0.5 flex gap-2 font-medium">
                         <span>Level: {listing.level}</span>
                         <span>•</span>
                         <span>Team: {listing.team}</span>
@@ -100,17 +100,17 @@ export default async function AdminDashboardOverview() {
                     {/* Verification Status */}
                     <td className="px-6 py-4">
                       {listing.status === "PENDING" && (
-                        <span className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[10px] font-semibold border border-amber-500/20">
+                        <span className="inline-flex items-center gap-1.5 bg-amber-500/5 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-amber-500/10">
                           <Clock className="h-3 w-3" /> Pending Review
                         </span>
                       )}
                       {listing.status === "REJECTED" && (
-                        <span className="inline-flex items-center gap-1.5 bg-red-500/10 text-red-500 px-2 py-0.5 rounded text-[10px] font-semibold border border-red-500/20">
+                        <span className="inline-flex items-center gap-1.5 bg-red-500/5 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-red-500/10">
                           <XCircle className="h-3 w-3" /> Rejected
                         </span>
                       )}
                       {listing.status === "APPROVED" && (
-                        <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] font-semibold border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-450 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-emerald-500/10">
                           <BadgeCheck className="h-3 w-3" /> Verified Approved
                         </span>
                       )}
@@ -119,14 +119,14 @@ export default async function AdminDashboardOverview() {
                     {/* Auction Telemetry */}
                     <td className="px-6 py-4">
                       {!auc ? (
-                        <span className="text-zinc-500 italic">Not scheduled yet</span>
+                        <span className="text-zinc-450 dark:text-zinc-500 italic font-medium">Not scheduled yet</span>
                       ) : (
                         <div className="space-y-1">
-                          <div className="font-medium text-foreground">
+                          <div className="font-semibold text-zinc-900 dark:text-white">
                             Current Bid: ${auc.currentHighestBid.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Sparkles className="h-3 w-3 text-gray-500 dark:text-zinc-400" />
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 font-semibold">
+                            <Sparkles className="h-3 w-3 text-zinc-450" />
                             {isConcluded ? "Concluded" : auc.status}
                           </div>
                         </div>
@@ -136,22 +136,22 @@ export default async function AdminDashboardOverview() {
                     {/* Winner / Notes */}
                     <td className="px-6 py-4">
                       {listing.status === "REJECTED" && listing.adminNotes && (
-                        <div className="rounded bg-red-500/5 text-red-400 p-2 text-[10px] border border-red-500/10 max-w-xs leading-normal">
+                        <div className="rounded-md bg-red-500/5 text-red-500 p-2.5 text-[10px] border border-red-500/10 max-w-xs leading-normal font-medium">
                           <strong>Admin Feedback:</strong> {listing.adminNotes}
                         </div>
                       )}
 
                       {isConcluded && auc && (
                         auc.highestBidderId ? (
-                          <div className="rounded bg-emerald-500/5 text-emerald-400 p-2.5 text-[10px] border border-emerald-500/10 max-w-xs space-y-1 leading-normal">
-                            <div className="font-bold flex items-center gap-1 uppercase tracking-wider text-[9px] text-emerald-500">
-                              <Trophy className="h-3.5 w-3.5 text-gray-950 dark:text-white" /> Winner Announced
+                          <div className="rounded-md bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 p-2.5 text-[10px] border border-emerald-500/10 max-w-xs space-y-1 leading-normal font-medium">
+                            <div className="font-semibold flex items-center gap-1 uppercase tracking-wider text-[9px] text-emerald-600 dark:text-emerald-450">
+                              <Trophy className="h-3.5 w-3.5 text-zinc-900 dark:text-white" /> Winner Announced
                             </div>
                             <div>Name: <span className="font-semibold text-zinc-900 dark:text-white">{(auc.highestBidderId as any).name}</span></div>
-                            <div className="text-[9px] text-muted-foreground">Email: {(auc.highestBidderId as any).email}</div>
+                            <div className="text-[9px] text-zinc-400 dark:text-zinc-500">Email: {(auc.highestBidderId as any).email}</div>
                           </div>
                         ) : (
-                          <div className="text-zinc-500 flex items-center gap-1.5">
+                          <div className="text-zinc-450 dark:text-zinc-500 flex items-center gap-1.5 font-medium">
                             <AlertCircle className="h-4 w-4" /> Ended with no bids
                           </div>
                         )
@@ -160,14 +160,14 @@ export default async function AdminDashboardOverview() {
                       {auc && !isConcluded && (
                         <Link
                           href={`/auctions/${auc._id.toString()}`}
-                          className="text-primary hover:underline text-[10px] font-semibold"
+                          className="text-zinc-900 dark:text-white hover:underline text-[10px] font-semibold"
                         >
                           Join Active Live Room &rarr;
                         </Link>
                       )}
 
                       {!auc && listing.status === "PENDING" && (
-                        <span className="text-[10px] text-zinc-500 leading-normal">
+                        <span className="text-[10px] text-zinc-450 dark:text-zinc-500 leading-normal font-medium">
                           Bidding block scheduled instantly upon verification approval.
                         </span>
                       )}

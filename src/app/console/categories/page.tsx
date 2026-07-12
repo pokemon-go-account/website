@@ -243,7 +243,7 @@ export default function ManageCategoriesPage() {
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="h-7 w-7 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-955 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                className="h-7 w-7 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -257,7 +257,7 @@ export default function ManageCategoriesPage() {
                   placeholder="e.g., Rare Items, Accounts Level 40"
                   {...register("name")}
                   className={cn(
-                    "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
+                    "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-900 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
                     errors.name && "border-red-500/50 focus:border-red-500"
                   )}
                 />
@@ -271,7 +271,7 @@ export default function ManageCategoriesPage() {
                   placeholder="e.g., rare-items, accounts-lvl-40"
                   {...register("slug")}
                   className={cn(
-                    "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors font-mono text-[11px]",
+                    "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-900 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors font-mono text-[11px]",
                     errors.slug && "border-red-500/50 focus:border-red-500"
                   )}
                 />
@@ -321,7 +321,7 @@ export default function ManageCategoriesPage() {
                     placeholder="https://..."
                     {...register("imageUrl")}
                     onChange={(e) => { setValue("imageUrl", e.target.value); setPreviewImageUrl(e.target.value); }}
-                    className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-955 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors text-[11px]"
+                    className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-900 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors text-[11px]"
                   />
                 </div>
               </div>

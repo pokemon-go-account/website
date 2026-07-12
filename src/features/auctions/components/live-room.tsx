@@ -599,7 +599,7 @@ Please let me know how to proceed with the payment!`;
     };
   });
   const renderBiddingPanel = () => (
-    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-5 shadow-xs dark:shadow-xl relative overflow-hidden">
+    <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md p-6 space-y-5 shadow-xs dark:shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-[#6133e1]/10 blur-xl pointer-events-none" />
 
       {/* Stock market glows */}
@@ -845,7 +845,7 @@ Please let me know how to proceed with the payment!`;
         </div>
 
         {/* Mobile Title Card */}
-        <div className="lg:hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-3 shadow-xs animate-in fade-in duration-300">
+        <div className="lg:hidden rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-3 shadow-xs animate-in fade-in duration-300">
           <span className="inline-block bg-[#6133e1]/10 text-[#6133e1] text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border border-[#6133e1]/20">
             Premium Grade Asset
           </span>
@@ -884,7 +884,7 @@ Please let me know how to proceed with the payment!`;
           <div className="lg:col-span-2 space-y-6">
             
             {/* Gallery module */}
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-4 sm:p-6 space-y-4 shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md p-4 sm:p-6 space-y-4 shadow-xs">
               
               {/* Main Viewer */}
               <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center group">
@@ -978,7 +978,7 @@ Please let me know how to proceed with the payment!`;
 
 
             {/* Detailed Description, Grid Statistics & Info Tabs */}
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md overflow-hidden shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md overflow-hidden shadow-xs">
               
               {/* Tab Selector Header */}
               <div className="flex border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto bg-zinc-50 dark:bg-black/20">
@@ -1155,7 +1155,7 @@ Please let me know how to proceed with the payment!`;
             </div>
 
                    {/* Accordion FAQs Panel */}
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-4 shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md p-6 space-y-4 shadow-xs">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
                 <HelpCircle className="h-4.5 w-4.5 text-[#6133e1]" />
                 Frequently Asked Questions
@@ -1187,7 +1187,7 @@ Please let me know how to proceed with the payment!`;
             </div>
 
             {/* Trust Assurance Block */}
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 flex flex-col sm:flex-row items-center gap-6 justify-between shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 flex flex-col sm:flex-row items-center gap-6 justify-between shadow-xs">
               <div className="flex items-center gap-4">
                 <ShieldAlert className="h-10 w-10 text-[#6133e1] shrink-0" />
                 <div className="space-y-1">
@@ -1209,7 +1209,7 @@ Please let me know how to proceed with the payment!`;
           <div className="space-y-6">
             
             {/* Header Title Metadata Info Panel */}
-            <div className="hidden lg:block rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-md p-6 space-y-4 shadow-xs">
+            <div className="hidden lg:block rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md p-6 space-y-4 shadow-xs">
               <span className="bg-[#6133e1]/10 text-[#6133e1] text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border border-[#6133e1]/20">
                 Premium Grade Asset
               </span>
@@ -1275,7 +1275,7 @@ Please let me know how to proceed with the payment!`;
             </div>
 
             {/* Delivery Specifications & Payment details */}
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 space-y-4 shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 space-y-4 shadow-xs">
               <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Shipping & Handover details</h4>
               <div className="space-y-3 text-xs text-zinc-600 dark:text-zinc-300 font-light">
                 <div className="flex items-center gap-2">
@@ -1303,7 +1303,7 @@ Please let me know how to proceed with the payment!`;
             </div>
 
             {/* Support contact panel */}
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 text-center space-y-3 shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 text-center space-y-3 shadow-xs">
               <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Have Questions?</h4>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team coordinates are available 24/7.</p>
               <button className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer">
@@ -1312,7 +1312,7 @@ Please let me know how to proceed with the payment!`;
             </div>
 
             {/* Ledger Bids list */}
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-6 space-y-4 shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 space-y-4 shadow-xs">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5">
                   <Trophy className="h-4 w-4 text-[#6133e1]" />
@@ -1375,7 +1375,7 @@ Please let me know how to proceed with the payment!`;
             <div className="space-y-4">
               
               {/* Bidding Timer & Status Panel */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-sm">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-sm">
                 <div className="flex justify-between items-center pb-3 border-b border-zinc-200 dark:border-zinc-800">
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5 text-zinc-400" />
@@ -1483,7 +1483,7 @@ Please let me know how to proceed with the payment!`;
               </div>
 
               {/* Buy Now Option */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-4 flex flex-col gap-3 shadow-xs">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 flex flex-col gap-3 shadow-xs">
                 <div className="space-y-0.5">
                   <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Buy Now price</h4>
                   <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
@@ -1504,7 +1504,7 @@ Please let me know how to proceed with the payment!`;
               </div>
 
               {/* Bids Ledger list */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-xs">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs">
                 <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
                     <Trophy className="h-4 w-4 text-[#6133e1]" />
@@ -1538,7 +1538,7 @@ Please let me know how to proceed with the payment!`;
             <div className="space-y-4">
               
               {/* Media Gallery Card */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-4 space-y-4 shadow-xs">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 space-y-4 shadow-xs">
                 <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center group">
                   
                   {/* Team Tag Overlay */}
@@ -1588,7 +1588,7 @@ Please let me know how to proceed with the payment!`;
               </div>
 
               {/* Spec Checklist & Inventory */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-6 shadow-xs">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-6 shadow-xs">
                 
                 {/* Highlights */}
                 <div className="space-y-4">
@@ -1683,7 +1683,7 @@ Please let me know how to proceed with the payment!`;
               </div>
 
               {/* Handover terms */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-xs text-xs">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs text-xs">
                 <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider border-b border-zinc-150 dark:border-zinc-800 pb-2">Handover Terms</h4>
                 <div className="space-y-3 leading-relaxed text-zinc-650 dark:text-zinc-300 font-light">
                   <p>
@@ -1696,7 +1696,7 @@ Please let me know how to proceed with the payment!`;
               </div>
 
               {/* FAQs Accordion */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 space-y-4 shadow-xs">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 border-b border-zinc-150 dark:border-zinc-800 pb-2">
                   <HelpCircle className="h-4 w-4 text-[#6133e1]" />
                   Frequently Asked Questions
@@ -1726,7 +1726,7 @@ Please let me know how to proceed with the payment!`;
               </div>
 
               {/* Support Panel */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-5 text-center space-y-3 shadow-xs">
+              <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 text-center space-y-3 shadow-xs">
                 <h4 className="text-xs font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Have Questions?</h4>
                 <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team is available 24/7 coordinates.</p>
                 <button type="button" className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer">
@@ -1756,7 +1756,7 @@ Please let me know how to proceed with the payment!`;
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/95 p-6 shadow-xl space-y-4 max-h-[80vh] flex flex-col z-10 overflow-hidden"
+              className="relative w-full max-w-md rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-xl space-y-4 max-h-[80vh] flex flex-col z-10 overflow-hidden"
             >
               <div className="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-800 pb-3">
                 <h3 className="font-extrabold text-sm text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -1817,7 +1817,7 @@ Please let me know how to proceed with the payment!`;
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-2xl rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/95 p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col z-10 overflow-y-auto"
+              className="relative w-full max-w-2xl rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col z-10 overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-800 pb-3">
                 <h3 className="font-extrabold text-sm text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -2199,7 +2199,7 @@ Please let me know how to proceed with the payment!`;
       {/* Buy Now Payment Modal */}
       {isBuyNowOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/95 p-6 shadow-2xl space-y-6 text-zinc-900 dark:text-white">
+          <div className="relative w-full max-w-md rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-2xl space-y-6 text-zinc-900 dark:text-white">
             
             {/* Close Button */}
             <button
