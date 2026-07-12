@@ -450,7 +450,13 @@ Please let me know how to proceed with the payment!`;
                   </div>
 
                   <button
-                    onClick={() => setIsCheckoutOpen(true)}
+                    onClick={() => {
+                      if (!session?.user) {
+                        window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                      } else {
+                        setIsCheckoutOpen(true);
+                      }
+                    }}
                     className="w-full h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all"
                   >
                     <span>Checkout / Buy Now</span>

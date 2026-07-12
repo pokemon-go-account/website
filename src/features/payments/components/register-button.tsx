@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CreditCard, X, Sparkles, MessageSquare } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface RegisterAuctionButtonProps {
   auctionId: string;
@@ -13,8 +14,15 @@ interface RegisterAuctionButtonProps {
 
 export function RegisterAuctionButton({ auctionId, onSuccess, label, className }: RegisterAuctionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
 
-
+  const handleButtonClick = () => {
+    if (!session?.user) {
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+    } else {
+      setIsOpen(true);
+    }
+  };
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
     const message = `Hi Pokémon GO Services! I would like to pay the one-time $2.50 verification deposit to verify my account for bidding across all auctions. Please let me know how to proceed with the payment!`;
@@ -41,7 +49,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
   return (
     <>
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={handleButtonClick}
         className={className || "w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm transition-all active:scale-[0.98] border border-zinc-700/50 cursor-pointer"}
       >
         <CreditCard className="h-4 w-4 text-white" />

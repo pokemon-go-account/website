@@ -377,6 +377,14 @@ export function LiveRoom({
     }
   };
 
+  const handleBuyNowClick = () => {
+    if (!session?.user) {
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+    } else {
+      setIsBuyNowOpen(true);
+    }
+  };
+
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
     try {
       await createBuyNowOrderAction(auction._id);
@@ -781,7 +789,7 @@ Please let me know how to proceed with the payment!`;
           <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
         </div>
         <button
-          onClick={() => setIsBuyNowOpen(true)}
+          onClick={handleBuyNowClick}
           className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer"
         >
           <span>BUY NOW</span>
@@ -1466,7 +1474,7 @@ Please let me know how to proceed with the payment!`;
                   <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
                 </div>
                 <button
-                  onClick={() => setIsBuyNowOpen(true)}
+                  onClick={handleBuyNowClick}
                   className="w-full h-11 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer"
                 >
                   <span>BUY NOW</span>
