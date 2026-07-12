@@ -84,7 +84,8 @@ export async function FeaturedAuctions() {
   const auctions = await getLiveAuctions();
 
   return (
-    <section className="bg-white dark:bg-[#080809] py-12">
+    <section className="relative w-full overflow-hidden py-12">
+      <div className="absolute inset-0 bg-white dark:bg-[#080809] z-[-2] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <FeaturedAuctionsClient auctions={auctions} />
       </div>

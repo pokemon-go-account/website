@@ -34,25 +34,25 @@ export default async function AuthErrorPage({ searchParams }: AuthErrorPageProps
   const { title, message } = errorMap[error] || errorMap.Default;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-6 border border-border bg-card/30 backdrop-blur-sm p-8 rounded-xl shadow-2xl text-center">
+    <div className="relative flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-[#09090B] text-zinc-900 dark:text-white px-4 py-16 sm:px-6 lg:px-8 transition-colors duration-300">
+      <div className="relative w-full max-w-md space-y-6 border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-8 rounded-lg shadow-xs transition-colors duration-300 text-center">
         {/* Error Icon */}
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 border border-destructive/20 text-destructive mb-2">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-red-500/10 border border-red-500/20 text-red-500 mb-2">
           {error === "AccessDenied" ? (
-            <ShieldAlert className="h-7 w-7" />
+            <ShieldAlert className="h-6 w-6" />
           ) : (
-            <AlertTriangle className="h-7 w-7" />
+            <AlertTriangle className="h-6 w-6" />
           )}
         </div>
 
         {/* Title & Description */}
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
+          <h1 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">{title}</h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">{message}</p>
         </div>
 
         {/* Error Code Tag */}
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+        <div className="inline-flex items-center gap-1.5 rounded-md bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] px-2.5 py-1 text-[10px] font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">
           Error Code: {error}
         </div>
 
@@ -60,20 +60,14 @@ export default async function AuthErrorPage({ searchParams }: AuthErrorPageProps
         <div className="pt-2 flex flex-col gap-2">
           <Link
             href="/login"
-            className={cn(
-              buttonVariants({ variant: "default" }),
-              "w-full h-9 inline-flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-700/50"
-            )}
+            className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Sign In
           </Link>
           <Link
             href="/"
-            className={cn(
-              buttonVariants({ variant: "ghost" }),
-              "w-full h-9 inline-flex items-center justify-center rounded-lg text-xs font-semibold hover:bg-muted/50 text-muted-foreground transition-all cursor-pointer"
-            )}
+            className="w-full h-8 px-4 rounded-md text-xs font-semibold text-zinc-550 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-all cursor-pointer flex items-center justify-center"
           >
             Go to Homepage
           </Link>

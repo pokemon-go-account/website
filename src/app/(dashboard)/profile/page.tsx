@@ -24,25 +24,23 @@ export default async function UserProfilePage() {
     <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 lg:px-8 space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
+        <h1 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
           Account Profile
         </h1>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-zinc-550 dark:text-zinc-400">
           View your registered trainer settings and communication handles.
         </p>
       </div>
 
-
-
       {/* Info Card */}
-      <div className="rounded-2xl border border-border bg-card/30 backdrop-blur-sm p-6 space-y-6 shadow-sm">
-        <div className="flex items-center gap-4 border-b border-border/60 pb-5">
-          <div className="h-12 w-12 rounded-xl bg-zinc-900 border border-zinc-700/50 flex items-center justify-center text-white">
+      <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 space-y-6 shadow-xs text-left">
+        <div className="flex items-center gap-4 border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+          <div className="h-10 w-10 rounded-md bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center text-zinc-900 dark:text-white shrink-0">
             <UserIcon className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-bold text-base text-foreground">{user.name}</h3>
-            <span className="inline-flex items-center gap-1 bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-700 mt-1 uppercase tracking-wider">
+            <h3 className="font-semibold text-sm text-zinc-900 dark:text-white">{user.name}</h3>
+            <span className="inline-flex items-center gap-1 bg-zinc-50 dark:bg-white/[0.04] text-zinc-900 dark:text-white px-2 py-0.5 rounded-md text-[9px] font-semibold border border-zinc-200 dark:border-white/[0.08] mt-1 uppercase tracking-wider">
               <Shield className="h-3 w-3" />
               {user.role}
             </span>
@@ -51,34 +49,34 @@ export default async function UserProfilePage() {
 
         {/* Dense info rows */}
         <div className="space-y-4 text-xs">
-          <div className="flex items-center justify-between py-1 border-b border-border/30">
-            <span className="text-muted-foreground flex items-center gap-1.5">
+          <div className="flex items-center justify-between py-1 border-b border-zinc-200 dark:border-white/[0.06]">
+            <span className="text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
               <UserIcon className="h-3.5 w-3.5" /> Username
             </span>
-            <span className="font-semibold text-indigo-400">{user.username || "Not assigned"}</span>
+            <span className="font-semibold text-zinc-900 dark:text-white">{user.username || "Not assigned"}</span>
           </div>
 
-          <div className="flex items-center justify-between py-1 border-b border-border/30">
-            <span className="text-muted-foreground flex items-center gap-1.5">
+          <div className="flex items-center justify-between py-1 border-b border-zinc-200 dark:border-white/[0.06]">
+            <span className="text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
               <Mail className="h-3.5 w-3.5" /> Email
             </span>
             <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">{user.email}</span>
+              <span className="font-semibold text-zinc-900 dark:text-white">{user.email}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between py-1 border-b border-border/30">
-            <span className="text-muted-foreground flex items-center gap-1.5">
+          <div className="flex items-center justify-between py-1 border-b border-zinc-200 dark:border-white/[0.06]">
+            <span className="text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
               <Send className="h-3.5 w-3.5" /> Telegram Handle
             </span>
-            <span className="font-medium text-zinc-300">
+            <span className="font-semibold text-zinc-900 dark:text-white">
               {user.telegramUsername || "None configured"}
             </span>
           </div>
         </div>
 
         {/* Interactive Update Handle Form */}
-        <div className="pt-4 border-t border-border/60">
+        <div className="pt-4 border-t border-zinc-200 dark:border-white/[0.06]">
           <ProfileForm currentTelegram={user.telegramUsername || ""} />
         </div>
       </div>

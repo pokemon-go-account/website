@@ -114,9 +114,8 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
       <div
         key={auc._id.toString()}
         className={cn(
-          "relative flex flex-col justify-between rounded-2xl border bg-white dark:bg-zinc-900/30 backdrop-blur-sm p-6 transition-all duration-300 hover:shadow-lg dark:hover:shadow-primary/5 hover:translate-y-[-2px] space-y-6 shadow-xs",
-          teamBorders[auc.listingId.team as keyof typeof teamBorders],
-          isConcluded && "opacity-70 dark:opacity-50 hover:opacity-100"
+          "relative flex flex-col justify-between rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 transition-all duration-200 hover:border-zinc-300 dark:hover:border-white/[0.1] space-y-5 shadow-xs",
+          isConcluded && "opacity-75 dark:opacity-50 hover:opacity-100"
         )}
       >
         {/* Upper row: Badge, Level and Title */}
@@ -124,52 +123,52 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
           <div className="flex items-center justify-between">
             {/* Status Badge */}
             {isLive && (
-              <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-650 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-500/20">
+              <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-500/20">
                 <Flame className="h-3 w-3 animate-pulse" />
                 Live Now
               </span>
             )}
             {isScheduled && (
-              <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-250 dark:border-yellow-500/20">
+              <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-yellow-500/20">
                 <CalendarDays className="h-3 w-3" />
                 Scheduled
               </span>
             )}
             {isConcluded && (
-              <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-200 dark:border-zinc-700">
+              <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-550 dark:text-zinc-450 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-zinc-250 dark:border-zinc-700">
                 <Archive className="h-3 w-3" />
                 Concluded
               </span>
             )}
 
             {/* Level and Team */}
-            <span className={cn("px-2 py-0.5 rounded text-[10px] font-semibold border", teamColors[auc.listingId.team as keyof typeof teamColors])}>
+            <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-semibold border", teamColors[auc.listingId.team as keyof typeof teamColors])}>
               Lvl {auc.listingId.level} • {auc.listingId.team}
             </span>
           </div>
 
           {/* Title & region */}
           <div>
-            <h3 className="font-bold text-base text-foreground tracking-tight line-clamp-1">
+            <h3 className="font-semibold text-sm text-zinc-900 dark:text-white tracking-tight line-clamp-1">
               {auc.listingId.title}
             </h3>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Region: {auc.listingId.region}</p>
+            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">Region: {auc.listingId.region}</p>
           </div>
         </div>
 
         {/* Middle row: Asset metrics */}
-        <div className="grid grid-cols-3 gap-2 py-3 border-y border-zinc-100 dark:border-border/60 text-center">
+        <div className="grid grid-cols-3 gap-2 py-2.5 border-y border-zinc-200 dark:border-white/[0.06] text-center bg-zinc-50/50 dark:bg-black/10 rounded-md">
           <div className="space-y-0.5">
-            <div className="text-[9px] text-muted-foreground uppercase font-semibold">Shiny</div>
-            <div className="text-xs font-bold text-yellow-500">{auc.listingId.shinyCount}✨</div>
+            <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">Shiny</div>
+            <div className="text-xs font-semibold text-yellow-600 dark:text-yellow-500">{auc.listingId.shinyCount}✨</div>
           </div>
           <div className="space-y-0.5">
-            <div className="text-[9px] text-muted-foreground uppercase font-semibold">Legendary</div>
-            <div className="text-xs font-bold text-orange-500">{auc.listingId.legendaryCount}🏆</div>
+            <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">Legendary</div>
+            <div className="text-xs font-semibold text-orange-600 dark:text-orange-500">{auc.listingId.legendaryCount}🏆</div>
           </div>
           <div className="space-y-0.5">
-            <div className="text-[9px] text-muted-foreground uppercase font-semibold">Mythical</div>
-            <div className="text-xs font-bold text-purple-500">{auc.listingId.mythicalCount}🔮</div>
+            <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">Mythical</div>
+            <div className="text-xs font-semibold text-purple-600 dark:text-purple-500">{auc.listingId.mythicalCount}🔮</div>
           </div>
         </div>
 
@@ -177,16 +176,16 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs">
             <div className="space-y-0.5">
-              <span className="text-[10px] text-muted-foreground">Current Highest Bid</span>
-              <div className="font-extrabold text-foreground text-sm">
+              <span className="text-[10px] text-zinc-450 dark:text-zinc-500">Highest Bid</span>
+              <div className="font-semibold text-zinc-900 dark:text-white text-sm">
                 <PriceDisplay amountInUSD={auc.currentHighestBid} />
               </div>
             </div>
             
             <div className="text-right space-y-0.5">
-              <span className="text-[10px] text-muted-foreground">End Time</span>
-              <div className="font-semibold text-foreground text-[10px] flex items-center gap-1 justify-end">
-                <Clock className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-zinc-450 dark:text-zinc-500">End Time</span>
+              <div className="font-semibold text-zinc-800 dark:text-zinc-200 text-[10px] flex items-center gap-1 justify-end">
+                <Clock className="h-3 w-3 text-zinc-450" />
                 {new Date(auc.endTime).toLocaleDateString([], { month: "short", day: "numeric" })}
               </div>
             </div>
@@ -196,20 +195,20 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
           <Link
             href={`/auctions/${auc._id.toString()}`}
             className={cn(
-              "w-full h-9 inline-flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
+              "w-full h-8 inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
               isConcluded
-                ? "bg-zinc-100 hover:bg-zinc-200 dark:bg-muted text-zinc-500 dark:text-muted-foreground border border-zinc-250 dark:border-border"
-                : "bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-700/50"
+                ? "bg-zinc-100 hover:bg-zinc-200 dark:bg-[#151515] text-zinc-500 dark:text-zinc-400 border border-zinc-250 dark:border-white/[0.06]"
+                : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 border border-transparent"
             )}
           >
             {isLive ? (
               <>
-                <Play className="h-3.5 w-3.5" />
+                <Play className="h-3 w-3" />
                 Join Live Room
               </>
             ) : (
               <>
-                <Trophy className="h-3.5 w-3.5" />
+                <Trophy className="h-3 w-3" />
                 View Bidding Block
               </>
             )}
@@ -223,38 +222,37 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
-      
       {/* Catalog Header */}
-      <div className="border-b border-zinc-200 dark:border-border pb-6 space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-6 space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
           Bidding Catalog Blocks
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Participate in active, live scheduled auctions for high-tier Trainer assets.
         </p>
       </div>
 
       {/* Grid List & Results */}
       {hasNoResults ? (
-        <div className="flex h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-white dark:bg-card/25 text-center p-8 shadow-xs">
+        <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-center p-8 shadow-xs">
           <div className="max-w-xs space-y-3">
-            <h3 className="text-base font-semibold text-foreground">No matches found</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-white">No matches found</h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               We couldn't find any live rooms, concluded auctions, or store products matching "{search}". Try checking your spelling or search for another keyword.
             </p>
             <Link
               href="/auctions"
-              className="inline-block h-8 px-4 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold leading-8 transition-all active:scale-[0.98]"
+              className="inline-flex h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold items-center justify-center transition-all active:scale-[0.98]"
             >
               Clear Search Filter
             </Link>
           </div>
         </div>
       ) : auctions.length === 0 && matchingProducts.length === 0 ? (
-        <div className="flex h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-white dark:bg-card/25 text-center p-8 shadow-xs">
+        <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-center p-8 shadow-xs">
           <div className="max-w-xs space-y-3">
-            <h3 className="text-base font-semibold text-foreground">No auctions scheduled</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-white">No auctions scheduled</h3>
+            <p className="text-xs text-zinc-550 dark:text-zinc-400">
               New bidding blocks are scheduled instantly upon verification approval. Check back later!
             </p>
           </div>

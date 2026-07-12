@@ -8,6 +8,8 @@ import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import { auth } from "@/auth";
 import { ChatWidget } from "@/features/chat/components/chat-widget";
+import { PokemonCursorTrail } from "@/components/pokemon-cursor-trail";
+import { headers } from "next/headers";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -44,6 +46,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isConsole = pathname.startsWith("/console");
+
   return (
     <html lang="en" className={cn("font-sans dark", plusJakartaSans.variable)} suppressHydrationWarning>
       <head>
@@ -66,16 +72,21 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col tracking-tight bg-background text-foreground">
         <SessionProvider>
           {/* Elegant Beta Announcement Banner */}
-          <div className="w-full bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 py-1.5 px-4 text-center font-medium tracking-wide">
-            🚀 We are currently in Beta. Welcome to the future of Pokémon GO services!
-          </div>
+          {!isConsole && (
+            <div className="w-full bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 py-1.5 px-4 text-center font-medium tracking-wide">
+              🚀 We are currently in Beta. Welcome to the future of Pokémon GO services!
+            </div>
+          )}
 
-          <Header />
-          <main className="flex-1 flex flex-col">
-            {children}
-          </main>
-          <Footer />
-          <ChatWidget />
+          <div className="relative z-10 flex flex-col min-h-screen">
+            {!isConsole && <Header />}
+            <main className="flex-1 flex flex-col">
+              {children}
+            </main>
+            {!isConsole && <Footer />}
+          </div>
+          {!isConsole && <ChatWidget />}
+          <PokemonCursorTrail />
         </SessionProvider>
         <Analytics />
       </body>

@@ -112,19 +112,16 @@ export default function OrdersConsolePage() {
   return (
     <div className="max-w-6xl space-y-8">
       {/* Title */}
-      <div className="border-b border-zinc-200 dark:border-white/[0.05] pb-5 flex items-center gap-3">
-        <ShoppingBag className="h-5 w-5 text-violet-500" />
-        <div>
-          <h1 className="text-xl font-black text-zinc-955 dark:text-white">Orders Manager</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Approve and track direct storefront checkouts and Buy Now transactions</p>
-        </div>
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Orders Manager</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Approve and track direct storefront checkouts and Buy Now transactions.</p>
       </div>
 
       {/* Alerts */}
       {alert && (
         <div
           className={cn(
-            "rounded-xl border p-3 text-xs flex items-center gap-2",
+            "rounded-md border p-3 text-xs flex items-center gap-2",
             alert.ok
               ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-450"
               : "border-red-500/20 bg-red-500/5 text-red-400"
@@ -138,16 +135,16 @@ export default function OrdersConsolePage() {
       {/* Search and Tabs Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         {/* Pills */}
-        <div className="flex border border-zinc-200 dark:border-white/[0.05] bg-zinc-100/50 dark:bg-white/[0.02] p-1 rounded-xl gap-1">
+        <div className="flex border border-zinc-200 dark:border-white/[0.06] bg-zinc-100/50 dark:bg-white/[0.02] p-1 rounded-md gap-1">
           {(["ALL", "PENDING", "COMPLETED", "FAILED"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "h-8 px-3 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer",
+                "h-7 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer",
                 activeTab === tab
                   ? "bg-zinc-900 dark:bg-white text-white dark:text-black shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-955 dark:hover:text-white"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
               {tab}
@@ -163,16 +160,16 @@ export default function OrdersConsolePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by buyer username, product name..."
-            className="w-full h-10 pl-9 pr-4 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-955 dark:text-white text-xs placeholder:text-zinc-450 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+            className="w-full h-8 pl-9 pr-4 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs placeholder:text-zinc-450 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
           />
         </div>
       </div>
 
       {/* Table grid */}
-      <div className="border border-zinc-200 dark:border-white/[0.05] rounded-2xl overflow-hidden bg-white dark:bg-zinc-950/40 backdrop-blur-md shadow-xs">
+      <div className="border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-xs">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.05] text-xs text-left">
-            <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-xs text-left">
+            <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="px-6 py-4">Buyer Profile</th>
                 <th className="px-6 py-4">Ordered Items</th>

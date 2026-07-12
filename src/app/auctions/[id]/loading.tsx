@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#08080a] py-6 transition-colors duration-300">
+    <div className="min-h-screen bg-transparent py-6 transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Breadcrumb Skeleton */}

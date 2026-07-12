@@ -51,88 +51,89 @@ export default function ConsoleRentPage() {
   };
 
   return (
-    <div className="max-w-4xl space-y-8">
-      <div className="border-b border-zinc-200 dark:border-white/[0.05] pb-5 flex items-center gap-3">
-        <Banknote className="h-5 w-5 text-amber-500" />
-        <div>
-          <h1 className="text-xl font-black text-zinc-950 dark:text-white">Rent Manager</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Track $2.50/week rent payments for all ADMINs</p>
-        </div>
+    <div className="max-w-4xl space-y-6">
+      {/* Page Header */}
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Rent Manager</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Track $2.50/week rent payments for all ADMINs.</p>
       </div>
 
-      <div className="border border-zinc-200 dark:border-white/[0.05] rounded-2xl overflow-hidden bg-white dark:bg-zinc-950/40 backdrop-blur-md shadow-xs">
-        <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.05] text-xs text-left">
-          <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
-            <tr>
-              <th className="px-6 py-4">ADMIN</th>
-              <th className="px-6 py-4">Rent Valid Until</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.05] text-zinc-700 dark:text-zinc-300">
-            {loading ? (
-              <tr><td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">Loading rent ledger...</td></tr>
-            ) : admins.length === 0 ? (
-              <tr><td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">No ADMINs found. Promote users via the Users tab first.</td></tr>
-            ) : admins.map((admin) => {
-              const expired = !admin.adminRentPaidUntil || new Date(admin.adminRentPaidUntil) < new Date();
-              const expiryStr = admin.adminRentPaidUntil
-                ? new Date(admin.adminRentPaidUntil).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                : "Never paid";
+      {/* Rent Table Ledger */}
+      <div className="border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-xs text-left">
+            <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="px-6 py-4">ADMIN</th>
+                <th className="px-6 py-4">Rent Valid Until</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.06] text-zinc-700 dark:text-zinc-300">
+              {loading ? (
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">Loading rent ledger...</td></tr>
+              ) : admins.length === 0 ? (
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">No ADMINs found. Promote users via the Users tab first.</td></tr>
+              ) : admins.map((admin) => {
+                const expired = !admin.adminRentPaidUntil || new Date(admin.adminRentPaidUntil) < new Date();
+                const expiryStr = admin.adminRentPaidUntil
+                  ? new Date(admin.adminRentPaidUntil).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                  : "Never paid";
 
-              return (
-                <tr key={admin._id} className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-zinc-900 dark:text-white">{admin.name || admin.username}</p>
-                    <p className="text-zinc-500 font-mono text-[10px]">@{admin.username}</p>
-                    {admin.telegramUsername && (
-                      <p className="text-zinc-500 dark:text-zinc-400 text-[10px]">{admin.telegramUsername}</p>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-zinc-600 dark:text-zinc-300 font-mono">{expiryStr}</td>
-                  <td className="px-6 py-4">
-                    <span className={cn(
-                      "px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-wider",
-                      expired
-                        ? "border-red-500/30 bg-red-500/10 text-red-400"
-                        : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                    )}>
-                      {expired ? "⚠ Overdue" : "✓ Active"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {message?.id === admin._id && (
-                        <span className={cn("text-[10px] font-semibold", message.ok ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
-                          {message.text}
-                        </span>
-                      )}
+                return (
+                  <tr key={admin._id} className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-zinc-900 dark:text-white leading-none">{admin.name || admin.username}</p>
+                      <p className="text-zinc-500 font-mono text-[10px] mt-1">@{admin.username}</p>
                       {admin.telegramUsername && (
-                        <a
-                          href={buildTelegramReminderUrl(admin)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="h-8 px-3 rounded-lg border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/[0.05] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                        >
-                          Send Reminder
-                        </a>
+                        <p className="text-zinc-500 dark:text-zinc-400 text-[10px] mt-0.5">{admin.telegramUsername}</p>
                       )}
-                      <button
-                        onClick={() => handleMarkPaid(admin)}
-                        disabled={processingId === admin._id}
-                        className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-                      >
-                        <CheckCircle className="h-3 w-3" />
-                        {processingId === admin._id ? "Processing..." : "Mark Paid (+7 days)"}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="px-6 py-4 text-zinc-650 dark:text-zinc-300 font-mono">{expiryStr}</td>
+                    <td className="px-6 py-4">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wider",
+                        expired
+                          ? "border-red-500/30 bg-red-500/10 text-red-400"
+                          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                      )}>
+                        {expired ? "⚠ Overdue" : "✓ Active"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {message?.id === admin._id && (
+                          <span className={cn("text-[10px] font-semibold mr-2", message.ok ? "text-emerald-600 dark:text-emerald-400" : "text-red-655 dark:text-red-400")}>
+                            {message.text}
+                          </span>
+                        )}
+                        {admin.telegramUsername && (
+                          <a
+                            href={buildTelegramReminderUrl(admin)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-8 px-3 rounded-md border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/[0.05] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            Send Reminder
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleMarkPaid(admin)}
+                          disabled={processingId === admin._id}
+                          className="h-8 px-3 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          {processingId === admin._id ? "Processing..." : "Mark Paid (+7 days)"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

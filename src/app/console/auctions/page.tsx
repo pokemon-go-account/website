@@ -135,17 +135,15 @@ export default function ConsoleAuctionsPage() {
 
   return (
     <div className="max-w-5xl space-y-8">
-      <div className="border-b border-zinc-200 dark:border-white/[0.05] pb-5 flex items-center gap-3">
-        <Gavel className="h-5 w-5 text-amber-500" />
-        <div>
-          <h1 className="text-xl font-black text-zinc-950 dark:text-white">Auction Approvals</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Review, verify, edit, and approve/reject ADMIN-submitted listings</p>
-        </div>
+      {/* Title Header */}
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Auction Approvals</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 font-medium">Review, verify, edit, and approve/reject seller-submitted listings.</p>
       </div>
 
       {message && (
         <div className={cn(
-          "rounded-xl border p-3 text-xs flex items-center gap-2",
+          "rounded-md border p-3 text-xs flex items-center gap-2",
           message.success 
             ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400" 
             : "border-red-500/20 bg-red-500/5 text-red-650 dark:text-red-400"
@@ -158,43 +156,43 @@ export default function ConsoleAuctionsPage() {
       {loading ? (
         <p className="text-zinc-500 text-xs italic">Loading pending submissions...</p>
       ) : listings.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-white/[0.06] py-16 text-center">
+        <div className="rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] py-16 text-center">
           <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
-          <p className="text-zinc-950 dark:text-white font-bold text-sm">All Clear</p>
-          <p className="text-zinc-550 dark:text-zinc-550 text-xs mt-1">No pending auction listings to review.</p>
+          <p className="text-zinc-950 dark:text-white font-semibold text-sm">All Clear</p>
+          <p className="text-zinc-550 dark:text-zinc-500 text-xs mt-1">No pending auction listings to review.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {listings.map((listing) => (
-            <div key={listing._id} className="rounded-2xl border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.01] p-5 space-y-4 hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all shadow-xs">
+            <div key={listing._id} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-zinc-900 dark:text-white font-bold text-sm">{listing.title}</h3>
-                  <p className="text-zinc-500 text-[10px] mt-1">
+                  <h3 className="text-zinc-900 dark:text-white font-semibold text-sm">{listing.title}</h3>
+                  <p className="text-zinc-500 text-[10px] mt-1.5">
                     By: <span className="text-zinc-700 dark:text-zinc-300 font-semibold">@{listing.sellerId?.username || "Unknown"}</span>
                     {" · "}LVL {listing.level} · Team {listing.team}
                     {" · "}Starting Bid: ${listing.startingBid.toLocaleString()}
                   </p>
-                  <p className="text-zinc-500 dark:text-zinc-600 text-[10px] mt-0.5">
+                  <p className="text-zinc-500 dark:text-zinc-650 text-[10px] mt-0.5">
                     Submitted {new Date(listing.createdAt).toLocaleDateString("en-IN")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleViewClick(listing)}
-                    className="h-8 px-3 rounded-lg border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/[0.05] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                    className="h-8 px-3 rounded-md border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/[0.05] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     Verify details
                   </button>
                   <button
                     onClick={() => handleEditClick(listing)}
-                    className="h-8 px-3 rounded-lg border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                    className="h-8 px-3 rounded-md border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-650 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                     Edit
                   </button>
-                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400">
                     Pending
                   </span>
                 </div>
@@ -205,14 +203,14 @@ export default function ConsoleAuctionsPage() {
                   placeholder="Optional review notes (required for rejection)..."
                   value={notes[listing._id] || ""}
                   onChange={(e) => setNotes((prev) => ({ ...prev, [listing._id]: e.target.value }))}
-                  className="w-full min-h-[50px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal resize-none"
+                  className="w-full min-h-[50px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-md text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal resize-none"
                 />
 
                 <div className="flex gap-2">
                   <button
                     onClick={() => approve(listing._id)}
                     disabled={processing === listing._id}
-                    className="h-8 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                    className="h-8 px-4 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
                   >
                     <CheckCircle className="h-3.5 w-3.5" />
                     {processing === listing._id ? "Processing..." : "Approve & Go Live"}
@@ -220,7 +218,7 @@ export default function ConsoleAuctionsPage() {
                   <button
                     onClick={() => reject(listing._id)}
                     disabled={processing === listing._id}
-                    className="h-8 px-4 rounded-xl bg-red-655 hover:bg-red-600 text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                    className="h-8 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
                   >
                     <XCircle className="h-3.5 w-3.5" />
                     Reject Application

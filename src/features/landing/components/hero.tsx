@@ -14,12 +14,12 @@ const trustBadges = [
 ];
 
 const QUICK_TAGS = [
-  { label: "Coins", query: "coins" },
-  { label: "Level 50", query: "level 50" },
-  { label: "PVP", query: "pvp" },
-  { label: "Raid Service", query: "raid service" },
-  { label: "Auction", query: "auction" },
-  { label: "Stardust", query: "stardust" },
+  { label: "🪙 Coins", query: "coins" },
+  { label: "⭐ Level 80", query: "level 80" },
+  { label: "⚔️ PVP", query: "pvp" },
+  { label: "🐉 Raid Service", query: "raid service" },
+  { label: "🏛️ Auction", query: "auction" },
+  { label: "✨ Stardust", query: "stardust" },
 ];
 
 const containerVariants: Variants = {
@@ -69,15 +69,15 @@ function HeroSearch() {
     <motion.div variants={itemVariants} className="w-full max-w-md space-y-3">
       {/* Search input */}
       <div
-        className={`relative flex items-center rounded-2xl border transition-all duration-200 bg-white/90 dark:bg-zinc-900/80 backdrop-blur-md shadow-lg ${
+        className={`relative flex items-center rounded-md border transition-all duration-200 bg-white dark:bg-[#111111] ${
           isFocused
-            ? "border-gray-400 dark:border-white/30 shadow-gray-300/40 dark:shadow-white/10 ring-2 ring-gray-900/10 dark:ring-white/10"
-            : "border-gray-200/80 dark:border-white/[0.09] shadow-gray-200/50 dark:shadow-black/40"
+            ? "border-zinc-300 dark:border-white/20 shadow-xs"
+            : "border-zinc-200 dark:border-white/[0.06]"
         }`}
       >
         <Search
-          className={`absolute left-4 h-4 w-4 shrink-0 transition-colors duration-200 ${
-            isFocused ? "text-gray-700 dark:text-white" : "text-gray-400 dark:text-gray-500"
+          className={`absolute left-3.5 h-4 w-4 shrink-0 transition-colors duration-200 ${
+            isFocused ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500"
           }`}
         />
         <input
@@ -89,19 +89,19 @@ function HeroSearch() {
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           placeholder="Search by team, level, region..."
-          className="flex-1 bg-transparent pl-11 pr-10 py-3.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 font-medium focus:outline-none"
+          className="flex-1 bg-transparent pl-10 pr-10 py-2.5 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 font-semibold focus:outline-none"
         />
         {query && (
           <button
             onClick={() => { setQuery(""); inputRef.current?.focus(); }}
-            className="absolute right-[52px] text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer p-1"
+            className="absolute right-[44px] text-zinc-450 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer p-1"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
         <button
           onClick={() => handleSubmit(query)}
-          className="absolute right-2 h-8 w-8 flex items-center justify-center rounded-xl bg-gray-900 dark:bg-white hover:bg-gray-700 dark:hover:bg-gray-100 text-white dark:text-black transition-all active:scale-95 shadow-sm cursor-pointer"
+          className="absolute right-1.5 h-7 w-7 flex items-center justify-center rounded-md bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all active:scale-[0.98] cursor-pointer"
         >
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
@@ -113,7 +113,7 @@ function HeroSearch() {
           <button
             key={tag.query}
             onClick={() => handleTagClick(tag.query)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold border border-gray-200/80 dark:border-white/[0.09] bg-white/70 dark:bg-zinc-900/60 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-white/30 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-800 backdrop-blur-sm transition-all duration-150 active:scale-95 cursor-pointer shadow-sm"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/10 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors"
           >
             {tag.label}
           </button>
@@ -124,12 +124,12 @@ function HeroSearch() {
 }
 
 export function Hero() {
-  const [bgImage, setBgImage] = useState("url('/hero-banner-light.png')");
+  const [bgImage, setBgImage] = useState("url('/try.jpg')");
 
   useEffect(() => {
     const checkTheme = () => {
       const isDark = document.documentElement.classList.contains("dark");
-      setBgImage(isDark ? "url('/hero-banner-dark.png')" : "url('/hero-banner-light.png')");
+      setBgImage(isDark ? "url('/try.jpg')" : "url('/try.jpg')");
     };
 
     checkTheme();
@@ -144,10 +144,10 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden bg-white dark:bg-[#080809]">
-      {/* Hero Banner */}
+    <section className="relative w-full overflow-hidden bg-transparent">
+      {/* Hero Banner Background placed behind particles */}
       <div
-        className="relative min-h-[460px] md:min-h-[580px] flex items-center"
+        className="absolute inset-0 z-[-2] pointer-events-none"
         style={{
           backgroundImage: bgImage,
           backgroundSize: "cover",
@@ -157,7 +157,10 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/10 dark:from-[#080809] dark:via-[#080809]/85 dark:to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#080809] via-transparent to-transparent opacity-60" />
         <div className="absolute bottom-0 left-0 w-96 h-48 opacity-0 dark:opacity-20 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.1),transparent_70%)]" />
+      </div>
 
+      {/* Hero Content Area */}
+      <div className="relative min-h-[460px] md:min-h-[580px] flex items-center">
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16">
           <motion.div
             variants={containerVariants}
@@ -167,22 +170,22 @@ export function Hero() {
           >
             <motion.p
               variants={itemVariants}
-              className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-[0.3em] mb-4"
+              className="text-zinc-400 dark:text-zinc-500 text-[10px] font-semibold uppercase tracking-wider mb-4"
             >
               WELCOME TO
             </motion.p>
             <motion.h1
               variants={itemVariants}
-              className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.1] mb-5"
+              className="text-3xl sm:text-4xl md:text-5xl font-semibold text-zinc-900 dark:text-white tracking-tight leading-tight mb-5"
             >
               POKÉMON GO<br />
-              <span className="text-gray-900 dark:text-white [text-shadow:0_0_40px_rgba(255,255,255,0.1)]">
+              <span className="text-zinc-900 dark:text-white">
                 SERVICES
               </span>
             </motion.h1>
             <motion.p
               variants={itemVariants}
-              className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-7 leading-relaxed max-w-md"
+              className="text-zinc-550 dark:text-zinc-400 text-xs sm:text-sm mb-7 leading-relaxed max-w-md font-medium"
             >
               The ultimate destination for premium Pokémon GO accounts, expert recovery solutions, and high-tier trainer services—secured by our trusted vault.
             </motion.p>
@@ -197,20 +200,14 @@ export function Hero() {
             >
               <Link
                 href="/auctions"
-                className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black font-bold px-6 py-3 rounded-xl text-sm transition-all active:scale-95 shadow-lg shadow-black/10 dark:shadow-white/5"
+                className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
-                </svg>
                 BROWSE AUCTIONS
               </Link>
               <Link
                 href="/store"
-                className="inline-flex items-center gap-2 border-2 border-gray-800/20 dark:border-white/30 hover:border-gray-800/60 dark:hover:border-white/60 bg-transparent text-gray-900 dark:text-white hover:bg-gray-100/50 dark:hover:bg-white/5 font-bold px-6 py-3 rounded-xl text-sm transition-all active:scale-95"
+                className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-white/[0.04] bg-transparent text-zinc-850 dark:text-white font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z" />
-                </svg>
                 BROWSE SERVICES
               </Link>
             </motion.div>
@@ -219,18 +216,19 @@ export function Hero() {
       </div>
 
       {/* Trust Badges Bar */}
-      <div className="bg-gray-50 dark:bg-[#0d0d0f] border-t border-gray-200 dark:border-white/[0.06]">
+      <div className="relative bg-transparent border-t border-zinc-200 dark:border-white/[0.06]">
+        <div className="absolute inset-0 bg-white dark:bg-[#111111] z-[-2] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-200 dark:divide-white/[0.06]"
+            className="grid grid-cols-2 md:grid-cols-4 divide-x divide-zinc-200 dark:divide-white/[0.06]"
           >
             {trustBadges.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center justify-center gap-2.5 py-4 px-4">
-                <Icon className="h-4 w-4 text-gray-500 dark:text-gray-400 shrink-0" />
-                <span className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-semibold">{label}</span>
+              <div key={label} className="flex items-center justify-center gap-2 py-3 px-4">
+                <Icon className="h-3.5 w-3.5 text-zinc-450 dark:text-zinc-500 shrink-0" />
+                <span className="text-zinc-700 dark:text-zinc-300 text-xs font-semibold">{label}</span>
               </div>
             ))}
           </motion.div>

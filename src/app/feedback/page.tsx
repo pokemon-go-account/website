@@ -107,44 +107,36 @@ export default async function FeedbackPage() {
 
   // Helper for generating distinct avatar bg colors based on username
   const getAvatarColorClass = (username: string) => {
-    const code = username.charCodeAt(0) % 5;
-    const colors = [
-      "bg-blue-500/10 text-blue-500 border-blue-500/20",
-      "bg-purple-500/10 text-purple-500 border-purple-500/20",
-      "bg-orange-500/10 text-orange-500 border-orange-500/20",
-      "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-      "bg-pink-500/10 text-pink-500 border-pink-500/20"
-    ];
-    return colors[code];
+    return "bg-zinc-100 dark:bg-white/[0.04] text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-white/[0.08]";
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
       
       {/* Header section */}
-      <div className="border-b border-border pb-6 space-y-2 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-6 space-y-2 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 dark:from-white dark:via-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
             Client Testimonials & Feedback
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Read what other Trainers have to say about our premium scheduled live auctions and secure account recovery service.
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Read what other Trainers have to say about our scheduled live auctions and secure account recovery service.
           </p>
         </div>
 
         {/* Stats quick view */}
-        <div className="flex items-center gap-6 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.05] p-4 rounded-2xl">
+        <div className="flex items-center gap-6 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] p-4 rounded-lg shadow-xs">
           <div className="text-center">
-            <div className="text-2xl font-black text-zinc-900 dark:text-white leading-none">{averageRating}</div>
+            <div className="text-xl font-bold text-zinc-900 dark:text-white leading-none">{averageRating}</div>
             <div className="flex items-center justify-center mt-1">
               <Star className="h-3 w-3 fill-yellow-400 stroke-yellow-400" />
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold ml-0.5">Rating</span>
+              <span className="text-[10px] text-zinc-550 dark:text-zinc-400 font-semibold ml-0.5">Rating</span>
             </div>
           </div>
-          <div className="h-8 w-px bg-zinc-200 dark:bg-white/10" />
+          <div className="h-8 w-px bg-zinc-200 dark:bg-white/[0.06]" />
           <div className="text-center">
-            <div className="text-2xl font-black text-zinc-900 dark:text-white leading-none">{totalReviews}</div>
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold block mt-1">Reviews</span>
+            <div className="text-xl font-bold text-zinc-900 dark:text-white leading-none">{totalReviews}</div>
+            <span className="text-[10px] text-zinc-550 dark:text-zinc-400 font-semibold block mt-1">Reviews</span>
           </div>
         </div>
       </div>
@@ -152,10 +144,10 @@ export default async function FeedbackPage() {
       {/* Main Grid */}
       <div className="space-y-6">
         {feedbacks.length === 0 ? (
-          <div className="flex h-[250px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/25 text-center p-8">
+          <div className="flex h-[250px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-center p-8">
             <MessageSquareCode className="h-8 w-8 text-zinc-400 mb-2" />
-            <h3 className="text-sm font-semibold text-foreground">No reviews yet</h3>
-            <p className="text-xs text-muted-foreground max-w-xs mt-1">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">No reviews yet</h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mt-1">
               No reviews have been posted yet.
             </p>
           </div>
@@ -164,16 +156,16 @@ export default async function FeedbackPage() {
             {feedbacks.map((item: any) => (
               <div
                 key={item._id.toString()}
-                className="rounded-2xl border border-zinc-200/60 dark:border-white/[0.04] bg-white/40 dark:bg-white/[0.01] hover:border-zinc-300 dark:hover:border-white/[0.08] p-5 transition-all duration-300 flex flex-col justify-between space-y-4"
+                className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] hover:border-zinc-300 dark:hover:border-white/[0.1] p-5 transition-all duration-200 flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-3">
                   {/* Upper row: User Avatar initials & rating */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className={cn("h-7 w-7 rounded-lg border text-xs font-black flex items-center justify-center select-none uppercase shadow-xs", getAvatarColorClass(item.username))}>
+                      <div className={cn("h-7 w-7 rounded-md border text-[10px] font-semibold flex items-center justify-center select-none uppercase shadow-xs", getAvatarColorClass(item.username))}>
                         {item.username.substring(0, 2)}
                       </div>
-                      <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 tracking-tight">
+                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
                         {item.username}
                       </span>
                     </div>
@@ -187,9 +179,9 @@ export default async function FeedbackPage() {
                 </div>
 
                 {/* Footer metadata */}
-                <div className="pt-2.5 border-t border-zinc-100 dark:border-white/[0.04] flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">
-                  <span className="flex items-center gap-1 text-[9px] text-[#24A1DE] uppercase tracking-wider">
-                    <Award className="h-3 w-3" /> Verified User
+                <div className="pt-4 border-t border-zinc-100 dark:border-white/[0.08] flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">
+                  <span className="flex items-center gap-1 text-[9px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <Award className="h-3 w-3 text-zinc-400 dark:text-zinc-500" /> Verified User
                   </span>
                   <span>
                     {new Date(item.createdAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}

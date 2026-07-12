@@ -133,19 +133,16 @@ export default function RegistrationsConsolePage() {
   return (
     <div className="max-w-6xl space-y-8">
       {/* Title */}
-      <div className="border-b border-zinc-200 dark:border-white/[0.05] pb-5 flex items-center gap-3">
-        <CreditCard className="h-5 w-5 text-violet-500" />
-        <div>
-          <h1 className="text-xl font-black text-zinc-950 dark:text-white">Bidder Registrations</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Manage and manually override bidder live entry deposits ($2.50)</p>
-        </div>
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Bidder Registrations</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Manage and manually override bidder live entry deposits ($2.50).</p>
       </div>
 
       {/* Alerts */}
       {alert && (
         <div
           className={cn(
-            "rounded-xl border p-3 text-xs flex items-center gap-2",
+            "rounded-md border p-3 text-xs flex items-center gap-2",
             alert.ok
               ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-450"
               : "border-red-500/20 bg-red-500/5 text-red-400"
@@ -157,38 +154,38 @@ export default function RegistrationsConsolePage() {
       )}
 
       {/* Manual Bidder Registration Form */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-950/40 p-5 space-y-4 shadow-sm">
-        <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
-          <CreditCard className="h-4 w-4" />
-          <h3 className="text-xs font-black uppercase tracking-wider">Register Bidder Manually</h3>
+      <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-sm">
+        <div className="flex items-center gap-2 text-zinc-900 dark:text-white">
+          <CreditCard className="h-4 w-4 text-zinc-400" />
+          <h3 className="text-xs font-semibold uppercase tracking-wider">Register Bidder Manually</h3>
         </div>
         <form onSubmit={handleManualRegisterSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-          <div className="space-y-1">
-            <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Bidder Username</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Bidder Username</label>
             <input
               type="text"
               value={manualUsername}
               onChange={(e) => setManualUsername(e.target.value)}
               placeholder="e.g. trainer_red"
               required
-              className="w-full h-10 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-955 dark:text-white text-xs focus:outline-none"
+              className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Target Auction ID</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Target Auction ID</label>
             <input
               type="text"
               value={manualAuctionId}
               onChange={(e) => setManualAuctionId(e.target.value)}
               placeholder="e.g. 64b8d77f24021..."
               required
-              className="w-full h-10 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-955 dark:text-white text-xs focus:outline-none"
+              className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
             />
           </div>
           <button
             type="submit"
             disabled={formPending || !manualUsername.trim() || !manualAuctionId.trim()}
-            className="h-10 px-5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+            className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-150 dark:text-zinc-900 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Check className="h-3.5 w-3.5" />
             {formPending ? "Registering..." : "Confirm & Mark Paid"}
@@ -199,16 +196,16 @@ export default function RegistrationsConsolePage() {
       {/* Search and Tabs Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         {/* Pills */}
-        <div className="flex border border-zinc-200 dark:border-white/[0.05] bg-zinc-100/50 dark:bg-white/[0.02] p-1 rounded-xl gap-1">
+        <div className="flex border border-zinc-200 dark:border-white/[0.06] bg-zinc-100/50 dark:bg-white/[0.02] p-1 rounded-md gap-1">
           {(["ALL", "PENDING", "PAID", "FAILED"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "h-8 px-3 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer",
+                "h-7 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer",
                 activeTab === tab
                   ? "bg-zinc-900 dark:bg-white text-white dark:text-black shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-955 dark:hover:text-white"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
               {tab}
@@ -224,16 +221,16 @@ export default function RegistrationsConsolePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by username, title, order ID..."
-            className="w-full h-10 pl-9 pr-4 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white text-xs placeholder:text-zinc-450 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+            className="w-full h-8 pl-9 pr-4 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs placeholder:text-zinc-450 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
           />
         </div>
       </div>
 
       {/* Table grid */}
-      <div className="border border-zinc-200 dark:border-white/[0.05] rounded-2xl overflow-hidden bg-white dark:bg-zinc-950/40 backdrop-blur-md shadow-xs">
+      <div className="border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-xs">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.05] text-xs text-left">
-            <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-xs text-left">
+            <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="px-6 py-4">Bidder Details</th>
                 <th className="px-6 py-4">Target Auction</th>

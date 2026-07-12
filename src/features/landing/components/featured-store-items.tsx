@@ -25,7 +25,8 @@ export async function FeaturedStoreItems() {
   const products = await getFeaturedProducts();
 
   return (
-    <section className="bg-gray-50 dark:bg-[#0d0d0f] border-t border-gray-100 dark:border-white/[0.06] py-16">
+    <section className="relative w-full overflow-hidden border-t border-zinc-200 dark:border-white/[0.06] py-16">
+      <div className="absolute inset-0 bg-white dark:bg-[#09090B] z-[-2] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <FeaturedStoreClient products={products} />
       </div>

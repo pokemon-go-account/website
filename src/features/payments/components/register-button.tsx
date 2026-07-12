@@ -88,7 +88,7 @@ ${orderIdStr}Please let me know how to proceed with the payment!`;
                 One-Time Bidding Verification
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Pay a one-time verification deposit to bid across all live auctions. Fully refundable or usable as store credit:
+                Pay a one-time verification deposit to bid across all live auctions. This money is completely refundable and will be deducted from the total amount of any future purchase you make from our store, whether for services or products.
               </p>
               <div className="text-2xl font-black text-[#6133e1] pt-1">
                 $2.50

@@ -63,15 +63,11 @@ export default function ConsoleUsersPage() {
     : null;
 
   return (
-    <div className="max-w-2xl space-y-8">
-      <div className="border-b border-zinc-200 dark:border-white/[0.05] pb-5">
-        <div className="flex items-center gap-3">
-          <Users className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-          <div>
-            <h1 className="text-xl font-black text-zinc-950 dark:text-white">Promote Users</h1>
-            <p className="text-xs text-zinc-500 mt-0.5">Search by username to promote, demote, or suspend accounts</p>
-          </div>
-        </div>
+    <div className="max-w-2xl space-y-6">
+      {/* Page Header */}
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Promote Users</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Search by username to promote, demote, or suspend accounts.</p>
       </div>
 
       {/* Search */}
@@ -81,12 +77,12 @@ export default function ConsoleUsersPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Enter exact username..."
-          className="flex-1 h-10 px-4 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-xl text-zinc-950 dark:text-white text-xs placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+          className="flex-1 h-8 px-3 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-900 dark:text-white text-xs placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
         />
         <button
           type="submit"
           disabled={loading}
-          className="h-10 px-5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition-all disabled:opacity-50"
+          className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
         >
           <Search className="h-3.5 w-3.5" />
           {loading ? "Searching..." : "Search"}
@@ -94,14 +90,14 @@ export default function ConsoleUsersPage() {
       </form>
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400 flex items-center gap-2">
+        <div className="rounded-md border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-650 dark:text-red-400 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
       {actionMsg && (
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-400 flex items-center gap-2">
+        <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-450 flex items-center gap-2">
           <CheckCircle className="h-4 w-4 shrink-0" />
           {actionMsg}
         </div>
@@ -109,19 +105,19 @@ export default function ConsoleUsersPage() {
 
       {/* User Card */}
       {result && (
-        <div className="rounded-2xl border border-zinc-200 bg-white dark:border-white/[0.06] dark:bg-white/[0.01] p-6 space-y-5 shadow-xs">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-white/[0.06] dark:bg-[#111111] p-6 space-y-5 shadow-xs">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-zinc-950 dark:text-white font-black text-sm">{result.name || "Unnamed User"}</p>
-              <p className="text-zinc-500 text-xs font-mono mt-0.5">@{result.username}</p>
-              <p className="text-zinc-600 dark:text-zinc-400 text-[10px] mt-1">{result.email}</p>
+              <p className="text-zinc-950 dark:text-white font-semibold text-sm">{result.name || "Unnamed User"}</p>
+              <p className="text-zinc-500 text-xs font-mono mt-1">@{result.username}</p>
+              <p className="text-zinc-600 dark:text-zinc-400 text-[10px] mt-1.5">{result.email}</p>
               {result.telegramUsername && (
-                <p className="text-zinc-655 dark:text-zinc-400 text-[10px]">Telegram: {result.telegramUsername}</p>
+                <p className="text-zinc-650 dark:text-zinc-400 text-[10px] mt-0.5">Telegram: {result.telegramUsername}</p>
               )}
             </div>
             <div className="text-right space-y-1.5">
               <span className={cn(
-                "inline-block px-2.5 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-wider",
+                "inline-block px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wider",
                 result.role === "SUPER_ADMIN" && "border-violet-500/30 bg-violet-500/10 text-violet-400",
                 result.role === "ADMIN" && "border-amber-500/30 bg-amber-500/10 text-amber-400",
                 result.role === "USER" && "border-zinc-200 dark:border-white/[0.06] bg-zinc-100 dark:bg-white/[0.02] text-zinc-500 dark:text-zinc-400",
@@ -129,10 +125,10 @@ export default function ConsoleUsersPage() {
                 {result.role}
               </span>
               {result.isSuspended && (
-                <p className="text-[9px] font-bold text-red-400 uppercase tracking-wider">⛔ Suspended</p>
+                <p className="text-[10px] font-semibold text-red-500 uppercase tracking-wider">⛔ Suspended</p>
               )}
               {result.role === "ADMIN" && result.adminRentPaidUntil && (
-                <p className={cn("text-[9px] font-bold uppercase tracking-wider", rentExpired ? "text-red-400" : "text-emerald-400")}>
+                <p className={cn("text-[10px] font-semibold uppercase tracking-wider", rentExpired ? "text-red-400" : "text-emerald-450")}>
                   Rent {rentExpired ? "EXPIRED" : "valid"} until {new Date(result.adminRentPaidUntil).toLocaleDateString()}
                 </p>
               )}
@@ -140,12 +136,12 @@ export default function ConsoleUsersPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 border-t border-zinc-200 dark:border-white/[0.05] pt-4">
+          <div className="flex flex-wrap gap-2 border-t border-zinc-200 dark:border-white/[0.06] pt-4">
             {result.role === "USER" && (
               <button
                 onClick={() => doAction(() => promoteToAdmin(result._id), "User promoted to ADMIN. First 7 days are rent-free.")}
                 disabled={actionLoading}
-                className="h-8 px-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-150 dark:text-zinc-900 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Promote to ADMIN
@@ -155,7 +151,7 @@ export default function ConsoleUsersPage() {
               <button
                 onClick={() => doAction(() => demoteToUser(result._id), "ADMIN demoted back to USER. Access revoked.")}
                 disabled={actionLoading}
-                className="h-8 px-4 rounded-xl bg-red-600/80 hover:bg-red-500 text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                className="h-8 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 <ShieldX className="h-3.5 w-3.5" />
                 Demote to USER
@@ -167,7 +163,7 @@ export default function ConsoleUsersPage() {
                 result.isSuspended ? "Account unsuspended." : "Account suspended."
               )}
               disabled={actionLoading || result.role === "SUPER_ADMIN"}
-              className="h-8 px-4 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-zinc-600 hover:text-zinc-950 dark:border-white/[0.08] dark:hover:bg-white/[0.05] dark:text-zinc-400 dark:hover:text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+              className="h-8 px-4 rounded-md border border-zinc-200 hover:bg-zinc-50 text-zinc-600 hover:text-zinc-900 dark:border-white/[0.08] dark:hover:bg-white/[0.05] dark:text-zinc-400 dark:hover:text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <Ban className="h-3.5 w-3.5" />
               {result.isSuspended ? "Unsuspend" : "Suspend"} Account
