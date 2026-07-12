@@ -149,42 +149,6 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
           </div>
         </div>
       </div>
-
-      {/* Stats Counter Area */}
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 shadow-xs">
-          <div className="grid grid-cols-3 divide-x divide-zinc-200 dark:divide-white/[0.06] text-center">
-            
-            <div className="space-y-1">
-              <span className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white block">
-                2K+
-              </span>
-              <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider block">
-                Happy Trainers
-              </span>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white block">
-                10K+
-              </span>
-              <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider block">
-                Trades Completed
-              </span>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white block">
-                4.8★
-              </span>
-              <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider block">
-                Average Rating
-              </span>
-            </div>
-
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

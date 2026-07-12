@@ -100,7 +100,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       const res = await loginWithFirebaseIdToken(idToken);
       
       if (res.success) {
-        window.location.href = res.redirectTo || "/auctions";
+        window.location.href = res.redirectTo || "/";
       } else {
         setAuthError(res.error || `Failed to log in with ${provider}.`);
       }

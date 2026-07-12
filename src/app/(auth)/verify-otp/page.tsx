@@ -15,7 +15,7 @@ export default async function VerifyOtpPage() {
   // If already verified, redirect away to profile complete or auctions
   if ((session.user as any).isEmailVerified) {
     if ((session.user as any).isOnboarded) {
-      redirect("/auctions");
+      redirect("/");
     } else {
       redirect("/profile/complete");
     }
