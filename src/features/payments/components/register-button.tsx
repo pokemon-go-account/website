@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CreditCard, X, Sparkles, MessageSquare } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { createRegistrationOrder } from "@/features/payments/actions";
 
 interface RegisterAuctionButtonProps {
   auctionId: string;
@@ -25,7 +26,18 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
   };
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
-    const message = `Hi Pokémon GO Services! I would like to pay the one-time $2.50 verification deposit to verify my account for bidding across all auctions. Please let me know how to proceed with the payment!`;
+    let orderIdStr = "";
+    try {
+      const res = await createRegistrationOrder(auctionId);
+      if (res.success && res.orderContext?.id) {
+        orderIdStr = `Order ID: ${res.orderContext.id}\n`;
+      }
+    } catch (err) {
+      console.error("Failed to persist registration order:", err);
+    }
+
+    const message = `Hi Pokémon GO Services! I would like to pay the one-time $2.50 verification deposit to verify my account for bidding across all auctions.
+${orderIdStr}Please let me know how to proceed with the payment!`;
 
     try {
       await navigator.clipboard.writeText(message);

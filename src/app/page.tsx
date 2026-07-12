@@ -1,7 +1,7 @@
 import { Hero } from "@/features/landing/components/hero";
 import { Features } from "@/features/landing/components/features";
 import { FeaturedAuctions } from "@/features/landing/components/featured-auctions";
-import { HowItWorks } from "@/features/landing/components/how-it-works";
+import { FeaturedStoreItems } from "@/features/landing/components/featured-store-items";
 import { FAQ } from "@/features/landing/components/faq";
 
 export const revalidate = 0; // Dynamic rendering
@@ -12,7 +12,7 @@ export default function Home() {
       <Hero />
       <Features />
       <FeaturedAuctions />
-      <HowItWorks />
+      <FeaturedStoreItems />
       <FAQ />
     </div>
   );

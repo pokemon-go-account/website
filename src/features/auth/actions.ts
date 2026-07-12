@@ -89,13 +89,15 @@ export async function registerUser(prevState: any, formData: FormData) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+    const ENABLE_EMAIL_VERIFICATION = false;
+
     await User.create({
       username,
       email: email.toLowerCase(),
       passwordHash,
       role: "USER",
       isOnboarded: false,
-      isEmailVerified: false,
+      isEmailVerified: !ENABLE_EMAIL_VERIFICATION,
       verificationOtp: otp,
       verificationOtpExpires: otpExpires,
       lastOtpSentAt: new Date(),
@@ -388,7 +390,7 @@ export async function requestPasswordResetOtp(email: string) {
                   Pokémon GO Marketplace & Services Group
                 </p>
                 <p style="font-size: 10px; color: #d4d4d8; margin: 0;">
-                  Secure Middleman Systems
+                  Secure Escrow Systems
                 </p>
               </div>
 

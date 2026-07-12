@@ -187,6 +187,10 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       return { success: false, error: "You cannot bid on your own auction." };
     }
 
+    if (auction.highestBidderId && auction.highestBidderId.toString() === user._id.toString()) {
+      return { success: false, error: "You are already the highest bidder. You cannot place another bid until you are outbid." };
+    }
+
     if (auction.endTime && new Date() >= new Date(auction.endTime)) {
       return { success: false, error: "Bidding is closed. This auction has concluded." };
     }
@@ -352,6 +356,10 @@ export async function createBuyNowOrderAction(auctionId: string) {
     }
 
     const buyNowPrice = listing.startingBid * 4;
+
+    if (auction.currentHighestBid >= 0.8 * buyNowPrice) {
+      return { success: false, error: "Buy Now is disabled because the current bid has reached 80% or more of the Buy Now price." };
+    }
 
     const Order = (await import("@/models/Order")).default;
 

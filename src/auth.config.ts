@@ -84,8 +84,9 @@ export const authConfig = {
         return Response.redirect(loginUrl);
       }
 
-      // 2. Logged in but email is not verified
-      if (!isEmailVerified) {
+      // 2. Logged in but email is not verified (Bypassed if ENABLE_EMAIL_VERIFICATION is false)
+      const ENABLE_EMAIL_VERIFICATION = false;
+      if (ENABLE_EMAIL_VERIFICATION && !isEmailVerified) {
         if (isVerifyOtpRoute || isApiAuthRoute) return true;
         return Response.redirect(new URL("/verify-otp", nextUrl));
       }

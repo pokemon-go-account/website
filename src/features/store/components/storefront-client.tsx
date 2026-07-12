@@ -53,8 +53,12 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   }, []);
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
+    let orderIdStr = "";
     try {
-      await createStorefrontOrderAction(items, getTotalPrice());
+      const res = await createStorefrontOrderAction(items, getTotalPrice());
+      if (res.success && res.orderId) {
+        orderIdStr = `Order ID: ${res.orderId}\n`;
+      }
     } catch (err) {
       console.error("Failed to persist storefront order:", err);
     }
@@ -71,14 +75,14 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
     const formattedFinal = convert(finalPrice).formatted;
 
     const message = hasWalletCredit
-      ? `Hi Pokémon GO Services! I would like to purchase the following items via secure middleman:
-${itemsList}
+      ? `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction:
+${orderIdStr}${itemsList}
 Original Total: ${formattedTotal}
 Wallet Verification Credit Applied: -${formattedDiscount}
 Adjusted Final Price: ${formattedFinal}
 Please let me know how to proceed with the payment!`
-      : `Hi Pokémon GO Services! I would like to purchase the following items via secure middleman:
-${itemsList}
+      : `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction:
+${orderIdStr}${itemsList}
 Total Price: ${formattedTotal}
 Please let me know how to proceed with the payment!`;
 
@@ -375,7 +379,7 @@ Please let me know how to proceed with the payment!`;
                     <div>
                       <h4 className="text-xs font-bold text-zinc-500">Cart is empty</h4>
                       <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1 max-w-xs mx-auto leading-normal">
-                        Browse our storefront listings on the left and add assets to queue your middleman checkout.
+                        Browse our storefront listings on the left and add assets to queue your checkout.
                       </p>
                     </div>
                   </div>
@@ -460,7 +464,7 @@ Please let me know how to proceed with the payment!`;
                     className="w-full h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all"
                   >
                     <span>Checkout / Buy Now</span>
-                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">(Middleman Checkout)</span>
+                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">(Secure Checkout)</span>
                   </button>
                 </div>
               )}
@@ -489,7 +493,7 @@ Please let me know how to proceed with the payment!`;
                 Complete Checkout
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                You are purchasing direct store items via secure middleman. The total price is:
+                You are purchasing direct store items. The total price is:
               </p>
               {hasWalletCredit && (
                 <div className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5 mt-1">
