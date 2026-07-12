@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction } from "@/features/store/actions";
+import { useSession } from "next-auth/react";
 
 interface Category {
   _id: string;
@@ -41,14 +42,23 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const [mounted, setMounted] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { convert } = useCurrencyStore();
+  
+  const { data: session } = useSession();
+  const walletBalance = (session?.user as any)?.walletBalance || 0;
+  const hasWalletCredit = walletBalance < 0;
+  const walletCreditAmount = hasWalletCredit ? Math.abs(walletBalance) : 0;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
+    let orderIdStr = "";
     try {
-      await createStorefrontOrderAction(items, getTotalPrice());
+      const res = await createStorefrontOrderAction(items, getTotalPrice());
+      if (res.success && res.orderId) {
+        orderIdStr = `Order ID: ${res.orderId}\n`;
+      }
     } catch (err) {
       console.error("Failed to persist storefront order:", err);
     }
@@ -57,10 +67,22 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
       .map((item) => `- ${item.name} x ${item.quantity} (${convert(item.price).formatted} each)`)
       .join("\n");
     const totalPrice = getTotalPrice();
-    const formattedTotal = convert(totalPrice).formatted;
+    const discount = Math.min(totalPrice, walletCreditAmount);
+    const finalPrice = Math.max(0, totalPrice - discount);
 
-    const message = `Hi Pokémon GO Services! I would like to purchase the following items via secure middleman:
-${itemsList}
+    const formattedTotal = convert(totalPrice).formatted;
+    const formattedDiscount = convert(discount).formatted;
+    const formattedFinal = convert(finalPrice).formatted;
+
+    const message = hasWalletCredit
+      ? `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction:
+${orderIdStr}${itemsList}
+Original Total: ${formattedTotal}
+Wallet Verification Credit Applied: -${formattedDiscount}
+Adjusted Final Price: ${formattedFinal}
+Please let me know how to proceed with the payment!`
+      : `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction:
+${orderIdStr}${itemsList}
 Total Price: ${formattedTotal}
 Please let me know how to proceed with the payment!`;
 
@@ -357,7 +379,7 @@ Please let me know how to proceed with the payment!`;
                     <div>
                       <h4 className="text-xs font-bold text-zinc-500">Cart is empty</h4>
                       <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1 max-w-xs mx-auto leading-normal">
-                        Browse our storefront listings on the left and add assets to queue your middleman checkout.
+                        Browse our storefront listings on the left and add assets to queue your checkout.
                       </p>
                     </div>
                   </div>
@@ -414,17 +436,35 @@ Please let me know how to proceed with the payment!`;
               {/* Drawer footer layout */}
               {items.length > 0 && (
                 <div className="border-t border-zinc-200 dark:border-white/[0.05] pt-4 mt-6 space-y-4">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500 font-medium">Subtotal:</span>
+                    <span className="text-zinc-900 dark:text-white font-black"><PriceDisplay amountInUSD={getTotalPrice()} /></span>
+                  </div>
+                  {hasWalletCredit && (
+                    <div className="flex items-center justify-between text-xs text-emerald-500">
+                      <span className="font-medium">Verification Credit Applied:</span>
+                      <span className="font-black">-$2.50</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-500 font-medium">Total Value:</span>
-                    <span className="text-zinc-900 dark:text-white font-black text-lg"><PriceDisplay amountInUSD={getTotalPrice()} /></span>
+                    <span className="text-zinc-500 font-bold">Total Price:</span>
+                    <span className="text-zinc-900 dark:text-white font-black text-lg">
+                      <PriceDisplay amountInUSD={Math.max(0, getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount))} />
+                    </span>
                   </div>
 
                   <button
-                    onClick={() => setIsCheckoutOpen(true)}
+                    onClick={() => {
+                      if (!session?.user) {
+                        window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                      } else {
+                        setIsCheckoutOpen(true);
+                      }
+                    }}
                     className="w-full h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all"
                   >
                     <span>Checkout / Buy Now</span>
-                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">(Middleman Checkout)</span>
+                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">(Secure Checkout)</span>
                   </button>
                 </div>
               )}
@@ -453,10 +493,17 @@ Please let me know how to proceed with the payment!`;
                 Complete Checkout
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                You are purchasing direct store items via secure middleman. The total price is:
+                You are purchasing direct store items. The total price is:
               </p>
+              {hasWalletCredit && (
+                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5 mt-1">
+                  <span>Subtotal: <PriceDisplay amountInUSD={getTotalPrice()} /></span>
+                  <span>•</span>
+                  <span className="text-emerald-500 font-semibold">Credit: -$2.50</span>
+                </div>
+              )}
               <div className="text-2xl font-black text-[#6133e1] pt-1">
-                <PriceDisplay amountInUSD={getTotalPrice()} />
+                <PriceDisplay amountInUSD={Math.max(0, getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount))} />
               </div>
             </div>
 

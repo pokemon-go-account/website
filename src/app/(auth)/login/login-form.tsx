@@ -25,9 +25,20 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
   const [authError, setAuthError] = useState<string | null>(null);
   const recaptchaRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<any>(null);
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1" || host.startsWith("192.168.")) {
+        setIsLocalhost(true);
+      }
+    }
+  }, []);
 
   // Render Google reCAPTCHA Enterprise explicitly for credentials
   useEffect(() => {
+    if (isLocalhost) return;
     let active = true;
     let interval: any;
 
@@ -107,7 +118,9 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
 
   return (
     <div className="w-full space-y-6">
-      <Script src="https://www.google.com/recaptcha/enterprise.js?render=explicit" async defer strategy="afterInteractive" />
+      {!isLocalhost && (
+        <Script src="https://www.google.com/recaptcha/enterprise.js?render=explicit" async defer strategy="afterInteractive" />
+      )}
 
       {/* Configuration Status Warning (Dev Mode Only) */}
       {!isConfigured && (
@@ -213,10 +226,12 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </div>
 
         {/* reCAPTCHA Render Anchor */}
-        <div 
-          ref={recaptchaRef}
-          className="recaptcha-responsive-container flex justify-center my-4 min-h-[78px]"
-        ></div>
+        {!isLocalhost && (
+          <div 
+            ref={recaptchaRef}
+            className="recaptcha-responsive-container flex justify-center my-4 min-h-[78px]"
+          ></div>
+        )}
 
         <Button 
           type="submit" 

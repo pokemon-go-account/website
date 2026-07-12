@@ -44,7 +44,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
     .limit(20)
     .lean();
   const registrationPromise = session?.user?.id
-    ? Registration.findOne({ userId: session.user.id, auctionId: id, status: "PAID" }).lean()
+    ? User.findById(session.user.id).lean()
     : Promise.resolve(null);
 
   // Await queries concurrently
@@ -58,7 +58,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
     notFound();
   }
 
-  const initialIsRegistered = !!registrationDoc;
+  const initialIsRegistered = !!(registrationDoc && (registrationDoc as any).hasPaidVerificationDeposit);
 
   // Format database objects into clean props
   const formattedAuction = {

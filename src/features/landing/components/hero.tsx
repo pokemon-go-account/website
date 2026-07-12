@@ -184,7 +184,7 @@ export function Hero() {
               variants={itemVariants}
               className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-7 leading-relaxed max-w-md"
             >
-              The ultimate destination for premium Pokémon GO accounts, expert recovery solutions, and high-tier trainer services—secured by our trusted middleman vault.
+              The ultimate destination for premium Pokémon GO accounts, expert recovery solutions, and high-tier trainer services—secured by our trusted vault.
             </motion.p>
 
             {/* Search Bar */}

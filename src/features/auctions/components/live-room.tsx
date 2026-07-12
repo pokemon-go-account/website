@@ -377,9 +377,21 @@ export function LiveRoom({
     }
   };
 
+  const handleBuyNowClick = () => {
+    if (!session?.user) {
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+    } else {
+      setIsBuyNowOpen(true);
+    }
+  };
+
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
+    let orderIdStr = "";
     try {
-      await createBuyNowOrderAction(auction._id);
+      const res = await createBuyNowOrderAction(auction._id);
+      if (res.success && res.orderId) {
+        orderIdStr = `- Order ID: ${res.orderId}\n`;
+      }
     } catch (err) {
       console.error("Failed to persist Buy Now order:", err);
     }
@@ -387,7 +399,7 @@ export function LiveRoom({
     const buyNowPrice = auction.listingId.startingBid * 4;
     const formattedPrice = convert(buyNowPrice).formatted;
     const message = `Hi Pokémon GO Services! I would like to complete the Buy Now instant purchase for the following auction:
-- Auction ID: ${auction._id}
+${orderIdStr}- Auction ID: ${auction._id}
 - Account Title: ${auction.listingId.title}
 - Buy Now Price: ${formattedPrice}
 Please let me know how to proceed with the payment!`;
@@ -484,6 +496,8 @@ Please let me know how to proceed with the payment!`;
   }, [endTime, status]);
 
   const activeBid = currentBid !== null ? currentBid : auction.currentHighestBid;
+  const buyNowPrice = auction.listingId.startingBid * 4;
+  const isBuyNowDisabled = activeBid >= 0.8 * buyNowPrice;
   const prevBidRef = useRef<number>(activeBid);
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 
@@ -726,7 +740,7 @@ Please let me know how to proceed with the payment!`;
                   key={amount}
                   type="button"
                   onClick={() => handlePlaceBid(amount)}
-                  disabled={!isConnected || isBidding}
+                  disabled={!isConnected || isBidding || highestBidderId === session?.user?.id}
                   className="h-11 rounded-xl bg-zinc-55 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 shadow-xs disabled:opacity-50 flex items-center justify-center"
                 >
                   {isBidding ? (
@@ -781,11 +795,17 @@ Please let me know how to proceed with the payment!`;
           <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
         </div>
         <button
-          onClick={() => setIsBuyNowOpen(true)}
-          className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer"
+          onClick={handleBuyNowClick}
+          disabled={isBuyNowDisabled}
+          className={cn(
+            "h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border cursor-pointer",
+            isBuyNowDisabled
+              ? "bg-zinc-205 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
+              : "bg-zinc-900 hover:bg-[#6133e1] text-white border border-zinc-800 hover:border-[#6133e1]"
+          )}
         >
           <span>BUY NOW</span>
-          <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2"><PriceDisplay amountInUSD={auction.listingId.startingBid * 4} /></span>
+          <span className={cn("text-[10px] font-bold border-l pl-2", isBuyNowDisabled ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-450 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
         </button>
       </div>
     </div>
@@ -1442,8 +1462,8 @@ Please let me know how to proceed with the payment!`;
                             key={amount}
                             type="button"
                             onClick={() => handlePlaceBid(amount)}
-                            disabled={!isConnected || isBidding}
-                            className="h-10 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center"
+                            disabled={!isConnected || isBidding || highestBidderId === session?.user?.id}
+                            className="h-10 rounded-xl bg-zinc-55 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center"
                           >
                             {isBidding ? (
                               <Loader2 className="h-4 w-4 animate-spin text-[#6133e1] dark:text-white" />
@@ -1466,11 +1486,17 @@ Please let me know how to proceed with the payment!`;
                   <p className="text-[10px] text-zinc-500">Skip the live bidding process</p>
                 </div>
                 <button
-                  onClick={() => setIsBuyNowOpen(true)}
-                  className="w-full h-11 px-4 rounded-xl bg-zinc-900 hover:bg-[#6133e1] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all border border-zinc-800 hover:border-[#6133e1] cursor-pointer"
+                  onClick={handleBuyNowClick}
+                  disabled={isBuyNowDisabled}
+                  className={cn(
+                    "w-full h-11 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border cursor-pointer",
+                    isBuyNowDisabled
+                      ? "bg-zinc-205 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
+                      : "bg-zinc-900 hover:bg-[#6133e1] text-white border border-zinc-800 hover:border-[#6133e1]"
+                  )}
                 >
                   <span>BUY NOW</span>
-                  <span className="text-[10px] text-zinc-400 font-bold border-l border-zinc-700/60 pl-2"><PriceDisplay amountInUSD={auction.listingId.startingBid * 4} /></span>
+                  <span className={cn("text-[10px] font-bold border-l pl-2", isBuyNowDisabled ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-450 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
                 </button>
               </div>
 

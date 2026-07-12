@@ -1,16 +1,9 @@
 import { getStoreCategories, getStoreProducts } from "@/features/store/actions";
 import { StorefrontClient } from "@/features/store/components/storefront-client";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 
 export const revalidate = 0; // Dynamic route
 
 export default async function StorefrontPage() {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login");
-  }
-
   const [categoriesRes, productsRes] = await Promise.all([
     getStoreCategories(),
     getStoreProducts(),

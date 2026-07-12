@@ -96,8 +96,8 @@ export async function fetchAuctionRealtime(auctionId: string) {
     const userId = session?.user?.id;
     let isRegistered = false;
     if (userId) {
-      const reg = await Registration.findOne({ userId, auctionId, status: "PAID" }).lean();
-      isRegistered = !!reg;
+      const user = await User.findById(userId).lean();
+      isRegistered = !!(user && (user as any).hasPaidVerificationDeposit);
     }
 
     const bids = await Bid.find({ auctionId })
@@ -168,13 +168,7 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
     }
 
     // 1b. Verify user registration status
-    const registration = await Registration.findOne({
-      userId: user._id,
-      auctionId,
-      status: "PAID",
-    });
-
-    if (!registration) {
+    if (!user.hasPaidVerificationDeposit) {
       return { success: false, error: "Access denied. Verification deposit ($2.50) is required to place bids." };
     }
 
@@ -191,6 +185,10 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
 
     if (listing.sellerId && listing.sellerId.toString() === user._id.toString()) {
       return { success: false, error: "You cannot bid on your own auction." };
+    }
+
+    if (auction.highestBidderId && auction.highestBidderId.toString() === user._id.toString()) {
+      return { success: false, error: "You are already the highest bidder. You cannot place another bid until you are outbid." };
     }
 
     if (auction.endTime && new Date() >= new Date(auction.endTime)) {
@@ -358,6 +356,10 @@ export async function createBuyNowOrderAction(auctionId: string) {
     }
 
     const buyNowPrice = listing.startingBid * 4;
+
+    if (auction.currentHighestBid >= 0.8 * buyNowPrice) {
+      return { success: false, error: "Buy Now is disabled because the current bid has reached 80% or more of the Buy Now price." };
+    }
 
     const Order = (await import("@/models/Order")).default;
 

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CreditCard, X, Sparkles, MessageSquare } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { createRegistrationOrder } from "@/features/payments/actions";
 
 interface RegisterAuctionButtonProps {
   auctionId: string;
@@ -13,13 +15,29 @@ interface RegisterAuctionButtonProps {
 
 export function RegisterAuctionButton({ auctionId, onSuccess, label, className }: RegisterAuctionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
 
-
+  const handleButtonClick = () => {
+    if (!session?.user) {
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+    } else {
+      setIsOpen(true);
+    }
+  };
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
-    const message = `Hi Pokémon GO Services! I would like to pay the $2.50 verification deposit to register for:
-- Auction ID: ${auctionId}
-Please let me know how to proceed with the payment!`;
+    let orderIdStr = "";
+    try {
+      const res = await createRegistrationOrder(auctionId);
+      if (res.success && res.orderContext?.id) {
+        orderIdStr = `Order ID: ${res.orderContext.id}\n`;
+      }
+    } catch (err) {
+      console.error("Failed to persist registration order:", err);
+    }
+
+    const message = `Hi Pokémon GO Services! I would like to pay the one-time $2.50 verification deposit to verify my account for bidding across all auctions.
+${orderIdStr}Please let me know how to proceed with the payment!`;
 
     try {
       await navigator.clipboard.writeText(message);
@@ -43,11 +61,11 @@ Please let me know how to proceed with the payment!`;
   return (
     <>
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={handleButtonClick}
         className={className || "w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm transition-all active:scale-[0.98] border border-zinc-700/50 cursor-pointer"}
       >
         <CreditCard className="h-4 w-4 text-white" />
-        {label || "Pay Verification Deposit ($2.50)"}
+        {label || "Pay One-Time Verification Deposit ($2.50)"}
       </Button>
 
       {/* Premium Selector Modal Overlay (Aligned with Buy Now) */}
@@ -67,10 +85,10 @@ Please let me know how to proceed with the payment!`;
             <div className="space-y-1.5">
               <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-[#6133e1]" />
-                Select Deposit Method
+                One-Time Bidding Verification
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                A verification deposit is required to participate in live bidding. The final fee is:
+                Pay a one-time verification deposit to bid across all live auctions. Fully refundable or usable as store credit:
               </p>
               <div className="text-2xl font-black text-[#6133e1] pt-1">
                 $2.50

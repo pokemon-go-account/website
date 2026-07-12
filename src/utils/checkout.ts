@@ -24,7 +24,7 @@ export function handleTelegramCheckout(items: CartItem[], totalPrice: number) {
   message += `───────────────────\n`;
   message += `*Total Order Value:* $${totalPrice.toLocaleString()}\n`;
   message += `───────────────────\n\n`;
-  message += `Please confirm my order and initiate secure middleman credentials validation.`;
+  message += `Please confirm my order and initiate secure credentials validation.`;
 
   const encodedText = encodeURIComponent(message);
   const telegramUrl = `https://t.me/${adminUsername}?text=${encodedText}`;

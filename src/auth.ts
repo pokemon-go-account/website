@@ -31,6 +31,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             isOnboarded: user.isOnboarded,
             isEmailVerified: user.isEmailVerified,
             adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
+            hasPaidVerificationDeposit: user.hasPaidVerificationDeposit,
+            walletBalance: user.walletBalance,
           } as any;
         }
 
@@ -58,6 +60,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           isOnboarded: user.isOnboarded,
           isEmailVerified: user.isEmailVerified,
           adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
+          hasPaidVerificationDeposit: user.hasPaidVerificationDeposit,
+          walletBalance: user.walletBalance,
         } as any;
       },
     }),
