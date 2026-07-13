@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   getOrdersConsole,
   completeOrderConsole,
   failOrderConsole,
   deleteOrderConsole
 } from "@/features/console/actions";
-import { ShoppingBag, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare } from "lucide-react";
+import { ShoppingBag, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 
@@ -35,25 +35,86 @@ interface OrderData {
 export default function OrdersConsolePage() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"ALL" | "PENDING" | "COMPLETED" | "FAILED">("ALL");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [alert, setAlert] = useState<{ text: string; ok: boolean } | null>(null);
 
-  const loadData = async () => {
-    setLoading(true);
-    const res = await getOrdersConsole();
-    if (res.success && res.orders) {
-      setOrders(res.orders);
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const observerTarget = useRef<HTMLDivElement | null>(null);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  const fetchOrders = async (pageNum: number, resetList: boolean = false) => {
+    if (resetList) {
+      setLoading(true);
     } else {
-      setAlert({ text: res.error || "Failed to load orders.", ok: false });
+      setLoadingMore(true);
     }
-    setLoading(false);
+    setAlert(null);
+    try {
+      const res = await getOrdersConsole(pageNum, 100, debouncedSearch, activeTab);
+      if (res.success && res.orders) {
+        const fetchedOrders = res.orders as OrderData[];
+        if (resetList) {
+          setOrders(fetchedOrders);
+        } else {
+          setOrders((prev) => {
+            const existingIds = new Set(prev.map(o => o._id));
+            const newOrders = fetchedOrders.filter(o => !existingIds.has(o._id));
+            return [...prev, ...newOrders];
+          });
+        }
+        setHasMore(res.hasMore ?? false);
+        setTotalCount(res.totalCount ?? 0);
+        setPage(pageNum);
+      } else {
+        setAlert({ text: res.error || "Failed to load orders.", ok: false });
+      }
+    } catch (err: any) {
+      setAlert({ text: err.message || "Failed to fetch orders.", ok: false });
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   };
 
+  // Reload when search query or tab filter changes
   useEffect(() => {
-    loadData();
-  }, []);
+    fetchOrders(1, true);
+  }, [debouncedSearch, activeTab]);
+
+  // Infinite Scroll intersection observer
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target || !hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchOrders(page + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => {
+      observer.unobserve(target);
+    };
+  }, [hasMore, loading, loadingMore, page, debouncedSearch, activeTab]);
 
   const handleComplete = async (id: string) => {
     setProcessingId(id);
@@ -61,7 +122,7 @@ export default function OrdersConsolePage() {
     const res = await completeOrderConsole(id);
     if (res.success) {
       setAlert({ text: "Order marked as COMPLETED successfully.", ok: true });
-      loadData();
+      setOrders(prev => prev.map(o => o._id === id ? { ...o, status: "COMPLETED" } : o));
     } else {
       setAlert({ text: res.error || "Action failed.", ok: false });
     }
@@ -74,7 +135,7 @@ export default function OrdersConsolePage() {
     const res = await failOrderConsole(id);
     if (res.success) {
       setAlert({ text: "Order marked as FAILED.", ok: true });
-      loadData();
+      setOrders(prev => prev.map(o => o._id === id ? { ...o, status: "FAILED" } : o));
     } else {
       setAlert({ text: res.error || "Action failed.", ok: false });
     }
@@ -88,26 +149,13 @@ export default function OrdersConsolePage() {
     const res = await deleteOrderConsole(id);
     if (res.success) {
       setAlert({ text: "Order deleted successfully.", ok: true });
-      loadData();
+      setOrders(prev => prev.filter(o => o._id !== id));
+      setTotalCount(prev => prev - 1);
     } else {
       setAlert({ text: res.error || "Delete failed.", ok: false });
     }
     setProcessingId(null);
   };
-
-  // Filtering & Search
-  const filteredOrders = orders.filter((order) => {
-    const matchesTab = activeTab === "ALL" || order.status === activeTab;
-    const matchesQuery =
-      !searchQuery.trim() ||
-      order.userId?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.userId?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.userId?._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.items.some((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesTab && matchesQuery;
-  });
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -180,20 +228,20 @@ export default function OrdersConsolePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.05] text-zinc-700 dark:text-zinc-300">
-              {loading ? (
+              {loading && orders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 italic">
                     Loading orders registry...
                   </td>
                 </tr>
-              ) : filteredOrders.length === 0 ? (
+              ) : orders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 italic font-medium">
                     No orders found matching parameters.
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => {
+                orders.map((order) => {
                   const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
@@ -302,7 +350,7 @@ export default function OrdersConsolePage() {
                           <button
                             onClick={() => handleDelete(order._id)}
                             disabled={processingId === order._id}
-                            className="h-7 w-7 rounded-lg bg-red-600/80 hover:bg-red-500 text-white flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
+                            className="h-7 w-7 rounded-lg bg-red-600/80 hover:bg-red-550 text-white flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
                             title="Delete Order"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -316,6 +364,11 @@ export default function OrdersConsolePage() {
             </tbody>
           </table>
         </div>
+        {hasMore && (
+          <div ref={observerTarget} className="flex justify-center p-6 border-t border-zinc-200 dark:border-white/[0.05]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#6133e1]" />
+          </div>
+        )}
       </div>
     </div>
   );

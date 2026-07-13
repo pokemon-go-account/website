@@ -8,6 +8,7 @@ import Listing from "@/models/Listing";
 import Auction from "@/models/Auction";
 import { revalidatePath } from "next/cache";
 import { handleTelegramCheckout } from "@/utils/checkout"; // repurposed for rent reminder
+import mongoose from "mongoose";
 
 async function checkSuperAdminSession() {
   const session = await auth();
@@ -224,23 +225,84 @@ export async function updateListingConsole(listingId: string, fields: any) {
 }
 
 /** Get all bidder registrations */
-export async function getRegistrationsConsole() {
+export async function getRegistrationsConsole(
+  page: number = 1,
+  limit: number = 100,
+  search: string = "",
+  status: string = "ALL"
+) {
   try {
     await checkSuperAdminSession();
     await connectDB();
     
     const Registration = (await import("@/models/Registration")).default;
     
-    const registrations = await Registration.find()
+    const query: any = {};
+    if (status !== "ALL") {
+      query.status = status;
+    }
+    
+    if (search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      
+      // 1. Match Users
+      const matchingUsers = await User.find({
+        $or: [
+          { name: searchRegex },
+          { username: searchRegex },
+          { email: searchRegex },
+          { telegramUsername: searchRegex }
+        ]
+      }).select("_id").lean();
+      const userIds = matchingUsers.map(u => u._id);
+      
+      // 2. Match Listings
+      const matchingListings = await Listing.find({
+        title: searchRegex
+      }).select("_id").lean();
+      const listingIds = matchingListings.map(l => l._id);
+      
+      // 3. Match Auctions
+      const matchingAuctions = await Auction.find({
+        listingId: { $in: listingIds }
+      }).select("_id").lean();
+      const auctionIds = matchingAuctions.map(a => a._id);
+      
+      const conditions: any[] = [
+        { userId: { $in: userIds } },
+        { auctionId: { $in: auctionIds } },
+        { razorpayOrderId: searchRegex }
+      ];
+      
+      if (mongoose.Types.ObjectId.isValid(search.trim())) {
+        conditions.push({ _id: search.trim() });
+      }
+      
+      query.$or = conditions;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const registrations = await Registration.find(query)
       .populate("userId", "name username email telegramUsername")
       .populate({
         path: "auctionId",
         populate: { path: "listingId", select: "title startingBid" }
       })
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
       
-    return { success: true, registrations: JSON.parse(JSON.stringify(registrations)) };
+    const totalCount = await Registration.countDocuments(query);
+    const hasMore = skip + registrations.length < totalCount;
+      
+    return { 
+      success: true, 
+      registrations: JSON.parse(JSON.stringify(registrations)),
+      hasMore,
+      totalCount
+    };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to fetch registrations." };
   }
@@ -259,7 +321,7 @@ export async function verifyRegistrationConsole(registrationId: string) {
       const User = (await import("@/models/User")).default;
       await User.findByIdAndUpdate(reg.userId, {
         hasPaidVerificationDeposit: true,
-        $set: { walletBalance: -2.5 }
+        $set: { walletBalance: 2.5 }
       });
     }
     revalidatePath("/console/registrations");
@@ -302,19 +364,67 @@ export async function deleteRegistrationConsole(registrationId: string) {
 }
 
 /** Get all storefront and buy-now orders */
-export async function getOrdersConsole() {
+export async function getOrdersConsole(
+  page: number = 1,
+  limit: number = 100,
+  search: string = "",
+  status: string = "ALL"
+) {
   try {
     await checkSuperAdminSession();
     await connectDB();
     
     const Order = (await import("@/models/Order")).default;
     
-    const orders = await Order.find()
+    const query: any = {};
+    if (status !== "ALL") {
+      query.status = status;
+    }
+    
+    if (search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      
+      // Find matching users
+      const matchingUsers = await User.find({
+        $or: [
+          { name: searchRegex },
+          { username: searchRegex },
+          { email: searchRegex },
+          { telegramUsername: searchRegex }
+        ]
+      }).select("_id").lean();
+      const userIds = matchingUsers.map(u => u._id);
+      
+      const conditions: any[] = [
+        { userId: { $in: userIds } },
+        { "items.name": searchRegex }
+      ];
+      
+      if (mongoose.Types.ObjectId.isValid(search.trim())) {
+        conditions.push({ _id: search.trim() });
+      }
+      
+      query.$or = conditions;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const orders = await Order.find(query)
       .populate("userId", "name username email telegramUsername")
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
       
-    return { success: true, orders: JSON.parse(JSON.stringify(orders)) };
+    const totalCount = await Order.countDocuments(query);
+    const hasMore = skip + orders.length < totalCount;
+      
+    return { 
+      success: true, 
+      orders: JSON.parse(JSON.stringify(orders)),
+      hasMore,
+      totalCount
+    };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to fetch orders." };
   }
@@ -417,7 +527,7 @@ export async function createRegistrationManuallyConsole(username: string, auctio
     );
 
     user.hasPaidVerificationDeposit = true;
-    user.walletBalance = -2.5;
+    user.walletBalance = 2.5;
     await user.save();
 
     revalidatePath("/console/registrations");
@@ -456,5 +566,59 @@ export async function cancelOrderUser(orderId: string) {
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to cancel order." };
+  }
+}
+
+/** Get all users on the site */
+export async function getAllUsers(page: number = 1, limit: number = 100, search: string = "") {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    const query: any = {};
+    if (search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      query.$or = [
+        { name: searchRegex },
+        { username: searchRegex },
+        { email: searchRegex },
+        { telegramUsername: searchRegex }
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const users = await User.find(query)
+      .select("name username email telegramUsername role isSuspended walletBalance adminRentPaidUntil createdAt")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalCount = await User.countDocuments(query);
+    const hasMore = skip + users.length < totalCount;
+
+    return { 
+      success: true, 
+      users: JSON.parse(JSON.stringify(users)),
+      hasMore,
+      totalCount
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/** Update user's wallet balance by Super Admin */
+export async function updateUserWalletBalance(userId: string, balance: number) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    await User.findByIdAndUpdate(userId, { walletBalance: balance });
+    revalidatePath("/console/users");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }

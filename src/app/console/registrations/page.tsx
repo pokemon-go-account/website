@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   getRegistrationsConsole,
   verifyRegistrationConsole,
@@ -8,7 +8,7 @@ import {
   deleteRegistrationConsole,
   createRegistrationManuallyConsole
 } from "@/features/console/actions";
-import { CreditCard, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare } from "lucide-react";
+import { CreditCard, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RegistrationData {
@@ -36,7 +36,9 @@ interface RegistrationData {
 export default function RegistrationsConsolePage() {
   const [registrations, setRegistrations] = useState<RegistrationData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"ALL" | "PENDING" | "PAID" | "FAILED">("ALL");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [alert, setAlert] = useState<{ text: string; ok: boolean } | null>(null);
@@ -44,20 +46,79 @@ export default function RegistrationsConsolePage() {
   const [manualUsername, setManualUsername] = useState("");
   const [formPending, setFormPending] = useState(false);
 
-  const loadData = async () => {
-    setLoading(true);
-    const res = await getRegistrationsConsole();
-    if (res.success && res.registrations) {
-      setRegistrations(res.registrations);
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const observerTarget = useRef<HTMLDivElement | null>(null);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  const fetchRegistrations = async (pageNum: number, resetList: boolean = false) => {
+    if (resetList) {
+      setLoading(true);
     } else {
-      setAlert({ text: res.error || "Failed to load registrations.", ok: false });
+      setLoadingMore(true);
     }
-    setLoading(false);
+    setAlert(null);
+    try {
+      const res = await getRegistrationsConsole(pageNum, 100, debouncedSearch, activeTab);
+      if (res.success && res.registrations) {
+        const fetchedRegs = res.registrations as RegistrationData[];
+        if (resetList) {
+          setRegistrations(fetchedRegs);
+        } else {
+          setRegistrations((prev) => {
+            const existingIds = new Set(prev.map(r => r._id));
+            const newRegs = fetchedRegs.filter(r => !existingIds.has(r._id));
+            return [...prev, ...newRegs];
+          });
+        }
+        setHasMore(res.hasMore ?? false);
+        setTotalCount(res.totalCount ?? 0);
+        setPage(pageNum);
+      } else {
+        setAlert({ text: res.error || "Failed to load registrations.", ok: false });
+      }
+    } catch (err: any) {
+      setAlert({ text: err.message || "Failed to fetch registrations.", ok: false });
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   };
 
+  // Reload registrations on search query or tab change
   useEffect(() => {
-    loadData();
-  }, []);
+    fetchRegistrations(1, true);
+  }, [debouncedSearch, activeTab]);
+
+  // Infinite Scroll intersection observer
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target || !hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchRegistrations(page + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => {
+      observer.unobserve(target);
+    };
+  }, [hasMore, loading, loadingMore, page, debouncedSearch, activeTab]);
 
   const handleVerify = async (id: string) => {
     setProcessingId(id);
@@ -65,7 +126,7 @@ export default function RegistrationsConsolePage() {
     const res = await verifyRegistrationConsole(id);
     if (res.success) {
       setAlert({ text: "Registration verified manually.", ok: true });
-      loadData();
+      setRegistrations(prev => prev.map(r => r._id === id ? { ...r, status: "PAID" } : r));
     } else {
       setAlert({ text: res.error || "Verification failed.", ok: false });
     }
@@ -78,7 +139,7 @@ export default function RegistrationsConsolePage() {
     const res = await failRegistrationConsole(id);
     if (res.success) {
       setAlert({ text: "Registration marked as failed.", ok: true });
-      loadData();
+      setRegistrations(prev => prev.map(r => r._id === id ? { ...r, status: "FAILED" } : r));
     } else {
       setAlert({ text: res.error || "Action failed.", ok: false });
     }
@@ -92,7 +153,8 @@ export default function RegistrationsConsolePage() {
     const res = await deleteRegistrationConsole(id);
     if (res.success) {
       setAlert({ text: "Registration deleted successfully.", ok: true });
-      loadData();
+      setRegistrations(prev => prev.filter(r => r._id !== id));
+      setTotalCount(prev => prev - 1);
     } else {
       setAlert({ text: res.error || "Delete failed.", ok: false });
     }
@@ -108,25 +170,12 @@ export default function RegistrationsConsolePage() {
     if (res.success) {
       setAlert({ text: `Successfully registered and marked paid bidder @${manualUsername.trim()} globally!`, ok: true });
       setManualUsername("");
-      loadData();
+      fetchRegistrations(1, true);
     } else {
       setAlert({ text: res.error || "Manual registration failed.", ok: false });
     }
     setFormPending(false);
   };
-
-  // Filtering & Search
-  const filteredRegistrations = registrations.filter((reg) => {
-    const matchesTab = activeTab === "ALL" || reg.status === activeTab;
-    const matchesQuery =
-      !searchQuery.trim() ||
-      reg.userId?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.userId?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.razorpayOrderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.auctionId?.listingId?.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesQuery;
-  });
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -228,20 +277,20 @@ export default function RegistrationsConsolePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.05] text-zinc-700 dark:text-zinc-300">
-              {loading ? (
+              {loading && registrations.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 italic">
                     Loading registrations ledger...
                   </td>
                 </tr>
-              ) : filteredRegistrations.length === 0 ? (
+              ) : registrations.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 italic font-medium">
                     No registrations found matching parameters.
                   </td>
                 </tr>
               ) : (
-                filteredRegistrations.map((reg) => {
+                registrations.map((reg) => {
                   const regDate = new Date(reg.createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
@@ -344,7 +393,7 @@ export default function RegistrationsConsolePage() {
                           <button
                             onClick={() => handleDelete(reg._id)}
                             disabled={processingId === reg._id}
-                            className="h-7 w-7 rounded-lg bg-red-600/80 hover:bg-red-500 text-white flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
+                            className="h-7 w-7 rounded-lg bg-red-600/80 hover:bg-red-550 text-white flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
                             title="Delete Record"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -358,6 +407,11 @@ export default function RegistrationsConsolePage() {
             </tbody>
           </table>
         </div>
+        {hasMore && (
+          <div ref={observerTarget} className="flex justify-center p-6 border-t border-zinc-200 dark:border-white/[0.05]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#6133e1]" />
+          </div>
+        )}
       </div>
     </div>
   );

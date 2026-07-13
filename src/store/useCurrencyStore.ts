@@ -81,10 +81,15 @@ export const useCurrencyStore = create<CurrencyState>()(
         const convertedAmount = amountInUSD * rate;
         const symbol = CURRENCY_SYMBOLS[currency];
         
+        const hasDecimals = convertedAmount % 1 !== 0;
+        const formattedAmount = (currency === "JPY" || !hasDecimals)
+          ? Math.round(convertedAmount).toLocaleString()
+          : convertedAmount.toFixed(2);
+        
         return {
           amount: convertedAmount,
           symbol,
-          formatted: `${symbol}${Math.round(convertedAmount).toLocaleString()}`,
+          formatted: `${symbol}${formattedAmount}`,
         };
       },
     }),

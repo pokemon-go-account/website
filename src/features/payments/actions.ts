@@ -193,7 +193,7 @@ export async function simulateMockPayment(orderId: string) {
 
     await User.findByIdAndUpdate(registration.userId, {
       hasPaidVerificationDeposit: true,
-      $set: { walletBalance: -2.5 }
+      $set: { walletBalance: 2.5 }
     });
 
     return { success: true };

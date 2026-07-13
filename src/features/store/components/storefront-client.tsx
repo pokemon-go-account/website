@@ -45,8 +45,8 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   
   const { data: session } = useSession();
   const walletBalance = (session?.user as any)?.walletBalance || 0;
-  const hasWalletCredit = walletBalance < 0;
-  const walletCreditAmount = hasWalletCredit ? Math.abs(walletBalance) : 0;
+  const hasWalletCredit = walletBalance > 0;
+  const walletCreditAmount = hasWalletCredit ? walletBalance : 0;
 
   useEffect(() => {
     setMounted(true);
@@ -426,7 +426,7 @@ Please let me know how to proceed with the payment!`;
                   {hasWalletCredit && (
                     <div className="flex items-center justify-between text-xs text-emerald-500">
                       <span className="font-medium">Verification Credit Applied:</span>
-                      <span className="font-semibold">-$2.50</span>
+                      <span className="font-semibold">-{convert(Math.min(getTotalPrice(), walletCreditAmount)).formatted}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-sm">
@@ -478,10 +478,10 @@ Please let me know how to proceed with the payment!`;
                 You are purchasing direct store items. The total price is:
               </p>
               {hasWalletCredit && (
-                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5 mt-1">
+                <div className="text-[11px] text-zinc-400 dark:text-zinc-550 flex items-center gap-1.5 mt-1">
                   <span>Subtotal: <PriceDisplay amountInUSD={getTotalPrice()} /></span>
                   <span>•</span>
-                  <span className="text-emerald-500 font-semibold">Credit: -$2.50</span>
+                  <span className="text-emerald-500 font-semibold">Credit: -<PriceDisplay amountInUSD={Math.min(getTotalPrice(), walletCreditAmount)} /></span>
                 </div>
               )}
               <div className="text-xl font-bold text-zinc-900 dark:text-white pt-1">

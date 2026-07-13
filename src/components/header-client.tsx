@@ -7,12 +7,15 @@ import Image from "next/image";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useSession, signOut as clientSignOut } from "next-auth/react";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
+import { PriceDisplay } from "@/components/price-display";
+import { cn } from "@/lib/utils";
 
 interface HeaderClientProps {
   user?: {
     name?: string | null;
     email?: string | null;
     role?: string | null;
+    walletBalance?: number;
   };
   signOutAction?: () => Promise<void>;
 }
@@ -36,11 +39,15 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
     name: sessionUser.name,
     email: sessionUser.email,
     role: (sessionUser as any).role as string | undefined,
+    walletBalance: (sessionUser as any).walletBalance ?? 0,
   } : undefined;
 
   // Prefer client-side user once it is loaded and has a role to guarantee reactivity,
   // falling back to server-provided propUser for instant SSR render without flickering.
   const user = (clientUser?.role ? clientUser : propUser) || clientUser || propUser;
+  
+  // Prefer the database-queried balance from the server component to bypass stale session cookies
+  const balance = typeof propUser?.walletBalance === "number" ? propUser.walletBalance : (clientUser?.walletBalance ?? 0);
 
   useEffect(() => {
     console.log("[HeaderClient Debug] propUser:", propUser);
@@ -181,6 +188,16 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             </button>
             {user ? (
               <div className="flex items-center gap-3">
+                <div className="text-xs text-gray-550 dark:text-gray-400 flex items-center gap-1 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] px-2 py-0.5 rounded font-semibold select-none">
+                  <span>Balance:</span>
+                  <span className={cn(
+                    "font-bold",
+                    balance < 0 ? "text-red-500" : "text-emerald-500"
+                  )}>
+                    <PriceDisplay amountInUSD={balance} />
+                  </span>
+                </div>
+                <span className="text-gray-300 dark:text-zinc-800">|</span>
                 <Link href="/orders" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-955 dark:hover:text-white transition-colors">
                   My Orders
                 </Link>
@@ -302,6 +319,15 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               <div className="border-t border-gray-200 dark:border-white/10 mt-3 pt-3">
                 {user ? (
                   <div className="space-y-2 px-2">
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 py-1.5 border-b border-gray-100 dark:border-white/[0.04]">
+                      <span>Balance</span>
+                      <span className={cn(
+                        "font-bold",
+                        balance < 0 ? "text-red-500" : "text-emerald-500"
+                      )}>
+                        <PriceDisplay amountInUSD={balance} />
+                      </span>
+                    </div>
                     <Link href="/profile" onClick={toggleMenu} className="block text-xs text-gray-500 dark:text-gray-400 py-1">
                       My Account ({user.role})
                     </Link>
