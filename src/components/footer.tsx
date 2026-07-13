@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, ShieldCheck, ChevronRight, MessageSquare, Globe } from "lucide-react";
 
 // Facebook SVG
@@ -33,7 +34,13 @@ export function Footer() {
           {/* Brand/About Section */}
           <div className="lg:col-span-4 space-y-4">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <img src="/logo.png" alt="Pokémon GO Services Logo" className="h-9 w-auto object-contain transition-transform group-hover:scale-105 duration-300" />
+              <Image
+                src="/logo.png"
+                alt="Pokémon GO Services Logo"
+                width={144}
+                height={36}
+                className="h-9 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
+              />
               <span className="font-extrabold text-sm tracking-wider uppercase bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-700 dark:from-white dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">
                 Pokémon GO Services
               </span>

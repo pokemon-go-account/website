@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X, LogOut, Shield, Sun, Moon, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useSession, signOut as clientSignOut } from "next-auth/react";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
@@ -102,7 +103,14 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity">
-            <img src="/logo.png" alt="Pokémon GO Services" className="h-10 w-auto object-contain" />
+            <Image
+              src="/logo.png"
+              alt="Pokémon GO Services"
+              width={160}
+              height={40}
+              priority
+              className="h-10 w-auto object-contain"
+            />
           </Link>
 
 

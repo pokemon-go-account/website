@@ -23,10 +23,18 @@ const POKEMON_IMAGES = [
 
 export function PokemonCursorTrail() {
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [enabled, setEnabled] = useState(false);
   const lastSpawnTime = useRef(0);
   const nextId = useRef(0);
 
   useEffect(() => {
+    // Disable trail animation on mobile and touch-only devices
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
+    const isMobileWidth = window.innerWidth < 768;
+    if (isTouch || isMobileWidth) return;
+
+    setEnabled(true);
+
     const handleMouseMove = (e: MouseEvent) => {
       const now = Date.now();
       // Throttle spawning to every 180ms to keep particle population clean on slow drifts
@@ -62,6 +70,8 @@ export function PokemonCursorTrail() {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
+
+  if (!enabled) return null;
 
   return (
     <>

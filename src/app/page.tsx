@@ -5,7 +5,7 @@ import { FeaturedStoreItems } from "@/features/landing/components/featured-store
 import { FAQ } from "@/features/landing/components/faq";
 import { FeedbackShowcase } from "@/features/landing/components/feedback-showcase";
 
-export const revalidate = 0; // Dynamic rendering
+export const revalidate = 60; // Cache page for 60 seconds (ISR)
 
 export default function Home() {
   return (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShoppingBag, ArrowRight } from "lucide-react";
 import { PriceDisplay } from "@/components/price-display";
+import Image from "next/image";
 
 interface StoreProduct {
   _id: string;
@@ -56,10 +57,12 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
               {/* Product Image & Category Badge */}
               <div className="relative aspect-video w-full rounded-md overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 flex items-center justify-center">
                 {product.imageUrl ? (
-                  <img
+                  <Image
                     src={product.imageUrl}
                     alt={product.name}
-                    className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-contain group-hover:scale-102 transition-transform duration-500"
                   />
                 ) : (
                   <span className="text-4xl select-none">🎁</span>

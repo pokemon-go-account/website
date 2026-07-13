@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Users, Lock, Headphones, Search, X, ArrowRight } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
+import Image from "next/image";
 
 const trustBadges = [
   { icon: ShieldCheck, label: "100% Secure" },
@@ -124,36 +125,19 @@ function HeroSearch() {
 }
 
 export function Hero() {
-  const [bgImage, setBgImage] = useState("url('/try.jpg')");
-
-  useEffect(() => {
-    const checkTheme = () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      setBgImage(isDark ? "url('/try.jpg')" : "url('/try.jpg')");
-    };
-
-    checkTheme();
-
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <section className="relative w-full overflow-hidden bg-transparent">
       {/* Hero Banner Background placed behind particles */}
-      <div
-        className="absolute inset-0 z-[-2] pointer-events-none"
-        style={{
-          backgroundImage: bgImage,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
+      <div className="absolute inset-0 z-[-2] pointer-events-none">
+        <Image
+          src="/try.jpg"
+          alt="Hero background banner"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/10 dark:from-[#080809] dark:via-[#080809]/85 dark:to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#080809] via-transparent to-transparent opacity-60" />
         <div className="absolute bottom-0 left-0 w-96 h-48 opacity-0 dark:opacity-20 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.1),transparent_70%)]" />
