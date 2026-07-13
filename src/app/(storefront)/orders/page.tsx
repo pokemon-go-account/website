@@ -10,6 +10,7 @@ import Link from "next/link";
 import { PriceDisplay } from "@/components/price-display";
 import { OrderReviewSection } from "./order-review-section";
 import { CancelOrderButton } from "./cancel-order-button";
+import { ResendMessageButton } from "./resend-message-button";
 
 export const revalidate = 0;
 
@@ -183,10 +184,18 @@ export default async function UserOrdersPage() {
                       <span className="text-xs text-zinc-400 dark:text-zinc-500">{formattedDate}</span>
                     </div>
 
-                    {/* Right: Price + Cancel */}
-                    <div className="flex items-center gap-3 shrink-0">
+                    {/* Right: Price + Cancel + Resend */}
+                    <div className="flex items-center gap-2 shrink-0">
                       {purchase.status === "PENDING" && purchase.orderType !== "AUCTION" && (
-                        <CancelOrderButton orderId={purchase.id} />
+                        <>
+                          <ResendMessageButton
+                            orderId={purchase.id}
+                            orderType={purchase.orderType}
+                            items={purchase.items}
+                            price={purchase.price}
+                          />
+                          <CancelOrderButton orderId={purchase.id} />
+                        </>
                       )}
                       <div className="text-right">
                         <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-none mb-0.5">Total</p>

@@ -516,7 +516,7 @@ Please let me know how to proceed with the payment!`;
     }
 
     if (platform === "telegram") {
-      window.open(`https://t.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      window.open(`https://telegram.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } else if (platform === "reddit") {
       window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Instant%20Escrow%20Purchase&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } else if (platform === "instagram") {
