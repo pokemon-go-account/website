@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, LogOut, Shield, Sun, Moon, Loader2 } from "lucide-react";
+import { Menu, X, LogOut, Shield, Sun, Moon, Loader2, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
@@ -41,6 +41,15 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyUsername = (e: React.MouseEvent, text: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const sessionUser = session?.user;
 
@@ -212,7 +221,18 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                     <div className="h-4.5 w-4.5 rounded-full bg-[#6133e1] text-white font-bold text-[9px] flex items-center justify-center uppercase select-none">
                       {user.username ? user.username[0] : (user.email ? user.email[0] : "U")}
                     </div>
-                    <span className="max-w-[80px] truncate">{user.username || user.email?.split("@")[0]}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="max-w-[80px] truncate">{user.username || user.email?.split("@")[0]}</span>
+                      {user.username && (
+                        <div
+                          onClick={(e) => handleCopyUsername(e, user.username!)}
+                          className="p-1 -ml-1 rounded-md hover:bg-zinc-200 dark:hover:bg-white/20 transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                          title="Copy username"
+                        >
+                          {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                        </div>
+                      )}
+                    </div>
                     <span className="text-[8px] opacity-60 transition-transform duration-200" style={{ transform: isUserMenuOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
                   </button>
 
@@ -232,7 +252,18 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                         >
                           {/* User details header */}
                           <div className="px-2.5 py-2 border-b border-zinc-150 dark:border-white/[0.04] mb-1">
-                            <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">{user.username || "Trainer"}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">{user.username || "Trainer"}</p>
+                              {user.username && (
+                                <button
+                                  onClick={(e) => handleCopyUsername(e, user.username!)}
+                                  className="p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                                  title="Copy username"
+                                >
+                                  {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                                </button>
+                              )}
+                            </div>
                             <p className="text-[10px] text-zinc-500 truncate">{user.email}</p>
                             {user.role && (
                               <span className="inline-block mt-1 text-[8px] font-bold bg-[#6133e1]/10 text-[#6133e1] dark:text-[#8b5cf6] border border-[#6133e1]/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">

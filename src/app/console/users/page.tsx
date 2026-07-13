@@ -10,9 +10,10 @@ import {
 } from "@/features/console/actions";
 import { 
   Users, Search, ShieldCheck, ShieldX, Ban, CheckCircle, 
-  AlertTriangle, Loader2, Mail, Calendar, Wallet, Check, AlertCircle 
+  AlertTriangle, Loader2, Mail, Calendar, Wallet, Check, AlertCircle, MessageSquare 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { PriceDisplay } from "@/components/price-display";
 
 interface FoundUser {
@@ -337,6 +338,14 @@ export default function ConsoleUsersPage() {
                         </span>
                       )}
                       <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(selectedUser.createdAt).toLocaleDateString()}</span>
+                      
+                      <Link
+                        href={`/console/chat?userId=${selectedUser._id}&username=${encodeURIComponent(selectedUser.username || "")}&email=${encodeURIComponent(selectedUser.email || "")}`}
+                        className="mt-2.5 inline-flex items-center gap-1.5 self-start px-3 py-1.5 rounded-lg bg-[#6133e1]/10 text-[#6133e1] dark:text-[#8b5cf6] hover:bg-[#6133e1]/20 border border-[#6133e1]/20 text-[10px] font-bold uppercase transition-all active:scale-[0.98] cursor-pointer"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Chat Directly
+                      </Link>
                     </div>
                   </div>
                   <div className="sm:text-right space-y-2">

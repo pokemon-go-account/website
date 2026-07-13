@@ -94,6 +94,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const walletCreditAmount = hasWalletCredit ? walletBalance : 0;
 
   // New interactive states
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeGalleryProduct, setActiveGalleryProduct] = useState<Product | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -370,7 +371,10 @@ Please let me know how to proceed with the payment!`;
                     key={product._id}
                     className="group relative rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 transition-all duration-250 flex flex-col justify-between hover:shadow-xs hover:border-zinc-300 dark:hover:border-white/[0.1]"
                   >
-                    <div className="space-y-3 relative">
+                    <div
+                      onClick={() => setSelectedProduct(product)}
+                      className="space-y-3 relative cursor-pointer group/card"
+                    >
                       {/* Badge (Most Purchased / Popular) */}
                       {product.badge && (
                         <div className={cn(
@@ -383,17 +387,13 @@ Please let me know how to proceed with the payment!`;
 
                       {/* Image Container */}
                       <div
-                        onClick={() => {
-                          setActiveGalleryProduct(product);
-                          setActiveImageIndex(0);
-                        }}
-                        className="relative h-52 w-full rounded-md bg-zinc-50 dark:bg-black/20 overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-white/[0.06] cursor-pointer group-hover:border-zinc-300 dark:group-hover:border-white/[0.12] transition-colors"
+                        className="relative h-52 w-full rounded-md bg-zinc-50 dark:bg-black/20 overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-white/[0.06] group-hover/card:border-zinc-300 dark:group-hover/card:border-white/[0.12] transition-colors"
                       >
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
                             alt={product.name}
-                            className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-500 animate-in fade-in"
+                            className="max-h-full max-w-full object-contain group-hover/card:scale-102 transition-transform duration-500 animate-in fade-in"
                           />
                         ) : (
                           <span className="text-3xl select-none">🎁</span>
@@ -405,14 +405,14 @@ Please let me know how to proceed with the payment!`;
                         )}
 
                         {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="text-[10px] bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-white px-2.5 py-1 rounded-md font-bold shadow-xs">Zoom & Gallery</span>
+                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-[10px] bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-white px-2.5 py-1 rounded-md font-bold shadow-xs">View Details</span>
                         </div>
                       </div>
 
                       {/* Detail */}
                       <div>
-                        <h4 className="text-xs font-semibold text-zinc-900 dark:text-white tracking-tight leading-snug truncate">
+                        <h4 className="text-xs font-semibold text-zinc-900 dark:text-white tracking-tight leading-snug truncate group-hover/card:text-[#6133e1] dark:group-hover/card:text-purple-400 transition-colors">
                           {product.name}
                         </h4>
                         <p className="text-[10px] text-zinc-500 mt-1 leading-normal line-clamp-2 h-8">
@@ -742,97 +742,269 @@ Please let me know how to proceed with the payment!`;
         </div>
       )}
 
-      {/* Product Image Gallery Slider Lightbox */}
-      {activeGalleryProduct && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-xl bg-zinc-900 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-2xl flex flex-col items-center gap-4 text-zinc-900 dark:text-white">
+      {/* Product Details Modal */}
+      {selectedProduct && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/65 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 md:p-8 shadow-2xl space-y-6 text-zinc-900 dark:text-white flex flex-col md:flex-row gap-8 scrollbar-thin">
             
             {/* Close Button */}
             <button
-              onClick={() => { setActiveGalleryProduct(null); setIsZoomed(false); }}
-              className="absolute top-4 right-4 h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+              onClick={() => setSelectedProduct(null)}
+              className="absolute top-4 right-4 h-8 w-8 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-zinc-900/80 hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors z-10"
             >
               <X className="h-4 w-4" />
             </button>
 
-            {/* Title */}
-            <div className="text-center w-full max-w-md px-8 space-y-1">
-              <h3 className="font-semibold text-xs text-zinc-900 dark:text-white tracking-tight leading-snug truncate">
-                {activeGalleryProduct.name}
-              </h3>
-              <p className="text-[10px] text-zinc-500 font-semibold">Image {activeImageIndex + 1} of {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) ? activeGalleryProduct.imageUrls.length : 1)}</p>
-            </div>
-
-            {/* Image Viewport */}
-            <div className={cn(
-              "relative h-80 w-full flex items-center justify-center bg-zinc-100/50 dark:bg-black/40 rounded-lg border border-zinc-200 dark:border-zinc-900 transition-all",
-              isZoomed ? "overflow-auto p-4" : "overflow-hidden"
-            )}>
-              {(() => {
-                const urls = (activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) 
-                  ? activeGalleryProduct.imageUrls 
-                  : [activeGalleryProduct.imageUrl];
-                const currentUrl = urls[activeImageIndex] || activeGalleryProduct.imageUrl;
-                return (
+            {/* Left Column: Image Container (Clickable for fullscreen) */}
+            <div className="w-full md:w-1/2 flex flex-col gap-3">
+              <div
+                onClick={() => {
+                  setActiveGalleryProduct(selectedProduct);
+                  setActiveImageIndex(0);
+                }}
+                className="relative aspect-square w-full rounded-lg bg-zinc-50 dark:bg-black/20 overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-white/[0.06] cursor-pointer hover:border-zinc-300 dark:hover:border-white/[0.12] transition-colors group"
+                title="Click to view full screen"
+              >
+                {selectedProduct.imageUrl ? (
                   <img
-                    src={currentUrl}
-                    alt={activeGalleryProduct.name}
-                    onClick={() => setIsZoomed(!isZoomed)}
-                    className={cn(
-                      "select-none animate-in zoom-in-95 duration-200 transition-all origin-center",
-                      isZoomed 
-                        ? "w-[200%] h-[200%] max-h-none max-w-none object-contain cursor-zoom-out" 
-                        : "max-h-full max-w-full object-contain cursor-zoom-in"
-                    )}
+                    src={selectedProduct.imageUrl}
+                    alt={selectedProduct.name}
+                    className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-500"
                   />
-                );
-              })()}
+                ) : (
+                  <span className="text-5xl select-none">🎁</span>
+                )}
+                
+                {/* Zoom indicator overlay */}
+                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-[10px] bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-white px-2.5 py-1 rounded-md font-bold shadow-xs">Click to view full screen</span>
+                </div>
+              </div>
 
-              {/* Prev / Next buttons if multiple */}
-              {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
-                <>
-                  <button
-                    onClick={() => {
-                      const total = activeGalleryProduct.imageUrls?.length || 1;
-                      setActiveImageIndex((prev) => (prev - 1 + total) % total);
-                      setIsZoomed(false);
-                    }}
-                    className="absolute left-3 h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/85 hover:bg-white dark:hover:bg-zinc-900 text-zinc-700 dark:text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-xs"
-                  >
-                    <ChevronLeft className="h-4.5 w-4.5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      const total = activeGalleryProduct.imageUrls?.length || 1;
-                      setActiveImageIndex((prev) => (prev + 1) % total);
-                      setIsZoomed(false);
-                    }}
-                    className="absolute right-3 h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/85 hover:bg-white dark:hover:bg-zinc-900 text-zinc-700 dark:text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-xs"
-                  >
-                    <ChevronRight className="h-4.5 w-4.5" />
-                  </button>
-                </>
+              {/* Thumbnails if available */}
+              {selectedProduct.imageUrls && selectedProduct.imageUrls.length > 1 && (
+                <div className="flex gap-1.5 overflow-x-auto py-1">
+                  {selectedProduct.imageUrls.map((url, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedProduct({ ...selectedProduct, imageUrl: url });
+                      }}
+                      className={cn(
+                        "h-12 w-12 rounded-md border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-all bg-white dark:bg-black",
+                        selectedProduct.imageUrl === url ? "border-zinc-900 dark:border-white ring-1 ring-zinc-900 dark:ring-white" : "border-zinc-200 dark:border-zinc-850 hover:border-zinc-400 dark:hover:border-zinc-700"
+                      )}
+                    >
+                      <img src={url} className="object-contain max-h-full max-w-full" alt="thumbnail" />
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Thumbnails list */}
-            {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
-              <div className="flex gap-1.5 max-w-full overflow-x-auto py-1">
-                {activeGalleryProduct.imageUrls?.map((url, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => { setActiveImageIndex(idx); setIsZoomed(false); }}
-                    className={cn(
-                      "h-10 w-10 rounded-md border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-all bg-white dark:bg-black",
-                      activeImageIndex === idx ? "border-zinc-900 dark:border-white ring-1 ring-zinc-900 dark:ring-white" : "border-zinc-200 dark:border-zinc-850 hover:border-zinc-400 dark:hover:border-zinc-700"
-                    )}
-                  >
-                    <img src={url} className="object-contain max-h-full max-w-full" alt="thumbnail" />
-                  </button>
-                ))}
+            {/* Right Column: Detailed Product Info */}
+            <div className="w-full md:w-1/2 flex flex-col justify-between space-y-4 pt-4 md:pt-0">
+              <div className="space-y-3">
+                {/* Category & Badge */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  {selectedProduct.categoryId && (
+                    <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-white/[0.04] text-[8px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.06]">
+                      {selectedProduct.categoryId.name}
+                    </span>
+                  )}
+                  {selectedProduct.badge && (
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs",
+                      selectedProduct.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                    )}>
+                      {selectedProduct.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
+                    </span>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h2 className="text-lg font-bold text-zinc-950 dark:text-white tracking-tight leading-snug">
+                  {selectedProduct.name}
+                </h2>
+
+                {/* Full Description */}
+                <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed max-h-[160px] overflow-y-auto pr-1">
+                  {selectedProduct.description || "No detailed description available for this premium storefront product."}
+                </div>
               </div>
+
+              {/* Pricing & Add to Cart */}
+              <div className="space-y-4 pt-4 border-t border-zinc-100 dark:border-white/[0.04]">
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wide">Price</span>
+                  <div>
+                    {selectedProduct.mrpPrice && selectedProduct.discountedPrice && selectedProduct.mrpPrice > selectedProduct.discountedPrice ? (
+                      <div className="text-right">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <span className="text-xs text-zinc-400 dark:text-zinc-500 line-through">
+                            <PriceDisplay amountInUSD={selectedProduct.mrpPrice} />
+                          </span>
+                          <span className="text-[9px] font-bold text-red-500 dark:text-red-400 bg-red-500/10 px-1 rounded">
+                            {Math.round(((selectedProduct.mrpPrice - selectedProduct.discountedPrice) / selectedProduct.mrpPrice) * 100)}% OFF
+                          </span>
+                        </div>
+                        <p className="text-xl font-bold text-zinc-900 dark:text-white mt-1">
+                          <PriceDisplay amountInUSD={selectedProduct.discountedPrice} />
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xl font-bold text-zinc-900 dark:text-white">
+                        <PriceDisplay amountInUSD={selectedProduct.price} />
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Add to Cart Actions */}
+                <div className="flex items-center gap-3">
+                  {(() => {
+                    const cartItem = items.find((item) => item.id === selectedProduct._id);
+                    if (cartItem) {
+                      return (
+                        <div className="flex items-center justify-between border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] rounded-lg p-1 w-full">
+                          <span className="text-xs font-semibold px-3 text-zinc-500">In Cart</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateQuantity(selectedProduct._id, cartItem.quantity - 1)}
+                              className="h-8 w-8 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-650 dark:text-zinc-350 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <span className="text-sm font-semibold text-zinc-900 dark:text-white min-w-6 text-center select-none">
+                              {cartItem.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(selectedProduct._id, cartItem.quantity + 1)}
+                              className="h-8 w-8 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-650 dark:text-zinc-350 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button
+                        onClick={() =>
+                          addItem({
+                            id: selectedProduct._id,
+                            name: selectedProduct.name,
+                            price: selectedProduct.discountedPrice || selectedProduct.price,
+                            imageUrl: selectedProduct.imageUrl,
+                          })
+                        }
+                        className="w-full h-10 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <ShoppingBag className="h-4 w-4" /> Add to Cart
+                      </button>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Product Image Gallery Slider Lightbox */}
+      {activeGalleryProduct && (
+        <div className="fixed inset-0 z-[120] flex flex-col items-center justify-between p-6 bg-black/95 backdrop-blur-xs animate-in fade-in duration-200">
+          
+          {/* Top Panel: Title & Close Button */}
+          <div className="w-full flex items-center justify-between z-10">
+            <div className="space-y-1 text-left">
+              <h3 className="font-bold text-sm text-white tracking-tight leading-snug">
+                {activeGalleryProduct.name}
+              </h3>
+              <p className="text-[10px] text-zinc-400 font-semibold">Image {activeImageIndex + 1} of {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) ? activeGalleryProduct.imageUrls.length : 1)}</p>
+            </div>
+            
+            <button
+              onClick={() => { setActiveGalleryProduct(null); setIsZoomed(false); }}
+              className="h-10 w-10 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Centered Image Container - Takes full height minus header & footer */}
+          <div className={cn(
+            "relative flex-1 w-full flex items-center justify-center my-6 overflow-hidden",
+            isZoomed ? "overflow-auto p-4" : ""
+          )}>
+            {(() => {
+              const urls = (activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) 
+                ? activeGalleryProduct.imageUrls 
+                : [activeGalleryProduct.imageUrl];
+              const currentUrl = urls[activeImageIndex] || activeGalleryProduct.imageUrl;
+              return (
+                <img
+                  src={currentUrl}
+                  alt={activeGalleryProduct.name}
+                  onClick={() => setIsZoomed(!isZoomed)}
+                  className={cn(
+                    "select-none animate-in zoom-in-95 duration-200 transition-all origin-center max-h-[80vh] max-w-[90vw] object-contain",
+                    isZoomed 
+                      ? "max-h-none max-w-none cursor-zoom-out scale-150" 
+                      : "cursor-zoom-in"
+                  )}
+                />
+              );
+            })()}
+
+            {/* Prev / Next buttons if multiple (positioned on left/right screen edges) */}
+            {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const total = activeGalleryProduct.imageUrls?.length || 1;
+                    setActiveImageIndex((prev) => (prev - 1 + total) % total);
+                    setIsZoomed(false);
+                  }}
+                  className="absolute left-4 h-12 w-12 rounded-full border border-white/10 bg-black/50 hover:bg-black/85 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-lg z-20"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const total = activeGalleryProduct.imageUrls?.length || 1;
+                    setActiveImageIndex((prev) => (prev + 1) % total);
+                    setIsZoomed(false);
+                  }}
+                  className="absolute right-4 h-12 w-12 rounded-full border border-white/10 bg-black/50 hover:bg-black/85 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-lg z-20"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
             )}
           </div>
+
+          {/* Bottom Thumbnails Strip */}
+          {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
+            <div className="flex gap-2 max-w-full overflow-x-auto py-2 z-10 border-t border-white/10 w-full justify-center scrollbar-none">
+              {activeGalleryProduct.imageUrls?.map((url, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => { setActiveImageIndex(idx); setIsZoomed(false); }}
+                  className={cn(
+                    "h-12 w-12 rounded-lg border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-all bg-black",
+                    activeImageIndex === idx ? "border-white ring-2 ring-white/50" : "border-white/15 hover:border-white/50"
+                  )}
+                >
+                  <img src={url} className="object-contain max-h-full max-w-full" alt="thumbnail" />
+                </button>
+              ))}
+            </div>
+          )}
+
         </div>
       )}
 

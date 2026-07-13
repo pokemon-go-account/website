@@ -10,10 +10,12 @@ import {
   query,
   orderBy,
   updateDoc,
+  setDoc,
   limit,
   getDocs,
   where,
 } from "firebase/firestore";
+import { useSearchParams } from "next/navigation";
 import { getDb } from "@/lib/firestore";
 import {
   MessageCircle,
@@ -65,6 +67,11 @@ function formatMessageTime(ts: any) {
 }
 
 export function AdminChatPanel() {
+  const searchParams = useSearchParams();
+  const queryUserId = searchParams.get("userId");
+  const queryUsername = searchParams.get("username");
+  const queryEmail = searchParams.get("email");
+
   const [conversations, setConversations] = useState<ChatMeta[]>([]);
   const [filteredConvs, setFilteredConvs] = useState<ChatMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,6 +82,33 @@ export function AdminChatPanel() {
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const autoSelectedRef = useRef(false);
+
+  // Auto-select user from query params
+  useEffect(() => {
+    if (queryUserId && !autoSelectedRef.current) {
+      const existing = conversations.find((c) => c.id === queryUserId);
+      if (existing) {
+        setActiveUserId(existing.id);
+        setActiveUser(existing);
+        autoSelectedRef.current = true;
+      } else if (queryUsername && queryEmail) {
+        const tempChat: ChatMeta = {
+          id: queryUserId,
+          username: queryUsername,
+          email: queryEmail,
+          lastMessage: "",
+          lastMessageAt: null,
+          unreadByAdmin: 0,
+          unreadByUser: 0,
+        };
+        setActiveUserId(queryUserId);
+        setActiveUser(tempChat);
+        autoSelectedRef.current = true;
+      }
+    }
+  }, [queryUserId, conversations, queryUsername, queryEmail]);
 
   // Load all conversations (real-time)
   useEffect(() => {
@@ -165,11 +199,14 @@ export function AdminChatPanel() {
         read: false,
       });
 
-      await updateDoc(chatRef, {
+      await setDoc(chatRef, {
+        username: activeUser?.username || "Unknown User",
+        email: activeUser?.email || "",
         lastMessage: text,
         lastMessageAt: serverTimestamp(),
         unreadByUser: (activeUser?.unreadByUser ?? 0) + 1,
-      });
+        unreadByAdmin: 0,
+      }, { merge: true });
     } catch (err) {
       console.error("Failed to send reply:", err);
     } finally {

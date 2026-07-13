@@ -1,4 +1,6 @@
 import { AdminChatPanel } from "@/features/chat/components/admin-chat-panel";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function ConsoleChatPage() {
   return (
@@ -12,7 +14,13 @@ export default function ConsoleChatPage() {
       </div>
 
       {/* Chat Panel */}
-      <AdminChatPanel />
+      <Suspense fallback={
+        <div className="flex-1 flex items-center justify-center p-20 bg-white dark:bg-[#111111] rounded-lg border border-zinc-200 dark:border-white/[0.06]">
+          <Loader2 className="h-6 w-6 animate-spin text-[#6133e1]" />
+        </div>
+      }>
+        <AdminChatPanel />
+      </Suspense>
     </div>
   );
 }

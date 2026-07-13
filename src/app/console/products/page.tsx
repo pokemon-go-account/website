@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getProducts, getCategories, createProduct, updateProduct, deleteProduct, uploadProductImageAction } from "@/features/admin/actions";
-import { Package2, Plus, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
+import { Package2, Plus, Pencil, Trash2, X, AlertTriangle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Zod Validation Schema
@@ -50,6 +50,18 @@ export default function ManageProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Category Filter Tab
+  const [activeCategoryTab, setActiveCategoryTab] = useState<string>("ALL");
+
+  const getProductCountForCategory = (catId: string) => {
+    if (catId === "ALL") return products.length;
+    return products.filter((p) => p.categoryId?._id === catId).length;
+  };
+
+  const filteredProducts = activeCategoryTab === "ALL" 
+    ? products 
+    : products.filter((p) => p.categoryId?._id === activeCategoryTab);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -293,83 +305,192 @@ export default function ManageProductsPage() {
         </div>
       )}
 
-      {/* Main product listing table */}
-      <div className="border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] rounded-lg overflow-x-auto shadow-xs">
-        <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-left text-xs">
-          <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
-            <tr>
-              <th className="px-6 py-4">Product details</th>
-              <th className="px-6 py-4">Category</th>
-              <th className="px-6 py-4">Price</th>
-              <th className="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.06] text-zinc-700 dark:text-zinc-300">
-            {loading ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
-                  Loading product warehouse logs...
-                </td>
-              </tr>
-            ) : products.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
-                  No products defined. Click "Add Product" to get started.
-                </td>
-              </tr>
-            ) : (
-              products.map((product) => (
-                <tr key={product._id} className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.03] flex items-center justify-center overflow-hidden shrink-0">
-                      {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="max-h-full max-w-full object-contain" />
-                      ) : (
-                        <span className="text-xl">🎁</span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-zinc-900 dark:text-white leading-none">{product.name}</p>
-                      <p className="text-[10px] text-zinc-500 mt-1 max-w-xs truncate">{product.description || "No description provided."}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-zinc-500 dark:text-zinc-400">
-                    {product.categoryId ? (
-                      <span className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-white/[0.05] bg-zinc-100 dark:bg-white/[0.02] text-[10px] font-semibold uppercase tracking-wider">
-                        {product.categoryId.name}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-655 italic">None</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-zinc-900 dark:text-white">${product.price.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-right flex justify-end gap-2 mt-0.5">
-                    <button
-                      onClick={() => openEditModal(product)}
-                      className="h-8 w-8 rounded-lg border border-zinc-200 hover:bg-zinc-100 dark:border-white/[0.08] dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-                      title="Edit Product"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product)}
-                      className="h-8 w-8 rounded-lg text-zinc-550 hover:text-red-655 hover:bg-red-500/5 flex items-center justify-center cursor-pointer transition-colors"
-                      title="Delete Product"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 flex items-center justify-between shadow-xs">
+          <div>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Products</p>
+            <p className="text-xl font-bold text-zinc-900 dark:text-white mt-1">{products.length}</p>
+          </div>
+          <div className="h-8 w-8 rounded-lg bg-zinc-100 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-zinc-500">
+            <Package2 className="h-4 w-4" />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 flex items-center justify-between shadow-xs">
+          <div>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Active Categories</p>
+            <p className="text-xl font-bold text-zinc-900 dark:text-white mt-1">{categories.length}</p>
+          </div>
+          <div className="h-8 w-8 rounded-lg bg-zinc-100 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-zinc-500">
+            <Plus className="h-4 w-4" />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 flex items-center justify-between shadow-xs">
+          <div>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Filtered View</p>
+            <p className="text-xl font-bold text-[#6133e1] dark:text-purple-400 mt-1">{filteredProducts.length} Items</p>
+          </div>
+          <div className="h-8 w-8 rounded-lg bg-zinc-100 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-[#6133e1] dark:text-purple-400">
+            <Package2 className="h-4 w-4" />
+          </div>
+        </div>
       </div>
 
-      {/* Add/Edit Product Glass Modal */}
+      {/* Category Tabs */}
+      <div className="flex gap-1.5 border-b border-zinc-200 dark:border-white/[0.06] pb-px overflow-x-auto scrollbar-thin">
+        <button
+          onClick={() => setActiveCategoryTab("ALL")}
+          className={cn(
+            "px-4 py-2 border-b-2 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5",
+            activeCategoryTab === "ALL"
+              ? "border-[#6133e1] text-[#6133e1] dark:border-purple-400 dark:text-purple-400 font-bold"
+              : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/10"
+          )}
+        >
+          All Products
+          <span className={cn(
+            "text-[9px] px-1.5 py-0.5 rounded-full font-bold",
+            activeCategoryTab === "ALL" ? "bg-[#6133e1]/10" : "bg-zinc-100 dark:bg-white/5"
+          )}>
+            {products.length}
+          </span>
+        </button>
+
+        {categories.map((cat) => {
+          const count = getProductCountForCategory(cat._id);
+          return (
+            <button
+              key={cat._id}
+              onClick={() => setActiveCategoryTab(cat._id)}
+              className={cn(
+                "px-4 py-2 border-b-2 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5",
+                activeCategoryTab === cat._id
+                  ? "border-[#6133e1] text-[#6133e1] dark:border-purple-400 dark:text-purple-400 font-bold"
+                  : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/10"
+              )}
+            >
+              {cat.name}
+              <span className={cn(
+                "text-[9px] px-1.5 py-0.5 rounded-full font-bold",
+                activeCategoryTab === cat._id ? "bg-[#6133e1]/10" : "bg-zinc-100 dark:bg-white/5"
+              )}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Redesigned grid list */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-[#6133e1]" />
+          <p className="text-xs text-zinc-500">Loading storefront catalog...</p>
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] bg-zinc-50/20 dark:bg-white/[0.01] p-16 text-center">
+          <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-zinc-400 mx-auto">
+            <Package2 className="h-5 w-5" />
+          </div>
+          <h3 className="text-zinc-800 dark:text-zinc-200 text-xs font-bold uppercase tracking-wider mt-3">No Products Found</h3>
+          <p className="text-zinc-450 dark:text-zinc-500 text-[10px] mt-1 max-w-xs mx-auto">
+            There are no products in this category. Click "Add Product" to create one.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {filteredProducts.map((product) => (
+            <div
+              key={product._id}
+              className="group rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 flex flex-col justify-between hover:border-zinc-300 dark:hover:border-white/[0.1] hover:shadow-xs transition-all duration-200"
+            >
+              <div className="space-y-3 relative">
+                {/* Image View */}
+                <div className="relative aspect-square w-full rounded-lg bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center overflow-hidden shrink-0">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="max-h-full max-w-full object-contain" />
+                  ) : (
+                    <span className="text-3xl select-none">🎁</span>
+                  )}
+
+                  {/* Badge Overlay */}
+                  {product.badge && (
+                    <span className={cn(
+                      "absolute top-2 left-2 px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider text-white shadow-xs",
+                      product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                    )}>
+                      {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
+                    </span>
+                  )}
+                  
+                  {/* Category Tag Overlay */}
+                  {product.categoryId && (
+                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-zinc-900/75 dark:bg-black/75 backdrop-blur-xs text-[7px] font-bold uppercase tracking-wider text-white border border-white/10">
+                      {product.categoryId.name}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-xs text-zinc-950 dark:text-white leading-snug truncate">
+                    {product.name}
+                  </h4>
+                  <p className="text-[10px] text-zinc-500 mt-1 line-clamp-2 h-7 leading-relaxed">
+                    {product.description || "No description provided."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-zinc-150 dark:border-white/[0.04] flex items-center justify-between">
+                <div>
+                  {product.mrpPrice && product.discountedPrice && product.mrpPrice > product.discountedPrice ? (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-zinc-450 line-through">${product.mrpPrice}</span>
+                        <span className="text-[8px] font-bold text-red-500 dark:text-red-400 bg-red-500/10 px-1 rounded">
+                          {Math.round(((product.mrpPrice - product.discountedPrice) / product.mrpPrice) * 100)}% OFF
+                        </span>
+                      </div>
+                      <p className="text-zinc-900 dark:text-white font-bold text-xs">
+                        ${product.discountedPrice}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      <p className="text-[8px] text-zinc-455 uppercase tracking-wider leading-none">Price</p>
+                      <p className="text-zinc-900 dark:text-white font-bold text-xs mt-0.5">
+                        ${product.price}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => openEditModal(product)}
+                    className="h-7 w-7 rounded-lg border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/5 text-zinc-550 hover:text-zinc-950 dark:text-zinc-450 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                    title="Edit Product"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product)}
+                    className="h-7 w-7 rounded-lg text-zinc-500 hover:text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 flex items-center justify-center cursor-pointer transition-colors"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}iv      {/* Add/Edit Product Glass Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 dark:bg-black/70 backdrop-blur-xs">
-          <div className="relative w-full max-w-md rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs">
+          <div className="relative w-full max-w-md rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-3">
               <h3 className="font-semibold text-sm text-zinc-950 dark:text-white">
                 {modalMode === "add" ? "Create Product" : "Update Product"}
@@ -384,54 +505,54 @@ export default function ManageProductsPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-xs">
               <div className="space-y-1.5">
-                <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Product Name</label>
+                <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Product Name</label>
                 <input
                   type="text"
                   placeholder="e.g., Stardust Boost 1M, Rayquaza Catch"
                   {...register("name")}
                   className={cn(
-                    "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
-                    errors.name && "border-red-500/50 focus:border-red-500"
+                    "w-full h-9 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all text-xs",
+                    errors.name && "border-red-500 focus:ring-red-500 focus:border-red-500"
                   )}
                 />
                 {errors.name && <p className="text-[10px] text-red-400 font-semibold">{errors.name.message}</p>}
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Description</label>
+                <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Description</label>
                 <textarea
                   placeholder="Details of the product or service..."
                   {...register("description")}
-                  className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal"
+                  className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all leading-normal text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">MRP Price ($)</label>
+                  <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">MRP Price ($)</label>
                   <input
                     type="number"
                     step="any"
                     placeholder="1200"
                     {...register("mrpPrice", { valueAsNumber: true })}
                     className={cn(
-                      "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
-                      errors.mrpPrice && "border-red-500/50 focus:border-red-500"
+                      "w-full h-9 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all text-xs",
+                      errors.mrpPrice && "border-red-500 focus:ring-red-500 focus:border-red-500"
                     )}
                   />
                   {errors.mrpPrice && <p className="text-[10px] text-red-400 font-semibold">{errors.mrpPrice.message}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Discounted Price ($)</label>
+                  <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Discounted Price ($)</label>
                   <input
                     type="number"
                     step="any"
                     placeholder="999"
                     {...register("discountedPrice", { valueAsNumber: true })}
                     className={cn(
-                      "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
-                      errors.discountedPrice && "border-red-500/50 focus:border-red-500"
+                      "w-full h-9 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all text-xs",
+                      errors.discountedPrice && "border-red-500 focus:ring-red-500 focus:border-red-500"
                     )}
                   />
                   {errors.discountedPrice && <p className="text-[10px] text-red-400 font-semibold">{errors.discountedPrice.message}</p>}
@@ -440,17 +561,17 @@ export default function ManageProductsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category</label>
+                  <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Category</label>
                   <select
                     {...register("categoryId")}
                     className={cn(
-                      "w-full h-8 px-2 bg-zinc-100 dark:bg-[#09090B] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors cursor-pointer",
-                      errors.categoryId && "border-red-500/50 focus:border-red-500"
+                      "w-full h-9 px-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all cursor-pointer text-xs",
+                      errors.categoryId && "border-red-500 focus:ring-red-500 focus:border-red-500"
                     )}
                   >
-                    <option value="" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Select...</option>
+                    <option value="" className="text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900">Select...</option>
                     {categories.map((cat) => (
-                      <option key={cat._id} value={cat._id} className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">
+                      <option key={cat._id} value={cat._id} className="text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900">
                         {cat.name}
                       </option>
                     ))}
@@ -459,24 +580,24 @@ export default function ManageProductsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Badge</label>
+                  <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Badge</label>
                   <select
                     {...register("badge")}
                     className={cn(
-                      "w-full h-8 px-2 bg-zinc-100 dark:bg-[#09090B] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors cursor-pointer",
-                      errors.badge && "border-red-500/50 focus:border-red-500"
+                      "w-full h-9 px-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all cursor-pointer text-xs",
+                      errors.badge && "border-red-500 focus:ring-red-500 focus:border-red-500"
                     )}
                   >
-                    <option value="" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">No Badge</option>
-                    <option value="MOST_PURCHASED" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Most Purchased</option>
-                    <option value="POPULAR" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Popular</option>
+                    <option value="" className="text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900">No Badge</option>
+                    <option value="MOST_PURCHASED" className="text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900">Most Purchased</option>
+                    <option value="POPULAR" className="text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900">Popular</option>
                   </select>
                 </div>
               </div>
 
-              <div className="space-y-3 p-3 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/50 dark:bg-white/[0.01]">
+              <div className="space-y-3 p-3.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-900/40">
                 <div className="flex items-center justify-between">
-                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px] cursor-pointer" htmlFor="isLimitedDeal">
+                  <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px] cursor-pointer" htmlFor="isLimitedDeal">
                     Limited Time Deal
                   </label>
                   <input
@@ -488,23 +609,23 @@ export default function ManageProductsPage() {
                 </div>
                 {watchedIsLimitedDeal && (
                   <div className="space-y-1.5 animate-in fade-in duration-200">
-                    <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Deal Expiry Date</label>
+                    <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Deal Expiry Date</label>
                     <input
                       type="datetime-local"
                       {...register("dealExpiry")}
-                      className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+                      className="w-full h-9 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all text-xs"
                     />
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Product Images</label>
+                <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Product Images</label>
                 
                 <div className="flex gap-3">
-                  <label className="flex-1 h-8 rounded-md border border-dashed border-zinc-200 dark:border-white/[0.1] hover:border-zinc-400 dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.01] dark:hover:bg-white/[0.03] flex items-center justify-center cursor-pointer transition-colors">
-                    <span className="text-[10px] font-semibold text-zinc-500">
-                      {uploadingImage ? "Uploading to Cloudinary..." : "Choose Image Files"}
+                  <label className="flex-1 h-9 rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.1] hover:border-zinc-450 dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/40 dark:hover:bg-zinc-900 flex items-center justify-center cursor-pointer transition-all">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">
+                      {uploadingImage ? "Uploading to Cloudinary..." : "Upload Image Files"}
                     </span>
                     <input
                       type="file"
@@ -548,7 +669,7 @@ export default function ManageProductsPage() {
                                   setValue("imageUrl", newUrls.length > 0 ? newUrls[0] : "");
                                 }
                               }}
-                              className="absolute top-0.5 right-0.5 h-4.5 w-4.5 rounded-full bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer shadow-xs text-[10px]"
+                              className="absolute top-0.5 right-0.5 h-4.5 w-4.5 rounded-full bg-red-650/90 hover:bg-red-650 text-white flex items-center justify-center cursor-pointer shadow-xs text-[10px]"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -560,14 +681,14 @@ export default function ManageProductsPage() {
                 )}
 
                 <div className="space-y-1">
-                  <p className="text-[8px] text-zinc-500 uppercase tracking-wider font-semibold">Primary Image URL</p>
+                  <p className="text-[8px] text-zinc-550 uppercase tracking-wider font-semibold">Primary Image URL</p>
                   <input
                     type="text"
                     placeholder="https://images.unsplash.com/... or select above"
                     {...register("imageUrl")}
                     className={cn(
-                      "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-655 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",
-                      errors.imageUrl && "border-red-500/50 focus:border-red-500"
+                      "w-full h-9 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all text-xs",
+                      errors.imageUrl && "border-red-500 focus:ring-red-500 focus:border-red-500"
                     )}
                   />
                   {errors.imageUrl && <p className="text-[10px] text-red-400 font-semibold">{errors.imageUrl.message}</p>}
@@ -577,7 +698,7 @@ export default function ManageProductsPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-semibold text-xs transition-colors mt-4 cursor-pointer"
+                className="w-full h-9 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-bold text-xs transition-all active:scale-[0.98] mt-4 cursor-pointer shadow-sm disabled:opacity-50"
               >
                 {submitting ? "Saving changes..." : modalMode === "add" ? "Create Product" : "Save Changes"}
               </button>
