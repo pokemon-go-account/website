@@ -9,6 +9,7 @@ import { useSession, signOut as clientSignOut } from "next-auth/react";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { PriceDisplay } from "@/components/price-display";
 import { cn } from "@/lib/utils";
+import { getFreshBalance } from "@/features/auth/actions";
 
 interface HeaderClientProps {
   user?: {
@@ -31,9 +32,24 @@ const navLinks = [
 ];
 
 export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
+  const [mounted, setMounted] = useState(false);
+  const [freshBalance, setFreshBalance] = useState<number | null>(null);
   const { data: session } = useSession();
   const { currency, setCurrency, isConverting } = useCurrencyStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const sessionUser = session?.user;
+
+  useEffect(() => {
+    if (mounted && sessionUser?.id) {
+      getFreshBalance().then((bal) => {
+        setFreshBalance(bal);
+      });
+    }
+  }, [mounted, sessionUser?.id]);
 
   const clientUser = sessionUser ? {
     name: sessionUser.name,
@@ -44,16 +60,22 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
   // Prefer client-side user once it is loaded and has a role to guarantee reactivity,
   // falling back to server-provided propUser for instant SSR render without flickering.
-  const user = (clientUser?.role ? clientUser : propUser) || clientUser || propUser;
+  const user = mounted
+    ? ((clientUser?.role ? clientUser : propUser) || clientUser || propUser)
+    : propUser;
   
   // Prefer the database-queried balance from the server component to bypass stale session cookies
-  const balance = typeof propUser?.walletBalance === "number" ? propUser.walletBalance : (clientUser?.walletBalance ?? 0);
+  const balance = mounted
+    ? (freshBalance !== null ? freshBalance : (typeof propUser?.walletBalance === "number" ? propUser.walletBalance : (clientUser?.walletBalance ?? 0)))
+    : (propUser?.walletBalance ?? 0);
 
   useEffect(() => {
-    console.log("[HeaderClient Debug] propUser:", propUser);
-    console.log("[HeaderClient Debug] clientUser:", clientUser);
-    console.log("[HeaderClient Debug] resolved user:", user);
-  }, [propUser, clientUser, user]);
+    if (mounted) {
+      console.log("[HeaderClient Debug] propUser:", propUser);
+      console.log("[HeaderClient Debug] clientUser:", clientUser);
+      console.log("[HeaderClient Debug] resolved user:", user);
+    }
+  }, [propUser, clientUser, user, mounted]);
 
   const handleSignOut = async () => {
     if (signOutAction) {

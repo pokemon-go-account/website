@@ -70,7 +70,7 @@ export const authConfig = {
 
       // Public routes — never require auth
       const PUBLIC_PREFIXES = ["/auctions", "/store", "/contact", "/feedback", "/recovery"];
-      const PUBLIC_EXACT = ["/", "/login", "/register", "/forgot-password"];
+      const PUBLIC_EXACT = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"];
       const isPublicRoute =
         PUBLIC_EXACT.includes(nextUrl.pathname) ||
         PUBLIC_PREFIXES.some((p) => nextUrl.pathname.startsWith(p)) ||
