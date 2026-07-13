@@ -7,6 +7,7 @@ export const authConfig = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
+      console.log("[Auth Redirect Callback Input]", { url, baseUrl });
       // In production use the canonical domain; in dev always use baseUrl (localhost)
       const canonicalBase =
         process.env.NODE_ENV === "production"
@@ -14,12 +15,24 @@ export const authConfig = {
             (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : baseUrl)
           : baseUrl;
 
-      if (url.startsWith("/")) return `${canonicalBase}${url}`;
+      console.log("[Auth Redirect Callback Canonical]", { canonicalBase });
+
+      if (url.startsWith("/")) {
+        const res = `${canonicalBase}${url}`;
+        console.log("[Auth Redirect Callback Resolved - relative startsWith]", { res });
+        return res;
+      }
       try {
         const parsedUrl = new URL(url);
         const parsedBase = new URL(canonicalBase);
-        if (parsedUrl.origin === parsedBase.origin) return url;
-      } catch (_) {}
+        if (parsedUrl.origin === parsedBase.origin) {
+          console.log("[Auth Redirect Callback Resolved - matches origin]", { url });
+          return url;
+        }
+      } catch (err: any) {
+        console.error("[Auth Redirect Callback Error parsedBase/parsedUrl]", err.message);
+      }
+      console.log("[Auth Redirect Callback Resolved - fallback]", { canonicalBase });
       return canonicalBase;
     },
 
