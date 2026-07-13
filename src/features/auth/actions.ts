@@ -581,3 +581,17 @@ export async function resendRegisterOtp() {
     return { success: false, error: error.message || "Failed to resend verification OTP." };
   }
 }
+
+/** Get the fresh wallet balance for header */
+export async function getFreshBalance() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return 0;
+    await connectDB();
+    const dbUser = await User.findById(session.user.id).select("walletBalance").lean();
+    return dbUser?.walletBalance ?? 0;
+  } catch (err) {
+    console.error("Failed to query fresh balance:", err);
+    return 0;
+  }
+}
