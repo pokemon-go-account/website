@@ -9,25 +9,38 @@ export const authConfig = {
     async redirect({ url, baseUrl }) {
       console.log("[Auth Redirect Callback Input]", { url, baseUrl });
       // In production use the canonical domain; in dev always use baseUrl (localhost)
-      const canonicalBase =
+      let canonicalBase =
         process.env.NODE_ENV === "production"
           ? process.env.NEXT_PUBLIC_APP_URL ||
             (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : baseUrl)
           : baseUrl;
 
+      // Force HTTPS in production if canonicalBase starts with http:// and is not localhost
+      if (process.env.NODE_ENV === "production" && canonicalBase.startsWith("http://") && !canonicalBase.includes("localhost")) {
+        canonicalBase = canonicalBase.replace("http://", "https://");
+      }
+
       console.log("[Auth Redirect Callback Canonical]", { canonicalBase });
 
+      const baseClean = canonicalBase.endsWith("/") ? canonicalBase.slice(0, -1) : canonicalBase;
+
       if (url.startsWith("/")) {
-        const res = `${canonicalBase}${url}`;
+        const res = `${baseClean}${url}`;
         console.log("[Auth Redirect Callback Resolved - relative startsWith]", { res });
         return res;
       }
       try {
-        const parsedUrl = new URL(url);
+        let parsedUrl = new URL(url);
+        // Force HTTPS in production for target url if it is not localhost
+        if (process.env.NODE_ENV === "production" && parsedUrl.protocol === "http:" && !parsedUrl.hostname.includes("localhost")) {
+          parsedUrl.protocol = "https:";
+        }
+
         const parsedBase = new URL(canonicalBase);
         if (parsedUrl.origin === parsedBase.origin) {
-          console.log("[Auth Redirect Callback Resolved - matches origin]", { url });
-          return url;
+          const resUrl = parsedUrl.toString();
+          console.log("[Auth Redirect Callback Resolved - matches origin]", { url: resUrl });
+          return resUrl;
         }
       } catch (err: any) {
         console.error("[Auth Redirect Callback Error parsedBase/parsedUrl]", err.message);
