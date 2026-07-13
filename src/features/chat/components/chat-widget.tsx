@@ -110,12 +110,14 @@ export function ChatWidget() {
       const msgsRef = collection(db, "supportChats", userId, "messages");
 
       const snap = await getDoc(chatRef);
-      if (!snap.exists()) {
+      const isFirstMessage = !snap.exists();
+
+      if (isFirstMessage) {
         await setDoc(chatRef, {
           userId,
           username,
           email: session?.user?.email ?? "",
-          lastMessage: text,
+          lastMessage: "Someone from our team will reply to you soon",
           lastMessageAt: serverTimestamp(),
           unreadByAdmin: 1,
           unreadByUser: 0,
@@ -137,6 +139,16 @@ export function ChatWidget() {
         timestamp: serverTimestamp(),
         read: false,
       });
+
+      if (isFirstMessage) {
+        await addDoc(msgsRef, {
+          text: "Someone from our team will reply to you soon",
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+      }
     } catch (err) {
       console.error("Failed to send message:", err);
     } finally {
