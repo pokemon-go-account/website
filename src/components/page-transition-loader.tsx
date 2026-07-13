@@ -28,6 +28,7 @@ function LoaderContent() {
         if (
           href &&
           href.startsWith("/") &&
+          !href.startsWith("//") &&
           !href.startsWith("/#") &&
           targetAttr !== "_blank" &&
           event.button === 0 && // Left-click only
