@@ -30,7 +30,6 @@ function LoaderContent() {
           href.startsWith("/") &&
           !href.startsWith("/#") &&
           targetAttr !== "_blank" &&
-          !event.defaultPrevented &&
           event.button === 0 && // Left-click only
           !event.metaKey &&
           !event.ctrlKey &&
