@@ -4,6 +4,9 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { auth } from "@/auth";
+import { ChatWidget } from "@/features/chat/components/chat-widget";
 import { PokemonCursorTrail } from "@/components/pokemon-cursor-trail";
 import { PageTransitionLoader } from "@/components/page-transition-loader";
 
@@ -74,6 +77,7 @@ export default function RootLayout({
           <PageTransitionLoader />
         </SessionProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
