@@ -27,12 +27,15 @@ async function connectDB() {
   }
 
   if (!cached.promise) {
+    console.log("[connectDB] Connecting to MongoDB...");
+    const startTime = Date.now();
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10, // Safeguards connection scaling limits on your cluster
     };
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongooseInstance) => {
+      console.log(`[connectDB] MongoDB connected in ${Date.now() - startTime}ms`);
       return mongooseInstance;
     });
   }
