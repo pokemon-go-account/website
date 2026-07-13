@@ -48,26 +48,6 @@ export function Footer() {
             <p className="text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed font-light max-w-sm">
               The premier marketplace and recovery network for high-tier Pokémon GO assets. Trusted globally for safe escrow, real-time live bidding, and certified trainers.
             </p>
-            <div className="flex items-center gap-3 pt-2">
-              <a
-                href="https://discord.gg/Zt2yE3qKY"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-8 w-8 rounded-lg bg-zinc-200/50 dark:bg-white/[0.04] hover:bg-[#5865F2]/10 dark:hover:bg-[#5865F2]/20 border border-zinc-300 dark:border-white/[0.06] flex items-center justify-center text-zinc-600 dark:text-zinc-450 hover:text-[#5865F2] dark:hover:text-[#5865F2] transition-all cursor-pointer"
-                title="Join our Discord Server"
-              >
-                <DiscordIcon className="h-4 w-4" />
-              </a>
-              <a
-                href="https://www.facebook.com/share/1LdWHj4HQz/?mibextid=wwXIfr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-8 w-8 rounded-lg bg-zinc-200/50 dark:bg-white/[0.04] hover:bg-[#1877F2]/10 dark:hover:bg-[#1877F2]/20 border border-zinc-300 dark:border-white/[0.06] flex items-center justify-center text-zinc-600 dark:text-zinc-450 hover:text-[#1877F2] dark:hover:text-[#1877F2] transition-all cursor-pointer"
-                title="Follow us on Facebook"
-              >
-                <FacebookIcon className="h-4 w-4" />
-              </a>
-            </div>
           </div>
 
           {/* Quick Links Column */}
@@ -151,12 +131,6 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between pt-8 gap-4 text-zinc-400 dark:text-zinc-650 text-[10px] sm:text-xs">
           <p>© {new Date().getFullYear()} Pokémon GO Services. All rights reserved.</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] sm:text-xs">
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-zinc-450 dark:text-zinc-650" />
-              SSL Encrypted Verification
-            </span>
-          </div>
         </div>
 
       </div>

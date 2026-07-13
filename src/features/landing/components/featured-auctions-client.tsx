@@ -186,7 +186,7 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
 
                   <Link
                     href={`/auctions/${auction._id}`}
-                    className="inline-flex h-8 w-full items-center justify-center bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold rounded-md transition-all active:scale-[0.98] cursor-pointer"
+                    className="inline-flex h-8 w-full items-center justify-center bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold rounded-md transition-all active:scale-[0.98] cursor-pointer"
                   >
                     BID NOW
                   </Link>

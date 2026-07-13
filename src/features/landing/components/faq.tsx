@@ -185,7 +185,7 @@ export function FAQ() {
               setShowAll(!showAll);
               setOpenIdx(null);
             }}
-            className="inline-flex h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
           >
             <MessageSquare className="h-4 w-4 shrink-0" />
             {showAll ? "Show Less Questions" : "View All Questions (25)"}
