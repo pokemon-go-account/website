@@ -370,7 +370,41 @@ export async function updateAuction(auctionId: string, fields: any) {
       "incubators",
       "luckyEggs",
       "lureModules",
-      "premiumRaidPass"
+      "premiumRaidPass",
+
+      // New Stats & Telemetry Fields
+      "platinumMedals",
+      "legendaryPoses",
+      "shinyPokemons",
+      "shinyMythical",
+      "shinyUltrabeasts",
+      "shinyLegendaries",
+      "legendaryPokemons",
+      "ultrabeasts",
+      "mythicalPokemons",
+      "hundoMythicalLegendaryUltrabeast",
+      "shundoLegendaryMythicalUltrabeast",
+      "shundoPokemons",
+      "hundoPokemons",
+      "costumeShinies",
+      "hatchedShinies",
+      "luckyPokemons",
+      "luckyLegendaries",
+      "shinyLuckyLegendaries",
+      "locationBackgroundLegendaryShiny",
+      "specialBackgroundLegendaryShiny",
+      "candyXlPokemons",
+      "candyXlLegendaries",
+      "bestBuddies",
+      "dualMovePokemons",
+      "shadowShinyPokemons",
+      "pokemonStorage",
+      "itemBagStorage",
+      "masterBalls",
+      "raidPasses",
+      "superRocketRadar",
+      "pokedexRegisteredNumber",
+      "bansCount"
     ];
 
     for (const field of listingFields) {
@@ -725,7 +759,7 @@ export async function getProducts() {
   try {
     await checkAdminSession();
     await connectDB();
-    const products = await Product.find().populate("categoryId", "name slug").sort({ createdAt: -1 }).lean();
+    const products = await Product.find().populate("categoryId", "name slug").sort({ sortOrder: 1, createdAt: -1 }).lean();
     return { success: true, products: JSON.parse(JSON.stringify(products)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -913,4 +947,24 @@ export async function deleteCustomRequest(requestId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function saveProductOrder(orderedIds: string[]) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    const bulkOps = orderedIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { sortOrder: index } },
+      },
+    }));
+    await Product.bulkWrite(bulkOps);
+    revalidatePath('/admin/products');
+    revalidatePath('/store');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 

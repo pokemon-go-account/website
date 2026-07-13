@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useSocket, BidHistoryItem } from "@/hooks/use-socket";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Clock,
@@ -74,6 +75,40 @@ interface LiveRoomProps {
       lureModules?: number;
       premiumRaidPass: number;
       sellerId?: string;
+
+      // New Stats & Telemetry Fields
+      platinumMedals?: number;
+      legendaryPoses?: number;
+      shinyPokemons?: number;
+      shinyMythical?: number;
+      shinyUltrabeasts?: number;
+      shinyLegendaries?: number;
+      legendaryPokemons?: number;
+      ultrabeasts?: number;
+      mythicalPokemons?: number;
+      hundoMythicalLegendaryUltrabeast?: number;
+      shundoLegendaryMythicalUltrabeast?: number;
+      shundoPokemons?: number;
+      hundoPokemons?: number;
+      costumeShinies?: number;
+      hatchedShinies?: number;
+      luckyPokemons?: number;
+      luckyLegendaries?: number;
+      shinyLuckyLegendaries?: number;
+      locationBackgroundLegendaryShiny?: number;
+      specialBackgroundLegendaryShiny?: number;
+      candyXlPokemons?: number;
+      candyXlLegendaries?: number;
+      bestBuddies?: number;
+      dualMovePokemons?: number;
+      shadowShinyPokemons?: number;
+      pokemonStorage?: number;
+      itemBagStorage?: number;
+      masterBalls?: number;
+      raidPasses?: number;
+      superRocketRadar?: number;
+      pokedexRegisteredNumber?: number;
+      bansCount?: number;
     };
     currentHighestBid: number;
     highestBidderId?: any;
@@ -96,6 +131,7 @@ export function LiveRoom({
 }: LiveRoomProps) {
   const { data: clientSession } = useSession();
   const session = clientSession || propSession;
+  const router = useRouter();
   const isOwner = session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId);
   const { convert } = useCurrencyStore();
   const {
@@ -185,6 +221,40 @@ export function LiveRoom({
     premiumRaidPass: auction.listingId.premiumRaidPass || 0,
     endTime: auction.endTime,
     registrationFee: auction.registrationFee || 199,
+
+    // New stats fields
+    platinumMedals: (auction.listingId as any).platinumMedals || 0,
+    legendaryPoses: (auction.listingId as any).legendaryPoses || 0,
+    shinyPokemons: (auction.listingId as any).shinyPokemons || 0,
+    shinyMythical: (auction.listingId as any).shinyMythical || 0,
+    shinyUltrabeasts: (auction.listingId as any).shinyUltrabeasts || 0,
+    shinyLegendaries: (auction.listingId as any).shinyLegendaries || 0,
+    legendaryPokemons: (auction.listingId as any).legendaryPokemons || 0,
+    ultrabeasts: (auction.listingId as any).ultrabeasts || 0,
+    mythicalPokemons: (auction.listingId as any).mythicalPokemons || 0,
+    hundoMythicalLegendaryUltrabeast: (auction.listingId as any).hundoMythicalLegendaryUltrabeast || 0,
+    shundoLegendaryMythicalUltrabeast: (auction.listingId as any).shundoLegendaryMythicalUltrabeast || 0,
+    shundoPokemons: (auction.listingId as any).shundoPokemons || 0,
+    hundoPokemons: (auction.listingId as any).hundoPokemons || 0,
+    costumeShinies: (auction.listingId as any).costumeShinies || 0,
+    hatchedShinies: (auction.listingId as any).hatchedShinies || 0,
+    luckyPokemons: (auction.listingId as any).luckyPokemons || 0,
+    luckyLegendaries: (auction.listingId as any).luckyLegendaries || 0,
+    shinyLuckyLegendaries: (auction.listingId as any).shinyLuckyLegendaries || 0,
+    locationBackgroundLegendaryShiny: (auction.listingId as any).locationBackgroundLegendaryShiny || 0,
+    specialBackgroundLegendaryShiny: (auction.listingId as any).specialBackgroundLegendaryShiny || 0,
+    candyXlPokemons: (auction.listingId as any).candyXlPokemons || 0,
+    candyXlLegendaries: (auction.listingId as any).candyXlLegendaries || 0,
+    bestBuddies: (auction.listingId as any).bestBuddies || 0,
+    dualMovePokemons: (auction.listingId as any).dualMovePokemons || 0,
+    shadowShinyPokemons: (auction.listingId as any).shadowShinyPokemons || 0,
+    pokemonStorage: (auction.listingId as any).pokemonStorage || 0,
+    itemBagStorage: (auction.listingId as any).itemBagStorage || 0,
+    masterBalls: (auction.listingId as any).masterBalls || 0,
+    raidPasses: (auction.listingId as any).raidPasses || 0,
+    superRocketRadar: (auction.listingId as any).superRocketRadar || 0,
+    pokedexRegisteredNumber: (auction.listingId as any).pokedexRegisteredNumber || 0,
+    bansCount: (auction.listingId as any).bansCount || 0,
   });
 
   useEffect(() => {
@@ -222,6 +292,40 @@ export function LiveRoom({
         premiumRaidPass: auction.listingId.premiumRaidPass || 0,
         endTime: auction.endTime,
         registrationFee: auction.registrationFee || 199,
+
+        // New stats fields
+        platinumMedals: (auction.listingId as any).platinumMedals || 0,
+        legendaryPoses: (auction.listingId as any).legendaryPoses || 0,
+        shinyPokemons: (auction.listingId as any).shinyPokemons || 0,
+        shinyMythical: (auction.listingId as any).shinyMythical || 0,
+        shinyUltrabeasts: (auction.listingId as any).shinyUltrabeasts || 0,
+        shinyLegendaries: (auction.listingId as any).shinyLegendaries || 0,
+        legendaryPokemons: (auction.listingId as any).legendaryPokemons || 0,
+        ultrabeasts: (auction.listingId as any).ultrabeasts || 0,
+        mythicalPokemons: (auction.listingId as any).mythicalPokemons || 0,
+        hundoMythicalLegendaryUltrabeast: (auction.listingId as any).hundoMythicalLegendaryUltrabeast || 0,
+        shundoLegendaryMythicalUltrabeast: (auction.listingId as any).shundoLegendaryMythicalUltrabeast || 0,
+        shundoPokemons: (auction.listingId as any).shundoPokemons || 0,
+        hundoPokemons: (auction.listingId as any).hundoPokemons || 0,
+        costumeShinies: (auction.listingId as any).costumeShinies || 0,
+        hatchedShinies: (auction.listingId as any).hatchedShinies || 0,
+        luckyPokemons: (auction.listingId as any).luckyPokemons || 0,
+        luckyLegendaries: (auction.listingId as any).luckyLegendaries || 0,
+        shinyLuckyLegendaries: (auction.listingId as any).shinyLuckyLegendaries || 0,
+        locationBackgroundLegendaryShiny: (auction.listingId as any).locationBackgroundLegendaryShiny || 0,
+        specialBackgroundLegendaryShiny: (auction.listingId as any).specialBackgroundLegendaryShiny || 0,
+        candyXlPokemons: (auction.listingId as any).candyXlPokemons || 0,
+        candyXlLegendaries: (auction.listingId as any).candyXlLegendaries || 0,
+        bestBuddies: (auction.listingId as any).bestBuddies || 0,
+        dualMovePokemons: (auction.listingId as any).dualMovePokemons || 0,
+        shadowShinyPokemons: (auction.listingId as any).shadowShinyPokemons || 0,
+        pokemonStorage: (auction.listingId as any).pokemonStorage || 0,
+        itemBagStorage: (auction.listingId as any).itemBagStorage || 0,
+        masterBalls: (auction.listingId as any).masterBalls || 0,
+        raidPasses: (auction.listingId as any).raidPasses || 0,
+        superRocketRadar: (auction.listingId as any).superRocketRadar || 0,
+        pokedexRegisteredNumber: (auction.listingId as any).pokedexRegisteredNumber || 0,
+        bansCount: (auction.listingId as any).bansCount || 0,
       });
     }
   }, [isAdminEditOpen, auction]);
@@ -235,6 +339,7 @@ export function LiveRoom({
       if (adminEditForm.endTime) {
         setEndTime(new Date(adminEditForm.endTime).toISOString());
       }
+      router.refresh();
     } else {
       setAdminActionError(res.error || "Failed to update auction details.");
     }
@@ -433,8 +538,7 @@ Please let me know how to proceed with the payment!`;
     ];
   const [activeImgIndex, setActiveImgIndex] = useState(0);
 
-  // Tabs controls
-  const [activeTab, setActiveTab] = useState<"overview" | "highlights" | "details" | "terms" | "reviews">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "details" | "terms" | "reviews">("overview");
 
   // FAQs Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -578,26 +682,7 @@ Please let me know how to proceed with the payment!`;
     NONE: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
   };
 
-  // Parse Pokémon highlights dynamically from the topPokemon string input
-  const rawHighlights = auction.listingId.topPokemon
-    ? auction.listingId.topPokemon.split(",").map(item => item.trim()).filter(Boolean)
-    : [];
 
-  const pokemonHighlights = rawHighlights.map((item, idx) => {
-    const match = item.match(/^([^(]+)(?:\(([^)]+)\))?$/);
-    const name = match ? match[1].trim() : item;
-    const cp = match && match[2] ? match[2].trim() : "";
-    const mockThumbnails = [
-      "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1613771404724-11d595413b6b?w=300&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1608889175123-8ec330b86f84?w=300&auto=format&fit=crop&q=80",
-    ];
-    return {
-      name,
-      cp,
-      img: mockThumbnails[idx % mockThumbnails.length]
-    };
-  });
   const renderBiddingPanel = () => (
     <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md p-6 space-y-5 shadow-xs dark:shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-[#6133e1]/10 blur-xl pointer-events-none" />
@@ -814,6 +899,196 @@ Please let me know how to proceed with the payment!`;
     </div>
   );
 
+  interface RowType {
+    label: string;
+    value: string | number | undefined | null;
+    format?: (v: number) => string;
+  }
+
+  const specRows: RowType[] = ([
+    { label: "Trainer Level", value: auction.listingId.level },
+    { label: "Faction Team", value: auction.listingId.team },
+    { label: "Stardust Balance", value: auction.listingId.stardust, format: (v: number) => v.toLocaleString() },
+    { label: "Total XP Balance", value: auction.listingId.xp, format: (v: number) => v.toLocaleString() },
+    { label: "PokéCoins", value: auction.listingId.pokeCoins, format: (v: number) => v.toLocaleString() },
+    { label: "Account Status", value: auction.listingId.accountStatus },
+    { label: "Account Type", value: auction.listingId.accountType },
+    { label: "Start Date", value: auction.listingId.startDate },
+    { label: "Account Region", value: auction.listingId.region },
+    { label: "Platinum Medals", value: (auction.listingId as any).platinumMedals },
+    { label: "Legendary Poses", value: (auction.listingId as any).legendaryPoses },
+    { label: "Shiny Pokémon", value: (auction.listingId as any).shinyPokemons },
+    { label: "Shiny Mythical", value: (auction.listingId as any).shinyMythical },
+    { label: "Shiny Ultrabeasts", value: (auction.listingId as any).shinyUltrabeasts },
+    { label: "Shiny Legendaries", value: (auction.listingId as any).shinyLegendaries },
+    { label: "Legendary Pokémon", value: (auction.listingId as any).legendaryPokemons },
+    { label: "Ultrabeasts", value: (auction.listingId as any).ultrabeasts },
+    { label: "Mythical Pokémon", value: (auction.listingId as any).mythicalPokemons },
+    { label: "Hundo Mythical/Leg/UB", value: (auction.listingId as any).hundoMythicalLegendaryUltrabeast },
+    { label: "Shundo Legendary/Mythical/UB", value: (auction.listingId as any).shundoLegendaryMythicalUltrabeast },
+    { label: "Shundo Pokémon", value: (auction.listingId as any).shundoPokemons },
+    { label: "Hundo Pokémon", value: (auction.listingId as any).hundoPokemons },
+    { label: "Costume Shinies", value: (auction.listingId as any).costumeShinies },
+    { label: "Hatched Shinies", value: (auction.listingId as any).hatchedShinies },
+    { label: "Lucky Pokémon", value: (auction.listingId as any).luckyPokemons },
+    { label: "Lucky Legendaries", value: (auction.listingId as any).luckyLegendaries },
+    { label: "Shiny Lucky Legendaries", value: (auction.listingId as any).shinyLuckyLegendaries },
+    { label: "Location BG Leg Shiny", value: (auction.listingId as any).locationBackgroundLegendaryShiny },
+    { label: "Special BG Leg Shiny", value: (auction.listingId as any).specialBackgroundLegendaryShiny },
+    { label: "CandyXL Pokémon", value: (auction.listingId as any).candyXlPokemons },
+    { label: "CandyXL Legendaries", value: (auction.listingId as any).candyXlLegendaries },
+    { label: "Best Buddies", value: (auction.listingId as any).bestBuddies },
+    { label: "Dual Move Pokémon", value: (auction.listingId as any).dualMovePokemons },
+    { label: "Shadow Shiny Pokémon", value: (auction.listingId as any).shadowShinyPokemons },
+    { label: "Pokémon Storage", value: (auction.listingId as any).pokemonStorage },
+    { label: "Item Bag Storage", value: (auction.listingId as any).itemBagStorage },
+    { label: "Master Balls", value: (auction.listingId as any).masterBalls },
+    { label: "Raid Passes", value: (auction.listingId as any).raidPasses },
+    { label: "Super Rocket Radar", value: (auction.listingId as any).superRocketRadar },
+    { label: "Pokédex Registered #", value: (auction.listingId as any).pokedexRegisteredNumber },
+    { label: "Bans Count", value: (auction.listingId as any).bansCount },
+  ] as RowType[]).filter((row): row is RowType & { value: string | number } => {
+    if (row.value === undefined || row.value === null || row.value === "") {
+      return false;
+    }
+    if (typeof row.value === "number" && row.value === 0) {
+      return false;
+    }
+    if (typeof row.value === "string" && (row.value === "0" || row.value === "NONE")) {
+      return false;
+    }
+    return true;
+  });
+
+  const resourceRows: RowType[] = ([
+    { label: "Rare Candy", value: auction.listingId.rareCandy },
+    { label: "Fast TM", value: auction.listingId.fastTm },
+    { label: "Charged TM", value: auction.listingId.chargedTm },
+    { label: "Elite Fast TM", value: auction.listingId.eliteFastTm },
+    { label: "Elite Charged TM", value: auction.listingId.eliteChargedTm },
+    { label: "Incubators", value: auction.listingId.incubators },
+    { label: "Lucky Eggs", value: auction.listingId.luckyEggs },
+    { label: "Lure Modules", value: auction.listingId.lureModules },
+    { label: "Premium Raid Pass", value: auction.listingId.premiumRaidPass },
+  ] as RowType[]).filter((row): row is RowType & { value: string | number } => {
+    if (row.value === undefined || row.value === null || row.value === "") {
+      return false;
+    }
+    if (typeof row.value === "number" && row.value === 0) {
+      return false;
+    }
+    if (typeof row.value === "string" && (row.value === "0" || row.value === "NONE")) {
+      return false;
+    }
+    return true;
+  });
+
+  const keyStats = [
+    { label: "Level", value: auction.listingId.level, suffix: "" },
+    { label: "Team", value: auction.listingId.team, suffix: "" },
+    { label: "Shiny Count", value: auction.listingId.shinyCount, suffix: "✨" },
+    { label: "Legendary Count", value: auction.listingId.legendaryCount, suffix: "🏆" },
+    { label: "Mythical Count", value: auction.listingId.mythicalCount, suffix: "⭐" },
+    { label: "Stardust", value: auction.listingId.stardust, format: (v: number) => v.toLocaleString() },
+  ].filter(stat => {
+    if (stat.value === undefined || stat.value === null || (stat.value as any) === "") return false;
+    if (typeof stat.value === "number" && stat.value === 0) return false;
+    if (typeof stat.value === "string" && ((stat.value as any) === "0" || stat.value === "NONE")) return false;
+    return true;
+  });
+
+  const renderKeyStatsGrid = (className?: string) => {
+    if (keyStats.length === 0) return null;
+    return (
+      <div className={cn("grid gap-2 text-center text-xs", className || "grid-cols-2 md:grid-cols-3")}>
+        {keyStats.map((stat, idx) => {
+          const display = stat.format && typeof stat.value === "number" ? stat.format(stat.value) : String(stat.value);
+          return (
+            <div key={idx} className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/30 p-2.5 shadow-2xs transition-all hover:scale-[1.02] duration-300">
+              <div className="text-[9px] text-zinc-550 dark:text-zinc-400 uppercase font-extrabold tracking-wider">{stat.label}</div>
+              <div className="font-black text-zinc-800 dark:text-white mt-1 text-sm truncate flex items-center justify-center gap-1">
+                {display} {stat.suffix}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderGallery = () => {
+    return (
+      <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 sm:p-5 space-y-4 shadow-xs relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 -mr-6 -mt-6 h-32 w-32 rounded-full bg-[#6133e1]/5 blur-2xl pointer-events-none" />
+
+        {/* Main Viewer */}
+        <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-50 dark:bg-black/20 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-center group shadow-inner">
+
+          {/* Team Tag Overlay */}
+          <div className="absolute top-3 left-3 z-10 flex gap-2">
+            <span className="bg-[#6133e1] text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-lg shadow-md tracking-wider">
+              Verified Asset
+            </span>
+            {auction.listingId.team !== "NONE" && (
+              <span className={cn("text-[9px] font-black uppercase px-2.5 py-1 rounded-lg shadow-md border tracking-wider", teamColors[auction.listingId.team])}>
+                {auction.listingId.team}
+              </span>
+            )}
+          </div>
+
+          {/* Main Display Image */}
+          <img
+            src={screenshots[activeImgIndex]}
+            alt="Account preview screenshot"
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-102"
+          />
+
+          {/* Left/Right Controls */}
+          {screenshots.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={prevImage}
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700/50 hover:border-zinc-650 transition-all cursor-pointer shadow-md"
+              >
+                <ChevronLeft className="h-4.5 w-4.5" />
+              </button>
+              <button
+                type="button"
+                onClick={nextImage}
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700/50 hover:border-zinc-650 transition-all cursor-pointer shadow-md"
+              >
+                <ChevronRight className="h-4.5 w-4.5" />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Thumbnails Row */}
+        {screenshots.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {screenshots.map((url, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveImgIndex(idx)}
+                className={cn(
+                  "relative h-12 w-16 rounded-lg overflow-hidden border bg-zinc-50 dark:bg-zinc-900 shrink-0 transition-all cursor-pointer",
+                  activeImgIndex === idx
+                    ? "border-[#6133e1] ring-2 ring-[#6133e1]/30 scale-95"
+                    : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+                )}
+              >
+                <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#08080a] text-zinc-900 dark:text-white py-6 pb-24 lg:pb-6 transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
@@ -831,110 +1106,18 @@ Please let me know how to proceed with the payment!`;
 
         {/* Real-time connection status overlay/banner */}
         {!isConnected && (
-          <div className="flex items-center gap-2 rounded-xl bg-zinc-200 dark:bg-white/5 border border-zinc-200 dark:border-white/10 p-3 text-xs text-zinc-600 dark:text-zinc-300 shadow-xs">
-            <AlertCircle className="h-4 w-4 animate-pulse text-zinc-400 dark:text-zinc-400" />
+          <div className="flex items-center gap-2 rounded-xl bg-zinc-200 dark:bg-white/5 border border-zinc-200 dark:border-white/10 p-3 text-xs text-zinc-600 dark:text-zinc-300 shadow-xs animate-pulse">
+            <AlertCircle className="h-4 w-4 text-zinc-400 dark:text-zinc-400" />
             Connecting to real-time bidding engine... Live updates paused.
           </div>
         )}
-
-        {/* Mobile Title Card */}
-        <div className="lg:hidden rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-3 shadow-xs animate-in fade-in duration-300">
-          <span className="inline-block bg-[#6133e1]/10 text-[#6133e1] text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border border-[#6133e1]/20">
-            Premium Grade Asset
-          </span>
-          <h1 className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">
-            {auction.listingId.title}
-          </h1>
-          <div className="grid grid-cols-4 gap-2 text-center text-xs pt-1">
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
-              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Level</div>
-              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.level}</div>
-            </div>
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
-              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Team</div>
-              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5 truncate">{auction.listingId.team}</div>
-            </div>
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
-              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Shiny</div>
-              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.shinyCount}✨</div>
-            </div>
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-2">
-              <div className="text-[8px] text-zinc-500 uppercase font-semibold">Legendary</div>
-              <div className="font-extrabold text-zinc-800 dark:text-white mt-0.5">{auction.listingId.legendaryCount}🏆</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Admin Control Panel */}
-        <div className="lg:hidden mt-4">
-          {renderAdminControlPanel()}
-        </div>
 
         {/* Desktop Title & Details Section (Grid: Left 2 cols, Right 1 col) */}
         <div className="hidden lg:grid gap-8 lg:grid-cols-3">
 
           {/* LEFT CONTAINER (Gallery, Info Tabs, Details lists) */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Gallery module */}
-            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md p-4 sm:p-6 space-y-4 shadow-xs">
-
-              {/* Main Viewer */}
-              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center group">
-
-                {/* Team Tag Overlay */}
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  <span className="bg-[#6133e1] text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md shadow-lg">
-                    Legendary Account
-                  </span>
-                  <span className={cn("text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md shadow-lg border", teamColors[auction.listingId.team])}>
-                    {auction.listingId.team}
-                  </span>
-                </div>
-
-                {/* Main Display Image */}
-                <img
-                  src={screenshots[activeImgIndex]}
-                  alt="Account preview screenshot"
-                  className="w-full h-full object-contain"
-                />
-
-                {/* Left/Right Controls */}
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Thumbnails Row */}
-              <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
-                {screenshots.map((url, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImgIndex(idx)}
-                    className={cn(
-                      "relative h-16 w-20 rounded-lg overflow-hidden border bg-zinc-50 dark:bg-zinc-900 shrink-0 transition-all cursor-pointer",
-                      activeImgIndex === idx ? "border-[#6133e1] ring-2 ring-[#6133e1]/50" : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
-                    )}
-                  >
-                    <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-                {screenshots.length > 4 && (
-                  <div className="h-16 w-20 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-[#0d0d12] flex items-center justify-center text-xs font-bold text-zinc-400 shrink-0">
-                    +{screenshots.length - 4}
-                  </div>
-                )}
-              </div>
-            </div>
+            {renderGallery()}
 
             {/* Quick Guarantees/Trust Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -949,45 +1132,42 @@ Please let me know how to proceed with the payment!`;
                 <Award className="h-5 w-5 text-purple-500 dark:text-purple-400 shrink-0" />
                 <div>
                   <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Instant Delivery</h4>
-                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Receive credentials instantly</p>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Credentials transfer</p>
                 </div>
               </div>
               <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3 shadow-xs">
                 <Coins className="h-5 w-5 text-sky-500 dark:text-sky-400 shrink-0" />
                 <div>
                   <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Verified Account</h4>
-                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Checked by team admin</p>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Checked by admin</p>
                 </div>
               </div>
               <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3 shadow-xs">
                 <Headset className="h-5 w-5 text-indigo-500 dark:text-indigo-400 shrink-0" />
                 <div>
                   <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">24/7 Help</h4>
-                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Continuous technical support</p>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Trade coordination</p>
                 </div>
               </div>
             </div>
-
-
 
             {/* Detailed Description, Grid Statistics & Info Tabs */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md overflow-hidden shadow-xs">
 
               {/* Tab Selector Header */}
               <div className="flex border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto bg-zinc-50 dark:bg-black/20">
-                {(["overview", "highlights", "details", "terms"] as const).map((tab) => (
+                {(["overview", "details", "terms"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={cn(
-                      "px-6 py-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all shrink-0 cursor-pointer",
+                      "px-6 py-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all shrink-0 cursor-pointer bg-transparent border-none",
                       activeTab === tab
                         ? "border-[#6133e1] text-zinc-900 dark:text-white bg-[#6133e1]/5"
                         : "border-transparent text-zinc-400 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                     )}
                   >
                     {tab === "overview" && "Overview"}
-                    {tab === "highlights" && "Pokémon Highlights"}
                     {tab === "details" && "Account Details"}
                     {tab === "terms" && "Terms & Conditions"}
                   </button>
@@ -998,39 +1178,37 @@ Please let me know how to proceed with the payment!`;
               <div className="p-6 sm:p-8 space-y-6">
 
                 {activeTab === "overview" && (
-                  <div className="space-y-6">
+                  <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="space-y-3">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">About This Account</h3>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-light">
+                      <p className="text-sm text-zinc-655 dark:text-zinc-300 leading-relaxed font-light whitespace-pre-line">
                         {auction.listingId.description}
                       </p>
                     </div>
 
                     {/* Detailed Specifications Checklist */}
-                    <div className="grid gap-3 sm:grid-cols-2 pt-2 text-xs">
-                      {[
-                        `Trainer Level ${auction.listingId.level}`,
-                        `Team Alignment: ${auction.listingId.team}`,
-                        `Shiny Variant Pokémon: ${auction.listingId.shinyCount}`,
-                        `Legendary Pokémon: ${auction.listingId.legendaryCount}`,
-                        `Mythical Pokémon: ${auction.listingId.mythicalCount}`,
-                        `Best Buddy Pokémon: ${auction.listingId.bestBuddyCount || 0}`,
-                        `Stardust Balance: ${(auction.listingId.stardust || 0).toLocaleString()}`,
-                        `Account Region: ${auction.listingId.region}`,
-                        `Start Date: ${auction.listingId.startDate || "N/A"}`
-                      ].map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-                          <Check className="h-4 w-4 text-[#6133e1] shrink-0" />
-                          <span>{item}</span>
+                    {specRows.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Key Features</h3>
+                        <div className="grid gap-3 sm:grid-cols-2 pt-2 text-xs">
+                          {specRows.slice(0, 12).map((row, idx) => {
+                            const displayValue = row.format && typeof row.value === "number" ? row.format(row.value) : String(row.value);
+                            return (
+                              <div key={idx} className="flex items-center gap-2 text-zinc-650 dark:text-zinc-300">
+                                <Check className="h-4 w-4 text-[#6133e1] shrink-0" />
+                                <span><strong>{row.label}:</strong> {displayValue}</span>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
 
                     {/* Security Notice Warning Box */}
                     <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-4 text-xs text-zinc-500 dark:text-zinc-400 flex items-start gap-3">
                       <AlertTriangle className="h-4.5 w-4.5 text-zinc-500 shrink-0 mt-0.5" />
                       <div>
-                        <strong className="font-semibold text-zinc-800 dark:text-white uppercase tracking-wider text-[10px]">Important Security Coordinates:</strong>
+                        <strong className="font-semibold text-zinc-850 dark:text-white uppercase tracking-wider text-[10px]">Important Security Coordinates:</strong>
                         <p className="mt-1 leading-relaxed">
                           We handle full email integration transfers. Credential coordinates (passwords/associated codes) are fully changed during secure trade procedures to guarantee permanent account lock protection.
                         </p>
@@ -1039,106 +1217,49 @@ Please let me know how to proceed with the payment!`;
                   </div>
                 )}
 
-                {activeTab === "highlights" && (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Top Legendary Highlights</h3>
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer underline">View All</span>
-                    </div>
-
-                    {/* Highlight Pokémon Cards Grid */}
-                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-                      {pokemonHighlights.map((pk, idx) => (
-                        <div key={idx} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-black/40 p-3 space-y-3 flex flex-col items-center justify-between text-center relative group">
-                          {/* 100% IV Badge */}
-                          <div className="absolute top-2 right-2 bg-white/85 dark:bg-black/60 rounded px-1.5 py-0.5 text-[8px] font-bold text-zinc-700 dark:text-white flex items-center gap-1 border border-zinc-200 dark:border-zinc-800">
-                            <Sparkles className="h-2.5 w-2.5 text-purple-400 fill-purple-400" />
-                            <span>100% IV</span>
-                          </div>
-
-                          <div className="h-20 w-20 flex items-center justify-center mt-2">
-                            <img src={pk.img} alt={pk.name} className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform" />
-                          </div>
-
-                          <div className="space-y-0.5">
-                            <h4 className="text-xs font-bold text-zinc-800 dark:text-white">{pk.name}</h4>
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold">{pk.cp}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {activeTab === "details" && (
-                  <div className="space-y-8">
+                  <div className="space-y-8 animate-in fade-in duration-300">
                     {/* Specifications detail grids */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Account Attributes</h3>
-                      <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 text-xs">
-                        {[
-                          { label: "Trainer Level", value: auction.listingId.level },
-                          { label: "Faction Team", value: auction.listingId.team },
-                          { label: "Stardust Balance", value: auction.listingId.stardust, format: (v: number) => v.toLocaleString() },
-                          { label: "Total XP Balance", value: auction.listingId.xp, format: (v: number) => v.toLocaleString() },
-                          { label: "PokéCoins", value: auction.listingId.pokeCoins, format: (v: number) => v.toLocaleString() },
-                          { label: "Account Status", value: auction.listingId.accountStatus },
-                          { label: "Account Type", value: auction.listingId.accountType },
-                          { label: "Start Date", value: auction.listingId.startDate },
-                          { label: "Account Region", value: auction.listingId.region },
-                          { label: "Platinum Medals", value: (auction.listingId as any).platinumMedals },
-                          { label: "Legendary Poses", value: (auction.listingId as any).legendaryPoses },
-                          { label: "Shiny Pokémon", value: (auction.listingId as any).shinyPokemons },
-                          { label: "Shiny Mythical", value: (auction.listingId as any).shinyMythical },
-                          { label: "Shiny Ultrabeasts", value: (auction.listingId as any).shinyUltrabeasts },
-                          { label: "Shiny Legendaries", value: (auction.listingId as any).shinyLegendaries },
-                          { label: "Legendary Pokémon", value: (auction.listingId as any).legendaryPokemons },
-                          { label: "Ultrabeasts", value: (auction.listingId as any).ultrabeasts },
-                          { label: "Mythical Pokémon", value: (auction.listingId as any).mythicalPokemons },
-                          { label: "Hundo Mythical/Leg/UB", value: (auction.listingId as any).hundoMythicalLegendaryUltrabeast },
-                          { label: "Shundo Legendary/Mythical/UB", value: (auction.listingId as any).shundoLegendaryMythicalUltrabeast },
-                          { label: "Shundo Pokémon", value: (auction.listingId as any).shundoPokemons },
-                          { label: "Hundo Pokémon", value: (auction.listingId as any).hundoPokemons },
-                          { label: "Costume Shinies", value: (auction.listingId as any).costumeShinies },
-                          { label: "Hatched Shinies", value: (auction.listingId as any).hatchedShinies },
-                          { label: "Lucky Pokémon", value: (auction.listingId as any).luckyPokemons },
-                          { label: "Lucky Legendaries", value: (auction.listingId as any).luckyLegendaries },
-                          { label: "Shiny Lucky Legendaries", value: (auction.listingId as any).shinyLuckyLegendaries },
-                          { label: "Location BG Leg Shiny", value: (auction.listingId as any).locationBackgroundLegendaryShiny },
-                          { label: "Special BG Leg Shiny", value: (auction.listingId as any).specialBackgroundLegendaryShiny },
-                          { label: "CandyXL Pokémon", value: (auction.listingId as any).candyXlPokemons },
-                          { label: "CandyXL Legendaries", value: (auction.listingId as any).candyXlLegendaries },
-                          { label: "Best Buddies", value: (auction.listingId as any).bestBuddies },
-                          { label: "Dual Move Pokémon", value: (auction.listingId as any).dualMovePokemons },
-                          { label: "Shadow Shiny Pokémon", value: (auction.listingId as any).shadowShinyPokemons },
-                          { label: "Pokémon Storage", value: (auction.listingId as any).pokemonStorage },
-                          { label: "Item Bag Storage", value: (auction.listingId as any).itemBagStorage },
-                          { label: "Master Balls", value: (auction.listingId as any).masterBalls },
-                          { label: "Raid Passes", value: (auction.listingId as any).raidPasses },
-                          { label: "Super Rocket Radar", value: (auction.listingId as any).superRocketRadar },
-                          { label: "Pokédex Registered #", value: (auction.listingId as any).pokedexRegisteredNumber },
-                          { label: "Bans Count", value: (auction.listingId as any).bansCount }
-                        ].filter(row => {
-                          if (row.value === undefined || row.value === null || row.value === "" || row.value === 0 || row.value === "0" || row.value === "NONE") {
-                            return false;
-                          }
-                          return true;
-                        }).map((row, idx) => {
-                          const displayValue = row.format && typeof row.value === "number" ? row.format(row.value) : String(row.value);
-                          return (
-                            <div key={idx} className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800/60">
-                              <span className="text-zinc-400 dark:text-zinc-400">{row.label}</span>
-                              <span className="font-semibold text-zinc-800 dark:text-white">{displayValue}</span>
-                            </div>
-                          );
-                        })}
+                    {specRows.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Account Attributes</h3>
+                        <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 text-xs">
+                          {specRows.map((row, idx) => {
+                            const displayValue = row.format && typeof row.value === "number" ? row.format(row.value) : String(row.value);
+                            return (
+                              <div key={idx} className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800/60 transition-colors hover:bg-zinc-50/20">
+                                <span className="text-zinc-500 dark:text-zinc-400">{row.label}</span>
+                                <span className="font-semibold text-zinc-805 dark:text-white">{displayValue}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Resources detail grids */}
+                    {resourceRows.length > 0 && (
+                      <div className="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-900">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Items & Inventory</h3>
+                        <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 text-xs">
+                          {resourceRows.map((row, idx) => {
+                            const displayValue = row.format && typeof row.value === "number" ? row.format(row.value) : String(row.value);
+                            return (
+                              <div key={idx} className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800/60 transition-colors hover:bg-zinc-50/20">
+                                <span className="text-zinc-500 dark:text-zinc-400">{row.label}</span>
+                                <span className="font-semibold text-zinc-800 dark:text-white">{displayValue}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {activeTab === "terms" && (
-                  <div className="space-y-6 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-light">
+                  <div className="space-y-6 text-xs text-zinc-650 dark:text-zinc-305 leading-relaxed font-light animate-in fade-in duration-300">
                     <div className="space-y-2">
                       <h4 className="text-sm font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Account Handover Terms</h4>
                       <p>
@@ -1154,13 +1275,11 @@ Please let me know how to proceed with the payment!`;
                   </div>
                 )}
 
-
-
               </div>
             </div>
 
             {/* Accordion FAQs Panel */}
-            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] backdrop-blur-md p-6 space-y-4 shadow-xs">
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 space-y-4 shadow-xs">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
                 <HelpCircle className="h-4.5 w-4.5 text-[#6133e1]" />
                 Frequently Asked Questions
@@ -1352,24 +1471,45 @@ Please let me know how to proceed with the payment!`;
       </div>
 
       {/* MOBILE FIRST SYSTEMATIC LAYOUT (Visible only on mobile/tablet) */}
-      <div className="lg:hidden space-y-6 animate-in fade-in duration-300">
+      <div className="lg:hidden space-y-6">
 
-        {/* Top View Navigation Tabs */}
-        <div className="flex rounded-xl bg-zinc-100 dark:bg-zinc-900 p-1 border border-zinc-200 dark:border-zinc-800">
+        {/* Title Card always visible at top */}
+        <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-3 shadow-xs">
+          <span className="inline-block bg-[#6133e1]/10 text-[#6133e1] text-[9px] font-black uppercase px-2 py-0.5 rounded border border-[#6133e1]/20">
+            Premium Grade Asset
+          </span>
+          <h1 className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">
+            {auction.listingId.title}
+          </h1>
+          {renderKeyStatsGrid("grid-cols-3 gap-2 pt-1")}
+        </div>
+
+        {/* Admin panel always visible if authorized */}
+        {isAuthorizedAdmin && (
+          <div className="mt-2">
+            {renderAdminControlPanel()}
+          </div>
+        )}
+
+        {/* Image gallery always visible at the top */}
+        {renderGallery()}
+
+        {/* Navigation Tabs Selector */}
+        <div className="flex rounded-xl bg-zinc-100 dark:bg-zinc-900 p-1 border border-zinc-200 dark:border-zinc-800 mt-4">
           {(["bid", "details", "help"] as const).map((view) => (
             <button
               key={view}
               type="button"
               onClick={() => setMobileActiveView(view)}
               className={cn(
-                "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-center cursor-pointer capitalize",
+                "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-center cursor-pointer capitalize bg-transparent border-none",
                 mobileActiveView === view
-                  ? "bg-[#6133e1] text-white shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200"
+                  ? "bg-[#6133e1] text-white shadow-sm font-black"
+                  : "text-zinc-550 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200"
               )}
             >
               {view === "bid" && "Live Bid"}
-              {view === "details" && "Specs & Media"}
+              {view === "details" && "Specs & Telemetry"}
               {view === "help" && "Help & Terms"}
             </button>
           ))}
@@ -1377,7 +1517,7 @@ Please let me know how to proceed with the payment!`;
 
         {/* Active Mobile View Content */}
         {mobileActiveView === "bid" && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in fade-in duration-200">
 
             {/* Bidding Timer & Status Panel */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-sm">
@@ -1441,19 +1581,19 @@ Please let me know how to proceed with the payment!`;
                       </p>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center">
+                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-955 p-4 text-center">
                       <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase">Concluded</h4>
                       <p className="text-[11px] text-zinc-500 mt-1">This auction expired with no bids.</p>
                     </div>
                   )
                 ) : isOwner ? (
-                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center">
+                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-955 p-4 text-center">
                     <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase tracking-wider">Owner Console</h4>
                     <p className="text-[11px] text-zinc-500 mt-1">You are the seller of this listing. Self-bidding is disabled.</p>
                   </div>
                 ) : !isRegistered ? (
                   <div className="space-y-3">
-                    <div className="rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3.5 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light text-center">
+                    <div className="rounded-xl bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 p-3.5 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light text-center">
                       A refundable verification deposit of $2.50 is required to participate in bidding.
                     </div>
                     <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
@@ -1471,7 +1611,7 @@ Please let me know how to proceed with the payment!`;
                           type="button"
                           onClick={() => handlePlaceBid(amount)}
                           disabled={!isConnected || isBidding || highestBidderId === session?.user?.id}
-                          className="h-10 rounded-xl bg-zinc-55 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center"
+                          className="h-10 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-[#6133e1] hover:text-white text-zinc-800 dark:text-white text-xs font-bold border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center animate-in duration-300"
                         >
                           {isBidding ? (
                             <Loader2 className="h-4 w-4 animate-spin text-[#6133e1] dark:text-white" />
@@ -1499,12 +1639,12 @@ Please let me know how to proceed with the payment!`;
                 className={cn(
                   "w-full h-11 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border cursor-pointer",
                   isBuyNowDisabled
-                    ? "bg-zinc-205 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
+                    ? "bg-zinc-200 dark:bg-zinc-900 text-zinc-450 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
                     : "bg-zinc-900 hover:bg-[#6133e1] text-white border border-zinc-800 hover:border-[#6133e1]"
                 )}
               >
                 <span>BUY NOW</span>
-                <span className={cn("text-[10px] font-bold border-l pl-2", isBuyNowDisabled ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-450 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
+                <span className={cn("text-[10px] font-bold border-l pl-2", isBuyNowDisabled ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-455 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
               </button>
             </div>
 
@@ -1550,125 +1690,54 @@ Please let me know how to proceed with the payment!`;
 
         {/* Details tab view */}
         {mobileActiveView === "details" && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in fade-in duration-200">
 
-            {/* Media Gallery Card */}
-            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 space-y-4 shadow-xs">
-              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center group">
-
-                {/* Team Tag Overlay */}
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  <span className="bg-[#6133e1] text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md shadow-lg">
-                    Legendary Account
-                  </span>
-                  <span className={cn("text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md shadow-lg border", teamColors[auction.listingId.team])}>
-                    {auction.listingId.team}
-                  </span>
-                </div>
-
-                <img src={screenshots[activeImgIndex]} alt="Trainer Account Screen" className="max-h-full max-w-full object-contain" />
-
-                <button
-                  type="button"
-                  onClick={() => setActiveImgIndex((prev) => (prev > 0 ? prev - 1 : screenshots.length - 1))}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700 cursor-pointer"
-                >
-                  &lt;
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveImgIndex((prev) => (prev < screenshots.length - 1 ? prev + 1 : 0))}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-zinc-700 cursor-pointer"
-                >
-                  &gt;
-                </button>
-              </div>
-
-              {/* Thumbnails */}
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {screenshots.map((img, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActiveImgIndex(idx)}
-                    className={cn(
-                      "relative h-12 w-16 rounded-md overflow-hidden border shrink-0 transition-all cursor-pointer",
-                      activeImgIndex === idx ? "border-[#6133e1] ring-2 ring-[#6133e1]/50" : "border-zinc-200 dark:border-zinc-800"
-                    )}
-                  >
-                    <img src={img} alt="thumbnail" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Spec Checklist & Inventory */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-6 shadow-xs">
 
-              {/* Highlights */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#6133e1]">Top Legendary Highlights</h3>
-                <div className="grid gap-3 grid-cols-2">
-                  {pokemonHighlights.map((pk, idx) => (
-                    <div key={idx} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-black/40 p-3 flex flex-col items-center justify-between text-center relative group">
-                      <div className="absolute top-2 right-2 bg-white/85 dark:bg-black/60 rounded px-1.5 py-0.5 text-[8px] font-bold text-zinc-700 dark:text-white flex items-center gap-1 border border-zinc-200 dark:border-zinc-800">
-                        <Sparkles className="h-2.5 w-2.5 text-purple-400 fill-purple-400" />
-                        <span>100% IV</span>
-                      </div>
-
-                      <div className="h-16 w-16 flex items-center justify-center mt-2">
-                        <img src={pk.img} alt={pk.name} className="max-h-full max-w-full object-contain" />
-                      </div>
-
-                      <div className="space-y-0.5 mt-2">
-                        <h4 className="text-[10px] font-bold text-zinc-850 dark:text-white">{pk.name}</h4>
-                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-bold">{pk.cp}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {/* About Account */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#6133e1]">About This Account</h3>
+                <p className="text-xs text-zinc-655 dark:text-zinc-300 leading-relaxed font-light whitespace-pre-line">
+                  {auction.listingId.description}
+                </p>
               </div>
+
 
               {/* Attributes specs */}
-              <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-900">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#6133e1]">Account Attributes</h3>
-                <div className="grid gap-y-2 text-[11px]">
-                  {[
-                    { label: "Trainer Level", value: `${auction.listingId.level}` },
-                    { label: "Faction Team", value: `${auction.listingId.team}` },
-                    { label: "Shiny Pokémon", value: `${auction.listingId.shinyCount}` },
-                    { label: "Legendary Pokémon", value: `${auction.listingId.legendaryCount}` },
-                    { label: "Stardust Balance", value: `${(auction.listingId.stardust || 0).toLocaleString()}` },
-                    { label: "PokéCoins", value: `${(auction.listingId.pokeCoins || 0).toLocaleString()}` },
-                    { label: "Account Status", value: `${auction.listingId.accountStatus || "Safe (No Strikes)"}` },
-                    { label: "Account Type", value: `${auction.listingId.accountType || "Google"}` },
-                    { label: "Account Region", value: `${auction.listingId.region}` }
-                  ].map((row, idx) => (
-                    <div key={idx} className="flex justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-zinc-500 dark:text-zinc-400">{row.label}</span>
-                      <span className="font-semibold text-zinc-800 dark:text-white">{row.value}</span>
-                    </div>
-                  ))}
+              {specRows.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-900">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#6133e1]">Account Attributes</h3>
+                  <div className="grid gap-y-2 text-[11px]">
+                    {specRows.map((row, idx) => {
+                      const displayValue = row.format && typeof row.value === "number" ? row.format(row.value) : String(row.value);
+                      return (
+                        <div key={idx} className="flex justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800/60">
+                          <span className="text-zinc-500 dark:text-zinc-400">{row.label}</span>
+                          <span className="font-semibold text-zinc-800 dark:text-white">{displayValue}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Resources inventory */}
-              <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-900">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#6133e1]">Items & Inventory</h3>
-                <div className="grid gap-y-2 text-[11px]">
-                  {[
-                    { label: "Rare Candy", value: `${auction.listingId.rareCandy || 0}` },
-                    { label: "Elite Fast TM", value: `${auction.listingId.eliteFastTm || 0}` },
-                    { label: "Elite Charged TM", value: `${auction.listingId.eliteChargedTm || 0}` },
-                    { label: "Premium Raid Pass", value: `${auction.listingId.premiumRaidPass || 0}` }
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-zinc-500 dark:text-zinc-400">{item.label}</span>
-                      <span className="font-semibold text-zinc-800 dark:text-white">{item.value}</span>
-                    </div>
-                  ))}
+              {resourceRows.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-900">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#6133e1]">Items & Inventory</h3>
+                  <div className="grid gap-y-2 text-[11px]">
+                    {resourceRows.map((row, idx) => {
+                      const displayValue = row.format && typeof row.value === "number" ? row.format(row.value) : String(row.value);
+                      return (
+                        <div key={idx} className="flex justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800/60">
+                          <span className="text-zinc-500 dark:text-zinc-400">{row.label}</span>
+                          <span className="font-semibold text-zinc-800 dark:text-white">{displayValue}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
 
@@ -1677,14 +1746,14 @@ Please let me know how to proceed with the payment!`;
 
         {/* Help & Terms tab view */}
         {mobileActiveView === "help" && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in fade-in duration-200">
 
             {/* Trust Guarantees */}
             <div className="grid grid-cols-2 gap-3">
               {[
                 { title: "100% Safe", desc: "Secure Escrows", icon: ShieldCheck, color: "text-emerald-500" },
-                { title: "Fast Delivery", desc: "Credentials Instantly", icon: Award, color: "text-purple-500" },
-                { title: "Verified Assets", desc: "Admin Hand-Checked", icon: Coins, color: "text-sky-500" },
+                { title: "Fast Delivery", desc: "Credentials Instantly", icon: Award, color: "text-purple-505" },
+                { title: "Verified Assets", desc: "Admin Checked", icon: Coins, color: "text-sky-500" },
                 { title: "24/7 Helpdesk", desc: "Live Chat Support", icon: Headset, color: "text-indigo-500" }
               ].map((item, idx) => (
                 <div key={idx} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 p-4 space-y-2 shadow-xs text-center flex flex-col items-center">
@@ -1700,7 +1769,7 @@ Please let me know how to proceed with the payment!`;
             {/* Delivery Specifications & Payment details */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs">
               <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Shipping & Handover details</h4>
-              <div className="space-y-3 text-xs text-zinc-650 dark:text-zinc-300 font-light">
+              <div className="space-y-3 text-xs text-zinc-600 dark:text-zinc-300 font-light">
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                   <span>Instant Delivery via admin transfer</span>
@@ -1728,7 +1797,7 @@ Please let me know how to proceed with the payment!`;
             {/* Handover terms */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs text-xs">
               <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider border-b border-zinc-150 dark:border-zinc-800 pb-2">Handover Terms</h4>
-              <div className="space-y-3 leading-relaxed text-zinc-650 dark:text-zinc-300 font-light">
+              <div className="space-y-3 leading-relaxed text-zinc-650 dark:text-zinc-305 font-light">
                 <p>
                   <strong>Secure credentials:</strong> Complete account coordinate logins are shared securely coordinates matching your account requests.
                 </p>
@@ -1744,16 +1813,16 @@ Please let me know how to proceed with the payment!`;
                 <HelpCircle className="h-4 w-4 text-[#6133e1]" />
                 Frequently Asked Questions
               </h3>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {[
                   { q: "Will I get full access to the account?", a: "Yes. You will receive complete credentials including access keys to the linked Google/PTC account coordinates, allowing you to change passwords instantly." },
-                  { q: "Is the account safe from bans?", a: "Absolutely. All listings undergo authentication review by administrators to ensure they are clean, have no active warnings or strikes, and align with safe parameters." }
+                  { q: "Is the account safe from bans?", a: "Absolutely. All listings undergo authentication review by administrators to ensure they are clean, have no active warnings or strikes, and align with safe play parameters." }
                 ].map((item, idx) => (
-                  <div key={idx} className="border-b border-zinc-100 dark:border-zinc-800/80 pb-2">
+                  <div key={idx} className="border-b border-zinc-200 dark:border-zinc-800/80 pb-2">
                     <button
                       type="button"
                       onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                      className="w-full flex items-center justify-between py-2 text-left text-[11px] font-bold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                      className="w-full flex items-center justify-between py-2 text-left text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white cursor-pointer bg-transparent border-none"
                     >
                       <span>{item.q}</span>
                       <span>{openFaq === idx ? "−" : "+"}</span>
@@ -1882,10 +1951,13 @@ Please let me know how to proceed with the payment!`;
                 </div>
               )}
 
-              <div className="space-y-4 text-xs">
-                {/* 1. Core Metadata */}
-                <div className="space-y-2">
-                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Core Information</h4>
+              <div className="space-y-6 text-xs max-h-[70vh] overflow-y-auto pr-2">
+                {/* 1. Core Metadata & Bidding Economics */}
+                <div className="space-y-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-4">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1 flex items-center gap-1.5">
+                    <Gavel className="h-3.5 w-3.5" />
+                    Core Info & Bidding Economics
+                  </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Listing Title</label>
@@ -1893,7 +1965,7 @@ Please let me know how to proceed with the payment!`;
                         type="text"
                         value={adminEditForm.title}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, title: e.target.value })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -1903,15 +1975,15 @@ Please let me know how to proceed with the payment!`;
                           type="number"
                           value={adminEditForm.level}
                           onChange={(e) => setAdminEditForm({ ...adminEditForm, level: parseInt(e.target.value) || 0 })}
-                          className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                          className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-zinc-500 font-medium">Team faction</label>
+                        <label className="text-zinc-500 font-medium">Team Faction</label>
                         <select
                           value={adminEditForm.team}
                           onChange={(e) => setAdminEditForm({ ...adminEditForm, team: e.target.value as any })}
-                          className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none cursor-pointer"
+                          className="w-full h-8 px-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none cursor-pointer"
                         >
                           <option value="NONE">None</option>
                           <option value="MYSTIC">Mystic</option>
@@ -1921,19 +1993,16 @@ Please let me know how to proceed with the payment!`;
                       </div>
                     </div>
                   </div>
+
                   <div className="space-y-1">
                     <label className="text-zinc-500 font-medium">Description</label>
                     <textarea
                       value={adminEditForm.description}
                       onChange={(e) => setAdminEditForm({ ...adminEditForm, description: e.target.value })}
-                      className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                      className="w-full min-h-[60px] p-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none text-[11px]"
                     />
                   </div>
-                </div>
 
-                {/* 2. Bidding Parameters */}
-                <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Bidding Economics</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Starting Bid ($)</label>
@@ -1941,7 +2010,7 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.startingBid}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, startingBid: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1950,7 +2019,7 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.reservePrice}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, reservePrice: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1959,91 +2028,65 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.minIncrement}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, minIncrement: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Entry Fee ($)</label>
+                      <label className="text-zinc-500 font-medium">Entry Deposit ($)</label>
                       <input
                         type="number"
                         value={adminEditForm.registrationFee}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, registrationFee: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Auction Expiration Date/Time</label>
                       <input
                         type="datetime-local"
                         value={new Date(new Date(adminEditForm.endTime).getTime() - new Date().getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 16)}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, endTime: new Date(e.target.value).toISOString() })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Top Pokémon Highlights (Comma Separated)</label>
+                      <label className="text-zinc-500 font-medium">Account Region</label>
                       <input
                         type="text"
-                        value={adminEditForm.topPokemon}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, topPokemon: e.target.value })}
-                        placeholder="Mewtwo(3950), Kyogre(3800)"
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        value={adminEditForm.region}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, region: e.target.value })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* 3. Account Telemetry */}
-                <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Account Stats & Telemetry</h4>
+                {/* 2. Pokémon Collection Metrics */}
+                <div className="space-y-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/55 dark:bg-zinc-900/30 p-4">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1 flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Pokémon Collection Stats
+                  </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Stardust</label>
-                      <input
-                        type="number"
-                        value={adminEditForm.stardust}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, stardust: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Total XP</label>
-                      <input
-                        type="number"
-                        value={adminEditForm.xp}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, xp: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Region</label>
-                      <input
-                        type="text"
-                        value={adminEditForm.region}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, region: e.target.value })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Shiny Count</label>
+                      <label className="text-zinc-500 font-medium">Shiny Count (Total)</label>
                       <input
                         type="number"
                         value={adminEditForm.shinyCount}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyCount: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Legendary Count</label>
                       <input
                         type="number"
                         value={adminEditForm.legendaryCount}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, legendaryCount: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2052,90 +2095,268 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.mythicalCount}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, mythicalCount: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Pokedex Completed %</label>
-                      <input
-                        type="number"
-                        value={adminEditForm.pokedexCompleted}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokedexCompleted: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">PokeCoins</label>
-                      <input
-                        type="number"
-                        value={adminEditForm.pokeCoins}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokeCoins: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Best Buddy Count</label>
                       <input
                         type="number"
                         value={adminEditForm.bestBuddyCount}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, bestBuddyCount: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Account Status</label>
-                      <input
-                        type="text"
-                        value={adminEditForm.accountStatus}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, accountStatus: e.target.value })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Account Type</label>
-                      <input
-                        type="text"
-                        value={adminEditForm.accountType}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, accountType: e.target.value })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-zinc-500 font-medium">Start Date</label>
-                      <input
-                        type="text"
-                        value={adminEditForm.startDate}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, startDate: e.target.value })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                   </div>
+
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="space-y-1 col-span-2">
-                      <label className="text-zinc-500 font-medium">Weekly Distance Traveled (km)</label>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shiny Pokémon</label>
                       <input
                         type="number"
-                        value={adminEditForm.weeklyDistance}
-                        onChange={(e) => setAdminEditForm({ ...adminEditForm, weeklyDistance: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        value={adminEditForm.shinyPokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyPokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shiny Mythical</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shinyMythical}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyMythical: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shiny Ultrabeasts</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shinyUltrabeasts}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyUltrabeasts: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shiny Legendaries</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shinyLegendaries}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyLegendaries: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Legendary Pokémon</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.legendaryPokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, legendaryPokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Ultrabeasts</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.ultrabeasts}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, ultrabeasts: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Mythical Pokémon</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.mythicalPokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, mythicalPokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Costume Shinies</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.costumeShinies}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, costumeShinies: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Hatched Shinies</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.hatchedShinies}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, hatchedShinies: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Location Bg Shiny Leg</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.locationBackgroundLegendaryShiny}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, locationBackgroundLegendaryShiny: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Special Bg Shiny Leg</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.specialBackgroundLegendaryShiny}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, specialBackgroundLegendaryShiny: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Dual Move Pokémon</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.dualMovePokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, dualMovePokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shadow Shiny Pokémon</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shadowShinyPokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shadowShinyPokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1 col-span-3">
+                      <label className="text-zinc-500 font-medium">Top Pokémon Highlights (Comma Separated)</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.topPokemon}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, topPokemon: e.target.value })}
+                        placeholder="Mewtwo(3950), Kyogre(3800)"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* 4. Items & Resources Inventory */}
-                <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                  <h4 className="font-black text-[#6133e1] uppercase text-[10px]">Items & Resources inventory</h4>
+                {/* 3. IV & Lucky Metrics */}
+                <div className="space-y-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-4">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1 flex items-center gap-1.5">
+                    <Award className="h-3.5 w-3.5" />
+                    IV & Lucky Metrics
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Hundo Count (Total)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.hundoPokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, hundoPokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shundo Count (Total)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shundoPokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shundoPokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Hundo Myth/Leg/UB</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.hundoMythicalLegendaryUltrabeast}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, hundoMythicalLegendaryUltrabeast: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shundo Myth/Leg/UB</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shundoLegendaryMythicalUltrabeast}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shundoLegendaryMythicalUltrabeast: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Lucky Pokémon</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.luckyPokemons}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, luckyPokemons: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Lucky Legendaries</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.luckyLegendaries}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, luckyLegendaries: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Shiny Lucky Legendaries</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.shinyLuckyLegendaries}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, shinyLuckyLegendaries: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Legendary Poses</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.legendaryPoses}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, legendaryPoses: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Items & Storage Inventory */}
+                <div className="space-y-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-4">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1 flex items-center gap-1.5">
+                    <Coins className="h-3.5 w-3.5" />
+                    Items & Storage Inventory
+                  </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">PokeCoins</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.pokeCoins}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokeCoins: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Rare Candy</label>
                       <input
                         type="number"
                         value={adminEditForm.rareCandy}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, rareCandy: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2144,7 +2365,7 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.fastTm}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, fastTm: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2153,7 +2374,7 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.chargedTm}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, chargedTm: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2162,27 +2383,28 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.eliteFastTm}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, eliteFastTm: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Elite Charged TM</label>
                       <input
                         type="number"
                         value={adminEditForm.eliteChargedTm}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, eliteChargedTm: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1">
                       <label className="text-zinc-500 font-medium">Incubators</label>
                       <input
                         type="number"
                         value={adminEditForm.incubators}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, incubators: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2191,7 +2413,7 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.luckyEggs}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, luckyEggs: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2200,7 +2422,7 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.lureModules}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, lureModules: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2209,7 +2431,152 @@ Please let me know how to proceed with the payment!`;
                         type="number"
                         value={adminEditForm.premiumRaidPass}
                         onChange={(e) => setAdminEditForm({ ...adminEditForm, premiumRaidPass: parseInt(e.target.value) || 0 })}
-                        className="w-full h-8 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:outline-none"
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Master Balls</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.masterBalls}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, masterBalls: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Raid Passes</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.raidPasses}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, raidPasses: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Super Rocket Radar</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.superRocketRadar}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, superRocketRadar: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Pokémon Storage</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.pokemonStorage}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokemonStorage: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Item Bag Storage</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.itemBagStorage}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, itemBagStorage: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Telemetry & Administration */}
+                <div className="space-y-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-4">
+                  <h4 className="font-black text-[#6133e1] uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1 flex items-center gap-1.5">
+                    <ShieldAlert className="h-3.5 w-3.5" />
+                    Telemetry & Administration
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Total XP</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.xp}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, xp: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Pokedex Completed %</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.pokedexCompleted}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokedexCompleted: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Pokedex Reg Number</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.pokedexRegisteredNumber}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, pokedexRegisteredNumber: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Start Date</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.startDate}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, startDate: e.target.value })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Account Type</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.accountType}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, accountType: e.target.value })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Account Status</label>
+                      <input
+                        type="text"
+                        value={adminEditForm.accountStatus}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, accountStatus: e.target.value })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Weekly Distance (km)</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.weeklyDistance}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, weeklyDistance: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Platinum Medals</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.platinumMedals}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, platinumMedals: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-zinc-500 font-medium">Bans/Warnings Count</label>
+                      <input
+                        type="number"
+                        value={adminEditForm.bansCount}
+                        onChange={(e) => setAdminEditForm({ ...adminEditForm, bansCount: parseInt(e.target.value) || 0 })}
+                        className="w-full h-8 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white focus:ring-1 focus:ring-[#6133e1] focus:outline-none"
                       />
                     </div>
                   </div>

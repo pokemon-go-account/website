@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getProducts, getCategories, createProduct, updateProduct, deleteProduct, uploadProductImageAction } from "@/features/admin/actions";
-import { Package2, Plus, Pencil, Trash2, X, AlertTriangle, Loader2 } from "lucide-react";
+import { getProducts, getCategories, createProduct, updateProduct, deleteProduct, uploadProductImageAction, saveProductOrder } from "@/features/admin/actions";
+import { Package2, Plus, Pencil, Trash2, X, AlertTriangle, Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Zod Validation Schema
@@ -269,6 +269,37 @@ export default function ManageProductsPage() {
     }
   };
 
+  const handleMove = async (index: number, direction: "up" | "down") => {
+    const newProducts = [...filteredProducts];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newProducts.length) return;
+
+    // Swap elements in place
+    const temp = newProducts[index];
+    newProducts[index] = newProducts[targetIndex];
+    newProducts[targetIndex] = temp;
+
+    // Instantly update products local state for zero-latency UI update
+    const updatedFullProducts = [...products];
+    const itemA = filteredProducts[index];
+    const itemB = filteredProducts[targetIndex];
+    const idxA = products.findIndex(p => p._id === itemA._id);
+    const idxB = products.findIndex(p => p._id === itemB._id);
+    if (idxA !== -1 && idxB !== -1) {
+      const tempItem = updatedFullProducts[idxA];
+      updatedFullProducts[idxA] = updatedFullProducts[idxB];
+      updatedFullProducts[idxB] = tempItem;
+      setProducts(updatedFullProducts);
+    }
+
+    const orderedIds = newProducts.map((p) => p._id);
+    const res = await saveProductOrder(orderedIds);
+    if (!res.success) {
+      setError(res.error || "Failed to save product order.");
+      loadData();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header section */}
@@ -401,7 +432,7 @@ export default function ManageProductsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-          {filteredProducts.map((product) => (
+          {filteredProducts.map((product, idx) => (
             <div
               key={product._id}
               className="group rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 flex flex-col justify-between hover:border-zinc-300 dark:hover:border-white/[0.1] hover:shadow-xs transition-all duration-200"
@@ -468,6 +499,26 @@ export default function ManageProductsPage() {
                 </div>
 
                 <div className="flex gap-1.5">
+                  {activeCategoryTab !== "ALL" && (
+                    <>
+                      <button
+                        onClick={() => handleMove(idx, "up")}
+                        disabled={idx === 0}
+                        className="h-7 w-7 rounded-lg border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/5 text-zinc-550 hover:text-zinc-950 dark:text-zinc-450 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleMove(idx, "down")}
+                        disabled={idx === filteredProducts.length - 1}
+                        className="h-7 w-7 rounded-lg border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/5 text-zinc-550 hover:text-zinc-950 dark:text-zinc-450 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={() => openEditModal(product)}
                     className="h-7 w-7 rounded-lg border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/5 text-zinc-550 hover:text-zinc-950 dark:text-zinc-450 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
@@ -487,7 +538,9 @@ export default function ManageProductsPage() {
             </div>
           ))}
         </div>
-      )}iv      {/* Add/Edit Product Glass Modal */}
+      )}
+      
+      {/* Add/Edit Product Glass Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs">
           <div className="relative w-full max-w-md rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-4">

@@ -29,7 +29,7 @@ export async function getStoreProducts() {
     await connectDB();
     const products = await Product.find()
       .populate("categoryId", "name slug")
-      .sort({ createdAt: -1 })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .lean();
     return { success: true, products: JSON.parse(JSON.stringify(products)) };
   } catch (error: any) {

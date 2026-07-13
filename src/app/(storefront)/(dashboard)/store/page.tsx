@@ -1,5 +1,6 @@
 import { getStoreCategories, getStoreProducts } from "@/features/store/actions";
 import { StorefrontClient } from "@/features/store/components/storefront-client";
+import { Suspense } from "react";
 
 export const revalidate = 0; // Dynamic route
 
@@ -18,9 +19,11 @@ export default async function StorefrontPage() {
   }
 
   return (
-    <StorefrontClient
-      categories={categoriesRes.categories || []}
-      products={productsRes.products || []}
-    />
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-black dark:bg-[#09090B] text-zinc-500 text-xs">Loading storefront catalog...</div>}>
+      <StorefrontClient
+        categories={categoriesRes.categories || []}
+        products={productsRes.products || []}
+      />
+    </Suspense>
   );
 }

@@ -11,7 +11,7 @@ async function getFeaturedProducts() {
     
     const products = await Product.find()
       .populate("categoryId", "name slug")
-      .sort({ createdAt: -1 })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .limit(3)
       .lean();
     return JSON.parse(JSON.stringify(products));

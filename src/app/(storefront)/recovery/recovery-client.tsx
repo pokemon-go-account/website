@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ShieldCheck, Activity, RefreshCw, KeyRound, ArrowRight, Star, HeartHandshake, Upload, X, ChevronDown, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PriceDisplay } from "@/components/price-display";
 
 // Custom Inline Platform SVG Icons for Visual Fidelity
 const TelegramIcon = () => (
@@ -210,7 +211,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
               <div>
                 <span className="text-[10px] text-zinc-450 dark:text-zinc-500 uppercase tracking-wider font-semibold">Service Fee</span>
                 <div className="text-2xl font-semibold text-zinc-900 dark:text-white mt-0.5">
-                  ${product.price.toLocaleString()}
+                  <PriceDisplay amountInUSD={product.price} />
                 </div>
               </div>
               <div className="flex flex-col items-end text-right">

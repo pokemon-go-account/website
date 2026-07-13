@@ -12,6 +12,7 @@ export interface IProduct extends Document {
   categoryId: mongoose.Types.ObjectId;
   imageUrl: string;
   imageUrls?: string[];
+  sortOrder?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +30,7 @@ const ProductSchema: Schema<IProduct> = new Schema(
     categoryId: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     imageUrl: { type: String, required: true },
     imageUrls: { type: [String], default: [] },
+    sortOrder: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

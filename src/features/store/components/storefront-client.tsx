@@ -10,6 +10,7 @@ import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
 interface Category {
   _id: string;
@@ -110,9 +111,45 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const [customRequestError, setCustomRequestError] = useState<string | null>(null);
   const [customRequestSuccess, setCustomRequestSuccess] = useState(false);
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const categorySlug = searchParams.get("category");
+    const productId = searchParams.get("productId");
+
+    if (categorySlug) {
+      const foundCategory = categories.find((cat) => cat.slug === categorySlug);
+      if (foundCategory) {
+        setSelectedCategoryId(foundCategory._id);
+        
+        if (productId) {
+          const foundProduct = products.find((p) => p._id === productId);
+          if (foundProduct) {
+            setSelectedProduct(foundProduct);
+          }
+        }
+      }
+    }
+  }, [searchParams, categories, products]);
+
+  const handleAddItem = (product: Product) => {
+    const isAccountOrPokemon = product.categoryId?.slug === "accounts" || product.categoryId?.slug === "pokemons";
+    const existing = items.find((item) => item.id === product._id);
+    if (isAccountOrPokemon && existing) {
+      alert("⚠️ You can only purchase 1 account or Pokémon at a time.");
+      return;
+    }
+    addItem({
+      id: product._id,
+      name: product.name,
+      price: product.discountedPrice || product.price,
+      imageUrl: product.imageUrl,
+    });
+  };
 
   const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
     let orderIdStr = "";
@@ -335,7 +372,7 @@ Please let me know how to proceed with the payment!`;
                 </button>
               )}
 
-              {(selectedCategoryObj?.slug === "xp" || selectedCategoryObj?.slug === "pokecoins") && (
+              {(selectedCategoryObj?.slug === "xp" || selectedCategoryObj?.slug === "") && (
                 <button
                   onClick={() => {
                     if (!session?.user) {
@@ -450,24 +487,27 @@ Please let me know how to proceed with the payment!`;
 
                       {(() => {
                         const cartItem = items.find((item) => item.id === product._id);
+                        const isAccountOrPokemon = product.categoryId?.slug === "accounts" || product.categoryId?.slug === "pokemons";
                         if (cartItem) {
                           return (
                             <div className="flex items-center gap-1.5 border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] rounded-md p-0.5">
                               <button
                                 onClick={() => updateQuantity(product._id, cartItem.quantity - 1)}
-                                className="h-6 w-6 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-650 dark:text-zinc-355 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                                className="h-6 w-6 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-655 dark:text-zinc-355 hover:text-zinc-955 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
                               >
                                 <Minus className="h-2.5 w-2.5" />
                               </button>
                               <span className="text-xs font-semibold text-zinc-900 dark:text-white min-w-4 text-center select-none px-0.5">
                                 {cartItem.quantity}
                               </span>
-                              <button
-                                onClick={() => updateQuantity(product._id, cartItem.quantity + 1)}
-                                className="h-6 w-6 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-650 dark:text-zinc-355 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-                              >
-                                <Plus className="h-2.5 w-2.5" />
-                              </button>
+                              {!isAccountOrPokemon && (
+                                <button
+                                  onClick={() => updateQuantity(product._id, cartItem.quantity + 1)}
+                                  className="h-6 w-6 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-655 dark:text-zinc-355 hover:text-zinc-955 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                                >
+                                  <Plus className="h-2.5 w-2.5" />
+                                </button>
+                              )}
                             </div>
                           );
                         }
@@ -545,50 +585,56 @@ Please let me know how to proceed with the payment!`;
                   </div>
                 ) : (
                   <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1">
-                    {items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 p-3 rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition-colors"
-                      >
-                        <div className="h-12 w-12 rounded-md bg-zinc-200 dark:bg-zinc-950/60 flex items-center justify-center border border-zinc-200 dark:border-white/[0.06] overflow-hidden shrink-0">
-                          {item.imageUrl ? (
-                            <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain" />
-                          ) : (
-                            <span className="text-xl">🎁</span>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-semibold text-zinc-900 dark:text-white truncate leading-snug">{item.name}</h4>
-                          <p className="text-[10px] text-zinc-500 font-semibold mt-0.5"><PriceDisplay amountInUSD={item.price} /> each</p>
-                        </div>
-
-                        {/* Adjuster */}
-                        <div className="flex items-center gap-2 border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] rounded-md p-1">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="h-5 w-5 rounded-md hover:bg-zinc-200 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="text-xs font-semibold text-zinc-900 dark:text-white min-w-4 text-center select-none">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="h-5 w-5 rounded-md hover:bg-zinc-200 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
-
-                        {/* Remove */}
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="h-8 w-8 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-500/5 flex items-center justify-center cursor-pointer transition-colors"
+                    {items.map((item) => {
+                      const itemProduct = products.find((p) => p._id === item.id);
+                      const isLimitedItem = itemProduct?.categoryId?.slug === "accounts" || itemProduct?.categoryId?.slug === "pokemons";
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 p-3 rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition-colors"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="h-12 w-12 rounded-md bg-zinc-200 dark:bg-zinc-955/60 flex items-center justify-center border border-zinc-200 dark:border-white/[0.06] overflow-hidden shrink-0">
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain" />
+                            ) : (
+                              <span className="text-xl">🎁</span>
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-semibold text-zinc-900 dark:text-white truncate leading-snug">{item.name}</h4>
+                            <p className="text-[10px] text-zinc-500 font-semibold mt-0.5"><PriceDisplay amountInUSD={item.price} /> each</p>
+                          </div>
+
+                          {/* Adjuster */}
+                          <div className="flex items-center gap-2 border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] rounded-md p-1">
+                            <button
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="h-5 w-5 rounded-md hover:bg-zinc-200 dark:hover:bg-white/5 text-zinc-550 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <span className="text-xs font-semibold text-zinc-900 dark:text-white min-w-4 text-center select-none">{item.quantity}</span>
+                            {!isLimitedItem && (
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="h-5 w-5 rounded-md hover:bg-zinc-200 dark:hover:bg-white/5 text-zinc-550 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Remove */}
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            className="h-8 w-8 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-500/5 flex items-center justify-center cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -861,9 +907,10 @@ Please let me know how to proceed with the payment!`;
                 </div>
 
                 {/* Add to Cart Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full">
                   {(() => {
                     const cartItem = items.find((item) => item.id === selectedProduct._id);
+                    const isAccountOrPokemon = selectedProduct.categoryId?.slug === "accounts" || selectedProduct.categoryId?.slug === "pokemons";
                     if (cartItem) {
                       return (
                         <div className="flex items-center justify-between border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] rounded-lg p-1 w-full">
@@ -878,26 +925,21 @@ Please let me know how to proceed with the payment!`;
                             <span className="text-sm font-semibold text-zinc-900 dark:text-white min-w-6 text-center select-none">
                               {cartItem.quantity}
                             </span>
-                            <button
-                              onClick={() => updateQuantity(selectedProduct._id, cartItem.quantity + 1)}
-                              className="h-8 w-8 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-650 dark:text-zinc-350 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </button>
+                            {!isAccountOrPokemon && (
+                              <button
+                                onClick={() => updateQuantity(selectedProduct._id, cartItem.quantity + 1)}
+                                className="h-8 w-8 rounded-md bg-zinc-200 dark:bg-white/5 hover:bg-zinc-300 dark:hover:bg-white/10 text-zinc-655 dark:text-zinc-355 hover:text-zinc-955 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
                     }
                     return (
                       <button
-                        onClick={() =>
-                          addItem({
-                            id: selectedProduct._id,
-                            name: selectedProduct.name,
-                            price: selectedProduct.discountedPrice || selectedProduct.price,
-                            imageUrl: selectedProduct.imageUrl,
-                          })
-                        }
+                        onClick={() => handleAddItem(selectedProduct)}
                         className="w-full h-10 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                       >
                         <ShoppingBag className="h-4 w-4" /> Add to Cart
