@@ -187,7 +187,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-650 dark:text-zinc-350 hover:text-zinc-955 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-650 dark:text-zinc-350 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
             >
               {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             </button>
@@ -342,13 +342,13 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:text-zinc-955 dark:hover:text-white cursor-pointer"
+              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
             >
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button
               onClick={toggleMenu}
-              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:text-zinc-955 dark:hover:text-white cursor-pointer"
+              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
             >
               {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
@@ -372,7 +372,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                   key={label}
                   href={href}
                   onClick={toggleMenu}
-                  className="block rounded-lg px-3 py-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/5 hover:text-zinc-955 dark:hover:text-white transition-colors"
+                  className="block rounded-lg px-3 py-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/5 hover:text-zinc-950 dark:hover:text-white transition-colors"
                 >
                   {label}
                 </Link>

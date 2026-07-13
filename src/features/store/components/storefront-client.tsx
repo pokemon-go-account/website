@@ -8,7 +8,7 @@ import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
-import { createStorefrontOrderAction, createPokemonRequestAction } from "@/features/store/actions";
+import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
 import { useSession } from "next-auth/react";
 
 interface Category {
@@ -101,6 +101,13 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const [requesting, setRequesting] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestSuccess, setRequestSuccess] = useState(false);
+
+  // Custom request states (Account, Stardust, XP)
+  const [isCustomRequestModalOpen, setIsCustomRequestModalOpen] = useState(false);
+  const [customRequestType, setCustomRequestType] = useState<"ACCOUNT" | "STARDUST" | "XP">("ACCOUNT");
+  const [customRequesting, setCustomRequesting] = useState(false);
+  const [customRequestError, setCustomRequestError] = useState<string | null>(null);
+  const [customRequestSuccess, setCustomRequestSuccess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -292,6 +299,54 @@ Please let me know how to proceed with the payment!`;
                   className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
                 >
                   ★ Request a Pokémon
+                </button>
+              )}
+
+              {selectedCategoryObj?.slug === "accounts" && (
+                <button
+                  onClick={() => {
+                    if (!session?.user) {
+                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                    } else {
+                      setCustomRequestType("ACCOUNT");
+                      setIsCustomRequestModalOpen(true);
+                    }
+                  }}
+                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
+                >
+                  ★ Request Custom Account
+                </button>
+              )}
+
+              {selectedCategoryObj?.slug === "stardust" && (
+                <button
+                  onClick={() => {
+                    if (!session?.user) {
+                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                    } else {
+                      setCustomRequestType("STARDUST");
+                      setIsCustomRequestModalOpen(true);
+                    }
+                  }}
+                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
+                >
+                  ★ Request Custom Stardust
+                </button>
+              )}
+
+              {(selectedCategoryObj?.slug === "xp" || selectedCategoryObj?.slug === "pokecoins") && (
+                <button
+                  onClick={() => {
+                    if (!session?.user) {
+                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                    } else {
+                      setCustomRequestType("XP");
+                      setIsCustomRequestModalOpen(true);
+                    }
+                  }}
+                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
+                >
+                  ★ Request Custom XP
                 </button>
               )}
             </div>
@@ -855,7 +910,7 @@ Please let me know how to proceed with the payment!`;
                 className="space-y-3.5 text-xs"
               >
                 {requestError && (
-                  <div className="flex items-center gap-2 rounded-md bg-red-500/5 border border-red-500/10 p-3 text-xs text-red-550 dark:text-red-400">
+                  <div className="flex items-center gap-2 rounded-md bg-red-500/5 border border-red-500/10 p-3 text-xs text-red-555 dark:text-red-400">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     {requestError}
                   </div>
@@ -868,7 +923,7 @@ Please let me know how to proceed with the payment!`;
                     name="pokemonName"
                     required
                     placeholder="e.g. Shiny Rayquaza, Shadow Mewtwo, etc."
-                    className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+                    className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-655 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
                   />
                 </div>
 
@@ -919,6 +974,173 @@ Please let me know how to proceed with the payment!`;
                   className="w-full h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-semibold text-xs transition-all active:scale-[0.98] mt-4 cursor-pointer"
                 >
                   {requesting ? "Submitting request..." : "Submit Sourcing Request"}
+                </button>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* Request Custom Service Form Modal (Account, Stardust, XP) */}
+      {isCustomRequestModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-4 text-zinc-900 dark:text-white">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setIsCustomRequestModalOpen(false);
+                setCustomRequestSuccess(false);
+                setCustomRequestError(null);
+              }}
+              className="absolute top-4 right-4 h-7 w-7 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Header */}
+            <div className="space-y-1">
+              <h3 className="font-semibold text-sm tracking-tight">
+                {customRequestType === "ACCOUNT" ? "Request a Custom Account" :
+                 customRequestType === "STARDUST" ? "Request Custom Stardust" :
+                 "Request Custom XP / Leveling"}
+              </h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+                {customRequestType === "ACCOUNT" ? "Can't find the account you need? Tell us your target level, shiny count, and rare assets, and we will source it for you." :
+                 customRequestType === "STARDUST" ? "Need a specific amount of Stardust? Let us know your targets and we will calculate a secure sourcing timeline." :
+                 "Looking for custom leveling or XP boosts? Provide your details and we will coordinate the training process."}
+              </p>
+            </div>
+
+            {customRequestSuccess ? (
+              <div className="py-6 text-center space-y-4">
+                <div className="h-10 w-10 rounded-md bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mx-auto text-emerald-500 font-bold">
+                  ✓
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-xs font-semibold">Request Submitted!</h4>
+                  <p className="text-[10.5px] text-zinc-500 dark:text-zinc-450 max-w-xs mx-auto leading-relaxed">
+                    We have successfully logged your custom request. Our trading team will contact you shortly via the social handle provided.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsCustomRequestModalOpen(false);
+                    setCustomRequestSuccess(false);
+                  }}
+                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold cursor-pointer"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setCustomRequesting(true);
+                  setCustomRequestError(null);
+                  
+                  const target = e.target as HTMLFormElement;
+                  const title = (target.elements.namedItem("title") as HTMLInputElement).value;
+                  const socialPlatform = (target.elements.namedItem("socialPlatform") as HTMLSelectElement).value;
+                  const socialId = (target.elements.namedItem("socialId") as HTMLInputElement).value;
+                  const description = (target.elements.namedItem("description") as HTMLTextAreaElement).value;
+
+                  const res = await createCustomRequestAction({
+                    requestType: customRequestType,
+                    title,
+                    socialPlatform,
+                    socialId,
+                    description,
+                  });
+
+                  if (res.success) {
+                    setCustomRequestSuccess(true);
+                  } else {
+                    setCustomRequestError(res.error || "Failed to submit request.");
+                  }
+                  setCustomRequesting(false);
+                }}
+                className="space-y-3.5 text-xs"
+              >
+                {customRequestError && (
+                  <div className="flex items-center gap-2 rounded-md bg-red-500/5 border border-red-500/10 p-3 text-xs text-red-555 dark:text-red-400">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {customRequestError}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">
+                    {customRequestType === "ACCOUNT" ? "Target Account Level / Rare Pokemons *" :
+                     customRequestType === "STARDUST" ? "Requested Stardust Amount (e.g. 5 Million) *" :
+                     "Target XP Level / Amount *"}
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    required
+                    placeholder={
+                      customRequestType === "ACCOUNT" ? "e.g. Level 50, Shiny Mew, 400+ Shinies" :
+                      customRequestType === "STARDUST" ? "e.g. 10 Million Stardust Boost" :
+                      "e.g. Level 40 to 50, 20M XP Boost"
+                    }
+                    className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Social Platform *</label>
+                    <select
+                      name="socialPlatform"
+                      required
+                      defaultValue="Telegram"
+                      className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors cursor-pointer"
+                    >
+                      <option value="Telegram" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Telegram</option>
+                      <option value="Discord" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Discord</option>
+                      <option value="Facebook" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Facebook</option>
+                      <option value="Instagram" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Instagram</option>
+                      <option value="Reddit" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Reddit</option>
+                      <option value="WhatsApp" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">WhatsApp</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Social Username/ID *</label>
+                    <input
+                      type="text"
+                      name="socialId"
+                      required
+                      placeholder="e.g. @username or tag"
+                      className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-655 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Detailed Requirements *</label>
+                  <textarea
+                    name="description"
+                    required
+                    rows={4}
+                    placeholder={
+                      customRequestType === "ACCOUNT" ? "Provide specifications (e.g. specific shiny legendaries, level, team color preference, region/location background, lucky trades, etc.)" :
+                      customRequestType === "STARDUST" ? "Provide details (e.g. current stardust amount, target timeline, preference for trade-only stardust, etc.)" :
+                      "Provide details (e.g. current level, target level, specific training methods preferred, timeline requirements, etc.)"
+                    }
+                    className="w-full min-h-[80px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={customRequesting}
+                  className="w-full h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-semibold text-xs transition-all active:scale-[0.98] mt-4 cursor-pointer"
+                >
+                  {customRequesting ? "Submitting request..." : "Submit Sourcing Request"}
                 </button>
               </form>
             )}

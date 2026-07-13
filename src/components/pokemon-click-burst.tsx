@@ -26,44 +26,48 @@ export function PokemonClickBurst() {
   const nextId = useRef(0);
 
   useEffect(() => {
-    const handlePointerDown = (e: PointerEvent) => {
-      // Don't burst if clicking on interactive elements like buttons/links unless we want to,
-      // but usually a global burst is fine on any tap.
-      const newParticles: BurstParticle[] = [];
-      const burstCount = 5 + Math.floor(Math.random() * 4); // 5 to 8 particles
-
-      for (let i = 0; i < burstCount; i++) {
-        const randomImage = POKEMON_IMAGES[Math.floor(Math.random() * POKEMON_IMAGES.length)];
-        
-        // Random angle and distance (increased for wider burst)
-        const angle = Math.random() * Math.PI * 2;
-        const velocity = 300 + Math.random() * 500; // pixels to travel (go far away)
-        const dx = Math.cos(angle) * velocity;
-        const dy = Math.sin(angle) * velocity;
-        const rot = (Math.random() - 0.5) * 720; // random rotation (more spins)
-        
-        newParticles.push({
-          id: nextId.current++,
-          x: e.clientX,
-          y: e.clientY,
-          imagePath: randomImage,
-          dx,
-          dy,
-          rot,
-        });
-      }
-
-      setParticles((prev) => [...prev, ...newParticles]);
-
-      // Cleanup particles after animation (3.5s)
-      const idsToRemove = newParticles.map(p => p.id);
+    const handleClick = (e: MouseEvent) => {
+      // Defer state update to next tick so default click actions (like links/forms) are not canceled by iOS WebKit
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      
       setTimeout(() => {
-        setParticles((prev) => prev.filter((p) => !idsToRemove.includes(p.id)));
-      }, 3500);
+        const newParticles: BurstParticle[] = [];
+        // const burstCount = 5 + Math.floor(Math.random() * 4); 
+        const burstCount = 1;
+        for (let i = 0; i < burstCount; i++) {
+          const randomImage = POKEMON_IMAGES[Math.floor(Math.random() * POKEMON_IMAGES.length)];
+          
+          // Random angle and distance (increased for wider burst)
+          const angle = Math.random() * Math.PI * 2;
+          const velocity = 300 + Math.random() * 500; // pixels to travel (go far away)
+          const dx = Math.cos(angle) * velocity;
+          const dy = Math.sin(angle) * velocity;
+          const rot = (Math.random() - 0.5) * 720; // random rotation (more spins)
+          
+          newParticles.push({
+            id: nextId.current++,
+            x: clientX,
+            y: clientY,
+            imagePath: randomImage,
+            dx,
+            dy,
+            rot,
+          });
+        }
+
+        setParticles((prev) => [...prev, ...newParticles]);
+
+        // Cleanup particles after animation (3.5s)
+        const idsToRemove = newParticles.map(p => p.id);
+        setTimeout(() => {
+          setParticles((prev) => prev.filter((p) => !idsToRemove.includes(p.id)));
+        }, 3500);
+      }, 0);
     };
 
-    window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
   }, []);
 
   if (particles.length === 0) return null;
@@ -71,6 +75,12 @@ export function PokemonClickBurst() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
+        @media (pointer: coarse) {
+          body {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+          }
+        }
         @keyframes pokemon-burst-anim {
           0% {
             transform: translate(-50%, -50%) translate3d(0, 0, 0) scale(0) rotate(0deg);

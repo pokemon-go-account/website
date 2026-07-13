@@ -42,10 +42,14 @@ function LoaderContent() {
             const currentUrl = new URL(window.location.href);
             const targetUrl = new URL(href, window.location.href);
             if (currentUrl.pathname !== targetUrl.pathname || currentUrl.search !== targetUrl.search) {
-              setLoading(true);
+              setTimeout(() => {
+                setLoading(true);
+              }, 0);
             }
           } catch (_) {
-            setLoading(true);
+            setTimeout(() => {
+              setLoading(true);
+            }, 0);
           }
         }
       }

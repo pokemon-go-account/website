@@ -4,7 +4,6 @@ import { useActionState, useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { registerUser, loginWithFirebaseIdToken } from "@/features/auth/actions";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { auth, googleProvider, appleProvider, isConfigured } from "@/lib/firebase";
@@ -52,15 +51,19 @@ export function RegisterForm() {
         if (recaptchaRef.current.innerHTML === "") {
           try {
             grecaptcha.enterprise.ready(() => {
-              if (active && recaptchaRef.current && recaptchaRef.current.innerHTML === "") {
-                const isDark = document.documentElement.classList.contains("dark");
-                const widgetId = grecaptcha.enterprise.render(recaptchaRef.current, {
-                  sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LfTJD4tAAAAAHsKOZikKbkNQRahOzidVC8tHKL8",
-                  action: "REGISTER",
-                  theme: isDark ? "dark" : "light",
-                  size: "normal",
-                });
-                widgetIdRef.current = widgetId;
+              try {
+                if (active && recaptchaRef.current && recaptchaRef.current.innerHTML === "") {
+                  const isDark = document.documentElement.classList.contains("dark");
+                  const widgetId = grecaptcha.enterprise.render(recaptchaRef.current, {
+                    sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LfTJD4tAAAAAHsKOZikKbkNQRahOzidVC8tHKL8",
+                    action: "REGISTER",
+                    theme: isDark ? "dark" : "light",
+                    size: "normal",
+                  });
+                  widgetIdRef.current = widgetId;
+                }
+              } catch (innerErr) {
+                console.error("Error rendering reCAPTCHA inside ready callback:", innerErr);
               }
             });
           } catch (e) {
@@ -154,9 +157,8 @@ export function RegisterForm() {
 
       {/* Social Login Section */}
       <div className="space-y-3">
-        <Button
+        <button
           type="button"
-          variant="outline"
           disabled={!!isSocialLoading}
           onClick={() => handleSocialLogin("google")}
           className="w-full h-8 px-4 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] text-xs font-semibold text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
@@ -172,7 +174,7 @@ export function RegisterForm() {
             </svg>
           )}
           Sign Up with Google
-        </Button>
+        </button>
       </div>
 
       {/* Decorative Divider */}
@@ -227,7 +229,7 @@ export function RegisterForm() {
           ></div>
         )}
 
-        <Button 
+        <button 
           type="submit" 
           disabled={isCredPending || !!isSocialLoading}
           className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
@@ -243,7 +245,7 @@ export function RegisterForm() {
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </>
           )}
-        </Button>
+        </button>
       </form>
     </div>
   );

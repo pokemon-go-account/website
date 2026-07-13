@@ -11,6 +11,7 @@ import Registration from "@/models/Registration";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
 import PokemonRequest from "@/models/PokemonRequest";
+import CustomRequest from "@/models/CustomRequest";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -818,8 +819,26 @@ export async function getPokemonRequests() {
   try {
     await checkAdminSession();
     await connectDB();
-    const requests = await PokemonRequest.find().sort({ createdAt: -1 }).lean();
-    return { success: true, requests: JSON.parse(JSON.stringify(requests)) };
+    const oldRequests = await PokemonRequest.find().sort({ createdAt: -1 }).lean();
+    const newRequests = await CustomRequest.find({ requestType: "POKEMON" }).sort({ createdAt: -1 }).lean();
+
+    const normalisedOld = oldRequests.map(r => ({
+      ...r,
+      requestType: "POKEMON",
+      title: (r as any).pokemonName,
+      pokemonName: (r as any).pokemonName
+    }));
+
+    const normalisedNew = newRequests.map(r => ({
+      ...r,
+      pokemonName: (r as any).title
+    }));
+
+    const combined = [...normalisedOld, ...normalisedNew].sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return { success: true, requests: JSON.parse(JSON.stringify(combined)) };
   } catch (error: any) {
     return { success: false, error: error.message, requests: [] };
   }
@@ -829,8 +848,12 @@ export async function updatePokemonRequestStatus(requestId: string, status: "PEN
   try {
     await checkAdminSession();
     await connectDB();
-    const request = await PokemonRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+    let request = await PokemonRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+    if (!request) {
+      request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+    }
     revalidatePath('/admin/pokemon-requests');
+    revalidatePath('/admin/custom-requests');
     return { success: true, request: JSON.parse(JSON.stringify(request)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -841,10 +864,53 @@ export async function deletePokemonRequest(requestId: string) {
   try {
     await checkSuperAdminSession();
     await connectDB();
-    await PokemonRequest.findByIdAndDelete(requestId);
+    const deletedOld = await PokemonRequest.findByIdAndDelete(requestId);
+    if (!deletedOld) {
+      await CustomRequest.findByIdAndDelete(requestId);
+    }
     revalidatePath('/admin/pokemon-requests');
+    revalidatePath('/admin/custom-requests');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Custom Service Requests (Accounts, Stardust, XP) Actions
+ */
+export async function getCustomRequests() {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const requests = await CustomRequest.find().sort({ createdAt: -1 }).lean();
+    return { success: true, requests: JSON.parse(JSON.stringify(requests)) };
+  } catch (error: any) {
+    return { success: false, error: error.message, requests: [] };
+  }
+}
+
+export async function updateCustomRequestStatus(requestId: string, status: "PENDING" | "COMPLETED" | "REJECTED") {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+    revalidatePath('/admin/custom-requests');
+    return { success: true, request: JSON.parse(JSON.stringify(request)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteCustomRequest(requestId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    await CustomRequest.findByIdAndDelete(requestId);
+    revalidatePath('/admin/custom-requests');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+

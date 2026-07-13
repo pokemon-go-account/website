@@ -169,18 +169,18 @@ export function NewListingForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="title" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Listing Title</Label>
-            <Input id="title" {...register("title")} placeholder="Level 50 Account - Rare Shinies" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="title" {...register("title")} placeholder="Level 50 Account - Rare Shinies" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.title && <p className="text-[10px] text-red-500 font-semibold">{errors.title.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="telegramUsername" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Your Telegram Handle (Private)</Label>
-            <Input id="telegramUsername" {...register("telegramUsername")} placeholder="@trainer_handle" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="telegramUsername" {...register("telegramUsername")} placeholder="@trainer_handle" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.telegramUsername && <p className="text-[10px] text-red-500 font-semibold">{errors.telegramUsername.message}</p>}
           </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="description" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Comprehensive Description</Label>
-          <Textarea id="description" {...register("description")} placeholder="Outline specific metadata records, exceptional items..." className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white rounded-md focus-visible:ring-zinc-900/10 min-h-[100px] leading-relaxed resize-none" />
+          <Textarea id="description" {...register("description")} placeholder="Outline specific metadata records, exceptional items..." className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white min-h-[100px] leading-relaxed resize-none transition-all" />
           {errors.description && <p className="text-[10px] text-red-500 font-semibold">{errors.description.message}</p>}
         </div>
 
@@ -188,7 +188,7 @@ export function NewListingForm() {
           <div className="space-y-1.5">
             <Label htmlFor="accountType" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Link Type</Label>
             <Select value={accountType} onValueChange={(val: any) => { setAccountType(val); setValue("accountType", val); }}>
-              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all">
                 <SelectValue placeholder="Select Account Type" />
               </SelectTrigger>
               <SelectContent>
@@ -201,17 +201,17 @@ export function NewListingForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="accountStatus" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Standing Status</Label>
-            <Input id="accountStatus" {...register("accountStatus")} placeholder="Safe (No Strikes)" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="accountStatus" {...register("accountStatus")} placeholder="Safe (No Strikes)" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.accountStatus && <p className="text-[10px] text-red-500 font-semibold">{errors.accountStatus.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="startDate" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Start Date</Label>
-            <Input id="startDate" {...register("startDate")} placeholder="Early 2019" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="startDate" {...register("startDate")} placeholder="Early 2019" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.startDate && <p className="text-[10px] text-red-500 font-semibold">{errors.startDate.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="region" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Region</Label>
-            <Input id="region" {...register("region")} placeholder="Asia / Global" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="region" {...register("region")} placeholder="Asia / Global" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.region && <p className="text-[10px] text-red-500 font-semibold">{errors.region.message}</p>}
           </div>
         </div>
@@ -220,7 +220,7 @@ export function NewListingForm() {
           <div className="space-y-1.5">
             <Label htmlFor="team" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Faction Team</Label>
             <Select value={team} onValueChange={(val: any) => { setTeam(val); setValue("team", val); }}>
-              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all">
                 <SelectValue placeholder="Select Team" />
               </SelectTrigger>
               <SelectContent>
@@ -233,7 +233,7 @@ export function NewListingForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="topPokemon" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Top Pokémon Highlights (Comma-separated)</Label>
-            <Input id="topPokemon" {...register("topPokemon")} placeholder="Mewtwo (CP 4724), Rayquaza (CP 4335)" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="topPokemon" {...register("topPokemon")} placeholder="Mewtwo (CP 4724), Rayquaza (CP 4335)" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
           </div>
         </div>
 
@@ -331,7 +331,7 @@ export function NewListingForm() {
                 type="number"
                 placeholder="0"
                 {...register(field.id as any, { valueAsNumber: true })}
-                className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10"
+                className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all"
               />
               {(errors as any)[field.id] && (
                 <p className="text-[10px] text-red-500 font-semibold">
@@ -349,22 +349,22 @@ export function NewListingForm() {
         <div className="grid gap-4 sm:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="startingBid" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Starting Bid ($)</Label>
-            <Input id="startingBid" type="number" {...register("startingBid", { valueAsNumber: true })} placeholder="1999" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="startingBid" type="number" {...register("startingBid", { valueAsNumber: true })} placeholder="1999" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.startingBid && <p className="text-[10px] text-red-500 font-semibold">{errors.startingBid.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="reservePrice" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Reserve Price ($)</Label>
-            <Input id="reservePrice" type="number" {...register("reservePrice", { valueAsNumber: true })} placeholder="4999" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="reservePrice" type="number" {...register("reservePrice", { valueAsNumber: true })} placeholder="4999" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.reservePrice && <p className="text-[10px] text-red-500 font-semibold">{errors.reservePrice.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="minIncrement" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Min Increment ($)</Label>
-            <Input id="minIncrement" type="number" {...register("minIncrement", { valueAsNumber: true })} placeholder="100" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="minIncrement" type="number" {...register("minIncrement", { valueAsNumber: true })} placeholder="100" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.minIncrement && <p className="text-[10px] text-red-500 font-semibold">{errors.minIncrement.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="durationHours" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Duration (Hours)</Label>
-            <Input id="durationHours" type="number" {...register("durationHours", { valueAsNumber: true })} placeholder="24" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="durationHours" type="number" {...register("durationHours", { valueAsNumber: true })} placeholder="24" className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus:outline-none focus:border-zinc-950 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white transition-all" />
             {errors.durationHours && <p className="text-[10px] text-red-500 font-semibold">{errors.durationHours.message}</p>}
           </div>
         </div>

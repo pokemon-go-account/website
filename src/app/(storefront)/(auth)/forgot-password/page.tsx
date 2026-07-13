@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { KeyRound, Mail, Lock, CheckCircle2, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -146,14 +145,14 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            <Button
+            <button
               type="submit"
               disabled={isPending}
               className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center gap-1.5 animate-in fade-in"
             >
               {isPending ? "Generating Code..." : "Send Verification OTP"}
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
+            </button>
           </form>
         )}
 
@@ -178,21 +177,20 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => setStage("EMAIL")}
-                className="w-1/3 h-8 border border-zinc-205 dark:border-white/[0.08] text-xs font-semibold text-zinc-650 dark:text-zinc-400 rounded-md"
+                className="w-1/3 h-8 border border-zinc-200 dark:border-white/[0.08] text-xs font-semibold text-zinc-650 dark:text-zinc-400 rounded-md bg-transparent"
               >
                 Back
-              </Button>
-              <Button
+              </button>
+              <button
                 type="submit"
                 disabled={isPending || otp.length !== 6}
                 className="w-2/3 h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center gap-1.5"
               >
                 {isPending ? "Verifying..." : "Verify OTP Code"}
-              </Button>
+              </button>
             </div>
           </form>
         )}
@@ -232,13 +230,13 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            <Button
+            <button
               type="submit"
               disabled={isPending || newPassword.length < 6 || confirmPassword.length < 6}
               className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center gap-1.5"
             >
               {isPending ? "Updating Password..." : "Finalize Password Reset"}
-            </Button>
+            </button>
           </form>
         )}
 

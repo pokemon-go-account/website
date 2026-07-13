@@ -1753,7 +1753,7 @@ Please let me know how to proceed with the payment!`;
                     <button
                       type="button"
                       onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                      className="w-full flex items-center justify-between py-2 text-left text-[11px] font-bold text-zinc-800 dark:text-zinc-200 hover:text-zinc-955 dark:hover:text-white cursor-pointer"
+                      className="w-full flex items-center justify-between py-2 text-left text-[11px] font-bold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
                     >
                       <span>{item.q}</span>
                       <span>{openFaq === idx ? "−" : "+"}</span>

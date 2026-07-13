@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { verifyRegisterOtp, resendRegisterOtp } from "@/features/auth/actions";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
@@ -110,13 +109,13 @@ export function VerifyOtpForm() {
             </p>
           </div>
 
-          <Button
+          <button
             type="submit"
             disabled={isPending || resending}
             className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer mt-2"
           >
             {isPending ? "Verifying..." : "Verify Code →"}
-          </Button>
+          </button>
 
           <div className="flex justify-center pt-2">
             <button
