@@ -14,16 +14,20 @@ export function PriceDisplay({ amountInUSD, className }: PriceDisplayProps) {
   const { convert, isConverting } = useCurrencyStore();
   const [mounted, setMounted] = useState(false);
 
+  const safeAmount = typeof amountInUSD === "number" ? amountInUSD : 0;
+
   // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) {
-    return <span className={className}>${Math.round(amountInUSD).toLocaleString()}</span>;
+    const hasDecimals = safeAmount % 1 !== 0;
+    const formattedAmount = hasDecimals ? safeAmount.toFixed(2) : Math.round(safeAmount).toLocaleString();
+    return <span className={className}>${formattedAmount}</span>;
   }
 
-  const { formatted } = convert(amountInUSD);
+  const { formatted } = convert(safeAmount);
 
   if (isConverting) {
     return (

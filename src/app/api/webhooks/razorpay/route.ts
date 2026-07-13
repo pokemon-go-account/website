@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       const User = (await import("@/models/User")).default;
       await User.findByIdAndUpdate(registration.userId, {
         hasPaidVerificationDeposit: true,
-        $set: { walletBalance: -2.5 }
+        $set: { walletBalance: 2.5 }
       });
 
       console.log(`Successfully verified deposit registration for order: ${orderId}`);
