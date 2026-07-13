@@ -7,7 +7,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { auth } from "@/auth";
 import { ChatWidget } from "@/features/chat/components/chat-widget";
-import { PokemonCursorTrail } from "@/components/pokemon-cursor-trail";
+import { PokemonClickBurst } from "@/components/pokemon-click-burst";
 import { PageTransitionLoader } from "@/components/page-transition-loader";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -73,7 +73,7 @@ export default function RootLayout({
           <main className="flex-1 flex flex-col">
             {children}
           </main>
-          <PokemonCursorTrail />
+          <PokemonClickBurst />
           <PageTransitionLoader />
         </SessionProvider>
         <Analytics />

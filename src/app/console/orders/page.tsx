@@ -214,7 +214,7 @@ export default function OrdersConsolePage() {
       </div>
 
       {/* Table grid */}
-      <div className="border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-hidden bg-white dark:bg-[#111111] shadow-xs">
+      <div className="border border-zinc-200 dark:border-white/[0.06] rounded-lg overflow-x-auto bg-white dark:bg-[#111111] shadow-xs">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-xs text-left">
             <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">

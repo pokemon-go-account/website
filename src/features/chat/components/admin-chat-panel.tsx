@@ -24,6 +24,7 @@ import {
   X,
   CheckCheck,
   Clock,
+  ChevronLeft,
 } from "lucide-react";
 
 interface ChatMeta {
@@ -190,7 +191,7 @@ export function AdminChatPanel() {
     <div className="flex flex-1 min-h-0 rounded-lg border border-zinc-200 dark:border-white/[0.06] overflow-hidden bg-white dark:bg-[#111111] shadow-xs">
       
       {/* LEFT PANE: Inbox */}
-      <div className="w-72 shrink-0 flex flex-col border-r border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-black/10">
+      <div className={`w-full md:w-72 shrink-0 flex flex-col border-r border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-black/10 ${activeUserId ? "hidden md:flex" : "flex"}`}>
         
         {/* Header */}
         <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] space-y-3">
@@ -279,7 +280,7 @@ export function AdminChatPanel() {
       </div>
 
       {/* RIGHT PANE: Conversation Thread */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 ${activeUserId ? "flex" : "hidden md:flex"}`}>
         {!activeUserId ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-8">
             <div className="h-16 w-16 rounded-lg bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center">
@@ -296,6 +297,14 @@ export function AdminChatPanel() {
           <>
             {/* Thread Header */}
             <div className="px-5 py-3.5 border-b border-zinc-200 dark:border-white/[0.06] flex items-center gap-3 bg-white dark:bg-[#111111]">
+              <button
+                type="button"
+                onClick={() => { setActiveUserId(null); setActiveUser(null); }}
+                className="md:hidden mr-1 p-1 -ml-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+                aria-label="Back to inbox"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
               <div className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center text-zinc-900 dark:text-white text-xs font-semibold uppercase shrink-0">
                 {(activeUser?.username || activeUser?.email || "?")[0]}
               </div>

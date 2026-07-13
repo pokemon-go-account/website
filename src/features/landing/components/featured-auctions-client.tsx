@@ -12,13 +12,7 @@ const teamColors: Record<string, string> = {
   NONE: "text-gray-400",
 };
 
-const whyChooseUs = [
-  "Largest Pokémon GO Auction Community",
-  "Verified Assets",
-  "Fair Auctions",
-  "Instant Delivery (Items)",
-  "Dedicated Support",
-];
+
 
 function formatTimeLeft(endTime: Date): string {
   const diff = new Date(endTime).getTime() - Date.now();
@@ -197,28 +191,7 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
         )}
       </div>
 
-      {/* Sidebar */}
-      <motion.div
-        initial={{ opacity: 0, x: 10 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="hidden xl:flex flex-col gap-4 w-56 shrink-0"
-      >
-        <div className="bg-zinc-50 dark:bg-black/10 border border-zinc-200 dark:border-white/[0.06] rounded-md p-5">
-          <h3 className="text-zinc-900 dark:text-white font-semibold text-[10px] uppercase tracking-wider mb-4">
-            WHY CHOOSE US?
-          </h3>
-          <ul className="space-y-3">
-            {whyChooseUs.map((item) => (
-              <li key={item} className="flex items-start gap-2 text-zinc-650 dark:text-zinc-500 text-xs leading-snug font-medium">
-                <CheckCircle2 className="h-3.5 w-3.5 text-zinc-900 dark:text-white shrink-0 mt-0.5" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </motion.div>
+
     </div>
   );
 }

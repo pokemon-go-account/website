@@ -34,6 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
             hasPaidVerificationDeposit: user.hasPaidVerificationDeposit,
             walletBalance: user.walletBalance,
+            username: user.username,
           } as any;
         }
 
@@ -63,6 +64,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           adminRentPaidUntil: user.adminRentPaidUntil?.toISOString() ?? null,
           hasPaidVerificationDeposit: user.hasPaidVerificationDeposit,
           walletBalance: user.walletBalance,
+          username: user.username,
         } as any;
       },
     }),

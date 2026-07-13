@@ -173,7 +173,7 @@ export default function ManageCategoriesPage() {
       )}
 
       {/* Main categories listing table */}
-      <div className="border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] rounded-lg overflow-hidden shadow-xs">
+      <div className="border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] rounded-lg overflow-x-auto shadow-xs">
         <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-left text-xs">
           <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
             <tr>

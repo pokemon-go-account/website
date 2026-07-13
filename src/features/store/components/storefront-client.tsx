@@ -82,7 +82,7 @@ interface StorefrontClientProps {
 }
 
 export function StorefrontClient({ categories, products }: StorefrontClientProps) {
-  const { items, isOpen, setIsOpen, addItem, removeItem, updateQuantity, getTotalPrice, getTotalItems } = useCartStore();
+  const { items, isOpen, setIsOpen, addItem, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -157,6 +157,11 @@ Please let me know how to proceed with the payment!`;
       alert("📋 We have copied your order details to your clipboard! Paste it in the Facebook message to proceed.");
       window.open("https://www.facebook.com/share/1LdWHj4HQz/?mibextid=wwXIfr", "_blank", "noopener,noreferrer");
     }
+
+    // Auto-clear cart and close modals
+    clearCart();
+    setIsCheckoutOpen(false);
+    setIsOpen(false);
   };
 
   // Group products by category ID

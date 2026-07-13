@@ -1310,10 +1310,10 @@ Please let me know how to proceed with the payment!`;
             {/* Support contact panel */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 text-center space-y-3 shadow-xs">
               <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Have Questions?</h4>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team coordinates are available 24/7.</p>
-              <button className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer">
-                Contact Support Coordinates
-              </button>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team is available 24/7.</p>
+              <Link href="/contact" className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer flex items-center justify-center">
+                Contact Support
+              </Link>
             </div>
 
             {/* Ledger Bids list */}
@@ -1535,6 +1535,16 @@ Please let me know how to proceed with the payment!`;
                 )}
               </div>
             </div>
+
+            {/* Support Panel */}
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 text-center space-y-3 shadow-xs">
+              <h4 className="text-xs font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Have Questions?</h4>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team is available 24/7.</p>
+              <Link href="/contact" className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer flex items-center justify-center">
+                Contact Support
+              </Link>
+            </div>
+
           </div>
         )}
 
@@ -1687,6 +1697,34 @@ Please let me know how to proceed with the payment!`;
               ))}
             </div>
 
+            {/* Delivery Specifications & Payment details */}
+            <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs">
+              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Shipping & Handover details</h4>
+              <div className="space-y-3 text-xs text-zinc-650 dark:text-zinc-300 font-light">
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                  <span>Instant Delivery via admin transfer</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                  <span>Full access changeable email coordinates</span>
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Supported Payments</span>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {["PayPal", "Visa", "Mastercard", "UPI"].map((pm, idx) => (
+                    <span key={idx} className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2 py-1 rounded text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                      {pm}
+                    </span>
+                  ))}
+                  <span className="text-[9px] text-zinc-500 dark:text-zinc-500 mt-1">and more...</span>
+                </div>
+              </div>
+            </div>
+
             {/* Handover terms */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs text-xs">
               <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider border-b border-zinc-150 dark:border-zinc-800 pb-2">Handover Terms</h4>
@@ -1715,7 +1753,7 @@ Please let me know how to proceed with the payment!`;
                     <button
                       type="button"
                       onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                      className="w-full flex items-center justify-between py-2 text-left text-[11px] font-bold text-zinc-800 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
+                      className="w-full flex items-center justify-between py-2 text-left text-[11px] font-bold text-zinc-800 dark:text-zinc-200 hover:text-zinc-955 dark:hover:text-white cursor-pointer"
                     >
                       <span>{item.q}</span>
                       <span>{openFaq === idx ? "−" : "+"}</span>
@@ -1733,10 +1771,10 @@ Please let me know how to proceed with the payment!`;
             {/* Support Panel */}
             <div className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 text-center space-y-3 shadow-xs">
               <h4 className="text-xs font-bold text-zinc-800 dark:text-white uppercase tracking-wider">Have Questions?</h4>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team is available 24/7 coordinates.</p>
-              <button type="button" className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer">
-                Contact Support Coordinates
-              </button>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-normal">Our technical trade team is available 24/7.</p>
+              <Link href="/contact" className="w-full h-10 rounded-xl bg-[#6133e1] hover:bg-[#6133e1]/90 text-xs font-bold text-white transition-all cursor-pointer flex items-center justify-center">
+                Contact Support
+              </Link>
             </div>
 
           </div>

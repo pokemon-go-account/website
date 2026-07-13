@@ -373,8 +373,8 @@ export default function ConsoleUsersPage() {
                     </span>
                   </div>
 
-                  <form onSubmit={handleUpdateBalance} className="flex gap-3 items-end">
-                    <div className="flex-1 space-y-1.5">
+                  <form onSubmit={handleUpdateBalance} className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                    <div className="w-full sm:flex-1 space-y-1.5">
                       <label htmlFor="balance-input" className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">
                         Set New Wallet Balance ($ USD)
                       </label>
@@ -391,7 +391,7 @@ export default function ConsoleUsersPage() {
                     <button
                       type="submit"
                       disabled={balanceLoading}
-                      className="h-8 px-4 rounded-md bg-[#6133e1] hover:bg-[#5229be] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 shrink-0 shadow-xs"
+                      className="w-full sm:w-auto h-8 px-4 rounded-md bg-[#6133e1] hover:bg-[#5229be] text-white text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 shrink-0 shadow-xs"
                     >
                       {balanceLoading ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -36,28 +36,24 @@ export const useCurrencyStore = create<CurrencyState>()(
         set({ isConverting: true });
         
         try {
-          // Fetch actual live market rates from public open API
-          const res = await fetch("https://open.er-api.com/v6/latest/USD");
-          if (!res.ok) throw new Error("API responded with an error status code");
-          const data = await res.json();
-          if (data && data.rates) {
+          // Import the server action dynamically to avoid SSR issues with Zustand
+          const { getLiveExchangeRates } = await import("@/features/store/currency-actions");
+          
+          // Fetch rates from our MongoDB-backed Server Action
+          const res = await getLiveExchangeRates();
+          
+          if (res.success && res.rates) {
             set({
               currency: newCurrency,
-              rates: {
-                USD: 1.0,
-                EUR: data.rates.EUR || 0.92,
-                INR: data.rates.INR || 83.5,
-                GBP: data.rates.GBP || 0.79,
-                JPY: data.rates.JPY || 155.0,
-              },
+              rates: res.rates as Record<Currency, number>,
             });
           } else {
-            throw new Error("Invalid exchange rate structure in response");
+            throw new Error(res.error || "Failed to fetch rates from server");
           }
         } catch (error) {
           console.error("Failed to fetch live market rates, falling back to simulated values:", error);
           
-          // Simulated fallback rates
+          // Simulated fallback rates if everything (API and DB) completely fails
           const baseRates = {
             USD: 1.0,
             EUR: 0.90 + Math.random() * 0.04,
