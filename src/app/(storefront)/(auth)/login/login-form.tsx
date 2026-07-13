@@ -36,6 +36,12 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     }
   }, []);
 
+  useEffect(() => {
+    if (credState.success && (credState as any).redirectTo) {
+      window.location.href = (credState as any).redirectTo;
+    }
+  }, [credState]);
+
   // Render Google reCAPTCHA Enterprise explicitly for credentials
   useEffect(() => {
     if (isLocalhost) return;

@@ -38,13 +38,22 @@ export async function loginUser(prevState: any, formData: FormData) {
     const { email, password } = validated.data;
     const callbackUrl = formData.get("callbackUrl") as string | null;
 
-    await signIn("credentials", {
-      email,
-      password,
-      redirectTo: callbackUrl || "/",
-    });
+    try {
+      await signIn("credentials", {
+        email,
+        password,
+        redirectTo: callbackUrl || "/",
+      });
+    } catch (error: any) {
+      if (error.message === "NEXT_REDIRECT" || error.digest?.startsWith("NEXT_REDIRECT")) {
+        const parts = (error.digest || "").split(";");
+        const redirectTo = parts[2] || "/";
+        return { success: true, redirectTo, error: null };
+      }
+      throw error;
+    }
 
-    return { success: true, error: null };
+    return { success: true, redirectTo: callbackUrl || "/", error: null };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -54,7 +63,7 @@ export async function loginUser(prevState: any, formData: FormData) {
           return { success: false, error: "Something went wrong." };
       }
     }
-    throw error;
+    return { success: false, error: (error as any).message || "Something went wrong." };
   }
 }
 

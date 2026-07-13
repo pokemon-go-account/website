@@ -22,6 +22,10 @@ export function NewListingForm() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Controlled states for Base UI Select components
+  const [accountType, setAccountType] = useState<string>("Google");
+  const [team, setTeam] = useState<string>("NONE");
+
   const {
     register,
     handleSubmit,
@@ -148,8 +152,8 @@ export function NewListingForm() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="accountType" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Link Type</Label>
-            <Select onValueChange={(val: any) => setValue("accountType", val)} defaultValue="Google">
-              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md">
+            <Select value={accountType} onValueChange={(val: any) => { setAccountType(val); setValue("accountType", val); }}>
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
                 <SelectValue placeholder="Select Account Type" />
               </SelectTrigger>
               <SelectContent>
@@ -237,8 +241,8 @@ export function NewListingForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="team" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Faction Team</Label>
-            <Select onValueChange={(val: any) => setValue("team", val)}>
-              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md">
+            <Select value={team} onValueChange={(val: any) => { setTeam(val); setValue("team", val); }}>
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
                 <SelectValue placeholder="Select Team" />
               </SelectTrigger>
               <SelectContent>
