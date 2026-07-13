@@ -51,6 +51,7 @@ const navGroups = [
     label: "Support",
     items: [
       { href: "/console/recovery", label: "Recovery", icon: KeyRound },
+      { href: "/console/pokemon-requests", label: "Pokemon Requests", icon: MessageCircle },
       { href: "/console/contact", label: "Contact", icon: MessageSquare },
       { href: "/console/chat", label: "Live Chat", icon: MessageCircle },
     ],

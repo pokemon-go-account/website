@@ -40,6 +40,7 @@ export function NewListingForm() {
       legendaryCount: 0,
       mythicalCount: 0,
       xp: 0,
+      stardust: 0,
       pokedexCompleted: 0,
       bestBuddyCount: 0,
       pokeCoins: 0,
@@ -57,6 +58,40 @@ export function NewListingForm() {
       luckyEggs: 0,
       lureModules: 0,
       premiumRaidPass: 0,
+
+      // New stats defaults
+      platinumMedals: 0,
+      legendaryPoses: 0,
+      shinyPokemons: 0,
+      shinyMythical: 0,
+      shinyUltrabeasts: 0,
+      shinyLegendaries: 0,
+      legendaryPokemons: 0,
+      ultrabeasts: 0,
+      mythicalPokemons: 0,
+      hundoMythicalLegendaryUltrabeast: 0,
+      shundoLegendaryMythicalUltrabeast: 0,
+      shundoPokemons: 0,
+      hundoPokemons: 0,
+      costumeShinies: 0,
+      hatchedShinies: 0,
+      luckyPokemons: 0,
+      luckyLegendaries: 0,
+      shinyLuckyLegendaries: 0,
+      locationBackgroundLegendaryShiny: 0,
+      specialBackgroundLegendaryShiny: 0,
+      candyXlPokemons: 0,
+      candyXlLegendaries: 0,
+      bestBuddies: 0,
+      dualMovePokemons: 0,
+      shadowShinyPokemons: 0,
+      pokemonStorage: 0,
+      itemBagStorage: 0,
+      masterBalls: 0,
+      raidPasses: 0,
+      superRocketRadar: 0,
+      pokedexRegisteredNumber: 0,
+      bansCount: 0,
     },
   });
 
@@ -134,26 +169,26 @@ export function NewListingForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="title" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Listing Title</Label>
-            <Input id="title" {...register("title")} placeholder="Level 50 Account - Rare Shinies" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="title" {...register("title")} placeholder="Level 50 Account - Rare Shinies" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.title && <p className="text-[10px] text-red-500 font-semibold">{errors.title.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="telegramUsername" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Your Telegram Handle (Private)</Label>
-            <Input id="telegramUsername" {...register("telegramUsername")} placeholder="@trainer_handle" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="telegramUsername" {...register("telegramUsername")} placeholder="@trainer_handle" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.telegramUsername && <p className="text-[10px] text-red-500 font-semibold">{errors.telegramUsername.message}</p>}
           </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="description" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Comprehensive Description</Label>
-          <Textarea id="description" {...register("description")} placeholder="Outline specific metadata records, exceptional items..." className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white rounded-md focus-visible:ring-zinc-900/10 min-h-[100px] leading-relaxed resize-none" />
+          <Textarea id="description" {...register("description")} placeholder="Outline specific metadata records, exceptional items..." className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white rounded-md focus-visible:ring-zinc-900/10 min-h-[100px] leading-relaxed resize-none" />
           {errors.description && <p className="text-[10px] text-red-500 font-semibold">{errors.description.message}</p>}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="accountType" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Link Type</Label>
             <Select value={accountType} onValueChange={(val: any) => { setAccountType(val); setValue("accountType", val); }}>
-              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
                 <SelectValue placeholder="Select Account Type" />
               </SelectTrigger>
               <SelectContent>
@@ -166,20 +201,40 @@ export function NewListingForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="accountStatus" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Standing Status</Label>
-            <Input id="accountStatus" {...register("accountStatus")} placeholder="Safe (No Strikes)" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="accountStatus" {...register("accountStatus")} placeholder="Safe (No Strikes)" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.accountStatus && <p className="text-[10px] text-red-500 font-semibold">{errors.accountStatus.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="startDate" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Start Date</Label>
-            <Input id="startDate" {...register("startDate")} placeholder="Early 2019" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="startDate" {...register("startDate")} placeholder="Early 2019" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.startDate && <p className="text-[10px] text-red-500 font-semibold">{errors.startDate.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="region" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Region</Label>
+            <Input id="region" {...register("region")} placeholder="Asia / Global" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            {errors.region && <p className="text-[10px] text-red-500 font-semibold">{errors.region.message}</p>}
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="topPokemon" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Top Pokémon Highlights (Comma-separated name + CP)</Label>
-          <Textarea id="topPokemon" {...register("topPokemon")} placeholder="Mewtwo (CP 4724), Rayquaza (CP 4335), Kyogre (CP 4115)" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white rounded-md focus-visible:ring-zinc-900/10 min-h-[60px] leading-relaxed resize-none" />
-          {errors.topPokemon && <p className="text-[10px] text-red-500 font-semibold">{errors.topPokemon.message}</p>}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="team" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Faction Team</Label>
+            <Select value={team} onValueChange={(val: any) => { setTeam(val); setValue("team", val); }}>
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
+                <SelectValue placeholder="Select Team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE">None</SelectItem>
+                <SelectItem value="MYSTIC">Mystic (Blue)</SelectItem>
+                <SelectItem value="VALOR">Valor (Red)</SelectItem>
+                <SelectItem value="INSTINCT">Instinct (Yellow)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="topPokemon" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Top Pokémon Highlights (Comma-separated)</Label>
+            <Input id="topPokemon" {...register("topPokemon")} placeholder="Mewtwo (CP 4724), Rayquaza (CP 4335)" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+          </div>
         </div>
 
         {/* Screenshots File Uploader */}
@@ -225,148 +280,91 @@ export function NewListingForm() {
         </div>
       </div>
 
-      {/* Section 2: In-Game Metrics Grid */}
+      {/* Section 2: Pokémon In-Game Statistics & Inventory */}
       <div className="space-y-4 border-b border-zinc-200 dark:border-white/[0.06] pb-6">
-        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">In-Game Asset Analytics</h3>
+        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">Pokémon In-Game Stats & Metrics</h3>
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="level" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Trainer Level</Label>
-            <Input id="level" type="number" {...register("level", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-            {errors.level && <p className="text-[10px] text-red-500 font-semibold">{errors.level.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="stardust" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Stardust Balance</Label>
-            <Input id="stardust" type="number" {...register("stardust", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-            {errors.stardust && <p className="text-[10px] text-red-500 font-semibold">{errors.stardust.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="team" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Faction Team</Label>
-            <Select value={team} onValueChange={(val: any) => { setTeam(val); setValue("team", val); }}>
-              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md w-full">
-                <SelectValue placeholder="Select Team" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="NONE">None</SelectItem>
-                <SelectItem value="MYSTIC">Mystic (Blue)</SelectItem>
-                <SelectItem value="VALOR">Valor (Red)</SelectItem>
-                <SelectItem value="INSTINCT">Instinct (Yellow)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="region" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Account Region</Label>
-            <Input id="region" {...register("region")} placeholder="Asia / Global" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-        </div>
-
-        <div className="grid gap-4 grid-cols-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="shinyCount" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Shiny Count</Label>
-            <Input id="shinyCount" type="number" {...register("shinyCount", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="legendaryCount" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Legendary Count</Label>
-            <Input id="legendaryCount" type="number" {...register("legendaryCount", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="mythicalCount" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Mythical Count</Label>
-            <Input id="mythicalCount" type="number" {...register("mythicalCount", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-        </div>
-
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-5">
-          <div className="space-y-1.5">
-            <Label htmlFor="xp" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Total XP</Label>
-            <Input id="xp" type="number" {...register("xp", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-            {errors.xp && <p className="text-[10px] text-red-500 font-semibold">{errors.xp.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="pokedexCompleted" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Pokedex Completed %</Label>
-            <Input id="pokedexCompleted" type="number" {...register("pokedexCompleted", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-            {errors.pokedexCompleted && <p className="text-[10px] text-red-500 font-semibold">{errors.pokedexCompleted.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="bestBuddyCount" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Best Buddy Count</Label>
-            <Input id="bestBuddyCount" type="number" {...register("bestBuddyCount", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-            {errors.bestBuddyCount && <p className="text-[10px] text-red-500 font-semibold">{errors.bestBuddyCount.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="pokeCoins" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">PokeCoins Balance</Label>
-            <Input id="pokeCoins" type="number" {...register("pokeCoins", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-            {errors.pokeCoins && <p className="text-[10px] text-red-500 font-semibold">{errors.pokeCoins.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="weeklyDistance" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Weekly Distance (km)</Label>
-            <Input id="weeklyDistance" type="number" {...register("weeklyDistance", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-            {errors.weeklyDistance && <p className="text-[10px] text-red-500 font-semibold">{errors.weeklyDistance.message}</p>}
-          </div>
-        </div>
-      </div>
-      {/* Section 3: In-Game Inventory & Resources */}
-      <div className="space-y-4 border-b border-zinc-200 dark:border-white/[0.06] pb-6">
-        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">Items & Resource Inventory</h3>
-        <div className="grid gap-4 grid-cols-3 sm:grid-cols-5">
-          <div className="space-y-1.5">
-            <Label htmlFor="rareCandy" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Rare Candy</Label>
-            <Input id="rareCandy" type="number" {...register("rareCandy", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="fastTm" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Fast TM</Label>
-            <Input id="fastTm" type="number" {...register("fastTm", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="chargedTm" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Charged TM</Label>
-            <Input id="chargedTm" type="number" {...register("chargedTm", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="eliteFastTm" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Elite Fast TM</Label>
-            <Input id="eliteFastTm" type="number" {...register("eliteFastTm", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="eliteChargedTm" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Elite Charged TM</Label>
-            <Input id="eliteChargedTm" type="number" {...register("eliteChargedTm", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="incubators" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Incubators</Label>
-            <Input id="incubators" type="number" {...register("incubators", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="luckyEggs" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Lucky Eggs</Label>
-            <Input id="luckyEggs" type="number" {...register("luckyEggs", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="lureModules" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Lure Modules</Label>
-            <Input id="lureModules" type="number" {...register("lureModules", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="premiumRaidPass" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Premium Raid Pass</Label>
-            <Input id="premiumRaidPass" type="number" {...register("premiumRaidPass", { valueAsNumber: true })} className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
-          </div>
+          {[
+            { id: "level", label: "Level *" },
+            { id: "stardust", label: "Stardust *" },
+            { id: "xp", label: "XP *" },
+            { id: "pokeCoins", label: "PokeCoins *" },
+            { id: "platinumMedals", label: "Platinum Medals" },
+            { id: "legendaryPoses", label: "Legendary Poses" },
+            { id: "shinyPokemons", label: "Shiny Pokemons" },
+            { id: "shinyMythical", label: "Shiny Mythical" },
+            { id: "shinyUltrabeasts", label: "Shiny Ultrabeasts" },
+            { id: "shinyLegendaries", label: "Shiny Legendaries" },
+            { id: "legendaryPokemons", label: "Legendary Pokemons" },
+            { id: "ultrabeasts", label: "Ultrabeasts" },
+            { id: "mythicalPokemons", label: "Mythical Pokemons" },
+            { id: "hundoMythicalLegendaryUltrabeast", label: "Hundo Mythical/Leg/UB" },
+            { id: "shundoLegendaryMythicalUltrabeast", label: "Shundo Legendary/Mythical/UB" },
+            { id: "shundoPokemons", label: "Shundo Pokemons" },
+            { id: "hundoPokemons", label: "Hundo Pokemons" },
+            { id: "costumeShinies", label: "Costume Shinies" },
+            { id: "hatchedShinies", label: "Hatched Shinies" },
+            { id: "luckyPokemons", label: "Lucky Pokemons" },
+            { id: "luckyLegendaries", label: "Lucky Legendaries" },
+            { id: "shinyLuckyLegendaries", label: "Shiny Lucky Legendaries" },
+            { id: "locationBackgroundLegendaryShiny", label: "Location BG Leg Shiny" },
+            { id: "specialBackgroundLegendaryShiny", label: "Special BG Leg Shiny" },
+            { id: "candyXlPokemons", label: "CandyXL Pokemons" },
+            { id: "candyXlLegendaries", label: "CandyXL Legendaries" },
+            { id: "bestBuddies", label: "Best Buddies" },
+            { id: "dualMovePokemons", label: "Dual Move Pokemons" },
+            { id: "shadowShinyPokemons", label: "Shadow Shiny Pokemons" },
+            { id: "pokemonStorage", label: "Pokemon Storage" },
+            { id: "itemBagStorage", label: "Item Bag Storage" },
+            { id: "masterBalls", label: "Master Balls" },
+            { id: "raidPasses", label: "Raid Passes" },
+            { id: "superRocketRadar", label: "Super Rocket Radar" },
+            { id: "pokedexRegisteredNumber", label: "Pokedex Registered #" },
+            { id: "bansCount", label: "Bans Count" },
+          ].map((field) => (
+            <div key={field.id} className="space-y-1.5">
+              <Label htmlFor={field.id} className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                {field.label}
+              </Label>
+              <Input
+                id={field.id}
+                type="number"
+                placeholder="0"
+                {...register(field.id as any, { valueAsNumber: true })}
+                className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10"
+              />
+              {(errors as any)[field.id] && (
+                <p className="text-[10px] text-red-500 font-semibold">
+                  {(errors as any)[field.id].message}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Section 4: Financial Pricing Structures */}
+      {/* Section 3: Financial Pricing Structures */}
       <div className="space-y-4">
         <h3 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">Auction Economics & Timeline</h3>
         <div className="grid gap-4 sm:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="startingBid" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Starting Bid ($)</Label>
-            <Input id="startingBid" type="number" {...register("startingBid", { valueAsNumber: true })} placeholder="1999" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="startingBid" type="number" {...register("startingBid", { valueAsNumber: true })} placeholder="1999" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.startingBid && <p className="text-[10px] text-red-500 font-semibold">{errors.startingBid.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="reservePrice" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Reserve Price ($)</Label>
-            <Input id="reservePrice" type="number" {...register("reservePrice", { valueAsNumber: true })} placeholder="4999" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="reservePrice" type="number" {...register("reservePrice", { valueAsNumber: true })} placeholder="4999" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.reservePrice && <p className="text-[10px] text-red-500 font-semibold">{errors.reservePrice.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="minIncrement" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Min Increment ($)</Label>
-            <Input id="minIncrement" type="number" {...register("minIncrement", { valueAsNumber: true })} placeholder="100" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="minIncrement" type="number" {...register("minIncrement", { valueAsNumber: true })} placeholder="100" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.minIncrement && <p className="text-[10px] text-red-500 font-semibold">{errors.minIncrement.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="durationHours" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Duration (Hours)</Label>
-            <Input id="durationHours" type="number" {...register("durationHours", { valueAsNumber: true })} placeholder="24" className="bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
+            <Input id="durationHours" type="number" {...register("durationHours", { valueAsNumber: true })} placeholder="24" className="bg-zinc-50 dark:bg-zinc-955/40 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-900 dark:text-white h-8 px-3 rounded-md focus-visible:ring-zinc-900/10" />
             {errors.durationHours && <p className="text-[10px] text-red-500 font-semibold">{errors.durationHours.message}</p>}
           </div>
         </div>

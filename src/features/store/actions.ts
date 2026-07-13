@@ -4,6 +4,7 @@ import connectDB from "@/lib/db";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
 import Order from "@/models/Order";
+import PokemonRequest from "@/models/PokemonRequest";
 import { auth } from "@/auth";
 
 /**
@@ -76,5 +77,44 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
   } catch (error: any) {
     console.error("Failed to create storefront order:", error);
     return { success: false, error: error.message || "Failed to record order." };
+  }
+}
+
+/**
+ * Record a new custom Pokemon request
+ */
+export async function createPokemonRequestAction(data: {
+  pokemonName: string;
+  description: string;
+  socialPlatform: string;
+  socialId: string;
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in first." };
+    }
+
+    if (!data.pokemonName || !data.description || !data.socialPlatform || !data.socialId) {
+      return { success: false, error: "All fields are required." };
+    }
+
+    await connectDB();
+
+    const request = await PokemonRequest.create({
+      userId: session.user.id,
+      username: session.user.name || "Unknown",
+      email: session.user.email || "No Email",
+      pokemonName: data.pokemonName.trim(),
+      description: data.description.trim(),
+      socialPlatform: data.socialPlatform.trim(),
+      socialId: data.socialId.trim(),
+      status: "PENDING",
+    });
+
+    return { success: true, requestId: request._id.toString() };
+  } catch (error: any) {
+    console.error("Failed to create Pokemon request:", error);
+    return { success: false, error: error.message || "Failed to submit request." };
   }
 }

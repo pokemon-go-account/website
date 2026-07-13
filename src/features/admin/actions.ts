@@ -10,6 +10,7 @@ import WebhookLog from "@/models/WebhookLog";
 import Registration from "@/models/Registration";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
+import PokemonRequest from "@/models/PokemonRequest";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -733,14 +734,20 @@ export async function getProducts() {
 export async function createProduct(data: {
   name: string;
   description?: string;
-  price: number;
+  mrpPrice: number;
+  discountedPrice: number;
+  isLimitedDeal?: boolean;
+  dealExpiry?: string | Date;
+  badge?: "MOST_PURCHASED" | "POPULAR" | "";
   categoryId: string;
   imageUrl: string;
+  imageUrls?: string[];
 }) {
   try {
     await checkSuperAdminSession();
     await connectDB();
-    const product = await Product.create(data);
+    const price = data.discountedPrice;
+    const product = await Product.create({ ...data, price });
     revalidatePath('/admin/products');
     revalidatePath('/store');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
@@ -754,15 +761,21 @@ export async function updateProduct(
   data: {
     name: string;
     description?: string;
-    price: number;
+    mrpPrice: number;
+    discountedPrice: number;
+    isLimitedDeal?: boolean;
+    dealExpiry?: string | Date;
+    badge?: "MOST_PURCHASED" | "POPULAR" | "";
     categoryId: string;
     imageUrl: string;
+    imageUrls?: string[];
   }
 ) {
   try {
     await checkSuperAdminSession();
     await connectDB();
-    const product = await Product.findByIdAndUpdate(id, data, { returnDocument: "after" });
+    const price = data.discountedPrice;
+    const product = await Product.findByIdAndUpdate(id, { ...data, price }, { returnDocument: "after" });
     revalidatePath('/admin/products');
     revalidatePath('/store');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
@@ -793,6 +806,44 @@ export async function uploadProductImageAction(base64Data: string) {
     const { uploadToCloudinary } = await import('@/lib/cloudinary');
     const url = await uploadToCloudinary(base64Data);
     return { success: true, url };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Pokémon Requests Actions
+ */
+export async function getPokemonRequests() {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const requests = await PokemonRequest.find().sort({ createdAt: -1 }).lean();
+    return { success: true, requests: JSON.parse(JSON.stringify(requests)) };
+  } catch (error: any) {
+    return { success: false, error: error.message, requests: [] };
+  }
+}
+
+export async function updatePokemonRequestStatus(requestId: string, status: "PENDING" | "COMPLETED" | "REJECTED") {
+  try {
+    await checkAdminSession();
+    await connectDB();
+    const request = await PokemonRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+    revalidatePath('/admin/pokemon-requests');
+    return { success: true, request: JSON.parse(JSON.stringify(request)) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deletePokemonRequest(requestId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    await PokemonRequest.findByIdAndDelete(requestId);
+    revalidatePath('/admin/pokemon-requests');
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

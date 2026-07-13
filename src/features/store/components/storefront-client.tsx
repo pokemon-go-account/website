@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft } from "lucide-react";
+import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
-import { createStorefrontOrderAction } from "@/features/store/actions";
+import { createStorefrontOrderAction, createPokemonRequestAction } from "@/features/store/actions";
 import { useSession } from "next-auth/react";
 
 interface Category {
@@ -23,12 +23,57 @@ interface Product {
   name: string;
   description?: string;
   price: number;
+  mrpPrice?: number;
+  discountedPrice?: number;
+  isLimitedDeal?: boolean;
+  dealExpiry?: string | Date;
+  badge?: "MOST_PURCHASED" | "POPULAR" | "";
   imageUrl: string;
+  imageUrls?: string[];
   categoryId?: {
     _id: string;
     name: string;
     slug: string;
   };
+}
+
+function CountdownTimer({ expiry }: { expiry: string | Date }) {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(expiry) - +new Date();
+      if (difference <= 0) {
+        setTimeLeft("EXPIRED");
+        setIsExpired(true);
+        return;
+      }
+      
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+      
+      let timeStr = "";
+      if (days > 0) timeStr += `${days}d `;
+      timeStr += `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      setTimeLeft(timeStr);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, [expiry]);
+
+  if (isExpired) return null;
+
+  return (
+    <div className="absolute bottom-2 left-2 z-10 bg-red-600/90 dark:bg-red-500/95 text-white font-bold text-[9px] px-2 py-0.5 rounded flex items-center gap-1 shadow-sm animate-pulse">
+      <span className="h-1.5 w-1.5 rounded-full bg-white block"></span>
+      <span>ENDS IN: {timeLeft}</span>
+    </div>
+  );
 }
 
 interface StorefrontClientProps {
@@ -47,6 +92,15 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const walletBalance = (session?.user as any)?.walletBalance || 0;
   const hasWalletCredit = walletBalance > 0;
   const walletCreditAmount = hasWalletCredit ? walletBalance : 0;
+
+  // New interactive states
+  const [activeGalleryProduct, setActiveGalleryProduct] = useState<Product | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requestSuccess, setRequestSuccess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -205,19 +259,36 @@ Please let me know how to proceed with the payment!`;
           /* Screen 2: Products of Selected Category Screen */
           <div className="space-y-8">
             {/* Header / Nav Options */}
-            <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-white/[0.06] pb-6">
-              <button
-                onClick={() => setSelectedCategoryId(null)}
-                className="h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-white/[0.04] text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95 shadow-xs"
-              >
-                <ChevronLeft className="h-4.5 w-4.5" />
-              </button>
-              <div>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 tracking-wider uppercase font-semibold block">Direct Storefront</span>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-                  {selectedCategoryObj?.name}
-                </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-white/[0.06] pb-6">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSelectedCategoryId(null)}
+                  className="h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-white/[0.04] text-zinc-655 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95 shadow-xs"
+                >
+                  <ChevronLeft className="h-4.5 w-4.5" />
+                </button>
+                <div>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 tracking-wider uppercase font-semibold block">Direct Storefront</span>
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
+                    {selectedCategoryObj?.name}
+                  </h2>
+                </div>
               </div>
+
+              {selectedCategoryObj?.slug === "pokemons" && (
+                <button
+                  onClick={() => {
+                    if (!session?.user) {
+                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                    } else {
+                      setIsRequestModalOpen(true);
+                    }
+                  }}
+                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
+                >
+                  ★ Request a Pokémon
+                </button>
+              )}
             </div>
 
             {/* Product list */}
@@ -233,24 +304,50 @@ Please let me know how to proceed with the payment!`;
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {catProducts.map((product) => (
                   <div
                     key={product._id}
                     className="group relative rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 transition-all duration-250 flex flex-col justify-between hover:shadow-xs hover:border-zinc-300 dark:hover:border-white/[0.1]"
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-3 relative">
+                      {/* Badge (Most Purchased / Popular) */}
+                      {product.badge && (
+                        <div className={cn(
+                          "absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs",
+                          product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                        )}>
+                          {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
+                        </div>
+                      )}
+
                       {/* Image Container */}
-                      <div className="relative h-32 w-full rounded-md bg-zinc-50 dark:bg-black/20 overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-white/[0.06]">
+                      <div
+                        onClick={() => {
+                          setActiveGalleryProduct(product);
+                          setActiveImageIndex(0);
+                        }}
+                        className="relative h-52 w-full rounded-md bg-zinc-50 dark:bg-black/20 overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-white/[0.06] cursor-pointer group-hover:border-zinc-300 dark:group-hover:border-white/[0.12] transition-colors"
+                      >
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
                             alt={product.name}
-                            className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-500"
+                            className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-500 animate-in fade-in"
                           />
                         ) : (
                           <span className="text-3xl select-none">🎁</span>
                         )}
+
+                        {/* Limited Time Deal Countdown */}
+                        {product.isLimitedDeal && product.dealExpiry && (
+                          <CountdownTimer expiry={product.dealExpiry} />
+                        )}
+
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-[10px] bg-white/90 dark:bg-zinc-900/90 text-zinc-900 dark:text-white px-2.5 py-1 rounded-md font-bold shadow-xs">Zoom & Gallery</span>
+                        </div>
                       </div>
 
                       {/* Detail */}
@@ -267,8 +364,28 @@ Please let me know how to proceed with the payment!`;
                     {/* Price & Add to Cart button */}
                     <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between">
                       <div>
-                        <p className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Price</p>
-                        <p className="text-zinc-900 dark:text-white font-semibold text-xs mt-0.5"><PriceDisplay amountInUSD={product.price} /></p>
+                        {product.mrpPrice && product.discountedPrice && product.mrpPrice > product.discountedPrice ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 line-through">
+                                <PriceDisplay amountInUSD={product.mrpPrice} />
+                              </span>
+                              <span className="text-[9px] font-bold text-red-500 dark:text-red-400 bg-red-500/10 px-1 rounded">
+                                {Math.round(((product.mrpPrice - product.discountedPrice) / product.mrpPrice) * 100)}% OFF
+                              </span>
+                            </div>
+                            <p className="text-zinc-900 dark:text-white font-bold text-xs">
+                              <PriceDisplay amountInUSD={product.discountedPrice} />
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-0.5">
+                            <p className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Price</p>
+                            <p className="text-zinc-900 dark:text-white font-semibold text-xs mt-0.5">
+                              <PriceDisplay amountInUSD={product.price} />
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {(() => {
@@ -300,7 +417,7 @@ Please let me know how to proceed with the payment!`;
                               addItem({
                                 id: product._id,
                                 name: product.name,
-                                price: product.price,
+                                price: product.discountedPrice || product.price,
                                 imageUrl: product.imageUrl,
                               })
                             }
@@ -560,6 +677,246 @@ Please let me know how to proceed with the payment!`;
             <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
               <span>Verify transaction manually with receipt screenshots.</span>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Product Image Gallery Slider Lightbox */}
+      {activeGalleryProduct && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl bg-zinc-900 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-2xl flex flex-col items-center gap-4 text-zinc-900 dark:text-white">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => { setActiveGalleryProduct(null); setIsZoomed(false); }}
+              className="absolute top-4 right-4 h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Title */}
+            <div className="text-center w-full max-w-md px-8 space-y-1">
+              <h3 className="font-semibold text-xs text-zinc-900 dark:text-white tracking-tight leading-snug truncate">
+                {activeGalleryProduct.name}
+              </h3>
+              <p className="text-[10px] text-zinc-500 font-semibold">Image {activeImageIndex + 1} of {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) ? activeGalleryProduct.imageUrls.length : 1)}</p>
+            </div>
+
+            {/* Image Viewport */}
+            <div className={cn(
+              "relative h-80 w-full flex items-center justify-center bg-zinc-100/50 dark:bg-black/40 rounded-lg border border-zinc-200 dark:border-zinc-900 transition-all",
+              isZoomed ? "overflow-auto p-4" : "overflow-hidden"
+            )}>
+              {(() => {
+                const urls = (activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) 
+                  ? activeGalleryProduct.imageUrls 
+                  : [activeGalleryProduct.imageUrl];
+                const currentUrl = urls[activeImageIndex] || activeGalleryProduct.imageUrl;
+                return (
+                  <img
+                    src={currentUrl}
+                    alt={activeGalleryProduct.name}
+                    onClick={() => setIsZoomed(!isZoomed)}
+                    className={cn(
+                      "select-none animate-in zoom-in-95 duration-200 transition-all origin-center",
+                      isZoomed 
+                        ? "w-[200%] h-[200%] max-h-none max-w-none object-contain cursor-zoom-out" 
+                        : "max-h-full max-w-full object-contain cursor-zoom-in"
+                    )}
+                  />
+                );
+              })()}
+
+              {/* Prev / Next buttons if multiple */}
+              {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
+                <>
+                  <button
+                    onClick={() => {
+                      const total = activeGalleryProduct.imageUrls?.length || 1;
+                      setActiveImageIndex((prev) => (prev - 1 + total) % total);
+                      setIsZoomed(false);
+                    }}
+                    className="absolute left-3 h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/85 hover:bg-white dark:hover:bg-zinc-900 text-zinc-700 dark:text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-xs"
+                  >
+                    <ChevronLeft className="h-4.5 w-4.5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const total = activeGalleryProduct.imageUrls?.length || 1;
+                      setActiveImageIndex((prev) => (prev + 1) % total);
+                      setIsZoomed(false);
+                    }}
+                    className="absolute right-3 h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/85 hover:bg-white dark:hover:bg-zinc-900 text-zinc-700 dark:text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-xs"
+                  >
+                    <ChevronRight className="h-4.5 w-4.5" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Thumbnails list */}
+            {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
+              <div className="flex gap-1.5 max-w-full overflow-x-auto py-1">
+                {activeGalleryProduct.imageUrls?.map((url, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => { setActiveImageIndex(idx); setIsZoomed(false); }}
+                    className={cn(
+                      "h-10 w-10 rounded-md border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-all bg-white dark:bg-black",
+                      activeImageIndex === idx ? "border-zinc-900 dark:border-white ring-1 ring-zinc-900 dark:ring-white" : "border-zinc-200 dark:border-zinc-850 hover:border-zinc-400 dark:hover:border-zinc-700"
+                    )}
+                  >
+                    <img src={url} className="object-contain max-h-full max-w-full" alt="thumbnail" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Request Pokémon Form Modal */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#09090B] p-6 shadow-2xl space-y-4 text-zinc-900 dark:text-white">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setIsRequestModalOpen(false);
+                setRequestSuccess(false);
+                setRequestError(null);
+              }}
+              className="absolute top-4 right-4 h-7 w-7 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Header */}
+            <div className="space-y-1">
+              <h3 className="font-semibold text-sm tracking-tight">Request a Pokémon</h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Can't find the Pokémon you need? Tell us what you're looking for, and we'll source it for you.</p>
+            </div>
+
+            {requestSuccess ? (
+              <div className="py-6 text-center space-y-4">
+                <div className="h-10 w-10 rounded-md bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mx-auto text-emerald-500 font-bold">
+                  ✓
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-xs font-semibold">Request Submitted!</h4>
+                  <p className="text-[10.5px] text-zinc-500 dark:text-zinc-450 max-w-xs mx-auto leading-relaxed">
+                    We have successfully logged your Pokémon request. Our sourcing team will contact you shortly via the social link provided.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsRequestModalOpen(false);
+                    setRequestSuccess(false);
+                  }}
+                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold cursor-pointer"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setRequesting(true);
+                  setRequestError(null);
+                  
+                  const target = e.target as HTMLFormElement;
+                  const pokemonName = (target.elements.namedItem("pokemonName") as HTMLInputElement).value;
+                  const socialPlatform = (target.elements.namedItem("socialPlatform") as HTMLSelectElement).value;
+                  const socialId = (target.elements.namedItem("socialId") as HTMLInputElement).value;
+                  const description = (target.elements.namedItem("description") as HTMLTextAreaElement).value;
+
+                  const res = await createPokemonRequestAction({
+                    pokemonName,
+                    socialPlatform,
+                    socialId,
+                    description,
+                  });
+
+                  if (res.success) {
+                    setRequestSuccess(true);
+                  } else {
+                    setRequestError(res.error || "Failed to submit request.");
+                  }
+                  setRequesting(false);
+                }}
+                className="space-y-3.5 text-xs"
+              >
+                {requestError && (
+                  <div className="flex items-center gap-2 rounded-md bg-red-500/5 border border-red-500/10 p-3 text-xs text-red-550 dark:text-red-400">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {requestError}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Pokémon Name *</label>
+                  <input
+                    type="text"
+                    name="pokemonName"
+                    required
+                    placeholder="e.g. Shiny Rayquaza, Shadow Mewtwo, etc."
+                    className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Social Platform *</label>
+                    <select
+                      name="socialPlatform"
+                      required
+                      defaultValue="Telegram"
+                      className="w-full h-8 px-2 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors cursor-pointer"
+                    >
+                      <option value="Telegram" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Telegram</option>
+                      <option value="Discord" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Discord</option>
+                      <option value="Facebook" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Facebook</option>
+                      <option value="Instagram" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Instagram</option>
+                      <option value="Reddit" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">Reddit</option>
+                      <option value="WhatsApp" className="text-zinc-950 dark:text-zinc-100 bg-white dark:bg-[#09090B]">WhatsApp</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Social Username/ID *</label>
+                    <input
+                      type="text"
+                      name="socialId"
+                      required
+                      placeholder="e.g. @username or tag"
+                      className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-655 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Description (IVs, Level, CP details) *</label>
+                  <textarea
+                    name="description"
+                    required
+                    rows={4}
+                    placeholder="Provide details about the specific Pokémon you want (CP range, shiny preference, specific fast/charged moves, gender, etc.)"
+                    className="w-full min-h-[80px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={requesting}
+                  className="w-full h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-semibold text-xs transition-all active:scale-[0.98] mt-4 cursor-pointer"
+                >
+                  {requesting ? "Submitting request..." : "Submit Sourcing Request"}
+                </button>
+              </form>
+            )}
 
           </div>
         </div>
