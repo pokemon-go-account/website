@@ -3,17 +3,16 @@ import { authConfig } from "./auth.config";
 
 export default NextAuth(authConfig).auth;
 
-// Optimizes middleware execution bounds by running only on protected routes
 export const config = {
   matcher: [
-    "/console",
-    "/console/:path*",
-    "/dashboard/admin",
-    "/dashboard/admin/:path*",
-    "/profile",
-    "/profile/:path*",
-    "/orders",
-    "/orders/:path*",
-    "/verify-otp",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes, except for /api/auth which NextAuth handles)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, logo.png, etc.
+     * Or any file path with an extension (ends with .[extension])
+     */
+    "/((?!api(?!/auth)|_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)",
   ],
 };
