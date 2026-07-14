@@ -27,13 +27,25 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
 
   let query: any = {};
   if (search && search.trim()) {
-    const matchingListings = await Listing.find({
-      $or: [
-        { title: { $regex: search.trim(), $options: "i" } },
-        { description: { $regex: search.trim(), $options: "i" } },
-        { region: { $regex: search.trim(), $options: "i" } },
-      ],
-    }).select("_id").lean();
+    const s = search.trim();
+    const numericVal = parseInt(s.replace(/\D/g, ""), 10);
+    const levelMatch = !isNaN(numericVal) && numericVal > 0;
+
+    // Build $or conditions — text fields + enum fields + optional numeric level
+    const orConditions: any[] = [
+      { title: { $regex: s, $options: "i" } },
+      { description: { $regex: s, $options: "i" } },
+      { region: { $regex: s, $options: "i" } },
+      { team: { $regex: s, $options: "i" } },
+      { accountType: { $regex: s, $options: "i" } },
+      { accountStatus: { $regex: s, $options: "i" } },
+      { topPokemon: { $regex: s, $options: "i" } },
+    ];
+    if (levelMatch) {
+      orConditions.push({ level: numericVal });
+    }
+
+    const matchingListings = await Listing.find({ $or: orConditions }).select("_id").lean();
     const matchingIds = matchingListings.map((l) => l._id);
     query.listingId = { $in: matchingIds };
   }

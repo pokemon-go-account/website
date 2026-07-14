@@ -15,12 +15,14 @@ const trustBadges = [
 ];
 
 const QUICK_TAGS = [
+  { label: "🔵 Mystic", query: "mystic" },
+  { label: "🔴 Valor", query: "valor" },
+  { label: "🟡 Instinct", query: "instinct" },
+  { label: "✨ Shiny", query: "shiny" },
+  { label: "🏆 Legendary", query: "legendary" },
   { label: "🪙 Coins", query: "coins" },
-  { label: "⭐ Level 80", query: "level 80" },
-  { label: "⚔️ PVP", query: "pvp" },
-  { label: "🐉 Raid Service", query: "raid service" },
-  { label: "🏛️ Auction", query: "auction" },
-  { label: "✨ Stardust", query: "stardust" },
+  { label: "⭐ Level 50", query: "50" },
+  { label: "🐉 Raid", query: "raid" },
 ];
 
 const containerVariants: Variants = {
@@ -89,7 +91,7 @@ function HeroSearch() {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
-          placeholder="Search by team, level, region..."
+          placeholder="Search team, level, region, shiny, legendary..."
           className="flex-1 bg-transparent pl-10 pr-10 py-2.5 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 font-semibold focus:outline-none"
         />
         {query && (

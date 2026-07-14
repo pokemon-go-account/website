@@ -20,6 +20,7 @@ import {
   MessageSquare,
   MessageCircle,
   ChevronDown,
+  IndianRupee,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ const navGroups = [
       { href: "/console/auctions", label: "Auctions", icon: Gavel },
       { href: "/console/registrations", label: "Registrations", icon: CreditCard },
       { href: "/console/orders", label: "Orders", icon: ShoppingBag },
+      { href: "/console/payments", label: "UPI Payments", icon: IndianRupee },
       { href: "/console/rent", label: "Rent Manager", icon: Banknote },
     ],
   },

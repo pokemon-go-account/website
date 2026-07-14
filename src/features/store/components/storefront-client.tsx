@@ -11,6 +11,7 @@ import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { UpiPaymentCheckout } from "@/features/payments/components/upi-checkout";
 
 interface Category {
   _id: string;
@@ -103,6 +104,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const [requesting, setRequesting] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestSuccess, setRequestSuccess] = useState(false);
+  const [upiCheckoutData, setUpiCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
 
   // Custom request states (Account, Stardust, XP)
   const [isCustomRequestModalOpen, setIsCustomRequestModalOpen] = useState(false);
@@ -685,104 +687,176 @@ Please let me know how to proceed with the payment!`;
             
             {/* Close Button */}
             <button
-              onClick={() => setIsCheckoutOpen(false)}
+              onClick={() => {
+                if (upiCheckoutData) {
+                  clearCart();
+                  setUpiCheckoutData(null);
+                }
+                setIsCheckoutOpen(false);
+              }}
               className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none"
             >
               <X className="h-5 w-5" />
             </button>
 
-            {/* Header */}
-            <div className="space-y-1.5 text-left">
-              <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-zinc-900 dark:text-white" />
-                Complete Checkout
-              </h2>
-              <p className="text-xs text-zinc-550 dark:text-zinc-400">
-                You are purchasing direct store items. The total price is:
-              </p>
-              {hasWalletCredit && (
-                <div className="text-[11px] text-zinc-400 dark:text-zinc-550 flex items-center gap-1.5 mt-1">
-                  <span>Subtotal: <PriceDisplay amountInUSD={getTotalPrice()} /></span>
-                  <span>•</span>
-                  <span className="text-emerald-500 font-semibold">Credit: -<PriceDisplay amountInUSD={Math.min(getTotalPrice(), walletCreditAmount)} /></span>
+            {upiCheckoutData ? (
+              <div className="space-y-4 text-left">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
+                    <ShoppingBag className="h-4.5 w-4.5 text-[#6133e1]" />
+                    UPI Pay Gate
+                  </h3>
+                  <button
+                    onClick={() => {
+                      clearCart();
+                      setUpiCheckoutData(null);
+                      setIsCheckoutOpen(false);
+                    }}
+                    className="text-[10px] font-bold text-zinc-500 hover:text-[#6133e1] dark:hover:text-purple-400 cursor-pointer bg-transparent border-none transition-colors"
+                  >
+                    Back to Shop
+                  </button>
                 </div>
-              )}
-              <div className="text-xl font-bold text-zinc-900 dark:text-white pt-1">
-                <PriceDisplay amountInUSD={Math.max(0, getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount))} />
+                <UpiPaymentCheckout
+                  orderId={upiCheckoutData.orderId}
+                  amount={upiCheckoutData.amount}
+                  customerEmail={upiCheckoutData.email}
+                />
               </div>
-            </div>
-
-            {/* Options List */}
-            <div className="space-y-3">
-              {/* Option 1: Pay via Telegram */}
-              <button
-                onClick={() => handleSocialRedirect("telegram")}
-                className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Telegram</h3>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="space-y-1.5 text-left">
+                  <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-zinc-900 dark:text-white" />
+                    Complete Checkout
+                  </h2>
+                  <p className="text-xs text-zinc-550 dark:text-zinc-400">
+                    You are purchasing direct store items. The total price is:
+                  </p>
+                  {hasWalletCredit && (
+                    <div className="text-[11px] text-zinc-400 dark:text-zinc-550 flex items-center gap-1.5 mt-1">
+                      <span>Subtotal: <PriceDisplay amountInUSD={getTotalPrice()} /></span>
+                      <span>•</span>
+                      <span className="text-emerald-500 font-semibold">Credit: -<PriceDisplay amountInUSD={Math.min(getTotalPrice(), walletCreditAmount)} /></span>
+                    </div>
+                  )}
+                  <div className="text-xl font-bold text-zinc-900 dark:text-white pt-1">
+                    <PriceDisplay amountInUSD={Math.max(0, getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount))} />
                   </div>
-                  <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
-                    Active
-                  </span>
                 </div>
-              </button>
 
-              {/* Option 2: Pay via Reddit */}
-              <button
-                onClick={() => handleSocialRedirect("reddit")}
-                className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Reddit</h3>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
-                  </div>
-                  <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
-                    Active
-                  </span>
+                {/* Options List */}
+                <div className="space-y-3">
+                  {/* Option 1: Pay via Telegram */}
+                  <button
+                    onClick={() => handleSocialRedirect("telegram")}
+                    className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Telegram</h3>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
+                      </div>
+                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 2: Pay via Reddit */}
+                  <button
+                    onClick={() => handleSocialRedirect("reddit")}
+                    className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Reddit</h3>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
+                      </div>
+                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 3: Pay via Instagram */}
+                  <button
+                    onClick={() => handleSocialRedirect("instagram")}
+                    className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Instagram</h3>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
+                      </div>
+                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 4: Pay via Facebook */}
+                  <button
+                    onClick={() => handleSocialRedirect("facebook")}
+                    className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Facebook</h3>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Message us on Facebook to complete your order</p>
+                      </div>
+                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 5: Pay via UPI (P2P QR) */}
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await createStorefrontOrderAction(items, getTotalPrice());
+                        if (res.success && res.orderId) {
+                          const totalPrice = getTotalPrice();
+                          const discount = Math.min(totalPrice, walletCreditAmount);
+                          const finalPrice = Math.max(0, totalPrice - discount);
+                          const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                          const amountInINR = Math.round(finalPrice * inrRate);
+
+                          setUpiCheckoutData({
+                            orderId: res.orderId,
+                            amount: amountInINR,
+                            email: session?.user?.email || "customer@store.com",
+                          });
+                        } else {
+                          alert("Error: " + (res.error || "Failed to create order"));
+                        }
+                      } catch (err) {
+                        console.error("UPI checkout error:", err);
+                        alert("Failed to initiate UPI transaction. Please try again.");
+                      }
+                    }}
+                    className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via UPI (Instant QR)</h3>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Scan QR code, enter 12-digit UTR and submit screenshot</p>
+                      </div>
+                      <span className="bg-violet-600 text-white px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                        UPI QR
+                      </span>
+                    </div>
+                  </button>
                 </div>
-              </button>
 
-              {/* Option 3: Pay via Instagram */}
-              <button
-                onClick={() => handleSocialRedirect("instagram")}
-                className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Instagram</h3>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
-                  </div>
-                  <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
-                    Active
-                  </span>
+                {/* Footer */}
+                <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
+                  <span>Verify transaction manually with receipt screenshots.</span>
                 </div>
-              </button>
-
-              {/* Option 4: Pay via Facebook */}
-              <button
-                onClick={() => handleSocialRedirect("facebook")}
-                className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Facebook</h3>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Message us on Facebook to complete your order</p>
-                  </div>
-                  <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
-                    Active
-                  </span>
-                </div>
-              </button>
-            </div>
-
-            {/* Footer */}
-            <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
-              <span>Verify transaction manually with receipt screenshots.</span>
-            </div>
+              </>
+            )}
 
           </div>
         </div>

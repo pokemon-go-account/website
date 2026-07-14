@@ -38,6 +38,7 @@ import { fetchAllAuctionBids, createBuyNowOrderAction } from "@/features/auction
 import { pauseAuction, resumeAuction, forceEndAuction, updateAuction, deleteAuction } from "@/features/admin/actions";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
+import { UpiPaymentCheckout } from "@/features/payments/components/upi-checkout";
 
 interface LiveRoomProps {
   auction: {
@@ -165,6 +166,7 @@ export function LiveRoom({
   const [isCopied, setIsCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
+  const [upiCheckoutData, setUpiCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
 
   // Admin Controls states
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
@@ -2613,98 +2615,164 @@ Please let me know how to proceed with the payment!`;
 
             {/* Close Button */}
             <button
-              onClick={() => setIsBuyNowOpen(false)}
+              onClick={() => {
+                setUpiCheckoutData(null);
+                setIsBuyNowOpen(false);
+              }}
               className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none"
             >
               <X className="h-5 w-5" />
             </button>
 
-            {/* Header */}
-            <div className="space-y-1.5">
-              <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-[#6133e1]" />
-                Complete Purchase
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                You are purchasing this listing instantly. The final Buy Now price is:
-              </p>
-              <div className="text-2xl font-black text-[#6133e1] pt-1">
-                <PriceDisplay amountInUSD={auction.listingId.startingBid * 4} />
+            {upiCheckoutData ? (
+              <div className="space-y-4 text-left">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
+                    <Sparkles className="h-4.5 w-4.5 text-[#6133e1]" />
+                    UPI Pay Gate
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setUpiCheckoutData(null);
+                      setIsBuyNowOpen(false);
+                    }}
+                    className="text-[10px] font-bold text-zinc-500 hover:text-[#6133e1] dark:hover:text-purple-400 cursor-pointer bg-transparent border-none transition-colors"
+                  >
+                    Back to Auction
+                  </button>
+                </div>
+                <UpiPaymentCheckout
+                  orderId={upiCheckoutData.orderId}
+                  amount={upiCheckoutData.amount}
+                  customerEmail={upiCheckoutData.email}
+                />
               </div>
-            </div>
-
-            {/* Options List */}
-            <div className="space-y-3">
-              {/* Option 1: Pay via Telegram */}
-              <button
-                onClick={() => handleSocialRedirect("telegram")}
-                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Telegram</h3>
-                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="space-y-1.5">
+                  <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-[#6133e1]" />
+                    Complete Purchase
+                  </h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    You are purchasing this listing instantly. The final Buy Now price is:
+                  </p>
+                  <div className="text-2xl font-black text-[#6133e1] pt-1">
+                    <PriceDisplay amountInUSD={auction.listingId.startingBid * 4} />
                   </div>
-                  <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                    Active
-                  </span>
                 </div>
-              </button>
 
-              {/* Option 2: Pay via Reddit */}
-              <button
-                onClick={() => handleSocialRedirect("reddit")}
-                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Reddit</h3>
-                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
-                  </div>
-                  <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-500/20">
-                    Active
-                  </span>
+                {/* Options List */}
+                <div className="space-y-3">
+                  {/* Option 1: Pay via Telegram */}
+                  <button
+                    onClick={() => handleSocialRedirect("telegram")}
+                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Telegram</h3>
+                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
+                      </div>
+                      <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 2: Pay via Reddit */}
+                  <button
+                    onClick={() => handleSocialRedirect("reddit")}
+                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Reddit</h3>
+                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
+                      </div>
+                      <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-500/20">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 3: Pay via Instagram */}
+                  <button
+                    onClick={() => handleSocialRedirect("instagram")}
+                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Instagram</h3>
+                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
+                      </div>
+                      <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 4: Pay via Facebook */}
+                  <button
+                    onClick={() => handleSocialRedirect("facebook")}
+                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Facebook</h3>
+                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Message us on Facebook to complete your order</p>
+                      </div>
+                      <span className="bg-blue-600/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
+                        Active
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 5: Pay via UPI (P2P QR) */}
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await createBuyNowOrderAction(auction._id);
+                        if (res.success && res.orderId) {
+                          const buyNowPrice = auction.listingId.startingBid * 4;
+                          const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                          const amountInINR = Math.round(buyNowPrice * inrRate);
+
+                          setUpiCheckoutData({
+                            orderId: res.orderId,
+                            amount: amountInINR,
+                            email: session?.user?.email || "customer@store.com",
+                          });
+                        } else {
+                          alert("Error: " + (res.error || "Failed to create order"));
+                        }
+                      } catch (err) {
+                        console.error("UPI checkout error:", err);
+                        alert("Failed to initiate UPI transaction. Please try again.");
+                      }
+                    }}
+                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via UPI (Instant QR)</h3>
+                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Scan QR code, enter 12-digit UTR and submit screenshot</p>
+                      </div>
+                      <span className="bg-violet-600 text-white px-2 py-0.5 rounded text-[10px] font-bold border border-violet-500/20">
+                        UPI QR
+                      </span>
+                    </div>
+                  </button>
                 </div>
-              </button>
 
-              {/* Option 3: Pay via Instagram */}
-              <button
-                onClick={() => handleSocialRedirect("instagram")}
-                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Instagram</h3>
-                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
-                  </div>
-                  <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
-                    Active
-                  </span>
+                {/* Footer */}
+                <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span>Verify transaction manually with receipt screenshots.</span>
                 </div>
-              </button>
-
-              {/* Option 4: Pay via Facebook */}
-              <button
-                onClick={() => handleSocialRedirect("facebook")}
-                className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Facebook</h3>
-                    <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Message us on Facebook to complete your order</p>
-                  </div>
-                  <span className="bg-blue-600/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                    Active
-                  </span>
-                </div>
-              </button>
-            </div>
-
-            {/* Footer */}
-            <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
-              <MessageSquare className="h-3.5 w-3.5" />
-              <span>Verify transaction manually with receipt screenshots.</span>
-            </div>
+              </>
+            )}
 
           </div>
         </div>
