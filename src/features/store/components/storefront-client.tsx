@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft, ChevronRight, ScanQrCode, CreditCard, Coins, DollarSign, Globe, CircleDot } from "lucide-react";
 import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
@@ -105,6 +105,8 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestSuccess, setRequestSuccess] = useState(false);
   const [upiCheckoutData, setUpiCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
+  const [paymentStage, setPaymentStage] = useState<"methods" | "platforms" | "upi">("methods");
+  const [selectedMethod, setSelectedMethod] = useState<"UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others" | null>(null);
 
   // Custom request states (Account, Stardust, XP)
   const [isCustomRequestModalOpen, setIsCustomRequestModalOpen] = useState(false);
@@ -175,14 +177,19 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
     const formattedDiscount = convert(discount).formatted;
     const formattedFinal = convert(finalPrice).formatted;
 
+    const methodLabel = selectedMethod === "Card" ? "Credit/Debit Card (Visa/Mastercard/Amex)" :
+                        selectedMethod === "Crypto" ? "Cryptocurrency" :
+                        selectedMethod === "PayPal" ? "PayPal" :
+                        selectedMethod === "Wise" ? "Wise" : "Others";
+
     const message = hasWalletCredit
-      ? `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction:
+      ? `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction and pay via ${methodLabel}:
 ${orderIdStr}${itemsList}
 Original Total: ${formattedTotal}
 Wallet Verification Credit Applied: -${formattedDiscount}
 Adjusted Final Price: ${formattedFinal}
 Please let me know how to proceed with the payment!`
-      : `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction:
+      : `Hi Pokémon GO Services! I would like to purchase the following items via secure transaction and pay via ${methodLabel}:
 ${orderIdStr}${itemsList}
 Total Price: ${formattedTotal}
 Please let me know how to proceed with the payment!`;
@@ -682,8 +689,26 @@ Please let me know how to proceed with the payment!`;
 
       {/* Checkout Payment Modal */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-xl space-y-6 text-zinc-900 dark:text-white">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if (upiCheckoutData) {
+                clearCart();
+                setUpiCheckoutData(null);
+              }
+              setPaymentStage("methods");
+              setSelectedMethod(null);
+              setIsCheckoutOpen(false);
+            }
+          }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div
+            className={cn(
+              "relative w-full rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-xl space-y-6 text-zinc-900 dark:text-white transition-all duration-300 cursor-default",
+              paymentStage === "upi" ? "max-w-2xl" : "max-w-md"
+            )}
+          >
             
             {/* Close Button */}
             <button
@@ -692,6 +717,8 @@ Please let me know how to proceed with the payment!`;
                   clearCart();
                   setUpiCheckoutData(null);
                 }
+                setPaymentStage("methods");
+                setSelectedMethod(null);
                 setIsCheckoutOpen(false);
               }}
               className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none"
@@ -699,22 +726,22 @@ Please let me know how to proceed with the payment!`;
               <X className="h-5 w-5" />
             </button>
 
-            {upiCheckoutData ? (
+            {/* STAGE 1: UPI CHECKOUT GATEWAY */}
+            {paymentStage === "upi" && upiCheckoutData ? (
               <div className="space-y-4 text-left">
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
                   <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
-                    <ShoppingBag className="h-4.5 w-4.5 text-[#6133e1]" />
+                    <ScanQrCode className="h-4.5 w-4.5 text-[#6133e1]" />
                     UPI Pay Gate
                   </h3>
                   <button
                     onClick={() => {
-                      clearCart();
                       setUpiCheckoutData(null);
-                      setIsCheckoutOpen(false);
+                      setPaymentStage("methods");
                     }}
                     className="text-[10px] font-bold text-zinc-500 hover:text-[#6133e1] dark:hover:text-purple-400 cursor-pointer bg-transparent border-none transition-colors"
                   >
-                    Back to Shop
+                    Change Method
                   </button>
                 </div>
                 <UpiPaymentCheckout
@@ -723,30 +750,19 @@ Please let me know how to proceed with the payment!`;
                   customerEmail={upiCheckoutData.email}
                 />
               </div>
-            ) : (
-              <>
-                {/* Header */}
-                <div className="space-y-1.5 text-left">
+            ) : paymentStage === "platforms" && selectedMethod ? (
+              /* STAGE 2: SOCIAL REDIRECT PLATFORMS FOR MANUAL VERIFICATION */
+              <div className="space-y-5 text-left">
+                <div className="space-y-1">
                   <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
                     <ShoppingBag className="h-5 w-5 text-zinc-900 dark:text-white" />
-                    Complete Checkout
+                    Manual Order Verification
                   </h2>
-                  <p className="text-xs text-zinc-550 dark:text-zinc-400">
-                    You are purchasing direct store items. The total price is:
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Verify and complete your payment via <strong>{selectedMethod}</strong> using one of our verified chat agents below:
                   </p>
-                  {hasWalletCredit && (
-                    <div className="text-[11px] text-zinc-400 dark:text-zinc-550 flex items-center gap-1.5 mt-1">
-                      <span>Subtotal: <PriceDisplay amountInUSD={getTotalPrice()} /></span>
-                      <span>•</span>
-                      <span className="text-emerald-500 font-semibold">Credit: -<PriceDisplay amountInUSD={Math.min(getTotalPrice(), walletCreditAmount)} /></span>
-                    </div>
-                  )}
-                  <div className="text-xl font-bold text-zinc-900 dark:text-white pt-1">
-                    <PriceDisplay amountInUSD={Math.max(0, getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount))} />
-                  </div>
                 </div>
 
-                {/* Options List */}
                 <div className="space-y-3">
                   {/* Option 1: Pay via Telegram */}
                   <button
@@ -756,9 +772,9 @@ Please let me know how to proceed with the payment!`;
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Telegram</h3>
-                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Chat with @pokemongoservicesadmin for billing details</p>
                       </div>
-                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                      <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase border border-blue-500/20">
                         Active
                       </span>
                     </div>
@@ -774,7 +790,7 @@ Please let me know how to proceed with the payment!`;
                         <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Reddit</h3>
                         <p className="text-[10px] text-zinc-500 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
                       </div>
-                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                      <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase border border-orange-500/20">
                         Active
                       </span>
                     </div>
@@ -790,7 +806,7 @@ Please let me know how to proceed with the payment!`;
                         <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Instagram</h3>
                         <p className="text-[10px] text-zinc-500 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
                       </div>
-                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                      <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase border border-pink-500/20">
                         Active
                       </span>
                     </div>
@@ -806,13 +822,50 @@ Please let me know how to proceed with the payment!`;
                         <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via Facebook</h3>
                         <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Message us on Facebook to complete your order</p>
                       </div>
-                      <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
+                      <span className="bg-blue-600/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase border border-blue-500/20">
                         Active
                       </span>
                     </div>
                   </button>
+                </div>
 
-                  {/* Option 5: Pay via UPI (P2P QR) */}
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={() => setPaymentStage("methods")}
+                    className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer bg-transparent border-none"
+                  >
+                    &larr; Back to Payment Methods
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* STAGE 3: CHOOSE PAYMENT METHOD (6 OPTIONS) */
+              <>
+                {/* Header */}
+                <div className="space-y-1.5 text-left">
+                  <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-zinc-900 dark:text-white" />
+                    Complete Checkout
+                  </h2>
+                  <p className="text-xs text-zinc-550 dark:text-zinc-400">
+                    Choose your preferred payment method below. The total price is:
+                  </p>
+                  {hasWalletCredit && (
+                    <div className="text-[11px] text-zinc-400 dark:text-zinc-550 flex items-center gap-1.5 mt-1">
+                      <span>Subtotal: <PriceDisplay amountInUSD={getTotalPrice()} /></span>
+                      <span>•</span>
+                      <span className="text-emerald-500 font-semibold">Credit: -<PriceDisplay amountInUSD={Math.min(getTotalPrice(), walletCreditAmount)} /></span>
+                    </div>
+                  )}
+                  <div className="text-xl font-bold text-zinc-900 dark:text-white pt-1">
+                    <PriceDisplay amountInUSD={Math.max(0, getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount))} />
+                  </div>
+                </div>
+
+                {/* 6 Payment Methods Grid */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  
+                  {/* 1. UPI */}
                   <button
                     onClick={async () => {
                       try {
@@ -829,6 +882,8 @@ Please let me know how to proceed with the payment!`;
                             amount: amountInINR,
                             email: session?.user?.email || "customer@store.com",
                           });
+                          setSelectedMethod("UPI");
+                          setPaymentStage("upi");
                         } else {
                           alert("Error: " + (res.error || "Failed to create order"));
                         }
@@ -837,23 +892,95 @@ Please let me know how to proceed with the payment!`;
                         alert("Failed to initiate UPI transaction. Please try again.");
                       }
                     }}
-                    className="w-full text-left overflow-hidden rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 hover:bg-zinc-100 dark:hover:bg-white/[0.02] p-4 transition-all hover:border-zinc-300 dark:hover:border-white/[0.08] cursor-pointer active:scale-[0.99]"
+                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-xs font-semibold text-zinc-900 dark:text-white">Pay via UPI (Instant QR)</h3>
-                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Scan QR code, enter 12-digit UTR and submit screenshot</p>
-                      </div>
-                      <span className="bg-violet-600 text-white px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase">
-                        UPI QR
-                      </span>
+                    <ScanQrCode className="h-5 w-5 text-violet-500 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">UPI QR / App</p>
+                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Instant transfer</p>
                     </div>
                   </button>
+
+                  {/* 2. Credit Card */}
+                  <button
+                    onClick={() => {
+                      setSelectedMethod("Card");
+                      setPaymentStage("platforms");
+                    }}
+                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                  >
+                    <CreditCard className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Credit Card</p>
+                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Visa, Mastercard, Amex</p>
+                    </div>
+                  </button>
+
+                  {/* 3. Crypto */}
+                  <button
+                    onClick={() => {
+                      setSelectedMethod("Crypto");
+                      setPaymentStage("platforms");
+                    }}
+                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                  >
+                    <Coins className="h-5 w-5 text-amber-500 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Cryptocurrency</p>
+                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">USDT, BTC, ETH</p>
+                    </div>
+                  </button>
+
+                  {/* 4. PayPal */}
+                  <button
+                    onClick={() => {
+                      setSelectedMethod("PayPal");
+                      setPaymentStage("platforms");
+                    }}
+                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                  >
+                    <DollarSign className="h-5 w-5 text-sky-500 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">PayPal</p>
+                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Instant checkout</p>
+                    </div>
+                  </button>
+
+                  {/* 5. Wise */}
+                  <button
+                    onClick={() => {
+                      setSelectedMethod("Wise");
+                      setPaymentStage("platforms");
+                    }}
+                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                  >
+                    <Globe className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Wise Transfer</p>
+                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Global bank pay</p>
+                    </div>
+                  </button>
+
+                  {/* 6. Others */}
+                  <button
+                    onClick={() => {
+                      setSelectedMethod("Others");
+                      setPaymentStage("platforms");
+                    }}
+                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                  >
+                    <CircleDot className="h-5 w-5 text-zinc-500 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Other Methods</p>
+                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Custom billing chat</p>
+                    </div>
+                  </button>
+
                 </div>
 
                 {/* Footer */}
-                <div className="pt-2 flex items-center gap-1.5 justify-center text-[10px] text-zinc-500">
-                  <span>Verify transaction manually with receipt screenshots.</span>
+                <div className="pt-2 flex items-center justify-center text-[10px] text-zinc-450 dark:text-zinc-500">
+                  <span>🔒 Secured &amp; encrypted manual payment system</span>
                 </div>
               </>
             )}
