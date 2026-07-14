@@ -40,7 +40,9 @@ export function UpiPaymentCheckout({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // UPI deep link for QR code / App launch
-  const upiLink = `upi://pay?pa=${upiId}&pn=PokemonGOServices&am=${amount}&cu=INR&tn=Order-${orderId}`;
+  // We remove 'tn' (transaction note) because passing long alphanumeric Order IDs triggers UPI Risk Policies/Spam filters on GPay/PhonePe.
+  const payeeName = encodeURIComponent("Pokemon GO Services");
+  const upiLink = `upi://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR`;
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(upiId);
