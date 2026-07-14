@@ -43,7 +43,7 @@ export default async function PaymentsConsolePage() {
     amount: p.amount,
     customerEmail: p.customerEmail,
     utrNumber: p.utrNumber,
-    screenshotBase64: p.screenshotBase64,
+    screenshotUrl: p.screenshotUrl,
     status: p.status as "Pending" | "Verified" | "Rejected",
     createdAt: new Date(p.createdAt).toLocaleString("en-IN", {
       day: "numeric",
@@ -171,7 +171,7 @@ export default async function PaymentsConsolePage() {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <PaymentActions
                           paymentId={p.id}
-                          screenshotBase64={p.screenshotBase64}
+                          screenshotUrl={p.screenshotUrl}
                           utrNumber={p.utrNumber}
                         />
                       </td>

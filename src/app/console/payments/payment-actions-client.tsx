@@ -6,11 +6,11 @@ import { verifyPayment, rejectPayment } from "@/features/console/payment-actions
 
 interface PaymentActionsProps {
   paymentId: string;
-  screenshotBase64: string;
+  screenshotUrl: string;
   utrNumber: string;
 }
 
-export function PaymentActions({ paymentId, screenshotBase64, utrNumber }: PaymentActionsProps) {
+export function PaymentActions({ paymentId, screenshotUrl, utrNumber }: PaymentActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [action, setAction] = useState<"verify" | "reject" | null>(null);
   const [done, setDone] = useState<"Verified" | "Rejected" | null>(null);
@@ -100,7 +100,7 @@ export function PaymentActions({ paymentId, screenshotBase64, utrNumber }: Payme
               </div>
               <div className="flex items-center gap-2">
                 <a
-                  href={screenshotBase64}
+                  href={screenshotUrl}
                   download={`payment-${utrNumber}.png`}
                   className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer"
                 >
@@ -116,7 +116,7 @@ export function PaymentActions({ paymentId, screenshotBase64, utrNumber }: Payme
               </div>
             </div>
             <img
-              src={screenshotBase64}
+              src={screenshotUrl}
               alt="Payment proof screenshot"
               className="w-full rounded-xl object-contain max-h-[60vh] bg-zinc-50 dark:bg-zinc-900"
             />

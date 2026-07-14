@@ -5,7 +5,7 @@ export interface IPayment extends Document {
   amount: number;
   customerEmail: string;
   utrNumber: string;
-  screenshotBase64: string;
+  screenshotUrl: string;
   status: "Pending" | "Verified" | "Rejected";
   createdAt: Date;
 }
@@ -16,7 +16,7 @@ const PaymentSchema = new Schema<IPayment>(
     amount: { type: Number, required: true },
     customerEmail: { type: String, required: true, trim: true, lowercase: true },
     utrNumber: { type: String, required: true, trim: true, maxlength: 12 },
-    screenshotBase64: { type: String, required: true },
+    screenshotUrl: { type: String, required: true },
     status: {
       type: String,
       enum: ["Pending", "Verified", "Rejected"],
@@ -28,7 +28,10 @@ const PaymentSchema = new Schema<IPayment>(
 
 PaymentSchema.index({ status: 1, createdAt: -1 });
 
-const Payment: Model<IPayment> =
-  mongoose.models.Payment || mongoose.model<IPayment>("Payment", PaymentSchema);
+if (mongoose.models && mongoose.models.Payment) {
+  delete (mongoose.models as any).Payment;
+}
+
+const Payment: Model<IPayment> = mongoose.model<IPayment>("Payment", PaymentSchema);
 
 export default Payment;
