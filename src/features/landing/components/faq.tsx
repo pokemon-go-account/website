@@ -11,8 +11,8 @@ const faqs = [
     a: "We are a premium secondary marketplace specializing in high-tier Pokémon GO account trading, raiding boosts, stardust services, and custom items. We offer both live scheduled auctions and direct storefront purchase options."
   },
   {
-    q: "Is this platform safe to use?",
-    a: "Absolutely. All transactions are securely handled using our secure escrow custody. Sellers must verify account ownership and undergo strict identity checks. We also back storefront accounts with a 7-day money-back ban guarantee."
+    q: "Is it safe to buy accounts here?",
+    a: "Absolutely. All transactions are securely handled using our secure custody. Sellers must verify account ownership and undergo strict identity checks. We also back storefront accounts with a 7-day money-back ban guarantee."
   },
   {
     q: "How do I create an account and start participating?",
@@ -75,10 +75,10 @@ const faqs = [
     a: "Storefront orders can be cancelled for a full refund up until our trade managers begin processing the transfer on your device. Once processing begins, orders are locked and cannot be cancelled."
   },
 
-  // Escrow & Handover (17-21)
+  // Handover (17-21)
   {
-    q: "How does the intermediate escrow system work?",
-    a: "When you buy an account, your payment is held securely in escrow by our team. Our team takes possession of the account details, resets recovery coordinates, changes email links, and verifies contents. We only release funds to the seller after you confirm full access."
+    q: "How does the intermediate system work?",
+    a: "When you buy an account, your payment is held securely by our team. Our team takes possession of the account details, resets recovery coordinates, changes email links, and verifies contents. We only release funds to the seller after you confirm full access."
   },
   {
     q: "What are 'changeable email coordinates'?",

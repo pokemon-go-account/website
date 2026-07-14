@@ -338,7 +338,7 @@ export async function requestPasswordResetOtp(email: string) {
                   Pokémon GO Marketplace & Services Group
                 </p>
                 <p style="font-size: 10px; color: #d4d4d8; margin: 0;">
-                  Secure Escrow Systems
+                  Secure Systems
                 </p>
               </div>
 

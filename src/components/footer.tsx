@@ -46,7 +46,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed font-light max-w-sm">
-              The premier marketplace and recovery network for high-tier Pokémon GO assets. Trusted globally for safe escrow, real-time live bidding, and certified trainers.
+              The premier marketplace and recovery network for high-tier Pokémon GO assets. Trusted globally for safety, real-time live bidding, and certified trainers.
             </p>
           </div>
 

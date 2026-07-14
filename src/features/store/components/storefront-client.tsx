@@ -90,7 +90,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { convert } = useCurrencyStore();
   
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const walletBalance = (session?.user as any)?.walletBalance || 0;
   const hasWalletCredit = walletBalance > 0;
   const walletCreditAmount = hasWalletCredit ? walletBalance : 0;
@@ -670,13 +670,15 @@ Please let me know how to proceed with the payment!`;
 
                   <button
                     onClick={() => {
+                      if (status === "loading") return;
                       if (!session?.user) {
                         window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
                       } else {
                         setIsCheckoutOpen(true);
                       }
                     }}
-                    className="w-full h-10 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                    disabled={status === "loading"}
+                    className="w-full h-10 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-65"
                   >
                     <span>Checkout / Buy Now</span>
                   </button>
@@ -892,12 +894,19 @@ Please let me know how to proceed with the payment!`;
                         alert("Failed to initiate UPI transaction. Please try again.");
                       }
                     }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
                   >
-                    <ScanQrCode className="h-5 w-5 text-violet-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">UPI QR / App</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Instant transfer</p>
+                    <div className="w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">UPI Transfer</span>
+                        <span className="text-[9px] bg-violet-500/15 text-violet-700 dark:text-violet-400 px-2 py-0.5 rounded-full font-bold uppercase border border-violet-500/20">Instant</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Zero fee instant payments</p>
+                      <div className="flex items-center gap-2 mt-auto">
+                        <img src="https://cdn.simpleicons.org/googlepay" alt="GPay" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                        <img src="https://cdn.simpleicons.org/phonepe" alt="PhonePe" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                        <img src="https://cdn.simpleicons.org/paytm" alt="Paytm" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      </div>
                     </div>
                   </button>
 
@@ -907,12 +916,19 @@ Please let me know how to proceed with the payment!`;
                       setSelectedMethod("Card");
                       setPaymentStage("platforms");
                     }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
                   >
-                    <CreditCard className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Credit Card</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Visa, Mastercard, Amex</p>
+                    <div className="w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Credit Card</span>
+                        <span className="text-[9px] bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Global card processing</p>
+                      <div className="flex items-center gap-2 mt-auto">
+                        <img src="https://cdn.simpleicons.org/visa" alt="Visa" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                        <img src="https://cdn.simpleicons.org/mastercard" alt="Mastercard" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                        <img src="https://cdn.simpleicons.org/americanexpress" alt="Amex" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      </div>
                     </div>
                   </button>
 
@@ -922,12 +938,19 @@ Please let me know how to proceed with the payment!`;
                       setSelectedMethod("Crypto");
                       setPaymentStage("platforms");
                     }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
                   >
-                    <Coins className="h-5 w-5 text-amber-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Cryptocurrency</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">USDT, BTC, ETH</p>
+                    <div className="w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Crypto</span>
+                        <span className="text-[9px] bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Secure USDT, BTC, ETH</p>
+                      <div className="flex items-center gap-2 mt-auto">
+                        <img src="https://cdn.simpleicons.org/tether" alt="USDT" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                        <img src="https://cdn.simpleicons.org/bitcoin" alt="BTC" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                        <img src="https://cdn.simpleicons.org/ethereum" alt="ETH" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      </div>
                     </div>
                   </button>
 
@@ -937,12 +960,17 @@ Please let me know how to proceed with the payment!`;
                       setSelectedMethod("PayPal");
                       setPaymentStage("platforms");
                     }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
                   >
-                    <DollarSign className="h-5 w-5 text-sky-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">PayPal</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Instant checkout</p>
+                    <div className="w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">PayPal</span>
+                        <span className="text-[9px] bg-sky-500/10 text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Global payment verification</p>
+                      <div className="flex items-center gap-2 mt-auto">
+                        <img src="https://cdn.simpleicons.org/paypal" alt="PayPal" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      </div>
                     </div>
                   </button>
 
@@ -952,12 +980,17 @@ Please let me know how to proceed with the payment!`;
                       setSelectedMethod("Wise");
                       setPaymentStage("platforms");
                     }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
                   >
-                    <Globe className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Wise Transfer</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Global bank pay</p>
+                    <div className="w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Wise</span>
+                        <span className="text-[9px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Direct international transfer</p>
+                      <div className="flex items-center gap-2 mt-auto">
+                        <img src="https://cdn.simpleicons.org/wise" alt="Wise" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      </div>
                     </div>
                   </button>
 
@@ -967,12 +1000,17 @@ Please let me know how to proceed with the payment!`;
                       setSelectedMethod("Others");
                       setPaymentStage("platforms");
                     }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
+                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
                   >
-                    <CircleDot className="h-5 w-5 text-zinc-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Other Methods</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Custom billing chat</p>
+                    <div className="w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Others</span>
+                        <span className="text-[9px] bg-zinc-500/10 text-zinc-700 dark:text-zinc-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Custom billing chat</p>
+                      <div className="flex items-center gap-2 mt-auto text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        Payoneer • Alipay
+                      </div>
                     </div>
                   </button>
 

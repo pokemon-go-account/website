@@ -135,7 +135,7 @@ export function LiveRoom({
   initialIsRegistered = false,
   session: propSession,
 }: LiveRoomProps) {
-  const { data: clientSession } = useSession();
+  const { data: clientSession, status: sessionStatus } = useSession();
   const session = clientSession || propSession;
   const router = useRouter();
   const isOwner = session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId);
@@ -492,6 +492,7 @@ export function LiveRoom({
   };
 
   const handleBuyNowClick = () => {
+    if (sessionStatus === "loading") return;
     if (!session?.user) {
       window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
     } else {
@@ -532,7 +533,7 @@ Please let me know how to proceed with the payment!`;
     if (platform === "telegram") {
       window.open(`https://telegram.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } else if (platform === "reddit") {
-      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Instant%20Escrow%20Purchase&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Instant%20Purchase&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } else if (platform === "instagram") {
       alert("📋 We have copied your order details to your clipboard! Paste it in the Instagram DM to proceed.");
       window.open("https://www.instagram.com/pokemongoservicesadmin/", "_blank", "noopener,noreferrer");
@@ -898,16 +899,16 @@ Please let me know how to proceed with the payment!`;
         </div>
         <button
           onClick={handleBuyNowClick}
-          disabled={isBuyNowDisabled}
+          disabled={isBuyNowDisabled || sessionStatus === "loading"}
           className={cn(
             "h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border cursor-pointer",
-            isBuyNowDisabled
-              ? "bg-zinc-205 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
+            (isBuyNowDisabled || sessionStatus === "loading")
+              ? "bg-zinc-200 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
               : "bg-zinc-900 hover:bg-[#6133e1] text-white border border-zinc-800 hover:border-[#6133e1]"
           )}
         >
           <span>BUY NOW</span>
-          <span className={cn("text-[10px] font-bold border-l pl-2", isBuyNowDisabled ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-450 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
+          <span className={cn("text-[10px] font-bold border-l pl-2", (isBuyNowDisabled || sessionStatus === "loading") ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-450 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
         </button>
       </div>
     </div>
@@ -1139,7 +1140,7 @@ Please let me know how to proceed with the payment!`;
                 <ShieldCheck className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
                 <div>
                   <h4 className="text-[11px] font-bold text-zinc-800 dark:text-white uppercase tracking-wider">100% Safe</h4>
-                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Secure escrow systems</p>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400">Secure systems</p>
                 </div>
               </div>
               <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0d0d12]/40 backdrop-blur-sm p-3.5 flex items-center gap-3 shadow-xs">
@@ -1649,16 +1650,16 @@ Please let me know how to proceed with the payment!`;
               </div>
               <button
                 onClick={handleBuyNowClick}
-                disabled={isBuyNowDisabled}
+                disabled={isBuyNowDisabled || sessionStatus === "loading"}
                 className={cn(
                   "w-full h-11 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border cursor-pointer",
-                  isBuyNowDisabled
-                    ? "bg-zinc-200 dark:bg-zinc-900 text-zinc-450 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
+                  (isBuyNowDisabled || sessionStatus === "loading")
+                    ? "bg-zinc-200 dark:bg-zinc-900 text-zinc-455 dark:text-zinc-500 border-zinc-300 dark:border-zinc-800 cursor-not-allowed opacity-60"
                     : "bg-zinc-900 hover:bg-[#6133e1] text-white border border-zinc-800 hover:border-[#6133e1]"
                 )}
               >
                 <span>BUY NOW</span>
-                <span className={cn("text-[10px] font-bold border-l pl-2", isBuyNowDisabled ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-455 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
+                <span className={cn("text-[10px] font-bold border-l pl-2", (isBuyNowDisabled || sessionStatus === "loading") ? "border-zinc-300 dark:border-zinc-700/60 text-zinc-455 dark:text-zinc-500" : "border-zinc-700/60 text-zinc-400")}><PriceDisplay amountInUSD={buyNowPrice} /></span>
               </button>
             </div>
 
@@ -1765,7 +1766,7 @@ Please let me know how to proceed with the payment!`;
             {/* Trust Guarantees */}
             <div className="grid grid-cols-2 gap-3">
               {[
-                { title: "100% Safe", desc: "Secure Escrows", icon: ShieldCheck, color: "text-emerald-500" },
+                { title: "100% Safe", desc: "Secure System", icon: ShieldCheck, color: "text-emerald-500" },
                 { title: "Fast Delivery", desc: "Credentials Instantly", icon: Award, color: "text-purple-505" },
                 { title: "Verified Assets", desc: "Admin Checked", icon: Coins, color: "text-sky-500" },
                 { title: "24/7 Helpdesk", desc: "Live Chat Support", icon: Headset, color: "text-indigo-500" }
@@ -2634,11 +2635,11 @@ Please let me know how to proceed with the payment!`;
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
         >
           <div
-            className={cn(
-              "relative w-full rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-2xl space-y-6 text-zinc-900 dark:text-white transition-all duration-300 cursor-default",
-              paymentStage === "upi" ? "max-w-2xl" : "max-w-md"
-            )}
+            className="relative w-full max-w-4xl rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white dark:bg-[#111] p-6 lg:p-8 shadow-2xl text-zinc-900 dark:text-white transition-all duration-300 cursor-default overflow-hidden"
           >
+            {/* Ambient background glows */}
+            <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#6133e1]/5 dark:bg-[#6133e1]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 w-64 h-64 bg-violet-500/5 dark:bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Close Button */}
             <button
@@ -2648,261 +2649,437 @@ Please let me know how to proceed with the payment!`;
                 setSelectedMethod(null);
                 setIsBuyNowOpen(false);
               }}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none"
+              className="absolute top-5 right-5 text-zinc-400 hover:text-zinc-955 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none z-20"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5.5 w-5.5" />
             </button>
 
-            {/* STAGE 1: UPI CHECKOUT GATEWAY */}
-            {paymentStage === "upi" && upiCheckoutData ? (
-              <div className="space-y-4 text-left">
-                <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
-                  <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
-                    <ScanQrCode className="h-4.5 w-4.5 text-[#6133e1]" />
-                    UPI Pay Gate
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setUpiCheckoutData(null);
-                      setPaymentStage("methods");
-                    }}
-                    className="text-[10px] font-bold text-zinc-500 hover:text-[#6133e1] dark:hover:text-purple-400 cursor-pointer bg-transparent border-none transition-colors"
-                  >
-                    Change Method
-                  </button>
-                </div>
-                <UpiPaymentCheckout
-                  orderId={upiCheckoutData.orderId}
-                  amount={upiCheckoutData.amount}
-                  customerEmail={upiCheckoutData.email}
-                />
+            {/* Main Checkout Container Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10 text-left">
+              
+              {/* Left Column: Interactive Forms (Stages) */}
+              <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+                
+                {/* STAGE 1: UPI CHECKOUT GATEWAY */}
+                {paymentStage === "upi" && upiCheckoutData ? (
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                      <h3 className="font-extrabold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5 uppercase tracking-wide">
+                        <ScanQrCode className="h-4.5 w-4.5 text-[#6133e1]" />
+                        UPI Secure Gate
+                      </h3>
+                      <button
+                        onClick={() => {
+                          setUpiCheckoutData(null);
+                          setPaymentStage("methods");
+                          setSelectedMethod(null);
+                        }}
+                        className="text-[10px] font-bold text-zinc-500 hover:text-[#6133e1] dark:hover:text-purple-400 cursor-pointer bg-transparent border-none transition-colors"
+                      >
+                        Change Method
+                      </button>
+                    </div>
+                    <UpiPaymentCheckout
+                      orderId={upiCheckoutData.orderId}
+                      amount={upiCheckoutData.amount}
+                      customerEmail={upiCheckoutData.email}
+                    />
+                  </div>
+                ) : paymentStage === "platforms" && selectedMethod ? (
+                  
+                  /* STAGE 2: SOCIAL REDIRECT PLATFORMS FOR MANUAL VERIFICATION */
+                  <div className="space-y-5">
+                    <div className="space-y-1.5 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                      <h2 className="text-base font-extrabold tracking-tight flex items-center gap-2 uppercase text-zinc-900 dark:text-white">
+                        <Sparkles className="h-5 w-5 text-[#6133e1]" />
+                        Live Verification
+                      </h2>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        Verify and complete your purchase via <span className="font-extrabold text-[#6133e1] dark:text-purple-400">{selectedMethod}</span>. Click one of our verified live chat agents below:
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Option 1: Pay via Telegram */}
+                      <button
+                        onClick={() => handleSocialRedirect("telegram")}
+                        className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-55/50 dark:bg-black/15 hover:border-blue-500/50 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-zinc-900/60 p-4 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer active:scale-[0.99] flex flex-col justify-between h-28 group"
+                      >
+                        <div className="flex items-start justify-between w-full">
+                          <div className="space-y-1 min-w-0">
+                            <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-blue-500 group-hover:animate-ping shrink-0" />
+                              Telegram
+                            </h3>
+                            <p className="text-[10px] text-zinc-505 dark:text-zinc-400 leading-normal line-clamp-2">Direct message @pokemongoservicesadmin for verification</p>
+                          </div>
+                          <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-[9px] font-black border border-blue-500/20 uppercase shrink-0">
+                            Active
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-bold text-blue-655 dark:text-blue-400 group-hover:translate-x-1 transition-transform self-end">
+                          Open Telegram Chat &rarr;
+                        </div>
+                      </button>
+
+                      {/* Option 2: Pay via Reddit */}
+                      <button
+                        onClick={() => handleSocialRedirect("reddit")}
+                        className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-55/50 dark:bg-black/15 hover:border-orange-500/50 dark:hover:border-orange-500/50 hover:bg-white dark:hover:bg-zinc-900/60 p-4 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer active:scale-[0.99] flex flex-col justify-between h-28 group"
+                      >
+                        <div className="flex items-start justify-between w-full">
+                          <div className="space-y-1 min-w-0">
+                            <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-orange-500 group-hover:animate-ping shrink-0" />
+                              Reddit Chat
+                            </h3>
+                            <p className="text-[10px] text-zinc-505 dark:text-zinc-400 leading-normal line-clamp-2">DM /u/PokemonGo-Services to process payment</p>
+                          </div>
+                          <span className="bg-orange-500/10 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded text-[9px] font-black border border-orange-500/20 uppercase shrink-0">
+                            Active
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-bold text-orange-655 dark:text-orange-400 group-hover:translate-x-1 transition-transform self-end">
+                          Open Reddit DM &rarr;
+                        </div>
+                      </button>
+
+                      {/* Option 3: Pay via Instagram */}
+                      <button
+                        onClick={() => handleSocialRedirect("instagram")}
+                        className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-55/50 dark:bg-black/15 hover:border-pink-500/50 dark:hover:border-pink-500/50 hover:bg-white dark:hover:bg-zinc-900/60 p-4 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer active:scale-[0.99] flex flex-col justify-between h-28 group"
+                      >
+                        <div className="flex items-start justify-between w-full">
+                          <div className="space-y-1 min-w-0">
+                            <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-pink-500 group-hover:animate-ping shrink-0" />
+                              Instagram DM
+                            </h3>
+                            <p className="text-[10px] text-zinc-505 dark:text-zinc-400 leading-normal line-clamp-2">Message @pokemongoservicesadmin on Instagram</p>
+                          </div>
+                          <span className="bg-pink-500/10 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded text-[9px] font-black border border-pink-500/20 uppercase shrink-0">
+                            Active
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-bold text-pink-600 dark:text-pink-400 group-hover:translate-x-1 transition-transform self-end">
+                          Open Instagram DM &rarr;
+                        </div>
+                      </button>
+
+                      {/* Option 4: Pay via Facebook */}
+                      <button
+                        onClick={() => handleSocialRedirect("facebook")}
+                        className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-55/50 dark:bg-black/15 hover:border-blue-600/50 dark:hover:border-blue-600/50 hover:bg-white dark:hover:bg-zinc-900/60 p-4 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer active:scale-[0.99] flex flex-col justify-between h-28 group"
+                      >
+                        <div className="flex items-start justify-between w-full">
+                          <div className="space-y-1 min-w-0">
+                            <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-blue-600 group-hover:animate-ping shrink-0" />
+                              Facebook
+                            </h3>
+                            <p className="text-[10px] text-zinc-505 dark:text-zinc-400 leading-normal line-clamp-2">Message our Facebook page to finalize transaction</p>
+                          </div>
+                          <span className="bg-blue-600/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-[9px] font-black border border-blue-500/20 uppercase shrink-0">
+                            Active
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-bold text-blue-655 dark:text-blue-400 group-hover:translate-x-1 transition-transform self-end">
+                          Open Messenger &rarr;
+                        </div>
+                      </button>
+                    </div>
+
+                    <div className="flex justify-center pt-2">
+                      <button
+                        onClick={() => {
+                          setPaymentStage("methods");
+                          setSelectedMethod(null);
+                        }}
+                        className="text-xs font-bold text-zinc-450 hover:text-zinc-955 dark:hover:text-white transition cursor-pointer bg-transparent border-none"
+                      >
+                        &larr; Back to Payment Methods
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  
+                  /* STAGE 3: CHOOSE PAYMENT METHOD (6 OPTIONS) */
+                  <div className="space-y-5">
+                    {/* Header */}
+                    <div className="space-y-1.5 text-left pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                      <h2 className="text-lg font-black tracking-tight flex items-center gap-2 uppercase text-zinc-955 dark:text-white">
+                        <Sparkles className="h-5 w-5 text-[#6133e1]" />
+                        Select Gateway
+                      </h2>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Choose your checkout method. Automated validation is available for UPI payments.
+                      </p>
+                    </div>
+
+                    {/* 6 Payment Methods Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+
+                      {/* 1. UPI */}
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await createBuyNowOrderAction(auction._id);
+                            if (res.success && res.orderId) {
+                              const buyNowPrice = auction.listingId.startingBid * 4;
+                              const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                              const amountInINR = Math.round(buyNowPrice * inrRate);
+
+                              setUpiCheckoutData({
+                                orderId: res.orderId,
+                                amount: amountInINR,
+                                email: session?.user?.email || "customer@store.com",
+                              });
+                              setSelectedMethod("UPI");
+                              setPaymentStage("upi");
+                            } else {
+                              alert("Error: " + (res.error || "Failed to create order"));
+                            }
+                          } catch (err) {
+                            console.error("UPI checkout error:", err);
+                            alert("Failed to initiate UPI transaction. Please try again.");
+                          }
+                        }}
+                        className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200/80 dark:border-white/[0.04] bg-zinc-55/50 dark:bg-black/15 hover:border-violet-500 dark:hover:border-purple-500/50 hover:bg-white dark:hover:bg-zinc-900/60 transition-all duration-300 cursor-pointer text-left h-26 group active:scale-[0.98] hover:-translate-y-0.5 shadow-xs"
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">UPI Transfer</span>
+                          <span className="text-[9px] bg-violet-500/15 text-violet-700 dark:text-violet-400 px-2 py-0.5 rounded-full font-bold uppercase border border-violet-500/20">Instant</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Zero fee instant payments</p>
+                        <div className="flex items-center gap-2 mt-auto">
+                          <img src="https://cdn.simpleicons.org/googlepay" alt="GPay" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                          <img src="https://cdn.simpleicons.org/phonepe" alt="PhonePe" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                          <img src="https://cdn.simpleicons.org/paytm" alt="Paytm" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                        </div>
+                      </button>
+
+                      {/* 2. Credit Card */}
+                      <button
+                        onClick={() => {
+                          setSelectedMethod("Card");
+                          setPaymentStage("platforms");
+                        }}
+                        className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200/80 dark:border-white/[0.04] bg-zinc-55/50 dark:bg-black/15 hover:border-violet-500 dark:hover:border-purple-500/50 hover:bg-white dark:hover:bg-zinc-900/60 transition-all duration-300 cursor-pointer text-left h-26 group active:scale-[0.98] hover:-translate-y-0.5 shadow-xs"
+                      >
+                        <div className="w-full space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Credit Card</span>
+                            <span className="text-[9px] bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase border border-blue-500/10">Manual</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Global card processing</p>
+                          <div className="flex items-center gap-2 mt-auto">
+                            <img src="https://cdn.simpleicons.org/visa" alt="Visa" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                            <img src="https://cdn.simpleicons.org/mastercard" alt="Mastercard" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                            <img src="https://cdn.simpleicons.org/americanexpress" alt="Amex" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* 3. Crypto */}
+                      <button
+                        onClick={() => {
+                          setSelectedMethod("Crypto");
+                          setPaymentStage("platforms");
+                        }}
+                        className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200/80 dark:border-white/[0.04] bg-zinc-55/50 dark:bg-black/15 hover:border-violet-500 dark:hover:border-purple-500/50 hover:bg-white dark:hover:bg-zinc-900/60 transition-all duration-300 cursor-pointer text-left h-26 group active:scale-[0.98] hover:-translate-y-0.5 shadow-xs"
+                      >
+                        <div className="w-full space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Crypto</span>
+                            <span className="text-[9px] bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase border border-amber-500/10">Manual</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Secure USDT, BTC, ETH</p>
+                          <div className="flex items-center gap-2 mt-auto">
+                            <img src="https://cdn.simpleicons.org/tether" alt="USDT" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                            <img src="https://cdn.simpleicons.org/bitcoin" alt="BTC" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                            <img src="https://cdn.simpleicons.org/ethereum" alt="ETH" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest mt-1">USDT, BTC, ETH</span>
+                      </button>
+
+                      {/* 4. PayPal */}
+                      <button
+                        onClick={() => {
+                          setSelectedMethod("PayPal");
+                          setPaymentStage("platforms");
+                        }}
+                        className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200/80 dark:border-white/[0.04] bg-zinc-55/50 dark:bg-black/15 hover:border-violet-500 dark:hover:border-purple-500/50 hover:bg-white dark:hover:bg-zinc-900/60 transition-all duration-300 cursor-pointer text-left h-26 group active:scale-[0.98] hover:-translate-y-0.5 shadow-xs"
+                      >
+                        <div className="w-full space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">PayPal</span>
+                            <span className="text-[9px] bg-sky-500/10 text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded-full font-bold uppercase border border-sky-500/10">Manual</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Global payment verification</p>
+                          <div className="flex items-center gap-2 mt-auto">
+                            <img src="https://cdn.simpleicons.org/paypal" alt="PayPal" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* 5. Wise */}
+                      <button
+                        onClick={() => {
+                          setSelectedMethod("Wise");
+                          setPaymentStage("platforms");
+                        }}
+                        className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200/80 dark:border-white/[0.04] bg-zinc-55/50 dark:bg-black/15 hover:border-violet-500 dark:hover:border-purple-500/50 hover:bg-white dark:hover:bg-zinc-900/60 transition-all duration-300 cursor-pointer text-left h-26 group active:scale-[0.98] hover:-translate-y-0.5 shadow-xs"
+                      >
+                        <div className="w-full space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Wise</span>
+                            <span className="text-[9px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-500/10">Manual</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Direct international transfer</p>
+                          <div className="flex items-center gap-2 mt-auto">
+                            <img src="https://cdn.simpleicons.org/wise" alt="Wise" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest mt-1">Global Bank Wire</span>
+                      </button>
+
+                      {/* 6. Others */}
+                      <button
+                        onClick={() => {
+                          setSelectedMethod("Others");
+                          setPaymentStage("platforms");
+                        }}
+                        className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200/80 dark:border-white/[0.04] bg-zinc-55/50 dark:bg-black/15 hover:border-violet-500 dark:hover:border-purple-500/50 hover:bg-white dark:hover:bg-zinc-900/60 transition-all duration-300 cursor-pointer text-left h-26 group active:scale-[0.98] hover:-translate-y-0.5 shadow-xs"
+                      >
+                        <div className="w-full space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Others</span>
+                            <span className="text-[9px] bg-zinc-500/10 text-zinc-700 dark:text-zinc-400 px-2 py-0.5 rounded-full font-bold uppercase border border-zinc-500/10">Manual</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Custom billing chat</p>
+                          <div className="flex items-center gap-2 mt-auto text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                            Payoneer • Alipay
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest mt-1">Live agent chat billing</span>
+                      </button>
+
+                    </div>
+
+                    {/* Footer */}
+                    <div className="pt-2 flex items-center justify-center gap-1 text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold">
+                      <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                      <span>🔒 256-bit Secure manual billing protocol</span>
+                    </div>
+                  </div>
+                )}
+
               </div>
-            ) : paymentStage === "platforms" && selectedMethod ? (
-              /* STAGE 2: SOCIAL REDIRECT PLATFORMS FOR MANUAL VERIFICATION */
-              <div className="space-y-5 text-left">
-                <div className="space-y-1">
-                  <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-[#6133e1]" />
-                    Manual Purchase Verification
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Verify and complete your purchase via <strong>{selectedMethod}</strong> using one of our verified chat agents below:
-                  </p>
-                </div>
 
-                <div className="space-y-3">
-                  {/* Option 1: Pay via Telegram */}
-                  <button
-                    onClick={() => handleSocialRedirect("telegram")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Telegram</h3>
-                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
-                      </div>
-                      <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                        Active
-                      </span>
+              {/* Right Column: SaaS Order Summary Invoice */}
+              <div className="lg:col-span-5 xl:col-span-4 bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-850 rounded-2xl p-5 space-y-5 lg:sticky lg:top-0">
+                <h3 className="text-xs font-black text-zinc-800 dark:text-zinc-300 uppercase tracking-widest border-b border-zinc-200 dark:border-zinc-800/60 pb-2 flex items-center justify-between">
+                  <span>Order Invoice</span>
+                  <span className="font-mono text-[9px] font-normal text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded">
+                    VERIFIED
+                  </span>
+                </h3>
+
+                {/* Account card preview */}
+                <div className="flex gap-3">
+                  {screenshots && screenshots[0] ? (
+                    <div className="w-14 h-14 rounded-xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shrink-0 bg-white dark:bg-zinc-900">
+                      <img
+                        src={screenshots[0]}
+                        alt="Account preview"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  </button>
-
-                  {/* Option 2: Pay via Reddit */}
-                  <button
-                    onClick={() => handleSocialRedirect("reddit")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Reddit</h3>
-                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
-                      </div>
-                      <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-500/20">
-                        Active
-                      </span>
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shrink-0 bg-zinc-105 dark:bg-zinc-850 flex items-center justify-center text-zinc-400">
+                      <Sparkles className="h-5 w-5" />
                     </div>
-                  </button>
-
-                  {/* Option 3: Pay via Instagram */}
-                  <button
-                    onClick={() => handleSocialRedirect("instagram")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Instagram</h3>
-                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
-                      </div>
-                      <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
-                        Active
+                  )}
+                  <div className="space-y-1 text-left min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-zinc-900 dark:text-white truncate">
+                      {auction.listingId.title}
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      <span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700">
+                        LVL {auction.listingId.level}
                       </span>
+                      {auction.listingId.team !== "NONE" && (
+                        <span className={cn(
+                          "px-1.5 py-0.5 rounded text-[8px] font-black border uppercase",
+                          teamColors[auction.listingId.team]
+                        )}>
+                          {auction.listingId.team}
+                        </span>
+                      )}
                     </div>
-                  </button>
-
-                  {/* Option 4: Pay via Facebook */}
-                  <button
-                    onClick={() => handleSocialRedirect("facebook")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Facebook</h3>
-                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Message us on Facebook to complete your order</p>
-                      </div>
-                      <span className="bg-blue-600/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                        Active
-                      </span>
+                    <div className="flex items-center gap-1.5 text-[9px] text-zinc-450 dark:text-zinc-500 font-bold pt-0.5">
+                      <span>✨ {auction.listingId.shinyCount} Shiny</span>
+                      <span>•</span>
+                      <span>🏆 {auction.listingId.legendaryCount} Legend</span>
                     </div>
-                  </button>
-                </div>
-
-                <div className="flex justify-center pt-2">
-                  <button
-                    onClick={() => setPaymentStage("methods")}
-                    className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer bg-transparent border-none"
-                  >
-                    &larr; Back to Payment Methods
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* STAGE 3: CHOOSE PAYMENT METHOD (6 OPTIONS) */
-              <>
-                {/* Header */}
-                <div className="space-y-1.5 text-left">
-                  <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-[#6133e1]" />
-                    Complete Purchase
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    You are purchasing this listing instantly. Choose your payment method below:
-                  </p>
-                  <div className="text-2xl font-black text-[#6133e1] pt-1">
-                    <PriceDisplay amountInUSD={auction.listingId.startingBid * 4} />
                   </div>
                 </div>
 
-                {/* 6 Payment Methods Grid */}
-                <div className="grid grid-cols-2 gap-3 pt-1">
-
-                  {/* 1. UPI */}
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await createBuyNowOrderAction(auction._id);
-                        if (res.success && res.orderId) {
-                          const buyNowPrice = auction.listingId.startingBid * 4;
-                          const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
-                          const amountInINR = Math.round(buyNowPrice * inrRate);
-
-                          setUpiCheckoutData({
-                            orderId: res.orderId,
-                            amount: amountInINR,
-                            email: session?.user?.email || "customer@store.com",
-                          });
-                          setSelectedMethod("UPI");
-                          setPaymentStage("upi");
-                        } else {
-                          alert("Error: " + (res.error || "Failed to create order"));
-                        }
-                      } catch (err) {
-                        console.error("UPI checkout error:", err);
-                        alert("Failed to initiate UPI transaction. Please try again.");
-                      }
-                    }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
-                  >
-                    <ScanQrCode className="h-5 w-5 text-violet-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">UPI QR / App</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Instant transfer</p>
-                    </div>
-                  </button>
-
-                  {/* 2. Credit Card */}
-                  <button
-                    onClick={() => {
-                      setSelectedMethod("Card");
-                      setPaymentStage("platforms");
-                    }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
-                  >
-                    <CreditCard className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Credit Card</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Visa, Mastercard, Amex</p>
-                    </div>
-                  </button>
-
-                  {/* 3. Crypto */}
-                  <button
-                    onClick={() => {
-                      setSelectedMethod("Crypto");
-                      setPaymentStage("platforms");
-                    }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
-                  >
-                    <Coins className="h-5 w-5 text-amber-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Cryptocurrency</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">USDT, BTC, ETH</p>
-                    </div>
-                  </button>
-
-                  {/* 4. PayPal */}
-                  <button
-                    onClick={() => {
-                      setSelectedMethod("PayPal");
-                      setPaymentStage("platforms");
-                    }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
-                  >
-                    <DollarSign className="h-5 w-5 text-sky-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">PayPal</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Instant checkout</p>
-                    </div>
-                  </button>
-
-                  {/* 5. Wise */}
-                  <button
-                    onClick={() => {
-                      setSelectedMethod("Wise");
-                      setPaymentStage("platforms");
-                    }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
-                  >
-                    <Globe className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Wise Transfer</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Global bank pay</p>
-                    </div>
-                  </button>
-
-                  {/* 6. Others */}
-                  <button
-                    onClick={() => {
-                      setSelectedMethod("Others");
-                      setPaymentStage("platforms");
-                    }}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-center space-y-2 group active:scale-[0.98]"
-                  >
-                    <CircleDot className="h-5 w-5 text-zinc-500 group-hover:scale-110 transition-transform" />
-                    <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">Other Methods</p>
-                      <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">Custom billing chat</p>
-                    </div>
-                  </button>
-
+                {/* Price Breakdown */}
+                <div className="space-y-2.5 text-xs border-y border-zinc-200 dark:border-zinc-800/60 py-3 font-medium">
+                  <div className="flex justify-between text-zinc-555 dark:text-zinc-400">
+                    <span>Listing Buy Now Price</span>
+                    <span className="text-zinc-855 dark:text-zinc-200 font-bold">
+                      <PriceDisplay amountInUSD={buyNowPrice} />
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-zinc-555 dark:text-zinc-400">
+                    <span>Secure Protection</span>
+                    <span className="text-emerald-600 dark:text-emerald-450 font-black uppercase text-[9px] bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Free</span>
+                  </div>
+                  <div className="flex justify-between text-zinc-555 dark:text-zinc-400">
+                    <span>Estimated Tax / VAT</span>
+                    <span className="text-zinc-800 dark:text-zinc-300 font-bold">$0.00</span>
+                  </div>
                 </div>
 
-                {/* Footer */}
-                <div className="pt-2 flex items-center justify-center text-[10px] text-zinc-450 dark:text-zinc-500">
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  <span>🔒 Secured &amp; encrypted manual payment system</span>
+                {/* Total */}
+                <div className="flex justify-between items-baseline pt-1">
+                  <span className="text-xs font-bold text-zinc-805 dark:text-zinc-300">Total Due</span>
+                  <div className="text-right">
+                    <div className="text-xl font-black text-[#6133e1] dark:text-purple-400 tracking-tight">
+                      <PriceDisplay amountInUSD={buyNowPrice} />
+                    </div>
+                    {/* Show INR amount if UPI selected */}
+                    {selectedMethod === "UPI" && (
+                      <div className="text-[10px] text-zinc-450 dark:text-zinc-500 font-bold mt-0.5">
+                        ≈ ₹{Math.round(buyNowPrice * (useCurrencyStore.getState().rates.INR || 83.5)).toLocaleString("en-IN")}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </>
-            )}
+
+                {/* Trust Badges */}
+                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800/60 space-y-2.5 text-left">
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="h-4.5 w-4.5 text-emerald-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200">Buyer Protection Guarantee</p>
+                      <p className="text-[9px] text-zinc-450 dark:text-zinc-500 leading-normal">Full protection. Funds are held secure until you verify the account.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-4.5 w-4.5 text-violet-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200">Anti-Recall Warranty</p>
+                      <p className="text-[9px] text-zinc-450 dark:text-zinc-500 leading-normal">Every account passes rigorous safety logs and features a recall warrant.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
 
           </div>
         </div>

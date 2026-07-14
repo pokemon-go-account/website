@@ -440,7 +440,7 @@ export async function updateAuction(auctionId: string, fields: any) {
 }
 
 /**
- * Update Escrow Stage mapping
+ * Update Stage mapping
  */
 export async function updateEscrowStage(listingId: string, stage: any) {
   try {
@@ -462,7 +462,7 @@ export async function updateEscrowStage(listingId: string, stage: any) {
 }
 
 /**
- * Save credentials securely inside the intermediate Escrow Vault
+ * Save credentials securely inside the intermediate Vault
  */
 export async function saveListingCredentials(listingId: string, credentialsVault: string) {
   try {
