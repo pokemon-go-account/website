@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Custom Inline Platform SVG Icons for Visual Fidelity
@@ -77,6 +77,7 @@ export function CompleteProfileForm() {
   const [selectedMethod, setSelectedMethod] = useState("telegram");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [selectedCountry, setSelectedCountry] = useState("");
 
   useEffect(() => {
     if (state.success && !isRedirecting) {
@@ -204,6 +205,52 @@ export function CompleteProfileForm() {
         <span className="relative z-10 px-3 bg-white dark:bg-[#111111] text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
           Optional
         </span>
+      </div>
+
+      {/* Country Select */}
+      <div className="space-y-2">
+        <Label htmlFor="country" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+          <Globe className="h-3.5 w-3.5 text-zinc-400" />
+          Country
+        </Label>
+        <div className="relative">
+          <select
+            id="country"
+            name="country"
+            value={selectedCountry}
+            onChange={(e) => setSelectedCountry(e.target.value)}
+            className="w-full h-8 pl-3 pr-8 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-white focus:outline-none cursor-pointer appearance-none shadow-xs"
+          >
+            <option value="">Select your country (optional)</option>
+            {[
+              "Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia","Australia",
+              "Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Belarus","Belgium","Belize",
+              "Benin","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria",
+              "Burkina Faso","Cambodia","Cameroon","Canada","Chile","China","Colombia","Costa Rica",
+              "Croatia","Cuba","Cyprus","Czech Republic","Denmark","Dominican Republic","Ecuador",
+              "Egypt","El Salvador","Estonia","Ethiopia","Finland","France","Georgia","Germany",
+              "Ghana","Greece","Guatemala","Honduras","Hungary","Iceland","India","Indonesia",
+              "Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan",
+              "Kenya","Kosovo","Kuwait","Latvia","Lebanon","Libya","Lithuania","Luxembourg",
+              "Malaysia","Malta","Mexico","Moldova","Mongolia","Montenegro","Morocco","Mozambique",
+              "Myanmar","Nepal","Netherlands","New Zealand","Nicaragua","Nigeria","North Korea",
+              "North Macedonia","Norway","Oman","Pakistan","Panama","Paraguay","Peru","Philippines",
+              "Poland","Portugal","Qatar","Romania","Russia","Saudi Arabia","Senegal","Serbia",
+              "Singapore","Slovakia","Slovenia","Somalia","South Africa","South Korea","Spain",
+              "Sri Lanka","Sudan","Sweden","Switzerland","Syria","Taiwan","Tanzania","Thailand",
+              "Tunisia","Turkey","Uganda","Ukraine","United Arab Emirates","United Kingdom",
+              "United States","Uruguay","Uzbekistan","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
+            ].map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </div>
+        </div>
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1 font-medium">
+          Your country will be visible in your profile and helps us serve you better.
+        </p>
       </div>
 
       {/* Additional Contact (Optional) field */}

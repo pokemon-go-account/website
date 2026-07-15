@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { ProfileForm } from "./profile-form";
-import { User as UserIcon, Shield, Mail, Send } from "lucide-react";
+import { User as UserIcon, Shield, Mail, Send, Globe } from "lucide-react";
 
 export const revalidate = 0; // Dynamic route
 
@@ -73,6 +73,15 @@ export default async function UserProfilePage() {
               {user.telegramUsername || "None configured"}
             </span>
           </div>
+
+          {user.country && (
+            <div className="flex items-center justify-between py-1 border-b border-zinc-200 dark:border-white/[0.06]">
+              <span className="text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
+                <Globe className="h-3.5 w-3.5" /> Country
+              </span>
+              <span className="font-semibold text-zinc-900 dark:text-white">{user.country}</span>
+            </div>
+          )}
         </div>
 
         {/* Interactive Update Handle Form */}

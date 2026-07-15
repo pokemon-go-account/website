@@ -6,7 +6,8 @@ declare module "next-auth" {
       role?: string;
       id?: string;
       isOnboarded?: boolean;
-      adminRentPaidUntil?: string | null; // ISO string
+      adminRentPaidUntil?: string | null;
+      country?: string;
     } & DefaultSession["user"];
   }
 
@@ -14,6 +15,7 @@ declare module "next-auth" {
     role?: string;
     isOnboarded?: boolean;
     adminRentPaidUntil?: Date | null;
+    country?: string;
   }
 }
 
@@ -23,5 +25,6 @@ declare module "next-auth/jwt" {
     id?: string;
     isOnboarded?: boolean;
     adminRentPaidUntil?: string | null;
+    country?: string;
   }
 }

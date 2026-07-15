@@ -10,7 +10,7 @@ import {
 } from "@/features/console/actions";
 import { 
   Users, Search, ShieldCheck, ShieldX, Ban, CheckCircle, 
-  AlertTriangle, Loader2, Mail, Calendar, Wallet, Check, AlertCircle, MessageSquare 
+  AlertTriangle, Loader2, Mail, Calendar, Wallet, Check, AlertCircle, MessageSquare, Globe 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -22,6 +22,7 @@ interface FoundUser {
   username?: string;
   email?: string;
   telegramUsername?: string;
+  country?: string;
   role: string;
   isSuspended: boolean;
   walletBalance: number;
@@ -338,6 +339,11 @@ export default function ConsoleUsersPage() {
                         </span>
                       )}
                       <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(selectedUser.createdAt).toLocaleDateString()}</span>
+                      {selectedUser.country && (
+                        <span className="flex items-center gap-1.5">
+                          <Globe className="h-3.5 w-3.5" /> {selectedUser.country}
+                        </span>
+                      )}
                       
                       <Link
                         href={`/console/chat?userId=${selectedUser._id}&username=${encodeURIComponent(selectedUser.username || "")}&email=${encodeURIComponent(selectedUser.email || "")}`}

@@ -768,7 +768,7 @@ Please guide me on how to complete the payment!`;
         <div className="flex items-center gap-2">
           <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider bg-zinc-105 dark:bg-zinc-800 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-800 flex items-center gap-1">
             <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-            {auction.viewers || 1} Viewers
+            {auction.viewers || 1} Views
           </span>
           <span className="text-[9px] text-red-500 dark:text-red-400 font-extrabold uppercase bg-red-500/10 px-2 py-0.5 rounded border border-red-200 dark:border-red-500/20 animate-pulse">
             {timeLeft}
@@ -816,7 +816,7 @@ Please guide me on how to complete the payment!`;
           <div className="font-bold text-zinc-800 dark:text-white mt-0.5">{bidHistory.length}</div>
         </div>
         <div className="border-x border-zinc-200 dark:border-zinc-850">
-          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Viewers</span>
+          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Views</span>
           <div className="font-bold text-zinc-800 dark:text-white mt-0.5">{auction.viewers || 1}</div>
         </div>
         <div className="flex justify-center">

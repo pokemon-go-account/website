@@ -166,6 +166,12 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-zinc-950 dark:bg-white transition-all group-hover:w-full" />
               </Link>
             ))}
+            <Link
+              href="/sell-with-us"
+              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 transition-all shadow-sm hover:shadow-emerald-500/25 active:scale-[0.97]"
+            >
+              Sell With Us
+            </Link>
           </nav>
 
           {/* Desktop CTAs */}
@@ -408,6 +414,14 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                   {label}
                 </Link>
               ))}
+              <Link
+                href="/sell-with-us"
+                onClick={toggleMenu}
+                className="flex items-center gap-2 rounded-lg mx-1 px-3 py-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/8 hover:bg-emerald-500/15 border border-emerald-450/20 hover:border-emerald-400/40 transition-all mt-1"
+              >
+                <span>🌿</span>
+                Sell With Us
+              </Link>
               {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
                 <Link
                   href="/dashboard/admin"

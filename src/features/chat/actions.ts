@@ -1,6 +1,5 @@
 "use server";
 
-import { uploadToCloudinary, deleteFromCloudinary } from "@/lib/cloudinary";
 import { auth } from "@/auth";
 
 export async function uploadChatImage(base64Data: string): Promise<{ success: boolean; url?: string; error?: string }> {
@@ -9,6 +8,7 @@ export async function uploadChatImage(base64Data: string): Promise<{ success: bo
     if (!session?.user) {
       return { success: false, error: "Unauthorized" };
     }
+    const { uploadToCloudinary } = await import("@/lib/cloudinary");
     const url = await uploadToCloudinary(base64Data);
     return { success: true, url };
   } catch (err: any) {
@@ -33,6 +33,7 @@ export async function deleteChatImages(imageUrls: string[]): Promise<{ success: 
       return { success: true };
     }
 
+    const { deleteFromCloudinary } = await import("@/lib/cloudinary");
     await deleteFromCloudinary(imageUrls);
     return { success: true };
   } catch (err: any) {

@@ -589,7 +589,7 @@ export async function getAllUsers(page: number = 1, limit: number = 100, search:
     const skip = (page - 1) * limit;
 
     const users = await User.find(query)
-      .select("name username email telegramUsername role isSuspended walletBalance adminRentPaidUntil createdAt")
+      .select("name username email telegramUsername country role isSuspended walletBalance adminRentPaidUntil createdAt")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

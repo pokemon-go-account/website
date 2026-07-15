@@ -59,6 +59,7 @@ export const authConfig = {
         token.hasPaidVerificationDeposit = (user as any).hasPaidVerificationDeposit;
         token.walletBalance = (user as any).walletBalance;
         token.username = (user as any).username;
+        token.country = (user as any).country ?? '';
       }
       if (trigger === "update" && session) {
         if (session.isOnboarded !== undefined) token.isOnboarded = session.isOnboarded;
@@ -68,6 +69,7 @@ export const authConfig = {
         if (session.hasPaidVerificationDeposit !== undefined) token.hasPaidVerificationDeposit = session.hasPaidVerificationDeposit;
         if (session.walletBalance !== undefined) token.walletBalance = session.walletBalance;
         if (session.username !== undefined) token.username = session.username;
+        if (session.country !== undefined) token.country = session.country;
       }
       return token;
     },
@@ -82,6 +84,7 @@ export const authConfig = {
         (session.user as any).hasPaidVerificationDeposit = !!token.hasPaidVerificationDeposit;
         (session.user as any).walletBalance = Number(token.walletBalance) || 0;
         (session.user as any).username = token.username;
+        (session.user as any).country = (token.country as string) || '';
       }
       return session;
     },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import {
   collection,
@@ -85,6 +85,31 @@ export function UserChatPanel({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Sound effects
+  const sendSoundRef = useRef<HTMLAudioElement | null>(null);
+  const receiveSoundRef = useRef<HTMLAudioElement | null>(null);
+  const notifSoundRef = useRef<HTMLAudioElement | null>(null);
+  const prevMessagesRef = useRef<Message[]>([]);
+  const prevConversationsRef = useRef<ChatMeta[]>([]);
+
+  useEffect(() => {
+    sendSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_X8t2FkCu.mp3");
+    receiveSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_qyWzqrX9.mp3");
+    notifSoundRef.current = new Audio("/audio/sound-7(1).mp3");
+    [sendSoundRef, receiveSoundRef, notifSoundRef].forEach((r) => {
+      if (r.current) { r.current.preload = "auto"; r.current.volume = 0.6; }
+    });
+  }, []);
+
+  const playSound = useCallback((ref: React.RefObject<HTMLAudioElement | null>) => {
+    try {
+      if (ref.current) {
+        ref.current.currentTime = 0;
+        ref.current.play().catch(() => {});
+      }
+    } catch { /* silent fail */ }
+  }, []);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -220,9 +245,19 @@ export function UserChatPanel({
     const q = query(msgsRef, orderBy("timestamp", "asc"));
 
     const unsub = onSnapshot(q, (snap) => {
-      setMessages(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Message, "id">) }))
-      );
+      const newMessages = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Message, "id">) }));
+      const prev = prevMessagesRef.current;
+
+      // Detect incoming admin messages while chat is open → play receive sound
+      if (prev.length > 0 && newMessages.length > prev.length) {
+        const newest = newMessages[newMessages.length - 1];
+        if (newest.sender === "admin") {
+          playSound(receiveSoundRef);
+        }
+      }
+
+      prevMessagesRef.current = newMessages;
+      setMessages(newMessages);
 
       // Mark as read by user
       const chatRef = doc(db, "supportChats", activeChatId);
@@ -230,7 +265,7 @@ export function UserChatPanel({
     });
 
     return unsub;
-  }, [activeChatId]);
+  }, [activeChatId, playSound]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -239,9 +274,31 @@ export function UserChatPanel({
     }
   }, [messages]);
 
+  // Notification sound: play when unreadByUser increases on a non-active chat
+  useEffect(() => {
+    const prev = prevConversationsRef.current;
+    if (prev.length > 0) {
+      conversations.forEach((conv) => {
+        if (conv.id === activeChatId) return; // skip active chat
+        const oldConv = prev.find((p) => p.id === conv.id);
+        if (!oldConv) return;
+        if ((conv.unreadByUser ?? 0) > (oldConv.unreadByUser ?? 0)) {
+          playSound(notifSoundRef);
+        }
+      });
+    }
+    prevConversationsRef.current = conversations;
+  }, [conversations, activeChatId, playSound]);
+
   // Filter conversations based on current tab
   const supportTickets = conversations.filter((c) => c.type === "support" || c.id.startsWith("support-"));
   const orderChats = conversations.filter((c) => c.type === "order" || c.id.startsWith("order-"));
+
+  // Unread counts for tab badges
+  const supportUnread = supportTickets.reduce((sum, c) => sum + (c.unreadByUser ?? 0), 0);
+  const ordersUnread = orderChats.reduce((sum, c) => sum + (c.unreadByUser ?? 0), 0);
+
+
 
   const handleCreateTicket = async () => {
     if (!userId || isCreatingTicket) return;
@@ -310,6 +367,9 @@ export function UserChatPanel({
         lastMessageAt: serverTimestamp(),
         unreadByAdmin: increment(1),
       });
+
+      // Play send sound after message is written
+      playSound(sendSoundRef);
     } catch (err) {
       console.error("Failed to send message:", err);
     } finally {
@@ -379,7 +439,7 @@ export function UserChatPanel({
           <button
             onClick={() => setActiveTab("support")}
             className={cn(
-              "flex-1 py-2 text-xs font-extrabold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+              "flex-1 py-2 text-xs font-extrabold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer relative",
               activeTab === "support"
                 ? "bg-[#6133e1]/10 text-[#6133e1] dark:text-purple-400"
                 : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -387,11 +447,16 @@ export function UserChatPanel({
           >
             <MessageSquare className="h-3.5 w-3.5" />
             Support
+            {supportUnread > 0 && (
+              <span className="ml-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center leading-none">
+                {supportUnread > 99 ? "99+" : supportUnread}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("orders")}
             className={cn(
-              "flex-1 py-2 text-xs font-extrabold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+              "flex-1 py-2 text-xs font-extrabold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer relative",
               activeTab === "orders"
                 ? "bg-[#6133e1]/10 text-[#6133e1] dark:text-purple-400"
                 : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -399,8 +464,14 @@ export function UserChatPanel({
           >
             <ShoppingBag className="h-3.5 w-3.5" />
             Orders
+            {ordersUnread > 0 && (
+              <span className="ml-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center leading-none">
+                {ordersUnread > 99 ? "99+" : ordersUnread}
+              </span>
+            )}
           </button>
         </div>
+
 
         {/* Action Header */}
         <div className="p-3 bg-white dark:bg-zinc-950 border-b border-zinc-150 dark:border-white/[0.04]">

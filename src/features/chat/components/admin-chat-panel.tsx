@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import {
   collection,
   doc,
@@ -50,6 +51,8 @@ interface ChatMeta {
   title?: string;
   status?: string;
   closed?: boolean;
+  assignedAdminId?: string;
+  assignedAdminName?: string;
 }
 
 interface Message {
@@ -106,6 +109,56 @@ export function AdminChatPanel() {
 
   const autoSelectedRef = useRef(false);
 
+  // Sound effects
+  const sendSoundRef = useRef<HTMLAudioElement | null>(null);
+  const receiveSoundRef = useRef<HTMLAudioElement | null>(null);
+  const prevMessagesRef = useRef<Message[]>([]);
+
+  useEffect(() => {
+    sendSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_X8t2FkCu.mp3");
+    receiveSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_qyWzqrX9.mp3");
+    [sendSoundRef, receiveSoundRef].forEach((r) => {
+      if (r.current) { r.current.preload = "auto"; r.current.volume = 0.6; }
+    });
+  }, []);
+
+  const playSound = useCallback((ref: React.RefObject<HTMLAudioElement | null>) => {
+    try {
+      if (ref.current) { ref.current.currentTime = 0; ref.current.play().catch(() => {}); }
+    } catch { /* silent */ }
+  }, []);
+
+  // Admin session for Get Assigned feature
+  const { data: session } = useSession();
+  const adminUsername = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "Admin";
+  const adminId = (session?.user as any)?.id || "";
+
+  const handleAssign = async () => {
+    if (!activeChatId) return;
+    const db = getDb();
+    const chatRef = doc(db, "supportChats", activeChatId);
+    const msgsRef = collection(db, "supportChats", activeChatId, "messages");
+
+    await updateDoc(chatRef, {
+      assignedAdminId: adminId,
+      assignedAdminName: adminUsername,
+    });
+
+    await addDoc(msgsRef, {
+      text: `System: ${adminUsername} joined the chat`,
+      sender: "admin",
+      senderName: "System",
+      timestamp: serverTimestamp(),
+      read: true,
+    });
+
+    await updateDoc(chatRef, {
+      lastMessage: `${adminUsername} joined the chat`,
+      lastMessageAt: serverTimestamp(),
+      unreadByUser: increment(1),
+    });
+  };
+
   const handleDownloadPDF = () => {
     if (!activeChatId || !messages.length) return;
 
@@ -157,17 +210,13 @@ export function AdminChatPanel() {
                   <span class="sender">${senderLabel}</span>
                   ${msg.image ? `<img src="${msg.image}" />` : ""}
                   ${displayMsg ? `<div>${displayMsg.replace(/\\n/g, '<br/>')}</div>` : ""}
-                  <span class="time">${new Date(msg.timestamp?.toDate ? msg.timestamp.toDate() : msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                   <span class="time">${new Date(msg.timestamp?.toDate ? msg.timestamp.toDate() : msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               `;
             }).join("")}
           </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(() => window.close(), 500);
-            };
-          </script>
+          ${"<"}script${">"
+          }setTimeout(function() { window.print(); setTimeout(function() { window.close(); }, 500); }, 250);${"<"}/script${">"}
         </body>
       </html>
     `;
@@ -334,6 +383,7 @@ export function AdminChatPanel() {
   useEffect(() => {
     if (!activeChatId) {
       setMessages([]);
+      prevMessagesRef.current = [];
       return;
     }
 
@@ -346,6 +396,16 @@ export function AdminChatPanel() {
         id: d.id,
         ...(d.data() as Omit<Message, "id">),
       }));
+
+      // Receive sound: new user message arrives while chat is open
+      const prev = prevMessagesRef.current;
+      if (prev.length > 0 && msgs.length > prev.length) {
+        const newest = msgs[msgs.length - 1];
+        if (newest.sender === "user") {
+          playSound(receiveSoundRef);
+        }
+      }
+      prevMessagesRef.current = msgs;
       setMessages(msgs);
 
       // Mark as read by admin
@@ -354,7 +414,7 @@ export function AdminChatPanel() {
     });
 
     return unsub;
-  }, [activeChatId]);
+  }, [activeChatId, playSound]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -377,7 +437,7 @@ export function AdminChatPanel() {
       await addDoc(msgsRef, {
         text,
         sender: "admin",
-        senderName: "Support Team",
+        senderName: adminUsername,
         timestamp: serverTimestamp(),
         read: false,
       });
@@ -388,6 +448,8 @@ export function AdminChatPanel() {
         unreadByUser: increment(1),
         unreadByAdmin: 0,
       });
+
+      playSound(sendSoundRef);
     } catch (err) {
       console.error("Failed to send reply:", err);
     } finally {
@@ -820,55 +882,95 @@ export function AdminChatPanel() {
                 <div className="flex items-center justify-center p-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 text-xs font-semibold uppercase tracking-wider">
                   🔒 This chat has been closed and cleared
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
+              ) : !activeChat?.assignedAdminId ? (
+                /* No one assigned yet — show Get Assigned button */
+                <div className="flex flex-col items-center gap-2 py-2">
+                  <p className="text-[10px] text-zinc-400 font-semibold">No admin is assigned to this chat yet.</p>
                   <button
                     type="button"
-                    onClick={() => imageInputRef.current?.click()}
-                    disabled={isSending || isUploadingImage}
-                    className="h-9 w-9 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-350 hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-center transition-colors cursor-pointer shrink-0 disabled:opacity-50"
-                    title="Attach Image"
+                    onClick={handleAssign}
+                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-colors cursor-pointer"
                   >
-                    {isUploadingImage ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-[#6133e1]" />
-                    ) : (
-                      <ImageIcon className="h-4 w-4" />
-                    )}
+                    ✋ Get Assigned
                   </button>
-                  <input
-                    ref={inputRef}
-                    id="admin-chat-reply-input"
-                    type="text"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={`Reply to ${selectedUser?.username || "user"}…`}
-                    disabled={isSending || isUploadingImage}
-                    className="flex-1 bg-zinc-50 dark:bg-[#151515] text-zinc-900 dark:text-white placeholder:text-zinc-400 rounded-xl px-3 h-9 text-xs outline-none border border-zinc-200 dark:border-white/[0.08] focus:border-[#6133e1]/40 focus:bg-white dark:focus:bg-zinc-950 transition-all disabled:opacity-50"
-                  />
-                  <button
-                    id="admin-chat-reply-send"
-                    onClick={handleSendReply}
-                    disabled={(!replyText.trim() && !isUploadingImage) || isSending || isUploadingImage}
-                    className="h-9 px-4 rounded-xl bg-[#6133e1] hover:bg-[#5028c7] text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 font-bold text-xs uppercase tracking-wider"
-                    aria-label="Send reply"
-                  >
-                    {isSending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      "Reply"
+                </div>
+              ) : (
+                /* Someone is assigned */
+                <div className="flex flex-col gap-2">
+                  {/* Assignment banner */}
+                  <div className={cn(
+                    "flex items-center justify-between px-3 py-1.5 rounded-lg text-[10px] font-bold",
+                    activeChat.assignedAdminId === adminId
+                      ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                      : "bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400"
+                  )}>
+                    <span>
+                      {activeChat.assignedAdminId === adminId
+                        ? `✅ You are handling this chat`
+                        : `⚡ ${activeChat.assignedAdminName} is handling this chat`}
+                    </span>
+                    {activeChat.assignedAdminId !== adminId && (
+                      <button
+                        type="button"
+                        onClick={handleAssign}
+                        className="ml-2 px-2 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 text-[9px] font-black uppercase tracking-wider cursor-pointer transition-colors"
+                      >
+                        Take Over
+                      </button>
                     )}
-                  </button>
+                  </div>
+
+                  {/* Reply input — all admins can send */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={isSending || isUploadingImage}
+                      className="h-9 w-9 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-350 hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-center transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      title="Attach Image"
+                    >
+                      {isUploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-[#6133e1]" />
+                      ) : (
+                        <ImageIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                    <input
+                      ref={inputRef}
+                      id="admin-chat-reply-input"
+                      type="text"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={`Reply to ${selectedUser?.username || "user"}…`}
+                      disabled={isSending || isUploadingImage}
+                      className="flex-1 bg-zinc-50 dark:bg-[#151515] text-zinc-900 dark:text-white placeholder:text-zinc-400 rounded-xl px-3 h-9 text-xs outline-none border border-zinc-200 dark:border-white/[0.08] focus:border-[#6133e1]/40 focus:bg-white dark:focus:bg-zinc-950 transition-all disabled:opacity-50"
+                    />
+                    <button
+                      id="admin-chat-reply-send"
+                      onClick={handleSendReply}
+                      disabled={(!replyText.trim() && !isUploadingImage) || isSending || isUploadingImage}
+                      className="h-9 px-4 rounded-xl bg-[#6133e1] hover:bg-[#5028c7] text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 font-bold text-xs uppercase tracking-wider"
+                      aria-label="Send reply"
+                    >
+                      {isSending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        "Reply"
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
+
           </>
         )}
       </div>

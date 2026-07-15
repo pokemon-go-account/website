@@ -73,7 +73,7 @@ export default function RootLayout({
           <main className="flex-1 flex flex-col">
             {children}
           </main>
-          <PokemonClickBurst />
+          {/* <PokemonClickBurst /> */}
           <PageTransitionLoader />
         </SessionProvider>
         <Analytics />

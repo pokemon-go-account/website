@@ -149,6 +149,7 @@ const CompleteProfileSchema = z.object({
   preferredContactMethod: z.string().min(1, "Preferred contact method is required"),
   preferredContactId: z.string().min(2, "Username or Profile Link must be at least 2 characters"),
   alternateContact: z.string().optional(),
+  country: z.string().optional(),
 });
 
 export async function completeUserProfile(prevState: any, formData: FormData) {
@@ -162,12 +163,14 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
     const preferredContactMethod = formData.get("preferredContactMethod") as string;
     const preferredContactId = formData.get("preferredContactId") as string;
     const alternateContact = (formData.get("alternateContact") as string) || "";
+    const country = (formData.get("country") as string) || "";
 
     const validated = CompleteProfileSchema.safeParse({
       name,
       preferredContactMethod,
       preferredContactId,
       alternateContact,
+      country,
     });
     if (!validated.success) {
       return { success: false, error: validated.error.issues[0].message };
@@ -182,11 +185,12 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
 
     await User.findByIdAndUpdate(session.user.id, {
       name: name.trim(),
-      telegramUsername: formattedHandle, // compatibility with rest of app
+      telegramUsername: formattedHandle,
       preferredContactMethod,
       preferredContactId: formattedHandle,
       alternateContact: alternateContact.trim() || undefined,
-      role: "USER", // Always USER — ADMIN/SUPER_ADMIN only assigned by SUPER_ADMIN via /console
+      country: country.trim() || undefined,
+      role: "USER",
       isOnboarded: true,
     });
 
