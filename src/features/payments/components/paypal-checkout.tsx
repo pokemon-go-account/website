@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { getDb } from "@/lib/firestore";
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
+import { useCartStore } from "@/store/useCartStore";
 import {
   Upload,
   CheckCircle,
@@ -32,6 +36,7 @@ export function PayPalPaymentCheckout({
   customerEmail,
   paypalLink = "https://www.paypal.me/Gasphernus",
 }: PayPalPaymentCheckoutProps) {
+  const { data: session } = useSession();
   const [transactionId, setTransactionId] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
@@ -129,7 +134,83 @@ export function PayPalPaymentCheckout({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed.");
-      setSubmitted(true);
+
+      // Create support chat for order payment proof verification
+      try {
+        const userId = (session?.user as any)?.id as string || "N/A";
+        const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+        const db = getDb();
+        const chatId = `order-${orderId}`;
+        const chatRef = doc(db, "supportChats", chatId);
+
+        const messageText = `📦 ORDER PAID & SUBMITTED (PayPal)
+----------------------------------
+Order ID: ${orderId}
+Paid Amount: €${amount.toLocaleString("en-IE")} EUR
+Payment Method: PayPal Transfer
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${customerEmail}
+User ID: ${userId}
+
+🔍 VERIFICATION PROOF:
+----------------------------------
+PayPal Transaction ID: #${transactionId}
+Payment Screenshot: Uploaded & Stored
+
+Please verify my payment proof and approve my order!`;
+
+        await setDoc(chatRef, {
+          userId,
+          username,
+          email: customerEmail,
+          type: "order",
+          orderId,
+          title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
+          lastMessage: `Payment proof submitted (PayPal ID: #${transactionId}).`,
+          lastMessageAt: serverTimestamp(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: serverTimestamp(),
+        });
+
+        const msgsRef = collection(db, "supportChats", chatId, "messages");
+        await addDoc(msgsRef, {
+          text: messageText,
+          sender: "user",
+          senderName: username,
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        if (data.screenshotUrl) {
+          await addDoc(msgsRef, {
+            image: data.screenshotUrl,
+            text: "Payment Proof Screenshot",
+            sender: "user",
+            senderName: username,
+            timestamp: serverTimestamp(),
+            read: false,
+          });
+        }
+
+        await addDoc(msgsRef, {
+          text: `System: Thank you for submitting your payment proof! A support representative will verify your PayPal Transaction ID #${transactionId} shortly and confirm your order.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        useCartStore.getState().clearCart();
+        setSubmitted(true);
+        window.location.href = `/chat?chatId=${chatId}`;
+      } catch (fErr) {
+        console.error("Failed to write to support chats:", fErr);
+        setSubmitted(true);
+      }
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {

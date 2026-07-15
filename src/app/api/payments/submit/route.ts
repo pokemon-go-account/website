@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       status: "Pending",
     });
 
-    return NextResponse.json({ success: true, paymentId: payment._id.toString() }, { status: 201 });
+    return NextResponse.json({ success: true, paymentId: payment._id.toString(), screenshotUrl }, { status: 201 });
   } catch (err: any) {
     console.error("[Payment Submit Error]", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });

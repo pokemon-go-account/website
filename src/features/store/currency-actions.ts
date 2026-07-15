@@ -22,7 +22,9 @@ export async function getLiveExchangeRates() {
 
     // Otherwise, fetch new rates from the API
     console.log("[Currency API] Cache expired or missing. Fetching fresh rates from open.er-api.com...");
-    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    const res = await fetch("https://open.er-api.com/v6/latest/USD", {
+      cache: "no-store", // Bypass Next.js static cache, always fetch fresh data since we cache in MongoDB!
+    });
     if (!res.ok) throw new Error("API responded with an error");
     const data = await res.json();
     

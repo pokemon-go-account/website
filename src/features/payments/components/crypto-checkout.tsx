@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { getDb } from "@/lib/firestore";
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
+import { useCartStore } from "@/store/useCartStore";
 import {
   Upload,
   CheckCircle,
@@ -15,12 +19,14 @@ import {
   Check,
   Coins,
   ChevronRight,
+  ChevronDown,
   RefreshCw,
+  Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrencyStore, CURRENCY_SYMBOLS } from "@/store/useCurrencyStore";
 import { motion, AnimatePresence } from "framer-motion";
-
+// Removed getLiveCryptoRates API import
 interface CryptoPaymentCheckoutProps {
   orderId: string;
   amount: number; // in USD (default store pricing is USD)
@@ -33,6 +39,8 @@ interface CoinOption {
   network: string;
   address: string;
   icon: string;
+  qrPrefix?: string;
+  ticker: string;
 }
 
 const COIN_OPTIONS: CoinOption[] = [
@@ -42,6 +50,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "BTC Network",
     address: "bc1qtd309hq8q38ndzs253938e92nqh9zdyekn674y",
     icon: "https://cdn.simpleicons.org/bitcoin",
+    qrPrefix: "bitcoin:",
+    ticker: "BTC",
   },
   {
     id: "eth",
@@ -49,6 +59,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "ERC-20",
     address: "0x7C16bCa7C046db092f420c96C3923DE26b0bA279",
     icon: "https://cdn.simpleicons.org/ethereum",
+    qrPrefix: "ethereum:",
+    ticker: "ETH",
   },
   {
     id: "usdt-erc20",
@@ -56,6 +68,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "ERC-20",
     address: "0x7C16bCa7C046db092f420c96C3923DE26b0bA279",
     icon: "https://cdn.simpleicons.org/tether",
+    qrPrefix: "ethereum:",
+    ticker: "USDT",
   },
   {
     id: "usdt-sol",
@@ -63,6 +77,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "Solana",
     address: "2UjaBJqSm7GzbdTdv2yNAx5rPYMPy41bLPeuZPtssKQg",
     icon: "https://cdn.simpleicons.org/tether",
+    qrPrefix: "solana:",
+    ticker: "USDT",
   },
   {
     id: "usdt-trc20",
@@ -70,6 +86,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "TRC-20",
     address: "TVtictVGRmWvAU8Tu1qnftT4SVWiBErm9k",
     icon: "https://cdn.simpleicons.org/tether",
+    qrPrefix: "tron:",
+    ticker: "USDT",
   },
   {
     id: "bnb",
@@ -77,6 +95,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "BSC Network",
     address: "0x7C16bCa7C046db092f420c96C3923DE26b0bA279",
     icon: "https://cdn.simpleicons.org/binance",
+    qrPrefix: "ethereum:",
+    ticker: "BNB",
   },
   {
     id: "xrp",
@@ -84,6 +104,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "XRP Network",
     address: "rM9i5Kkh6MogRYyhqMWk8wfwQisyyW39yc",
     icon: "https://cdn.simpleicons.org/xrp",
+    qrPrefix: "ripple:",
+    ticker: "XRP",
   },
   {
     id: "sol",
@@ -91,6 +113,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "SOL Network",
     address: "2UjaBJqSm7GzbdTdv2yNAx5rPYMPy41bLPeuZPtssKQg",
     icon: "https://cdn.simpleicons.org/solana",
+    qrPrefix: "solana:",
+    ticker: "SOL",
   },
   {
     id: "ltc",
@@ -98,6 +122,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "LTC Network",
     address: "LNHkjPqtSXgZ1WL5LZvWurxQmPA4p4xXKE",
     icon: "https://cdn.simpleicons.org/litecoin",
+    qrPrefix: "litecoin:",
+    ticker: "LTC",
   },
   {
     id: "trx",
@@ -105,6 +131,8 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "TRC-20",
     address: "TVtictVGRmWvAU8Tu1qnftT4SVWiBErm9k",
     icon: "https://cdn.simpleicons.org/tron",
+    qrPrefix: "tron:",
+    ticker: "TRX",
   },
   {
     id: "doge",
@@ -112,14 +140,20 @@ const COIN_OPTIONS: CoinOption[] = [
     network: "DOGE Network",
     address: "DGzkNM5dLzdJv1A2ksRgbzbi3uQAA7WW8M",
     icon: "https://cdn.simpleicons.org/dogecoin",
+    qrPrefix: "dogecoin:",
+    ticker: "DOGE",
   }
 ];
+
+
+
 
 export function CryptoPaymentCheckout({
   orderId,
   amount, // base USD amount
   customerEmail,
 }: CryptoPaymentCheckoutProps) {
+  const { data: session } = useSession();
   const [selectedCoin, setSelectedCoin] = useState<CoinOption | null>(null);
   const [txHash, setTxHash] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -129,7 +163,15 @@ export function CryptoPaymentCheckout({
   const [submitted, setSubmitted] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isQrExpanded, setIsQrExpanded] = useState(false);
+
+  const getQrValue = () => {
+    if (!selectedCoin) return "";
+    return selectedCoin.qrPrefix ? `${selectedCoin.qrPrefix}${selectedCoin.address}` : selectedCoin.address;
+  };
 
   const { currency: selectedCurrency, rates } = useCurrencyStore();
 
@@ -219,7 +261,84 @@ export function CryptoPaymentCheckout({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed.");
-      setSubmitted(true);
+
+      // Create support chat for order payment proof verification
+      try {
+        const userId = (session?.user as any)?.id as string || "N/A";
+        const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+        const db = getDb();
+        const chatId = `order-${orderId}`;
+        const chatRef = doc(db, "supportChats", chatId);
+
+        const messageText = `📦 ORDER PAID & SUBMITTED (Crypto)
+----------------------------------
+Order ID: ${orderId}
+Base USD Amount: $${amount.toLocaleString()}
+Selected Coin: ${selectedCoin.name} (${selectedCoin.network})
+Payment Method: Cryptocurrency
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${customerEmail}
+User ID: ${userId}
+
+🔍 VERIFICATION PROOF:
+----------------------------------
+TxHash / Hash ID: #${txHash}
+Payment Screenshot: Uploaded & Stored
+
+Please verify my payment proof and approve my order!`;
+
+        await setDoc(chatRef, {
+          userId,
+          username,
+          email: customerEmail,
+          type: "order",
+          orderId,
+          title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
+          lastMessage: `Payment proof submitted (Crypto Hash: #${txHash.substring(0, 8)}...).`,
+          lastMessageAt: serverTimestamp(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: serverTimestamp(),
+        });
+
+        const msgsRef = collection(db, "supportChats", chatId, "messages");
+        await addDoc(msgsRef, {
+          text: messageText,
+          sender: "user",
+          senderName: username,
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        if (data.screenshotUrl) {
+          await addDoc(msgsRef, {
+            image: data.screenshotUrl,
+            text: "Payment Proof Screenshot",
+            sender: "user",
+            senderName: username,
+            timestamp: serverTimestamp(),
+            read: false,
+          });
+        }
+
+        await addDoc(msgsRef, {
+          text: `System: Thank you for submitting your payment proof! A support representative will verify your Crypto TxHash #${txHash} shortly and confirm your order.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        useCartStore.getState().clearCart();
+        setSubmitted(true);
+        window.location.href = `/chat?chatId=${chatId}`;
+      } catch (fErr) {
+        console.error("Failed to write to support chats:", fErr);
+        setSubmitted(true);
+      }
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {
@@ -347,30 +466,66 @@ export function CryptoPaymentCheckout({
           )}
 
           {/* Coin selectors */}
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             <p className="text-[9px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block">
               Choose Currency:
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              {COIN_OPTIONS.map((coin) => (
-                <button
-                  key={coin.id}
-                  type="button"
-                  onClick={() => setSelectedCoin(coin)}
-                  className={cn(
-                    "flex items-center gap-2 p-2.5 rounded-xl border text-[11px] font-bold transition-all active:scale-[0.98] cursor-pointer text-left",
-                    selectedCoin?.id === coin.id
-                      ? "border-amber-500 bg-amber-500/5 text-amber-600 dark:text-amber-400 font-black shadow-xs"
-                      : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700"
-                  )}
-                >
-                  <img src={coin.icon} alt={coin.name} className="h-4 w-4 object-contain" />
-                  <div className="min-w-0">
-                    <p className="leading-none">{coin.name}</p>
-                    <span className="text-[8px] text-zinc-450 leading-none font-medium mt-0.5 block">{coin.network}</span>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-amber-500 transition-colors shadow-sm focus:outline-none"
+              >
+                {selectedCoin ? (
+                  <div className="flex items-center gap-2.5">
+                    <img src={selectedCoin.icon} alt={selectedCoin.name} className="h-5 w-5 object-contain" />
+                    <div className="text-left leading-tight">
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">{selectedCoin.name}</p>
+                      <span className="text-[9px] text-zinc-450 font-medium">{selectedCoin.network}</span>
+                    </div>
                   </div>
-                </button>
-              ))}
+                ) : (
+                  <span className="text-xs font-semibold text-zinc-400">Select a cryptocurrency...</span>
+                )}
+                <ChevronDown className={cn("h-4 w-4 text-zinc-400 transition-transform duration-200", isDropdownOpen && "rotate-180")} />
+              </button>
+
+              {/* Dropdown Menu */}
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden max-h-56 overflow-y-auto"
+                  >
+                    {COIN_OPTIONS.map((coin) => (
+                      <button
+                        key={coin.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCoin(coin);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-2.5 p-3 text-left transition-colors cursor-pointer border-b border-zinc-100 dark:border-zinc-800/50 last:border-b-0 hover:bg-zinc-50 dark:hover:bg-zinc-800",
+                          selectedCoin?.id === coin.id ? "bg-amber-500/5 text-amber-600 dark:text-amber-400" : "text-zinc-700 dark:text-zinc-300"
+                        )}
+                      >
+                        <img src={coin.icon} alt={coin.name} className="h-5 w-5 object-contain" />
+                        <div className="leading-tight">
+                          <p className="text-xs font-bold text-zinc-900 dark:text-white group-hover:text-amber-500">{coin.name}</p>
+                          <span className="text-[9px] text-zinc-450 font-medium">{coin.network}</span>
+                        </div>
+                        {selectedCoin?.id === coin.id && (
+                          <Check className="h-4 w-4 ml-auto text-amber-500" />
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -397,15 +552,23 @@ export function CryptoPaymentCheckout({
 
                 {/* QR Code and Copy Block */}
                 <div className="flex items-center gap-4">
-                  <div className="p-2 bg-white rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xs shrink-0">
+                  <div 
+                    onClick={() => setIsQrExpanded(true)}
+                    className="p-2 bg-white rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xs shrink-0 cursor-pointer relative group/qr hover:border-amber-500 transition-colors"
+                    title="Click to expand QR Code"
+                  >
                     <QRCodeSVG
-                      value={selectedCoin.address}
+                      value={getQrValue()}
                       size={70}
                       bgColor="#ffffff"
                       fgColor="#18181b"
                       level="M"
                       includeMargin={false}
                     />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/qr:opacity-100 transition-opacity flex flex-col items-center justify-center rounded-lg text-white gap-0.5">
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      <span className="text-[7px] font-bold tracking-tight uppercase text-center text-white">Enlarge</span>
+                    </div>
                   </div>
                   <div className="flex-1 space-y-1.5 min-w-0 text-left">
                     <span className="text-[8px] text-zinc-450 dark:text-zinc-550 font-bold uppercase tracking-wider block">Wallet Address</span>
@@ -428,6 +591,19 @@ export function CryptoPaymentCheckout({
                   </div>
                 </div>
 
+                {/* Quantity to Pay Block Removed */}
+
+                {/* Gas Fees Warning Box */}
+                <div className="bg-amber-500/10 dark:bg-amber-500/[0.05] border border-amber-500/30 dark:border-amber-550/20 rounded-xl p-3 flex items-start gap-2 text-left">
+                  <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-0.5">Gas Fees & Network Fees</p>
+                    <p className="text-[9px] text-zinc-600 dark:text-zinc-300 font-medium leading-relaxed">
+                      You must pay the extra gas/network fees. Send exactly the amount shown above plus whatever fee your wallet/exchange requires. <span className="font-bold text-amber-600 dark:text-amber-400">If the received amount is less, it will result in partial payment.</span>
+                    </p>
+                  </div>
+                </div>
+
                 <p className="text-[9px] text-red-500/80 dark:text-red-400/80 font-semibold leading-normal flex items-start gap-1">
                   <AlertCircle className="h-3 w-3 shrink-0 mt-0.5" />
                   <span>Send ONLY {selectedCoin.name} over {selectedCoin.network}. Sending other coins will lose funds.</span>
@@ -447,7 +623,7 @@ export function CryptoPaymentCheckout({
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-amber-500/15 cursor-pointer mt-2"
+              className="w-full h-11 flex sm:hidden items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-amber-500/15 cursor-pointer mt-2"
             >
               <Check className="h-4.5 w-4.5 text-amber-200 animate-pulse" />
               I HAVE SENT PAYMENT, SUBMIT PROOF
@@ -580,6 +756,57 @@ export function CryptoPaymentCheckout({
         </button>
 
       </form>
+
+      {/* Expanded QR Modal Overlay */}
+      {isQrExpanded && selectedCoin && (
+        <div
+          onClick={() => setIsQrExpanded(false)}
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md cursor-pointer animate-in fade-in duration-250"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white dark:bg-[#111111] p-8 rounded-2xl border border-zinc-200 dark:border-white/[0.06] shadow-2xl flex flex-col items-center gap-4 text-center cursor-default max-w-sm w-full animate-in zoom-in-95 duration-200"
+          >
+            <button
+              onClick={() => setIsQrExpanded(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <div className="space-y-1">
+              <h4 className="font-extrabold text-sm text-zinc-900 dark:text-white uppercase tracking-wider">
+                Scan {selectedCoin.name} QR
+              </h4>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-450">
+                Network: <span className="font-extrabold text-amber-500 uppercase">{selectedCoin.network}</span>
+              </p>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-zinc-200 shadow-sm shrink-0">
+              <QRCodeSVG
+                value={getQrValue()}
+                size={220}
+                bgColor="#ffffff"
+                fgColor="#18181b"
+                level="Q"
+                includeMargin={false}
+              />
+            </div>
+
+            <div className="w-full space-y-1.5 text-left">
+              <span className="text-[8px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider block">Wallet Address</span>
+              <div className="font-mono text-[10px] text-zinc-800 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-200/50 dark:border-zinc-800/40 break-all select-all">
+                {selectedCoin.address}
+              </div>
+            </div>
+
+            <p className="text-[9px] text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 dark:bg-amber-500/[0.05] p-2.5 rounded-lg border border-amber-500/25">
+              ⚠️ Remember to cover the transaction gas fees so the exact amount of ${amount} USD arrives.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

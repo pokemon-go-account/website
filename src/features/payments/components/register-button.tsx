@@ -12,6 +12,8 @@ import { PayPalPaymentCheckout } from "./paypal-checkout";
 import { CryptoPaymentCheckout } from "./crypto-checkout";
 import { WisePaymentCheckout } from "./wise-checkout";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
+import { getDb } from "@/lib/firestore";
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { AnimatedCardIcon, AnimatedCryptoIcon, PaypalIcon, WiseIcon } from "@/components/ui/animated-payment-icons";
 
 interface RegisterAuctionButtonProps {
@@ -40,41 +42,75 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
     }
   };
 
-  const handleSocialRedirect = async (platform: "telegram" | "reddit" | "instagram" | "facebook") => {
-    let orderIdStr = "";
+  const handleManualOrderChat = async (method: "Card" | "Others") => {
+    if (status === "loading" || !session?.user) return;
+    const userId = (session.user as any).id as string;
+    const username = (session.user as any).username || session.user.name || session.user.email || "User";
+
     try {
       const res = await createRegistrationOrder(auctionId);
       if (res.success && res.orderContext?.id) {
-        orderIdStr = `Order ID: ${res.orderContext.id}\n`;
+        const orderId = res.orderContext.id;
+        const db = getDb();
+        const chatId = `order-${orderId}`;
+        const chatRef = doc(db, "supportChats", chatId);
+
+        const methodLabel = method === "Card" ? "Card, Cash App, Apple Pay" : "Others";
+        
+        const messageText = `📦 NEW ORDER: Bidding Registration Deposit
+----------------------------------
+Order ID: ${orderId}
+Amount: $2.50 USD
+Payment Method: ${methodLabel}
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${session?.user?.email || "N/A"}
+User ID: ${userId}
+
+Please guide me on how to complete the payment!`;
+
+        await setDoc(chatRef, {
+          userId,
+          username,
+          email: session?.user?.email ?? "",
+          type: "order",
+          orderId,
+          title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
+          lastMessage: `Payment coordination started for ${methodLabel}.`,
+          lastMessageAt: serverTimestamp(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: serverTimestamp(),
+        });
+
+        const msgsRef = collection(db, "supportChats", chatId, "messages");
+        await addDoc(msgsRef, {
+          text: messageText,
+          sender: "user",
+          senderName: username,
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        await addDoc(msgsRef, {
+          text: `System: Hi ${username}! Someone from our support team will reply to you here shortly to guide you through your manual payment.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        // Close modal and redirect
+        setIsOpen(false);
+        window.location.href = `/chat?chatId=${chatId}`;
+      } else {
+        alert("Error creating order: " + (res.error || "Please try again."));
       }
     } catch (err) {
-      console.error("Failed to persist registration order:", err);
-    }
-
-    const methodLabel = selectedMethod === "Card" ? "Credit/Debit Card (Visa/Mastercard/Amex)" :
-                        selectedMethod === "Crypto" ? "Cryptocurrency" :
-                        selectedMethod === "PayPal" ? "PayPal" :
-                        selectedMethod === "Wise" ? "Wise" : "Others";
-
-    const message = `Hi Pokémon GO Services! I would like to pay the one-time $2.50 verification deposit to verify my account for bidding across all auctions and pay via ${methodLabel}.
-${orderIdStr}Please let me know how to proceed with the payment!`;
-
-    try {
-      await navigator.clipboard.writeText(message);
-    } catch (err) {
-      console.error("Clipboard copy failed:", err);
-    }
-
-    if (platform === "telegram") {
-      window.open(`https://telegram.me/pokemongoservicesadmin?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-    } else if (platform === "reddit") {
-      window.open(`https://www.reddit.com/message/compose/?to=PokemonGo-Services&subject=Deposit%20Verification&message=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-    } else if (platform === "instagram") {
-      alert("📋 We have copied your deposit details to your clipboard! Paste it in the Instagram DM to proceed.");
-      window.open("https://www.instagram.com/pokemongoservicesadmin/", "_blank", "noopener,noreferrer");
-    } else if (platform === "facebook") {
-      alert("📋 We have copied your deposit details to your clipboard! Paste it in the Facebook message to proceed.");
-      window.open("https://www.facebook.com/share/1LdWHj4HQz/?mibextid=wwXIfr", "_blank", "noopener,noreferrer");
+      console.error("Manual order chat error:", err);
+      alert("Failed to initiate chat. Please try again.");
     }
   };
 
@@ -220,94 +256,6 @@ ${orderIdStr}Please let me know how to proceed with the payment!`;
                   customerEmail={upiCheckoutData.email}
                 />
               </div>
-            ) : paymentStage === "platforms" && selectedMethod ? (
-              /* STAGE 2: SOCIAL REDIRECT PLATFORMS FOR MANUAL VERIFICATION */
-              <div className="space-y-5 text-left">
-                <div className="space-y-1">
-                  <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-[#6133e1]" />
-                    Manual Order Verification
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Verify and complete your deposit via <strong>{selectedMethod}</strong> using one of our verified chat agents below:
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Option 1: Pay via Telegram */}
-                  <button
-                    onClick={() => handleSocialRedirect("telegram")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Telegram</h3>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Direct message @pokemongoservicesadmin for validation</p>
-                      </div>
-                      <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                        Active
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Option 2: Pay via Reddit */}
-                  <button
-                    onClick={() => handleSocialRedirect("reddit")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Reddit</h3>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">DM user /u/PokemonGo-Services to process payment</p>
-                      </div>
-                      <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-500/20">
-                        Active
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Option 3: Pay via Instagram */}
-                  <button
-                    onClick={() => handleSocialRedirect("instagram")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200/85 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Instagram</h3>
-                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">DM @pokemongoservicesadmin on Instagram</p>
-                      </div>
-                      <span className="bg-pink-500/10 text-pink-600 px-2 py-0.5 rounded text-[10px] font-bold border border-pink-500/20">
-                        Active
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Option 4: Pay via Facebook */}
-                  <button
-                    onClick={() => handleSocialRedirect("facebook")}
-                    className="w-full text-left overflow-hidden rounded-xl border border-zinc-200/85 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900 p-4 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Pay via Facebook</h3>
-                        <p className="text-[11px] text-zinc-555 dark:text-zinc-400">Message us on Facebook to complete deposit verification</p>
-                      </div>
-                      <span className="bg-blue-600/10 text-blue-600 dark:text-blue-405 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
-                        Active
-                      </span>
-                    </div>
-                  </button>
-                </div>
-
-                <div className="flex justify-center pt-2">
-                  <button
-                    onClick={() => setPaymentStage("methods")}
-                    className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer bg-transparent border-none"
-                  >
-                    &larr; Back to Payment Methods
-                  </button>
-                </div>
-              </div>
             ) : (
               /* STAGE 3: CHOOSE PAYMENT METHOD (6 OPTIONS) */
               <>
@@ -371,10 +319,7 @@ ${orderIdStr}Please let me know how to proceed with the payment!`;
 
                   {/* 2. Credit Card */}
                   <button
-                    onClick={() => {
-                      setSelectedMethod("Card");
-                      setPaymentStage("platforms");
-                    }}
+                    onClick={() => handleManualOrderChat("Card")}
                     className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-blue-500 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
                     <div className="flex items-center gap-3">
@@ -515,10 +460,7 @@ ${orderIdStr}Please let me know how to proceed with the payment!`;
 
                   {/* 6. Others */}
                   <button
-                    onClick={() => {
-                      setSelectedMethod("Others");
-                      setPaymentStage("platforms");
-                    }}
+                    onClick={() => handleManualOrderChat("Others")}
                     className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-400 dark:hover:border-zinc-400/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
                     <div className="flex items-center gap-3">

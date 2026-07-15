@@ -13,6 +13,7 @@ import Product from "@/models/Product";
 import PokemonRequest from "@/models/PokemonRequest";
 import CustomRequest from "@/models/CustomRequest";
 import { revalidatePath } from "next/cache";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 /**
  * Helper to enforce strict admin validation
@@ -265,13 +266,26 @@ export async function deleteAuction(auctionId: string) {
     const auction = await Auction.findById(auctionId);
     if (!auction) return { success: false, error: "Auction not found." };
 
-    // Delete associated listing, bids, and registrations
+    // Collect all image URLs from the associated listing before deletion
+    let listingImageUrls: string[] = [];
     if (auction.listingId) {
+      const listing = await Listing.findById(auction.listingId).lean() as any;
+      if (listing) {
+        if (listing.imageUrl) listingImageUrls.push(listing.imageUrl);
+        if (Array.isArray(listing.imageUrls)) listingImageUrls.push(...listing.imageUrls);
+        if (listing.screenshotUrl) listingImageUrls.push(listing.screenshotUrl);
+      }
       await Listing.findByIdAndDelete(auction.listingId);
     }
+
     await Bid.deleteMany({ auctionId: auctionId });
     await Registration.deleteMany({ auctionId: auctionId });
     await Auction.findByIdAndDelete(auctionId);
+
+    // Delete Cloudinary assets after DB cleanup (non-blocking on failure)
+    if (listingImageUrls.length > 0) {
+      await deleteFromCloudinary(listingImageUrls);
+    }
 
     revalidatePath("/admin");
     revalidatePath("/auctions");
@@ -729,7 +743,15 @@ export async function deleteCategory(id: string) {
       return { success: false, error: 'Cannot delete category containing products.' };
     }
 
+    // Fetch the image URL before deleting the document
+    const category = await Category.findById(id).lean() as any;
     await Category.findByIdAndDelete(id);
+
+    // Delete Cloudinary asset after DB record is gone
+    if (category?.imageUrl) {
+      await deleteFromCloudinary(category.imageUrl);
+    }
+
     revalidatePath('/admin/categories');
     revalidatePath('/store');
     return { success: true };
@@ -823,7 +845,21 @@ export async function deleteProduct(id: string) {
   try {
     await checkSuperAdminSession();
     await connectDB();
+
+    // Fetch all image URLs before deleting the document
+    const product = await Product.findById(id).lean() as any;
     await Product.findByIdAndDelete(id);
+
+    // Delete Cloudinary assets: primary image + gallery images
+    if (product) {
+      const allImageUrls: string[] = [];
+      if (product.imageUrl) allImageUrls.push(product.imageUrl);
+      if (Array.isArray(product.imageUrls)) allImageUrls.push(...product.imageUrls);
+      if (allImageUrls.length > 0) {
+        await deleteFromCloudinary(allImageUrls);
+      }
+    }
+
     revalidatePath('/admin/products');
     revalidatePath('/store');
     return { success: true };
