@@ -22,13 +22,15 @@ interface UpiPaymentCheckoutProps {
   amount: number; // in INR
   customerEmail: string;
   upiId?: string; // Your UPI ID e.g. "yourname@upi"
+  payeeName?: string; // Real name associated with UPI ID to prevent risk blocks
 }
 
 export function UpiPaymentCheckout({
   orderId,
   amount,
   customerEmail,
-  upiId = "to-babyrao@ybl",
+  upiId = "adarshsingh9888-3@oksbi",
+  payeeName = "Pokemon GO Services",
 }: UpiPaymentCheckoutProps) {
   const [utrNumber, setUtrNumber] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -41,8 +43,8 @@ export function UpiPaymentCheckout({
 
   // UPI deep link for QR code / App launch
   // We remove 'tn' (transaction note) because passing long alphanumeric Order IDs triggers UPI Risk Policies/Spam filters on GPay/PhonePe.
-  const payeeName = encodeURIComponent("Pokemon GO Services");
-  const upiLink = `upi://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR`;
+  const encodedPayeeName = encodeURIComponent(payeeName);
+  const upiLink = `upi://pay?pa=${upiId}&pn=${encodedPayeeName}&am=${amount}&cu=INR`;
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(upiId);
@@ -213,8 +215,16 @@ export function UpiPaymentCheckout({
             </h3>
           </div>
 
-          {/* Mobile View: Launch App Directly */}
-          <div className="block sm:hidden w-full space-y-2">
+          {/* Amount Card */}
+          <div className="flex flex-col items-center justify-center bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 rounded-xl py-3 shadow-sm">
+             <p className="text-[10px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Amount to Pay</p>
+             <p className="text-2xl font-black text-zinc-950 dark:text-white tracking-tight">
+               ₹{amount.toLocaleString("en-IN")}
+             </p>
+          </div>
+
+          {/* Mobile View: Launch App Directly & Fallback */}
+          <div className="block sm:hidden w-full space-y-3">
             <a
               href={upiLink}
               className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-violet-500/15 cursor-pointer"
@@ -222,31 +232,40 @@ export function UpiPaymentCheckout({
               <ScanQrCode className="h-4.5 w-4.5" />
               PAY DIRECTLY VIA UPI APP
             </a>
-            <p className="text-[10px] text-zinc-450 dark:text-zinc-500 text-center leading-relaxed font-medium">
-              Tap to launch your preferred UPI app (GPay, PhonePe, Paytm, BHIM) and pay. After paying, come back here to submit proof.
-            </p>
+            
+            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 space-y-2.5">
+              <div className="flex items-start gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
+                  If direct payment fails (e.g. Paytm risk policy), copy the UPI ID below and pay manually.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyUpi}
+                className="w-full h-9 flex items-center justify-center gap-2 rounded-lg bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-500/30 hover:border-amber-400 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+              >
+                {copiedUpi ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-zinc-500" />}
+                {copiedUpi ? "COPIED UPI ID!" : "COPY UPI ID TO PAY"}
+              </button>
+            </div>
           </div>
 
           {/* Desktop View: Scan QR Code */}
-          <div className="hidden sm:flex flex-col items-center gap-3 pt-2">
+          <div className="hidden sm:flex flex-col items-center gap-3 pt-1">
             <div className="p-3 bg-white rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-md inline-block transition-transform hover:scale-[1.02] duration-300">
               <QRCodeSVG
                 value={upiLink}
-                size={130}
+                size={120}
                 bgColor="#ffffff"
                 fgColor="#18181b"
                 level="M"
                 includeMargin={false}
               />
             </div>
-            <div className="text-center space-y-0.5">
-              <p className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider flex items-center justify-center gap-1">
-                <ScanQrCode className="h-3 w-3 text-[#6133e1]" /> Scan to pay instantly
-              </p>
-              <p className="text-lg font-black text-zinc-950 dark:text-white">
-                ₹{amount.toLocaleString("en-IN")}
-              </p>
-            </div>
+            <p className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+              <ScanQrCode className="h-3 w-3 text-[#6133e1]" /> Scan QR with any UPI App
+            </p>
           </div>
         </div>
 
