@@ -13,44 +13,58 @@ import {
   ImageIcon,
   Copy,
   Check,
-  Sparkles,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrencyStore, CURRENCY_SYMBOLS } from "@/store/useCurrencyStore";
+import { motion } from "framer-motion";
 
-interface UpiPaymentCheckoutProps {
+interface PayPalPaymentCheckoutProps {
   orderId: string;
-  amount: number; // in INR
+  amount: number; // in USD or appropriate currency
   customerEmail: string;
-  upiId?: string; // Your UPI ID e.g. "yourname@upi"
-  payeeName?: string; // Real name associated with UPI ID to prevent risk blocks
+  paypalLink?: string; 
 }
 
-export function UpiPaymentCheckout({
+export function PayPalPaymentCheckout({
   orderId,
   amount,
   customerEmail,
-  upiId = "adarshsingh9888-3@oksbi",
-  payeeName = "Pokemon GO Services",
-}: UpiPaymentCheckoutProps) {
-  const [utrNumber, setUtrNumber] = useState("");
+  paypalLink = "https://www.paypal.me/Gasphernus",
+}: PayPalPaymentCheckoutProps) {
+  const [transactionId, setTransactionId] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // UPI deep link for QR code / App launch
-  // We remove 'tn' (transaction note) because passing long alphanumeric Order IDs triggers UPI Risk Policies/Spam filters on GPay/PhonePe.
-  const encodedPayeeName = encodeURIComponent(payeeName);
-  const upiLink = `upi://pay?pa=${upiId}&pn=${encodedPayeeName}&am=${amount}&cu=INR`;
+  const { currency: selectedCurrency, rates } = useCurrencyStore();
 
-  const handleCopyUpi = () => {
-    navigator.clipboard.writeText(upiId);
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2000);
+  // We can pass the amount to the paypal.me link
+  const finalPaypalLink = `${paypalLink}/${amount}EUR`;
+
+  const eurRate = rates.EUR || 0.92;
+  const selectedRate = rates[selectedCurrency] || 1.0;
+  const amountInUSD = amount / eurRate;
+  const amountInSelected = amountInUSD * selectedRate;
+
+  const formatSelected = () => {
+    const symbol = CURRENCY_SYMBOLS[selectedCurrency] || "$";
+    const hasDecimals = amountInSelected % 1 !== 0;
+    const formatted = (selectedCurrency === "JPY" || !hasDecimals)
+      ? Math.round(amountInSelected).toLocaleString()
+      : amountInSelected.toFixed(2);
+    return `${symbol}${formatted} ${selectedCurrency}`;
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(finalPaypalLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const handleFileChange = useCallback((file: File | null) => {
@@ -90,8 +104,8 @@ export function UpiPaymentCheckout({
     e.preventDefault();
     setError(null);
 
-    if (!utrNumber || utrNumber.length !== 12) {
-      setError("Please enter a valid 12-digit UTR number.");
+    if (!transactionId || transactionId.trim().length < 5) {
+      setError("Please enter a valid PayPal Transaction ID.");
       return;
     }
     if (!screenshotFile) {
@@ -102,14 +116,14 @@ export function UpiPaymentCheckout({
     setIsSubmitting(true);
     try {
       const screenshotBase64 = await toBase64(screenshotFile);
-      const res = await fetch("/api/payments/submit", {
+      const res = await fetch("/api/payments/submit-paypal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId,
           amount,
           customerEmail,
-          utrNumber,
+          transactionId,
           screenshotBase64,
         }),
       });
@@ -126,16 +140,16 @@ export function UpiPaymentCheckout({
   // ─── Success State ────────────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/[0.08] to-transparent dark:from-emerald-500/[0.04] p-6 text-center shadow-xl backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-gradient-to-b from-blue-500/[0.08] to-transparent dark:from-blue-500/[0.04] p-6 text-center shadow-xl backdrop-blur-md">
         {/* Glow effects */}
-        <div className="absolute -top-12 -left-12 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-12 -right-12 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -top-12 -left-12 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-75" />
-            <div className="relative h-16 w-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-              <CheckCircle className="h-8 w-8 text-emerald-500 animate-pulse" />
+            <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping opacity-75" />
+            <div className="relative h-16 w-16 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-blue-500 animate-pulse" />
             </div>
           </div>
 
@@ -163,9 +177,9 @@ export function UpiPaymentCheckout({
 
             <div className="space-y-2 pt-1 font-medium">
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500">UTR / Ref Number:</span>
+                <span className="text-zinc-500">Transaction ID:</span>
                 <span className="font-mono text-zinc-900 dark:text-zinc-200 font-bold bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded">
-                  #{utrNumber}
+                  #{transactionId}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -175,7 +189,7 @@ export function UpiPaymentCheckout({
               <div className="flex justify-between">
                 <span className="text-zinc-500">Amount Paid:</span>
                 <span className="font-bold text-zinc-950 dark:text-white">
-                  ₹{amount.toLocaleString("en-IN")}
+                  €{amount.toLocaleString("en-IE")}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -186,11 +200,11 @@ export function UpiPaymentCheckout({
           </div>
 
           <p className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-xs leading-relaxed">
-            🚀 Once our billing team validates the transaction against the UTR, your order will be automatically fulfilled and available in your dashboard.
+            🚀 Once our billing team validates the transaction against the ID, your order will be automatically fulfilled and available in your dashboard.
           </p>
 
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-450 dark:text-zinc-550 pt-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            <ShieldCheck className="h-4 w-4 text-blue-500" />
             <span>Secured Payment Gateway</span>
           </div>
         </div>
@@ -211,11 +225,11 @@ export function UpiPaymentCheckout({
         <div className="space-y-4">
           {/* Header Title */}
           <div className="flex items-center gap-2">
-            <span className="h-5.5 w-5.5 rounded-full bg-violet-500/10 text-[#6133e1] dark:text-purple-400 text-[11px] font-black flex items-center justify-center shrink-0 border border-violet-500/20">
+            <span className="h-5.5 w-5.5 rounded-full bg-blue-500/10 text-[#0070ba] dark:text-blue-400 text-[11px] font-black flex items-center justify-center shrink-0 border border-blue-500/20">
               1
             </span>
             <h3 className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
-              UPI Pay Gateway
+              PayPal Gateway
             </h3>
           </div>
 
@@ -223,33 +237,88 @@ export function UpiPaymentCheckout({
           <div className="flex flex-col items-center justify-center bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 rounded-xl py-3 shadow-sm">
              <p className="text-[10px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Amount to Pay</p>
              <p className="text-2xl font-black text-zinc-950 dark:text-white tracking-tight">
-               ₹{amount.toLocaleString("en-IN")}
+               €{amount.toLocaleString("en-IE")}
              </p>
           </div>
 
-          {/* Mobile View: Copy UPI & Go to Verification Step */}
+          {/* Friends & Family Warning Banner */}
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3 flex items-start gap-2 shadow-xs">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-extrabold text-red-800 dark:text-red-300 uppercase tracking-wide">
+                Important Requirement
+              </p>
+              <p className="text-[10px] text-red-750 dark:text-red-400 font-medium leading-relaxed">
+                We accept payments ONLY if you send them via <strong className="font-extrabold underline">"Friends and Family"</strong>. Payments sent via "Goods and Services" might result in loss of funds.
+              </p>
+            </div>
+          </div>
+
+          {/* Animated Conversion Box */}
+          {selectedCurrency !== "EUR" && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-blue-50/50 dark:bg-blue-950/10 border border-blue-200/50 dark:border-blue-900/30 rounded-xl p-3 flex flex-col items-center justify-center space-y-1 text-center"
+            >
+              <p className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+                Converted from Selected Currency
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                  {formatSelected()}
+                </span>
+                <motion.span
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                  className="text-blue-500 font-bold text-xs"
+                >
+                  &rarr;
+                </motion.span>
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                  €{amount.toLocaleString("en-IE")} EUR
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Mobile View: Launch App Directly & Fallback */}
           <div className="block sm:hidden w-full space-y-3">
-            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 space-y-2.5">
+            <a
+              href={finalPaypalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                setTimeout(() => setStep(2), 800);
+              }}
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-blue-500/15 cursor-pointer"
+            >
+              <ExternalLink className="h-4.5 w-4.5" />
+              PAY VIA PAYPAL
+            </a>
+            
+            <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-3 space-y-2.5">
               <div className="flex items-start gap-1.5">
-                <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
-                  Please copy the UPI ID below to pay manually from GPay, PhonePe, Paytm, or BHIM.
+                <AlertCircle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-blue-800 dark:text-blue-300 font-medium leading-relaxed">
+                  If the button doesn't work, copy the link below and pay manually.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={handleCopyUpi}
-                className="w-full h-9 flex items-center justify-center gap-2 rounded-lg bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-500/30 hover:border-amber-400 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+                onClick={handleCopyLink}
+                className="w-full h-9 flex items-center justify-center gap-2 rounded-lg bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-500/30 hover:border-blue-400 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-all active:scale-[0.98] shadow-sm cursor-pointer"
               >
-                {copiedUpi ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-zinc-500" />}
-                {copiedUpi ? "COPIED UPI ID!" : "COPY UPI ID TO PAY"}
+                {copiedLink ? <Check className="h-4 w-4 text-blue-500" /> : <Copy className="h-4 w-4 text-zinc-500" />}
+                {copiedLink ? "COPIED LINK!" : "COPY PAYPAL LINK"}
               </button>
             </div>
 
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-violet-500/15 cursor-pointer"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-550 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-blue-500/15 cursor-pointer"
             >
               <Check className="h-4.5 w-4.5 text-emerald-400 animate-pulse" />
               I HAVE PAID, SUBMIT PROOF
@@ -260,7 +329,7 @@ export function UpiPaymentCheckout({
           <div className="hidden sm:flex flex-col items-center gap-3 pt-1">
             <div className="p-3 bg-white rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-md inline-block transition-transform hover:scale-[1.02] duration-300">
               <QRCodeSVG
-                value={upiLink}
+                value={finalPaypalLink}
                 size={120}
                 bgColor="#ffffff"
                 fgColor="#18181b"
@@ -269,8 +338,17 @@ export function UpiPaymentCheckout({
               />
             </div>
             <p className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider flex items-center justify-center gap-1">
-              <ScanQrCode className="h-3 w-3 text-[#6133e1]" /> Scan QR with any UPI App
+              <ScanQrCode className="h-3 w-3 text-[#0070ba]" /> Scan QR to open PayPal
             </p>
+            <a
+              href={finalPaypalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 w-full h-9 flex items-center justify-center gap-1.5 rounded-lg bg-[#0070ba] hover:bg-[#003087] text-white font-bold text-xs transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open PayPal in browser
+            </a>
           </div>
         </div>
 
@@ -278,14 +356,14 @@ export function UpiPaymentCheckout({
         <div className="space-y-3 pt-3 border-t border-zinc-200/60 dark:border-white/[0.04]">
           <div className="text-[10px] space-y-1.5">
             <div className="flex justify-between items-center">
-              <span className="text-zinc-450 dark:text-zinc-500">UPI Address:</span>
+              <span className="text-zinc-450 dark:text-zinc-500">PayPal Link:</span>
               <button
                 type="button"
-                onClick={handleCopyUpi}
-                className="flex items-center gap-1 font-mono text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-violet-500/50 dark:hover:border-violet-500/50 px-2 py-0.5 rounded transition cursor-pointer text-[10px]"
+                onClick={handleCopyLink}
+                className="flex items-center gap-1 font-mono text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 px-2 py-0.5 rounded transition cursor-pointer text-[10px] max-w-[150px] truncate"
               >
-                {upiId}
-                {copiedUpi ? (
+                {paypalLink.replace("https://www.", "")}
+                {copiedLink ? (
                   <Check className="h-3 w-3 text-emerald-500" />
                 ) : (
                   <Copy className="h-3 w-3 text-zinc-450 hover:text-zinc-700 dark:hover:text-zinc-300" />
@@ -299,9 +377,9 @@ export function UpiPaymentCheckout({
           </div>
 
           <div className="flex items-center gap-4 justify-center flex-wrap pt-2 opacity-95">
-            <img src="https://cdn.simpleicons.org/googlepay" alt="Google Pay" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
-            <img src="https://cdn.simpleicons.org/phonepe" alt="PhonePe" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
-            <img src="https://cdn.simpleicons.org/paytm" alt="Paytm" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.simpleicons.org/paypal" alt="PayPal" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.simpleicons.org/visa" alt="Visa" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.simpleicons.org/mastercard" alt="Mastercard" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
           </div>
         </div>
 
@@ -319,7 +397,7 @@ export function UpiPaymentCheckout({
         {/* Header Title */}
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <span className="h-5.5 w-5.5 rounded-full bg-violet-500/10 text-[#6133e1] dark:text-purple-400 text-[11px] font-black flex items-center justify-center shrink-0 border border-violet-500/20">
+            <span className="h-5.5 w-5.5 rounded-full bg-blue-500/10 text-[#0070ba] dark:text-blue-400 text-[11px] font-black flex items-center justify-center shrink-0 border border-blue-500/20">
               2
             </span>
             <h3 className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
@@ -330,26 +408,24 @@ export function UpiPaymentCheckout({
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="block sm:hidden text-[10px] font-bold text-zinc-500 hover:text-[#6133e1] transition cursor-pointer bg-transparent border-none"
+            className="block sm:hidden text-[10px] font-bold text-zinc-500 hover:text-blue-500 transition cursor-pointer bg-transparent border-none"
           >
             &larr; Back
           </button>
         </div>
 
-        {/* UTR Input */}
+        {/* Transaction ID Input */}
         <div className="space-y-1.5">
           <label className="text-[9px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block">
-            12-Digit Transaction UTR
+            PayPal Transaction ID
           </label>
           <div className="relative">
             <input
               type="text"
-              inputMode="numeric"
-              maxLength={12}
-              value={utrNumber}
-              onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, "").slice(0, 12))}
-              placeholder="e.g. 423611234567"
-              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#6133e1]/20 focus:border-[#6133e1] transition shadow-xs"
+              value={transactionId}
+              onChange={(e) => setTransactionId(e.target.value)}
+              placeholder="e.g. 3L409384930..."
+              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#0070ba]/20 focus:border-[#0070ba] transition shadow-xs"
             />
           </div>
         </div>
@@ -381,9 +457,9 @@ export function UpiPaymentCheckout({
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900 py-4 px-3 text-center cursor-pointer transition duration-200 flex-1 min-h-[90px] shadow-xs group hover:border-[#6133e1]"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900 py-4 px-3 text-center cursor-pointer transition duration-200 flex-1 min-h-[90px] shadow-xs group hover:border-[#0070ba]"
             >
-              <ImageIcon className="h-5 w-5 text-zinc-400 group-hover:text-[#6133e1] transition-colors" />
+              <ImageIcon className="h-5 w-5 text-zinc-400 group-hover:text-[#0070ba] transition-colors" />
               <div>
                 <p className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
                   Upload screenshot receipt
@@ -416,7 +492,7 @@ export function UpiPaymentCheckout({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-10 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-zinc-500 disabled:to-zinc-500 disabled:opacity-60 text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-emerald-500/15"
+          className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-zinc-500 disabled:to-zinc-500 disabled:opacity-60 text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-blue-500/15"
         >
           {isSubmitting ? (
             <>

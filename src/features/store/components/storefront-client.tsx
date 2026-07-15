@@ -7,11 +7,15 @@ import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
-import { useCurrencyStore } from "@/store/useCurrencyStore";
+import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { UpiPaymentCheckout } from "@/features/payments/components/upi-checkout";
+import { PayPalPaymentCheckout } from "@/features/payments/components/paypal-checkout";
+import { CryptoPaymentCheckout } from "@/features/payments/components/crypto-checkout";
+import { WisePaymentCheckout } from "@/features/payments/components/wise-checkout";
+import { AnimatedCardIcon, AnimatedCryptoIcon, PaypalIcon, WiseIcon } from "@/components/ui/animated-payment-icons";
 
 interface Category {
   _id: string;
@@ -105,7 +109,10 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestSuccess, setRequestSuccess] = useState(false);
   const [upiCheckoutData, setUpiCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
-  const [paymentStage, setPaymentStage] = useState<"methods" | "platforms" | "upi">("methods");
+  const [paypalCheckoutData, setPaypalCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
+  const [cryptoCheckoutData, setCryptoCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
+  const [wiseCheckoutData, setWiseCheckoutData] = useState<{ orderId: string; amount: number; currency: Currency; email: string } | null>(null);
+  const [paymentStage, setPaymentStage] = useState<"methods" | "platforms" | "upi" | "paypal" | "crypto" | "wise">("methods");
   const [selectedMethod, setSelectedMethod] = useState<"UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others" | null>(null);
 
   // Custom request states (Account, Stardust, XP)
@@ -694,9 +701,12 @@ Please let me know how to proceed with the payment!`;
         <div
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              if (upiCheckoutData) {
+              if (upiCheckoutData || paypalCheckoutData || cryptoCheckoutData || wiseCheckoutData) {
                 clearCart();
                 setUpiCheckoutData(null);
+                setPaypalCheckoutData(null);
+                setCryptoCheckoutData(null);
+                setWiseCheckoutData(null);
               }
               setPaymentStage("methods");
               setSelectedMethod(null);
@@ -707,17 +717,20 @@ Please let me know how to proceed with the payment!`;
         >
           <div
             className={cn(
-              "relative w-full rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-xl space-y-6 text-zinc-900 dark:text-white transition-all duration-300 cursor-default",
-              paymentStage === "upi" ? "max-w-2xl" : "max-w-md"
+              "relative w-full rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-6 shadow-xl space-y-6 text-zinc-900 dark:text-white transition-all duration-300 cursor-default overflow-y-auto max-h-[95vh] scrollbar-thin",
+              (paymentStage === "upi" || paymentStage === "paypal" || paymentStage === "crypto" || paymentStage === "wise") ? "max-w-4xl" : "max-w-3xl"
             )}
           >
             
             {/* Close Button */}
             <button
               onClick={() => {
-                if (upiCheckoutData) {
+                if (upiCheckoutData || paypalCheckoutData || cryptoCheckoutData || wiseCheckoutData) {
                   clearCart();
                   setUpiCheckoutData(null);
+                  setPaypalCheckoutData(null);
+                  setCryptoCheckoutData(null);
+                  setWiseCheckoutData(null);
                 }
                 setPaymentStage("methods");
                 setSelectedMethod(null);
@@ -728,8 +741,78 @@ Please let me know how to proceed with the payment!`;
               <X className="h-5 w-5" />
             </button>
 
-            {/* STAGE 1: UPI CHECKOUT GATEWAY */}
-            {paymentStage === "upi" && upiCheckoutData ? (
+            {/* STAGE 1: WISE CHECKOUT GATEWAY */}
+            {paymentStage === "wise" && wiseCheckoutData ? (
+              <div className="space-y-4 text-left">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
+                    <Globe className="h-4.5 w-4.5 text-emerald-500" />
+                    Wise Secure Gate
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setWiseCheckoutData(null);
+                      setPaymentStage("methods");
+                    }}
+                    className="text-[10px] font-bold text-zinc-500 hover:text-emerald-500 cursor-pointer bg-transparent border-none transition-colors"
+                  >
+                    Change Method
+                  </button>
+                </div>
+                <WisePaymentCheckout
+                  orderId={wiseCheckoutData.orderId}
+                  amount={wiseCheckoutData.amount}
+                  currency={wiseCheckoutData.currency}
+                  customerEmail={wiseCheckoutData.email}
+                />
+              </div>
+            ) : paymentStage === "crypto" && cryptoCheckoutData ? (
+              <div className="space-y-4 text-left">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
+                    <Coins className="h-4.5 w-4.5 text-amber-500" />
+                    Crypto Secure Gate
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setCryptoCheckoutData(null);
+                      setPaymentStage("methods");
+                    }}
+                    className="text-[10px] font-bold text-zinc-500 hover:text-amber-500 cursor-pointer bg-transparent border-none transition-colors"
+                  >
+                    Change Method
+                  </button>
+                </div>
+                <CryptoPaymentCheckout
+                  orderId={cryptoCheckoutData.orderId}
+                  amount={cryptoCheckoutData.amount}
+                  customerEmail={cryptoCheckoutData.email}
+                />
+              </div>
+            ) : paymentStage === "paypal" && paypalCheckoutData ? (
+              <div className="space-y-4 text-left">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
+                    <DollarSign className="h-4.5 w-4.5 text-blue-500" />
+                    PayPal Secure Gate
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setPaypalCheckoutData(null);
+                      setPaymentStage("methods");
+                    }}
+                    className="text-[10px] font-bold text-zinc-500 hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer bg-transparent border-none transition-colors"
+                  >
+                    Change Method
+                  </button>
+                </div>
+                <PayPalPaymentCheckout
+                  orderId={paypalCheckoutData.orderId}
+                  amount={paypalCheckoutData.amount}
+                  customerEmail={paypalCheckoutData.email}
+                />
+              </div>
+            ) : paymentStage === "upi" && upiCheckoutData ? (
               <div className="space-y-4 text-left">
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-150 dark:border-zinc-800">
                   <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
@@ -865,7 +948,7 @@ Please let me know how to proceed with the payment!`;
                 </div>
 
                 {/* 6 Payment Methods Grid */}
-                <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   
                   {/* 1. UPI */}
                   <button
@@ -894,19 +977,19 @@ Please let me know how to proceed with the payment!`;
                         alert("Failed to initiate UPI transaction. Please try again.");
                       }
                     }}
-                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
+                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-[#6133e1] dark:hover:border-[#6133e1]/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
-                    <div className="w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">UPI Transfer</span>
-                        <span className="text-[9px] bg-violet-500/15 text-violet-700 dark:text-violet-400 px-2 py-0.5 rounded-full font-bold uppercase border border-violet-500/20">Instant</span>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-[#6133e1]/10 text-[#6133e1] dark:bg-[#6133e1]/20">
+                        <ScanQrCode className="h-5 w-5" />
                       </div>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Zero fee instant payments</p>
-                      <div className="flex items-center gap-2 mt-auto">
-                        <img src="https://cdn.simpleicons.org/googlepay" alt="GPay" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
-                        <img src="https://cdn.simpleicons.org/phonepe" alt="PhonePe" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
-                        <img src="https://cdn.simpleicons.org/paytm" alt="Paytm" className="h-4 w-auto object-contain drop-shadow-sm grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      <div>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">UPI Transfer</span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Zero fee instant payments</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] bg-[#6133e1]/10 text-[#6133e1] dark:text-violet-400 px-2 py-0.5 rounded-full font-bold uppercase border border-[#6133e1]/10">Instant</span>
                     </div>
                   </button>
 
@@ -916,81 +999,148 @@ Please let me know how to proceed with the payment!`;
                       setSelectedMethod("Card");
                       setPaymentStage("platforms");
                     }}
-                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
+                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-blue-500 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
-                    <div className="w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Credit Card</span>
-                        <span className="text-[9px] bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
+                        <AnimatedCardIcon className="h-5 w-5" />
                       </div>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Global card processing</p>
-                      <div className="flex items-center gap-2 mt-auto">
-                        <img src="https://cdn.simpleicons.org/visa" alt="Visa" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
-                        <img src="https://cdn.simpleicons.org/mastercard" alt="Mastercard" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
-                        <img src="https://cdn.simpleicons.org/americanexpress" alt="Amex" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      <div>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Card, Cash App, Apple Pay</span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Global card processing</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase border border-blue-500/10">Manual</span>
                     </div>
                   </button>
 
                   {/* 3. Crypto */}
                   <button
-                    onClick={() => {
-                      setSelectedMethod("Crypto");
-                      setPaymentStage("platforms");
+                    onClick={async () => {
+                      try {
+                        const res = await createStorefrontOrderAction(items, getTotalPrice());
+                        if (res.success && res.orderId) {
+                          const totalPrice = getTotalPrice();
+                          const discount = Math.min(totalPrice, walletCreditAmount);
+                          const finalPriceUSD = Math.max(0, totalPrice - discount);
+
+                          setCryptoCheckoutData({
+                            orderId: res.orderId,
+                            amount: finalPriceUSD,
+                            email: session?.user?.email || "customer@store.com",
+                          });
+                          setSelectedMethod("Crypto");
+                          setPaymentStage("crypto");
+                        } else {
+                          alert("Error: " + (res.error || "Failed to create order"));
+                        }
+                      } catch (err) {
+                        console.error("Crypto checkout error:", err);
+                        alert("Failed to initiate Crypto transaction. Please try again.");
+                      }
                     }}
-                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
+                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-amber-500 dark:hover:border-amber-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
-                    <div className="w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Crypto</span>
-                        <span className="text-[9px] bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
+                        <AnimatedCryptoIcon className="h-5 w-5" />
                       </div>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Secure USDT, BTC, ETH</p>
-                      <div className="flex items-center gap-2 mt-auto">
-                        <img src="https://cdn.simpleicons.org/tether" alt="USDT" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
-                        <img src="https://cdn.simpleicons.org/bitcoin" alt="BTC" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
-                        <img src="https://cdn.simpleicons.org/ethereum" alt="ETH" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      <div>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Crypto</span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Secure USDT, BTC, ETH</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase border border-amber-500/10">Instant</span>
                     </div>
                   </button>
 
                   {/* 4. PayPal */}
                   <button
-                    onClick={() => {
-                      setSelectedMethod("PayPal");
-                      setPaymentStage("platforms");
+                    onClick={async () => {
+                      try {
+                        const res = await createStorefrontOrderAction(items, getTotalPrice());
+                        if (res.success && res.orderId) {
+                          const totalPrice = getTotalPrice();
+                          const discount = Math.min(totalPrice, walletCreditAmount);
+                          const finalPriceUSD = Math.max(0, totalPrice - discount);
+                          const eurRate = useCurrencyStore.getState().rates.EUR || 0.92;
+                          const amountInEUR = Math.round(finalPriceUSD * eurRate * 100) / 100;
+
+                          setPaypalCheckoutData({
+                            orderId: res.orderId,
+                            amount: amountInEUR,
+                            email: session?.user?.email || "customer@store.com",
+                          });
+                          setSelectedMethod("PayPal");
+                          setPaymentStage("paypal");
+                        } else {
+                          alert("Error: " + (res.error || "Failed to create order"));
+                        }
+                      } catch (err) {
+                        console.error("PayPal checkout error:", err);
+                        alert("Failed to initiate PayPal transaction. Please try again.");
+                      }
                     }}
-                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
+                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-sky-500 dark:hover:border-sky-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
-                    <div className="w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">PayPal</span>
-                        <span className="text-[9px] bg-sky-500/10 text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
+                        <PaypalIcon className="h-5 w-5" />
                       </div>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Global payment verification</p>
-                      <div className="flex items-center gap-2 mt-auto">
-                        <img src="https://cdn.simpleicons.org/paypal" alt="PayPal" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      <div>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">PayPal</span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Global instant verification</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] bg-sky-500/10 text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded-full font-bold uppercase border border-sky-500/10">Instant</span>
                     </div>
                   </button>
 
                   {/* 5. Wise */}
                   <button
-                    onClick={() => {
-                      setSelectedMethod("Wise");
-                      setPaymentStage("platforms");
+                    onClick={async () => {
+                      try {
+                        const res = await createStorefrontOrderAction(items, getTotalPrice());
+                        if (res.success && res.orderId) {
+                          const totalPrice = getTotalPrice();
+                          const discount = Math.min(totalPrice, walletCreditAmount);
+                          const finalPriceUSD = Math.max(0, totalPrice - discount);
+                          const selectedCurrency = useCurrencyStore.getState().currency;
+                          const rate = useCurrencyStore.getState().rates[selectedCurrency] || 1.0;
+                          const amountInSelected = Math.round(finalPriceUSD * rate * 100) / 100;
+
+                          setWiseCheckoutData({
+                            orderId: res.orderId,
+                            amount: amountInSelected,
+                            currency: selectedCurrency,
+                            email: session?.user?.email || "customer@store.com",
+                          });
+                          setSelectedMethod("Wise");
+                          setPaymentStage("wise");
+                        } else {
+                          alert("Error: " + (res.error || "Failed to create order"));
+                        }
+                      } catch (err) {
+                        console.error("Wise checkout error:", err);
+                        alert("Failed to initiate Wise transaction. Please try again.");
+                      }
                     }}
-                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
+                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
-                    <div className="w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Wise</span>
-                        <span className="text-[9px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
+                        <WiseIcon className="h-5 w-5" />
                       </div>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Direct international transfer</p>
-                      <div className="flex items-center gap-2 mt-auto">
-                        <img src="https://cdn.simpleicons.org/wise" alt="Wise" className="h-4 w-auto object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" />
+                      <div>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Wise</span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Direct international transfer</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-500/20">Instant</span>
                     </div>
                   </button>
 
@@ -1000,17 +1150,19 @@ Please let me know how to proceed with the payment!`;
                       setSelectedMethod("Others");
                       setPaymentStage("platforms");
                     }}
-                    className="flex flex-col items-start justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-300 dark:hover:border-violet-500/30 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition cursor-pointer text-left h-24 group active:scale-[0.98]"
+                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-455 dark:hover:border-zinc-400/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
                   >
-                    <div className="w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">Others</span>
-                        <span className="text-[9px] bg-zinc-500/10 text-zinc-700 dark:text-zinc-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-zinc-500/10 text-zinc-500 dark:bg-zinc-500/20">
+                        <CircleDot className="h-5 w-5" />
                       </div>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2 font-medium">Custom billing chat</p>
-                      <div className="flex items-center gap-2 mt-auto text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                        Payoneer • Alipay
+                      <div>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Others</span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Payoneer, Alipay, Custom chat</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] bg-zinc-500/10 text-zinc-700 dark:text-zinc-400 px-2 py-0.5 rounded-full font-bold uppercase">Manual</span>
                     </div>
                   </button>
 

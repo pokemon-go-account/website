@@ -13,44 +13,51 @@ import {
   ImageIcon,
   Copy,
   Check,
-  Sparkles,
+  ExternalLink,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrencyStore, CURRENCY_SYMBOLS, Currency } from "@/store/useCurrencyStore";
+import { motion } from "framer-motion";
 
-interface UpiPaymentCheckoutProps {
+interface WisePaymentCheckoutProps {
   orderId: string;
-  amount: number; // in INR
+  amount: number; // in customer's selected currency
+  currency: Currency; // e.g. "USD", "EUR", "INR" etc.
   customerEmail: string;
-  upiId?: string; // Your UPI ID e.g. "yourname@upi"
-  payeeName?: string; // Real name associated with UPI ID to prevent risk blocks
+  wiseLink?: string;
 }
 
-export function UpiPaymentCheckout({
+export function WisePaymentCheckout({
   orderId,
   amount,
+  currency,
   customerEmail,
-  upiId = "adarshsingh9888-3@oksbi",
-  payeeName = "Pokemon GO Services",
-}: UpiPaymentCheckoutProps) {
-  const [utrNumber, setUtrNumber] = useState("");
+  wiseLink = "https://wise.com/pay/me/deepanshus58",
+}: WisePaymentCheckoutProps) {
+  const [transactionReference, setTransactionReference] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // UPI deep link for QR code / App launch
-  // We remove 'tn' (transaction note) because passing long alphanumeric Order IDs triggers UPI Risk Policies/Spam filters on GPay/PhonePe.
-  const encodedPayeeName = encodeURIComponent(payeeName);
-  const upiLink = `upi://pay?pa=${upiId}&pn=${encodedPayeeName}&am=${amount}&cu=INR`;
+  const formatSelected = () => {
+    const symbol = CURRENCY_SYMBOLS[currency] || "$";
+    const hasDecimals = amount % 1 !== 0;
+    const formatted = (currency === "JPY" || !hasDecimals)
+      ? Math.round(amount).toLocaleString()
+      : amount.toFixed(2);
+    return `${symbol}${formatted} ${currency}`;
+  };
 
-  const handleCopyUpi = () => {
-    navigator.clipboard.writeText(upiId);
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2000);
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(wiseLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const handleFileChange = useCallback((file: File | null) => {
@@ -90,8 +97,8 @@ export function UpiPaymentCheckout({
     e.preventDefault();
     setError(null);
 
-    if (!utrNumber || utrNumber.length !== 12) {
-      setError("Please enter a valid 12-digit UTR number.");
+    if (!transactionReference || transactionReference.trim().length < 4) {
+      setError("Please enter a valid Wise Transaction Reference.");
       return;
     }
     if (!screenshotFile) {
@@ -102,14 +109,15 @@ export function UpiPaymentCheckout({
     setIsSubmitting(true);
     try {
       const screenshotBase64 = await toBase64(screenshotFile);
-      const res = await fetch("/api/payments/submit", {
+      const res = await fetch("/api/payments/submit-wise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId,
           amount,
+          currency,
           customerEmail,
-          utrNumber,
+          transactionReference,
           screenshotBase64,
         }),
       });
@@ -127,7 +135,6 @@ export function UpiPaymentCheckout({
   if (submitted) {
     return (
       <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/[0.08] to-transparent dark:from-emerald-500/[0.04] p-6 text-center shadow-xl backdrop-blur-md">
-        {/* Glow effects */}
         <div className="absolute -top-12 -left-12 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-12 -right-12 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -140,53 +147,47 @@ export function UpiPaymentCheckout({
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-lg font-black tracking-tight text-zinc-950 dark:text-white uppercase">
-              Payment Submitted
+            <h3 className="text-lg font-black tracking-tight text-zinc-955 dark:text-white uppercase">
+              Transfer Submitted
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Your transaction details have been sent for verification.
+              Your Wise payment details have been sent to our billing desk.
             </p>
           </div>
 
-          {/* SaaS Styled Invoice Ticket */}
           <div className="w-full bg-white/40 dark:bg-zinc-900/40 border border-zinc-200/50 dark:border-zinc-800/40 rounded-xl p-4 space-y-3 text-xs text-left relative">
-            {/* Cutout Notches */}
             <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-6 bg-white dark:bg-[#111111] rounded-r-full border-r border-zinc-200 dark:border-zinc-800" />
             <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-6 bg-white dark:bg-[#111111] rounded-l-full border-l border-zinc-200 dark:border-zinc-800" />
 
             <div className="flex justify-between items-center pb-2 border-b border-dashed border-zinc-200 dark:border-zinc-800">
-              <span className="text-zinc-500 font-medium">Verification Status</span>
+              <span className="text-zinc-500 font-medium">Order Status</span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
-                Pending Verification
+                Awaiting Verification
               </span>
             </div>
 
             <div className="space-y-2 pt-1 font-medium">
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500">UTR / Ref Number:</span>
-                <span className="font-mono text-zinc-900 dark:text-zinc-200 font-bold bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded">
-                  #{utrNumber}
+                <span className="text-zinc-500">Wise ID / Reference:</span>
+                <span className="font-mono text-zinc-900 dark:text-zinc-200 font-bold bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded max-w-[150px] truncate" title={transactionReference}>
+                  {transactionReference}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">Order ID:</span>
-                <span className="font-mono text-zinc-550 dark:text-zinc-400">{orderId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Amount Paid:</span>
+                <span className="text-zinc-500">Amount Sent:</span>
                 <span className="font-bold text-zinc-950 dark:text-white">
-                  ₹{amount.toLocaleString("en-IN")}
+                  {formatSelected()}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-500">ETA Confirmation:</span>
-                <span className="text-zinc-700 dark:text-zinc-300 font-semibold">1 – 24 Hours</span>
+                <span className="text-zinc-700 dark:text-zinc-300 font-semibold">1 – 8 Hours</span>
               </div>
             </div>
           </div>
 
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-xs leading-relaxed">
-            🚀 Once our billing team validates the transaction against the UTR, your order will be automatically fulfilled and available in your dashboard.
+          <p className="text-[10px] text-zinc-450 dark:text-zinc-500 max-w-xs leading-relaxed">
+            🚀 Once verified against our bank logs, your items will be activated and accessible on your profile.
           </p>
 
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-450 dark:text-zinc-550 pt-2">
@@ -198,7 +199,6 @@ export function UpiPaymentCheckout({
     );
   }
 
-  // ─── Checkout Form (Responsive grid, mobile optimized) ───────────────────
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-stretch text-left">
       
@@ -211,45 +211,71 @@ export function UpiPaymentCheckout({
         <div className="space-y-4">
           {/* Header Title */}
           <div className="flex items-center gap-2">
-            <span className="h-5.5 w-5.5 rounded-full bg-violet-500/10 text-[#6133e1] dark:text-purple-400 text-[11px] font-black flex items-center justify-center shrink-0 border border-violet-500/20">
+            <span className="h-5.5 w-5.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 text-[11px] font-black flex items-center justify-center shrink-0 border border-emerald-500/20">
               1
             </span>
             <h3 className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
-              UPI Pay Gateway
+              Wise Transfer
             </h3>
           </div>
 
           {/* Amount Card */}
           <div className="flex flex-col items-center justify-center bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 rounded-xl py-3 shadow-sm">
-             <p className="text-[10px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Amount to Pay</p>
-             <p className="text-2xl font-black text-zinc-950 dark:text-white tracking-tight">
-               ₹{amount.toLocaleString("en-IN")}
+             <p className="text-[10px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Amount to Send ({currency})</p>
+             <p className="text-2xl font-black text-zinc-950 dark:text-white tracking-tight text-center">
+               {formatSelected()}
              </p>
           </div>
 
-          {/* Mobile View: Copy UPI & Go to Verification Step */}
+          {/* Instruction Box */}
+          <div className="bg-emerald-50/30 dark:bg-emerald-950/5 border border-emerald-100 dark:border-emerald-950/20 rounded-xl p-3 flex items-start gap-2 shadow-xs">
+            <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-450 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
+                Wise.com Profile Link
+              </p>
+              <p className="text-[10px] text-emerald-750 dark:text-emerald-450 font-medium leading-relaxed">
+                Click pay below or copy the Wise link to complete transfer. Send exact amount in **{currency}**.
+              </p>
+            </div>
+          </div>
+
+          {/* Mobile View: Launch App Directly & Fallback */}
           <div className="block sm:hidden w-full space-y-3">
-            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 space-y-2.5">
+            <a
+              href={wiseLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                setTimeout(() => setStep(2), 800);
+              }}
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-emerald-500/15 cursor-pointer"
+            >
+              <ExternalLink className="h-4.5 w-4.5" />
+              PAY VIA WISE
+            </a>
+            
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-3 space-y-2.5">
               <div className="flex items-start gap-1.5">
-                <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
-                  Please copy the UPI ID below to pay manually from GPay, PhonePe, Paytm, or BHIM.
+                <AlertCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
+                  If the button doesn't open the link, copy the payment URL below.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={handleCopyUpi}
-                className="w-full h-9 flex items-center justify-center gap-2 rounded-lg bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-500/30 hover:border-amber-400 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+                onClick={handleCopyLink}
+                className="w-full h-9 flex items-center justify-center gap-2 rounded-lg bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-500/30 hover:border-emerald-400 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-all active:scale-[0.98] shadow-sm cursor-pointer"
               >
-                {copiedUpi ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-zinc-500" />}
-                {copiedUpi ? "COPIED UPI ID!" : "COPY UPI ID TO PAY"}
+                {copiedLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-zinc-500" />}
+                {copiedLink ? "COPIED LINK!" : "COPY WISE PAYMENT LINK"}
               </button>
             </div>
 
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-violet-500/15 cursor-pointer"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-650 hover:from-emerald-500 hover:to-teal-550 text-white font-extrabold text-xs transition-all active:scale-[0.98] shadow-md shadow-emerald-500/15 cursor-pointer"
             >
               <Check className="h-4.5 w-4.5 text-emerald-400 animate-pulse" />
               I HAVE PAID, SUBMIT PROOF
@@ -260,7 +286,7 @@ export function UpiPaymentCheckout({
           <div className="hidden sm:flex flex-col items-center gap-3 pt-1">
             <div className="p-3 bg-white rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-md inline-block transition-transform hover:scale-[1.02] duration-300">
               <QRCodeSVG
-                value={upiLink}
+                value={wiseLink}
                 size={120}
                 bgColor="#ffffff"
                 fgColor="#18181b"
@@ -269,8 +295,17 @@ export function UpiPaymentCheckout({
               />
             </div>
             <p className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider flex items-center justify-center gap-1">
-              <ScanQrCode className="h-3 w-3 text-[#6133e1]" /> Scan QR with any UPI App
+              <ScanQrCode className="h-3 w-3 text-emerald-500" /> Scan QR to open Wise.com
             </p>
+            <a
+              href={wiseLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 h-9 px-4 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 dark:bg-zinc-800 hover:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-bold text-xs transition active:scale-[0.98] border border-zinc-750 cursor-pointer shadow-sm"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open Wise Link in browser
+            </a>
           </div>
         </div>
 
@@ -278,14 +313,14 @@ export function UpiPaymentCheckout({
         <div className="space-y-3 pt-3 border-t border-zinc-200/60 dark:border-white/[0.04]">
           <div className="text-[10px] space-y-1.5">
             <div className="flex justify-between items-center">
-              <span className="text-zinc-450 dark:text-zinc-500">UPI Address:</span>
+              <span className="text-zinc-450 dark:text-zinc-500">Wise Link:</span>
               <button
                 type="button"
-                onClick={handleCopyUpi}
-                className="flex items-center gap-1 font-mono text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-violet-500/50 dark:hover:border-violet-500/50 px-2 py-0.5 rounded transition cursor-pointer text-[10px]"
+                onClick={handleCopyLink}
+                className="flex items-center gap-1 font-mono text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 px-2 py-0.5 rounded transition cursor-pointer text-[10px]"
               >
-                {upiId}
-                {copiedUpi ? (
+                deepanshus58
+                {copiedLink ? (
                   <Check className="h-3 w-3 text-emerald-500" />
                 ) : (
                   <Copy className="h-3 w-3 text-zinc-450 hover:text-zinc-700 dark:hover:text-zinc-300" />
@@ -299,9 +334,7 @@ export function UpiPaymentCheckout({
           </div>
 
           <div className="flex items-center gap-4 justify-center flex-wrap pt-2 opacity-95">
-            <img src="https://cdn.simpleicons.org/googlepay" alt="Google Pay" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
-            <img src="https://cdn.simpleicons.org/phonepe" alt="PhonePe" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
-            <img src="https://cdn.simpleicons.org/paytm" alt="Paytm" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.simpleicons.org/wise" alt="Wise" className="h-5 w-auto object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
           </div>
         </div>
 
@@ -319,7 +352,7 @@ export function UpiPaymentCheckout({
         {/* Header Title */}
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <span className="h-5.5 w-5.5 rounded-full bg-violet-500/10 text-[#6133e1] dark:text-purple-400 text-[11px] font-black flex items-center justify-center shrink-0 border border-violet-500/20">
+            <span className="h-5.5 w-5.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 text-[11px] font-black flex items-center justify-center shrink-0 border border-emerald-500/20">
               2
             </span>
             <h3 className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
@@ -330,26 +363,24 @@ export function UpiPaymentCheckout({
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="block sm:hidden text-[10px] font-bold text-zinc-500 hover:text-[#6133e1] transition cursor-pointer bg-transparent border-none"
+            className="block sm:hidden text-[10px] font-bold text-zinc-500 hover:text-emerald-500 transition cursor-pointer bg-transparent border-none"
           >
             &larr; Back
           </button>
         </div>
 
-        {/* UTR Input */}
+        {/* Transaction Reference Input */}
         <div className="space-y-1.5">
           <label className="text-[9px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block">
-            12-Digit Transaction UTR
+            Wise Transfer ID / Reference (Reference Number)
           </label>
           <div className="relative">
             <input
               type="text"
-              inputMode="numeric"
-              maxLength={12}
-              value={utrNumber}
-              onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, "").slice(0, 12))}
-              placeholder="e.g. 423611234567"
-              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#6133e1]/20 focus:border-[#6133e1] transition shadow-xs"
+              value={transactionReference}
+              onChange={(e) => setTransactionReference(e.target.value)}
+              placeholder="e.g. #Y7136015 or #T8150..."
+              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition shadow-xs"
             />
           </div>
         </div>
@@ -381,14 +412,14 @@ export function UpiPaymentCheckout({
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900 py-4 px-3 text-center cursor-pointer transition duration-200 flex-1 min-h-[90px] shadow-xs group hover:border-[#6133e1]"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-850 bg-white dark:bg-zinc-900/50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900 py-4 px-3 text-center cursor-pointer transition duration-200 flex-1 min-h-[90px] shadow-xs group hover:border-emerald-500"
             >
-              <ImageIcon className="h-5 w-5 text-zinc-400 group-hover:text-[#6133e1] transition-colors" />
+              <ImageIcon className="h-5 w-5 text-zinc-400 group-hover:text-emerald-500 transition-colors" />
               <div>
-                <p className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-                  Upload screenshot receipt
+                <p className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-950 dark:group-hover:text-white transition-colors">
+                  Upload transfer receipt screenshot
                 </p>
-                <p className="text-[8px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                <p className="text-[8px] text-zinc-450 dark:text-zinc-500 mt-0.5">
                   Drag &amp; drop or click to browse (Max 5MB)
                 </p>
               </div>
@@ -416,12 +447,12 @@ export function UpiPaymentCheckout({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-10 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-zinc-500 disabled:to-zinc-500 disabled:opacity-60 text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-emerald-500/15"
+          className="w-full h-10 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-650 hover:from-emerald-500 hover:to-teal-550 disabled:from-zinc-500 disabled:to-zinc-500 disabled:opacity-60 text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-emerald-500/15"
         >
           {isSubmitting ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Submitting proof...
+              Submitting receipt...
             </>
           ) : (
             <>

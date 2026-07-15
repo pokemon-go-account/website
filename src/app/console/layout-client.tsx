@@ -21,6 +21,8 @@ import {
   MessageCircle,
   ChevronDown,
   IndianRupee,
+  DollarSign,
+  Coins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +42,14 @@ const navGroups = [
       { href: "/console/orders", label: "Orders", icon: ShoppingBag },
       { href: "/console/payments", label: "UPI Payments", icon: IndianRupee },
       { href: "/console/rent", label: "Rent Manager", icon: Banknote },
+    ],
+  },
+  {
+    label: "Global Gateways",
+    items: [
+      { href: "/console/paypal-panel", label: "PayPal Panel", icon: DollarSign },
+      { href: "/console/crypto-panel", label: "Crypto Panel", icon: Coins },
+      { href: "/console/wise-panel", label: "Wise Panel", icon: Banknote },
     ],
   },
   {
