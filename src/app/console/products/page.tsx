@@ -20,6 +20,7 @@ const productSchema = z.object({
   categoryId: z.string().min(1, "Please select a category"),
   imageUrl: z.string().min(1, "Image URL is required"),
   imageUrls: z.array(z.string()),
+  isFeatured: z.boolean().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -40,6 +41,7 @@ interface Product {
   isLimitedDeal?: boolean;
   dealExpiry?: string | Date;
   badge?: "MOST_PURCHASED" | "POPULAR" | "";
+  isFeatured?: boolean;
   imageUrl: string;
   imageUrls?: string[];
   categoryId?: Category;
@@ -91,6 +93,7 @@ export default function ManageProductsPage() {
       categoryId: "",
       imageUrl: "",
       imageUrls: [],
+      isFeatured: false,
     }
   });
 
@@ -186,7 +189,8 @@ export default function ManageProductsPage() {
       badge: "",
       categoryId: "",
       imageUrl: "",
-      imageUrls: []
+      imageUrls: [],
+      isFeatured: false,
     });
     setIsModalOpen(true);
   };
@@ -217,6 +221,7 @@ export default function ManageProductsPage() {
       categoryId: product.categoryId?._id || "",
       imageUrl: product.imageUrl,
       imageUrls: product.imageUrls || (product.imageUrl ? [product.imageUrl] : []),
+      isFeatured: product.isFeatured || false,
     });
     setIsModalOpen(true);
   };
@@ -236,6 +241,7 @@ export default function ManageProductsPage() {
       categoryId: values.categoryId,
       imageUrl: values.imageUrl,
       imageUrls: values.imageUrls || [],
+      isFeatured: values.isFeatured || false,
     };
 
     let res;
@@ -447,14 +453,21 @@ export default function ManageProductsPage() {
                   )}
 
                   {/* Badge Overlay */}
-                  {product.badge && (
-                    <span className={cn(
-                      "absolute top-2 left-2 px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider text-white shadow-xs",
-                      product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
-                    )}>
-                      {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
-                    </span>
-                  )}
+                  <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+                    {product.badge && (
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider text-white shadow-xs",
+                        product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                      )}>
+                        {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
+                      </span>
+                    )}
+                    {product.isFeatured && (
+                      <span className="px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider text-white bg-emerald-500 shadow-xs">
+                        ★ Featured
+                      </span>
+                    )}
+                  </div>
                   
                   {/* Category Tag Overlay */}
                   {product.categoryId && (
@@ -670,6 +683,20 @@ export default function ManageProductsPage() {
                     />
                   </div>
                 )}
+              </div>
+
+              <div className="space-y-3 p-3.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-900/40">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px] cursor-pointer" htmlFor="isFeatured">
+                    Show in Landing Page (Featured Store Services)
+                  </label>
+                  <input
+                    id="isFeatured"
+                    type="checkbox"
+                    {...register("isFeatured")}
+                    className="h-4 w-4 rounded border-zinc-200 dark:border-white/[0.08] text-zinc-900 focus:ring-zinc-900/10 cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

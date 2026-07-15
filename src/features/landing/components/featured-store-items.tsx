@@ -9,11 +9,18 @@ async function getFeaturedProducts() {
     // Register Category model for population reference
     const _categoryCheck = Category;
     
-    const products = await Product.find()
+    let products = await Product.find({ isFeatured: true })
       .populate("categoryId", "name slug")
       .sort({ sortOrder: 1, createdAt: -1 })
-      .limit(3)
       .lean();
+      
+    if (products.length === 0) {
+      products = await Product.find()
+        .populate("categoryId", "name slug")
+        .sort({ sortOrder: 1, createdAt: -1 })
+        .limit(3)
+        .lean();
+    }
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
     console.error("Failed to load featured storefront items:", error);

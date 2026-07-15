@@ -796,6 +796,7 @@ export async function createProduct(data: {
   isLimitedDeal?: boolean;
   dealExpiry?: string | Date;
   badge?: "MOST_PURCHASED" | "POPULAR" | "";
+  isFeatured?: boolean;
   categoryId: string;
   imageUrl: string;
   imageUrls?: string[];
@@ -807,6 +808,7 @@ export async function createProduct(data: {
     const product = await Product.create({ ...data, price });
     revalidatePath('/admin/products');
     revalidatePath('/store');
+    revalidatePath('/');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -823,6 +825,7 @@ export async function updateProduct(
     isLimitedDeal?: boolean;
     dealExpiry?: string | Date;
     badge?: "MOST_PURCHASED" | "POPULAR" | "";
+    isFeatured?: boolean;
     categoryId: string;
     imageUrl: string;
     imageUrls?: string[];
@@ -835,6 +838,7 @@ export async function updateProduct(
     const product = await Product.findByIdAndUpdate(id, { ...data, price }, { returnDocument: "after" });
     revalidatePath('/admin/products');
     revalidatePath('/store');
+    revalidatePath('/');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
   } catch (error: any) {
     return { success: false, error: error.message };

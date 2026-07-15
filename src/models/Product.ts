@@ -9,6 +9,7 @@ export interface IProduct extends Document {
   isLimitedDeal?: boolean;
   dealExpiry?: Date;
   badge?: "MOST_PURCHASED" | "POPULAR" | "";
+  isFeatured?: boolean;
   categoryId: mongoose.Types.ObjectId;
   imageUrl: string;
   imageUrls?: string[];
@@ -27,6 +28,7 @@ const ProductSchema: Schema<IProduct> = new Schema(
     isLimitedDeal: { type: Boolean, default: false },
     dealExpiry: { type: Date, default: null },
     badge: { type: String, enum: ["MOST_PURCHASED", "POPULAR", ""], default: "" },
+    isFeatured: { type: Boolean, default: false },
     categoryId: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     imageUrl: { type: String, required: true },
     imageUrls: { type: [String], default: [] },
