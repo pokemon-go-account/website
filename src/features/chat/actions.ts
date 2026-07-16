@@ -41,3 +41,26 @@ export async function deleteChatImages(imageUrls: string[]): Promise<{ success: 
     return { success: false, error: err.message || "Failed to delete images" };
   }
 }
+
+/**
+ * Server Action: Generate a Firebase Custom Token for the logged-in user session
+ */
+export async function getFirebaseCustomToken(): Promise<{ success: boolean; customToken?: string; error?: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized" };
+    }
+    const { getAuth } = await import("firebase-admin/auth");
+    await import("@/lib/firebase-admin");
+    
+    const firebaseAuth = getAuth();
+    const customToken = await firebaseAuth.createCustomToken(session.user.id, {
+      role: (session.user as any).role || "USER",
+    });
+    return { success: true, customToken };
+  } catch (err: any) {
+    console.error("Failed to create Firebase custom token:", err);
+    return { success: false, error: err.message || "Failed to create token" };
+  }
+}

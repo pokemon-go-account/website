@@ -36,7 +36,9 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadChatImage, deleteChatImages } from "@/features/chat/actions";
+import { uploadChatImage, deleteChatImages, getFirebaseCustomToken } from "@/features/chat/actions";
+import { signInWithCustomToken } from "firebase/auth";
+import { auth as clientAuth } from "@/lib/firebase";
 
 interface ChatMeta {
   id: string; // doc ID (support-xxxx or order-xxxx)
@@ -123,6 +125,12 @@ export function AdminChatPanel() {
 
   const autoSelectedRef = useRef(false);
 
+  // Admin session for Get Assigned feature
+  const { data: session } = useSession();
+  const adminUsername = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "Admin";
+  const adminId = (session?.user as any)?.id || "";
+  const isSuperAdmin = (session?.user as any)?.role === "SUPER_ADMIN";
+
   // Sound effects
   const sendSoundRef = useRef<HTMLAudioElement | null>(null);
   const receiveSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -136,17 +144,33 @@ export function AdminChatPanel() {
     });
   }, []);
 
+  // 0. Client-side custom token sign-in to Firestore rules
+  useEffect(() => {
+    if (!clientAuth || !adminId) return;
+
+    // Skip if already signed in as the correct user
+    if (clientAuth.currentUser?.uid === adminId) return;
+
+    getFirebaseCustomToken().then((res) => {
+      if (res.success && res.customToken) {
+        signInWithCustomToken(clientAuth, res.customToken)
+          .then(() => {
+            console.log("Firebase Auth signed in as Admin successfully.");
+          })
+          .catch((err) => {
+            console.error("Firebase admin custom token auth error:", err);
+          });
+      }
+    });
+  }, [adminId]);
+
   const playSound = useCallback((ref: React.RefObject<HTMLAudioElement | null>) => {
     try {
       if (ref.current) { ref.current.currentTime = 0; ref.current.play().catch(() => {}); }
     } catch { /* silent */ }
   }, []);
 
-  // Admin session for Get Assigned feature
-  const { data: session } = useSession();
-  const adminUsername = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "Admin";
-  const adminId = (session?.user as any)?.id || "";
-  const isSuperAdmin = (session?.user as any)?.role === "SUPER_ADMIN";
+
 
   const handleAssign = async () => {
     if (!activeChatId) return;

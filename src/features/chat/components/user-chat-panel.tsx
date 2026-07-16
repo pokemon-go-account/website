@@ -30,7 +30,9 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadChatImage } from "@/features/chat/actions";
+import { uploadChatImage, getFirebaseCustomToken } from "@/features/chat/actions";
+import { signInWithCustomToken } from "firebase/auth";
+import { auth as clientAuth } from "@/lib/firebase";
 
 interface ChatMeta {
   id: string;
@@ -71,6 +73,12 @@ export function UserChatPanel({
   onClose,
 }: UserChatPanelProps) {
   const { data: session } = useSession();
+  const userId = (session?.user as any)?.id as string | undefined;
+  const username =
+    (session?.user as any)?.username ||
+    session?.user?.name ||
+    session?.user?.email ||
+    "User";
   const [activeTab, setActiveTab] = useState<"support" | "orders">("support");
   const [conversations, setConversations] = useState<ChatMeta[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(initialChatId);
@@ -101,6 +109,26 @@ export function UserChatPanel({
       if (r.current) { r.current.preload = "auto"; r.current.volume = 0.6; }
     });
   }, []);
+
+  // 0. Client-side custom token sign-in to Firestore rules
+  useEffect(() => {
+    if (!clientAuth || !userId) return;
+
+    // Skip if already signed in as the correct user
+    if (clientAuth.currentUser?.uid === userId) return;
+
+    getFirebaseCustomToken().then((res) => {
+      if (res.success && res.customToken) {
+        signInWithCustomToken(clientAuth, res.customToken)
+          .then(() => {
+            console.log("Firebase Auth signed in with custom token successfully.");
+          })
+          .catch((err) => {
+            console.error("Firebase custom token auth error:", err);
+          });
+      }
+    });
+  }, [userId]);
 
   const playSound = useCallback((ref: React.RefObject<HTMLAudioElement | null>) => {
     try {
@@ -168,12 +196,7 @@ export function UserChatPanel({
     }
   };
 
-  const userId = (session?.user as any)?.id as string | undefined;
-  const username =
-    (session?.user as any)?.username ||
-    session?.user?.name ||
-    session?.user?.email ||
-    "User";
+
 
   // Auto-select initialChatId if provided
   useEffect(() => {
