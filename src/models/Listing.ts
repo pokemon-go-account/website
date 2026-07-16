@@ -168,5 +168,29 @@ const ListingSchema: Schema<IListing> = new Schema(
 
 ListingSchema.index({ sellerId: 1, status: 1 });
 
+ListingSchema.pre('save', function (this: any, next: any) {
+  // Sync shiny
+  if (this.shinyPokemons !== undefined && this.shinyPokemons !== 0) {
+    this.shinyCount = this.shinyPokemons;
+  } else if (this.shinyCount !== undefined && this.shinyCount !== 0) {
+    this.shinyPokemons = this.shinyCount;
+  }
+
+  // Sync legendary
+  if (this.legendaryPokemons !== undefined && this.legendaryPokemons !== 0) {
+    this.legendaryCount = this.legendaryPokemons;
+  } else if (this.legendaryCount !== undefined && this.legendaryCount !== 0) {
+    this.legendaryPokemons = this.legendaryCount;
+  }
+
+  // Sync mythical
+  if (this.mythicalPokemons !== undefined && this.mythicalPokemons !== 0) {
+    this.mythicalCount = this.mythicalPokemons;
+  } else if (this.mythicalCount !== undefined && this.mythicalCount !== 0) {
+    this.mythicalPokemons = this.mythicalCount;
+  }
+  next();
+});
+
 const Listing: Model<IListing> = mongoose.models.Listing || mongoose.model<IListing>('Listing', ListingSchema);
 export default Listing;

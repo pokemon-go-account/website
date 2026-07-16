@@ -79,6 +79,9 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
         shinyCount: number;
         legendaryCount: number;
         mythicalCount: number;
+        shinyPokemons?: number;
+        legendaryPokemons?: number;
+        mythicalPokemons?: number;
         team: "MYSTIC" | "VALOR" | "INSTINCT" | "NONE";
         startingBid: number;
         region: string;
@@ -122,6 +125,20 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
     const isScheduled = auc.status === "SCHEDULED" && !hasEnded;
     const isConcluded = hasEnded || (!isLive && !isScheduled);
 
+    const shiny = auc.listingId.shinyPokemons || auc.listingId.shinyCount || 0;
+    const legendary = auc.listingId.legendaryPokemons || auc.listingId.legendaryCount || 0;
+    const mythical = auc.listingId.mythicalPokemons || auc.listingId.mythicalCount || 0;
+
+    const visibleMetrics = [];
+    if (shiny > 0) visibleMetrics.push({ label: "Shiny", value: `${shiny}✨`, colorClass: "text-yellow-600 dark:text-yellow-500" });
+    if (legendary > 0) visibleMetrics.push({ label: "Legendary", value: `${legendary}🏆`, colorClass: "text-orange-600 dark:text-orange-500" });
+    if (mythical > 0) visibleMetrics.push({ label: "Mythical", value: `${mythical}🔮`, colorClass: "text-purple-600 dark:text-purple-550" });
+
+    const gridColsClass = 
+      visibleMetrics.length === 3 ? "grid-cols-3" :
+      visibleMetrics.length === 2 ? "grid-cols-2" :
+      "grid-cols-1";
+
     return (
       <div
         key={auc._id.toString()}
@@ -164,25 +181,21 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
             <h3 className="font-semibold text-sm text-zinc-900 dark:text-white tracking-tight line-clamp-1">
               {auc.listingId.title}
             </h3>
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">Region: {auc.listingId.region}</p>
+            <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-1">Region: {auc.listingId.region}</p>
           </div>
         </div>
 
         {/* Middle row: Asset metrics */}
-        <div className="grid grid-cols-3 gap-2 py-2.5 border-y border-zinc-200 dark:border-white/[0.06] text-center bg-zinc-50/50 dark:bg-black/10 rounded-md">
-          <div className="space-y-0.5">
-            <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">Shiny</div>
-            <div className="text-xs font-semibold text-yellow-600 dark:text-yellow-500">{auc.listingId.shinyCount}✨</div>
+        {visibleMetrics.length > 0 && (
+          <div className={cn("grid gap-2 py-2.5 border-y border-zinc-200 dark:border-white/[0.06] text-center bg-zinc-50/50 dark:bg-black/10 rounded-md", gridColsClass)}>
+            {visibleMetrics.map((m) => (
+              <div key={m.label} className="space-y-0.5">
+                <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">{m.label}</div>
+                <div className={cn("text-xs font-semibold", m.colorClass)}>{m.value}</div>
+              </div>
+            ))}
           </div>
-          <div className="space-y-0.5">
-            <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">Legendary</div>
-            <div className="text-xs font-semibold text-orange-600 dark:text-orange-500">{auc.listingId.legendaryCount}🏆</div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">Mythical</div>
-            <div className="text-xs font-semibold text-purple-600 dark:text-purple-500">{auc.listingId.mythicalCount}🔮</div>
-          </div>
-        </div>
+        )}
 
         {/* Lower row: Telemetry and bidding actions */}
         <div className="space-y-4">

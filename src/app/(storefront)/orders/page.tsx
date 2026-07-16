@@ -43,10 +43,11 @@ export default async function UserOrdersPage() {
     price: o.totalPrice,
     status: o.status,
     items: o.items.map((i: any) => `${i.name} (x${i.quantity})`),
-    link: o.orderType === "BUY_NOW" && o.auctionId ? `/auctions/${o.auctionId.toString()}` : null,
+    link: (o.orderType === "BUY_NOW" || o.orderType === "AUCTION") && o.auctionId ? `/auctions/${o.auctionId.toString()}` : null,
     walletDiscountApplied: o.walletDiscountApplied || 0,
     deliveryStatus: o.deliveryStatus || null,
     auctionId: o.auctionId?.toString() || null,
+    isPlaceholder: false,
   }));
 
   const wonAuctions = wonAuctionsDocs
@@ -63,6 +64,7 @@ export default async function UserOrdersPage() {
       walletDiscountApplied: 0,
       deliveryStatus: null,
       auctionId: a._id.toString(),
+      isPlaceholder: true,
     }));
 
   const allPurchases = [...directOrders, ...wonAuctions].sort(
@@ -195,7 +197,7 @@ export default async function UserOrdersPage() {
 
                     {/* Right: Price + Cancel + Resend */}
                     <div className="flex items-center gap-2 shrink-0">
-                      {purchase.status === "PENDING" && purchase.orderType !== "AUCTION" && (
+                      {purchase.status === "PENDING" && (
                         <>
                           <ResendMessageButton
                             orderId={purchase.id}
@@ -203,8 +205,19 @@ export default async function UserOrdersPage() {
                             items={purchase.items}
                             price={purchase.price}
                             walletDiscountApplied={purchase.walletDiscountApplied}
+                            isAuctionPlaceholder={purchase.isPlaceholder}
+                            auctionId={purchase.auctionId}
                           />
-                          <CancelOrderButton orderId={purchase.id} />
+                          {purchase.link && (
+                            <Link
+                              href={purchase.link}
+                              className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-500 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-500/30 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/[0.06] transition-all cursor-pointer font-semibold"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              View Auction
+                            </Link>
+                          )}
+                          {purchase.orderType !== "AUCTION" && <CancelOrderButton orderId={purchase.id} />}
                         </>
                       )}
                       <div className="text-right">
@@ -223,6 +236,12 @@ export default async function UserOrdersPage() {
                         {item}
                       </p>
                     ))}
+
+                    {purchase.orderType === "AUCTION" && purchase.status === "COMPLETED" && (
+                      <div className="mt-2 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-450 text-xs font-semibold">
+                        🎉 Your payment has been confirmed! Our support representative will contact you with the account details shortly.
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-4 pt-1">
                       {/* Order ID */}

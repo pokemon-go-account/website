@@ -252,7 +252,7 @@ export function NewListingForm() {
             />
             <label
               htmlFor="file-upload"
-              className="h-8 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+              className="h-8 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
             >
               {isUploading ? "Uploading to Cloud..." : "Choose Image Screenshots"}
             </label>
@@ -307,8 +307,8 @@ export function NewListingForm() {
             { id: "luckyPokemons", label: "Lucky Pokemons" },
             { id: "luckyLegendaries", label: "Lucky Legendaries" },
             { id: "shinyLuckyLegendaries", label: "Shiny Lucky Legendaries" },
-            { id: "locationBackgroundLegendaryShiny", label: "Location BG Leg Shiny" },
-            { id: "specialBackgroundLegendaryShiny", label: "Special BG Leg Shiny" },
+            { id: "locationBackgroundLegendaryShiny", label: "Location BG Shiny" },
+            { id: "specialBackgroundLegendaryShiny", label: "Special BG Shiny" },
             { id: "candyXlPokemons", label: "CandyXL Pokemons" },
             { id: "candyXlLegendaries", label: "CandyXL Legendaries" },
             { id: "bestBuddies", label: "Best Buddies" },

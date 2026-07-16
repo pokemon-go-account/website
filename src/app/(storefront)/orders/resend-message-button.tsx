@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createAuctionWinnerOrderAction } from "@/features/auctions/actions";
 import { Send, X, MessageSquare, ScanQrCode, CreditCard, Coins, DollarSign, Globe, CircleDot, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { getDb } from "@/lib/firestore";
@@ -20,16 +21,56 @@ interface ResendMessageButtonProps {
   items: string[];
   price: number;
   walletDiscountApplied?: number;
+  isAuctionPlaceholder?: boolean;
+  auctionId?: string;
 }
 
 type PaymentMethod = "UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others";
 
-export function ResendMessageButton({ orderId, orderType, items, price, walletDiscountApplied = 0 }: ResendMessageButtonProps) {
+export function ResendMessageButton({
+  orderId,
+  orderType,
+  items,
+  price,
+  walletDiscountApplied = 0,
+  isAuctionPlaceholder = false,
+  auctionId,
+}: ResendMessageButtonProps) {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
+  const [localOrderId, setLocalOrderId] = useState(orderId);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  useEffect(() => {
+    setLocalOrderId(orderId);
+  }, [orderId]);
+
+  const handleOpen = async () => {
+    if (isAuctionPlaceholder && !localOrderId && auctionId) {
+      setIsCreatingOrder(true);
+      try {
+        const res = await createAuctionWinnerOrderAction(auctionId);
+        if (res.success && res.orderId) {
+          setLocalOrderId(res.orderId);
+          setSelectedMethod(null);
+          setIsOpen(true);
+        } else {
+          alert(res.error || "Failed to initiate auction checkout.");
+        }
+      } catch (err) {
+        console.error("Auction win order creation error:", err);
+        alert("Failed to initiate auction checkout. Please try again.");
+      } finally {
+        setIsCreatingOrder(false);
+      }
+    } else {
+      setSelectedMethod(null);
+      setIsOpen(true);
+    }
+  };
 
   const { rates, currency, convert } = useCurrencyStore();
   const inrRate = rates.INR || 83.5;
@@ -55,7 +96,7 @@ export function ResendMessageButton({ orderId, orderType, items, price, walletDi
 
     try {
       const db = getDb();
-      const chatId = `order-${orderId}`;
+      const chatId = `order-${localOrderId}`;
       const chatRef = doc(db, "supportChats", chatId);
 
       const methodLabel = method === "Card" ? "Card, Cash App, Apple Pay" : "Others";
@@ -71,7 +112,7 @@ export function ResendMessageButton({ orderId, orderType, items, price, walletDi
 
       const messageText = `📦 ORDER FOLLOW UP: Manual Payment
 ----------------------------------
-Order ID: ${orderId}
+Order ID: ${localOrderId}
 Items:
 ${itemsList}${subtotalText}${walletDiscountText}${finalPriceText}
 Payment Method: ${methodLabel}
@@ -89,8 +130,8 @@ Please guide me on how to complete the payment!`;
         username,
         email,
         type: "order",
-        orderId,
-        title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
+        orderId: localOrderId,
+        title: `Order #${localOrderId.substring(0, 8).toUpperCase()}`,
         lastMessage: `Payment coordination started for ${methodLabel}.`,
         lastMessageAt: serverTimestamp(),
         unreadByAdmin: 1,
@@ -133,14 +174,16 @@ Please guide me on how to complete the payment!`;
     <>
       {/* Trigger button */}
       <button
-        onClick={() => {
-          setSelectedMethod(null);
-          setIsOpen(true);
-        }}
-        className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-500 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-500/30 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/[0.06] transition-all cursor-pointer font-semibold"
+        onClick={handleOpen}
+        disabled={isCreatingOrder}
+        className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-500 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-500/30 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/[0.06] transition-all cursor-pointer font-semibold disabled:opacity-50"
       >
-        <Send className="h-3 w-3" />
-        Pay / Resend
+        {isCreatingOrder ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Send className="h-3 w-3" />
+        )}
+        {isCreatingOrder ? "Connecting..." : "Pay / Resend"}
       </button>
 
       {/* Modal */}
@@ -172,7 +215,7 @@ Please guide me on how to complete the payment!`;
                   </button>
                 </div>
                 <UpiPaymentCheckout
-                  orderId={orderId}
+                  orderId={localOrderId}
                   amount={amountInINR}
                   customerEmail={email}
                   walletDiscountApplied={walletDiscountApplied}
@@ -194,7 +237,7 @@ Please guide me on how to complete the payment!`;
                   </button>
                 </div>
                 <PayPalPaymentCheckout
-                  orderId={orderId}
+                  orderId={localOrderId}
                   amount={amountInEUR}
                   customerEmail={email}
                   walletDiscountApplied={walletDiscountApplied}
@@ -216,7 +259,7 @@ Please guide me on how to complete the payment!`;
                   </button>
                 </div>
                 <CryptoPaymentCheckout
-                  orderId={orderId}
+                  orderId={localOrderId}
                   amount={price}
                   customerEmail={email}
                   walletDiscountApplied={walletDiscountApplied}
@@ -238,7 +281,7 @@ Please guide me on how to complete the payment!`;
                   </button>
                 </div>
                 <WisePaymentCheckout
-                  orderId={orderId}
+                  orderId={localOrderId}
                   amount={amountInSelected}
                   currency={selectedCurrency}
                   customerEmail={email}
@@ -263,7 +306,7 @@ Please guide me on how to complete the payment!`;
                 {/* Order total info */}
                 <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-3 flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">Order ID: {orderId}</p>
+                    <p className="text-[10px] text-zinc-450 dark:text-zinc-500 font-mono">Order ID: {localOrderId || "PENDING CREATE"}</p>
                     <p className="text-xs font-semibold text-zinc-850 dark:text-zinc-200 truncate mt-0.5">{items.join(", ")}</p>
                   </div>
                   <div className="text-right shrink-0">
