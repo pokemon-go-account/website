@@ -123,7 +123,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
   const [screenshots, setScreenshots] = useState<{ id: string; base64: string; name: string }[]>([]);
   const [selectedMethod, setSelectedMethod] = useState("telegram");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [emailCheck, setEmailCheck] = useState(false);
+  const [emailCheck, setEmailCheck] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -151,7 +151,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
         setDrawerOpen(false);
         // Reset local states
         setScreenshots([]);
-        setEmailCheck(false);
+        setEmailCheck("");
       }, 2500);
     }
   }, [state.success]);
@@ -522,25 +522,27 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                     </div>
 
                     {/* Checklist: Access to Email */}
-                    <div className="flex items-start gap-2.5 pt-2">
-                      <Checkbox
-                        id="hasEmailAccess"
-                        checked={emailCheck}
-                        onCheckedChange={(checked) => setEmailCheck(!!checked)}
-                        className="mt-0.5"
-                      />
-                      <input type="hidden" name="hasEmailAccess" value={emailCheck ? "true" : "false"} />
-                      <Label
-                        htmlFor="hasEmailAccess"
-                        className="text-[10px] text-zinc-550 dark:text-zinc-400 leading-normal font-semibold select-none cursor-pointer"
-                      >
-                        I confirm that I still have access to the registered email address of the Pokémon GO account to be recovered.
+                    <div className="space-y-1.5 pt-2">
+                      <Label htmlFor="hasEmailAccess" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                        Do you still have access to the registered email address?
                       </Label>
+                      <select
+                        id="hasEmailAccess"
+                        value={emailCheck}
+                        onChange={(e) => setEmailCheck(e.target.value)}
+                        required
+                        className="w-full h-8 px-3 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold focus:outline-hidden transition-colors cursor-pointer appearance-none"
+                      >
+                        <option value="">Select an option</option>
+                        <option value="yes">Yes, I have access</option>
+                        <option value="no">No, I lost access</option>
+                      </select>
+                      <input type="hidden" name="hasEmailAccess" value={emailCheck === "yes" ? "true" : "false"} />
                     </div>
 
                     <Button
                       type="submit"
-                      disabled={isPending || !emailCheck || screenshots.length === 0}
+                      disabled={isPending || emailCheck === "" || screenshots.length === 0}
                       className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isPending ? "Submitting Order..." : "Confirm & Buy Service"}
