@@ -10,20 +10,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { orderId, amount, currency, customerEmail, transactionReference, screenshotBase64 } = body;
 
-    // Validate required fields
-    if (!orderId || !amount || !currency || !customerEmail || !transactionReference || !screenshotBase64) {
+    // Validate required fields (excluding transactionReference)
+    if (!orderId || !amount || !currency || !customerEmail || !screenshotBase64) {
       return NextResponse.json(
-        { error: "All fields are required." },
+        { error: "Required fields are missing." },
         { status: 400 }
       );
     }
 
-    if (typeof transactionReference !== "string" || transactionReference.trim().length < 4) {
-      return NextResponse.json(
-        { error: "Please enter a valid Wise Transaction Reference." },
-        { status: 400 }
-      );
-    }
+    const finalTxRef = transactionReference && typeof transactionReference === "string" && transactionReference.trim().length > 0
+      ? transactionReference.trim()
+      : "N/A";
 
     // Upload screenshot to Cloudinary
     let screenshotUrl = "";
@@ -42,7 +39,7 @@ export async function POST(req: NextRequest) {
       amount: Number(amount),
       currency,
       customerEmail,
-      transactionReference,
+      transactionReference: finalTxRef,
       screenshotUrl,
       status: "Pending",
     });

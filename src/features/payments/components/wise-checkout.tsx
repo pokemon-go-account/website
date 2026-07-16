@@ -44,7 +44,7 @@ export function WisePaymentCheckout({
   originalTotalPrice,
 }: WisePaymentCheckoutProps) {
   const { data: session } = useSession();
-  const [transactionReference, setTransactionReference] = useState("");
+  const transactionReference = "N/A";
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,10 +106,7 @@ export function WisePaymentCheckout({
     e.preventDefault();
     setError(null);
 
-    if (!transactionReference || transactionReference.trim().length < 4) {
-      setError("Please enter a valid Wise Transaction Reference.");
-      return;
-    }
+
     if (!screenshotFile) {
       setError("Please upload a screenshot of the payment.");
       return;
@@ -160,7 +157,7 @@ User ID: ${userId}
 
 🔍 VERIFICATION PROOF:
 ----------------------------------
-Wise Reference ID: #${transactionReference}
+Wise Reference: Screenshot Proof Attached
 Payment Screenshot: Uploaded & Stored
 
 Please verify my payment proof and approve my order!`;
@@ -172,7 +169,7 @@ Please verify my payment proof and approve my order!`;
           type: "order",
           orderId,
           title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
-          lastMessage: `Payment proof submitted (Wise Ref: #${transactionReference}).`,
+          lastMessage: `Payment proof submitted (Wise Transfer).`,
           lastMessageAt: serverTimestamp(),
           unreadByAdmin: 1,
           unreadByUser: 0,
@@ -201,7 +198,7 @@ Please verify my payment proof and approve my order!`;
         }
 
         await addDoc(msgsRef, {
-          text: `System: Thank you for submitting your payment proof! A support representative will verify your Wise Reference ID #${transactionReference} shortly and confirm your order.`,
+          text: `System: Thank you for submitting your payment proof! A support representative will verify your Wise transfer shortly and confirm your order.`,
           sender: "admin",
           senderName: "Support Team",
           timestamp: serverTimestamp(),
@@ -258,12 +255,6 @@ Please verify my payment proof and approve my order!`;
             </div>
 
             <div className="space-y-2 pt-1 font-medium">
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-500">Wise ID / Reference:</span>
-                <span className="font-mono text-zinc-900 dark:text-zinc-200 font-bold bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded max-w-[150px] truncate" title={transactionReference}>
-                  {transactionReference}
-                </span>
-              </div>
               <div className="flex justify-between">
                 <span className="text-zinc-500">Amount Sent:</span>
                 <span className="font-bold text-zinc-950 dark:text-white">
@@ -460,21 +451,7 @@ Please verify my payment proof and approve my order!`;
           </button>
         </div>
 
-        {/* Transaction Reference Input */}
-        <div className="space-y-1.5">
-          <label className="text-[9px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block">
-            Wise Transfer ID / Reference (Reference Number)
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={transactionReference}
-              onChange={(e) => setTransactionReference(e.target.value)}
-              placeholder="e.g. #Y7136015 or #T8150..."
-              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition shadow-xs"
-            />
-          </div>
-        </div>
+
 
         {/* Screenshot Upload preview */}
         <div className="space-y-1.5 flex-1 flex flex-col justify-center">

@@ -42,7 +42,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { RegisterAuctionButton } from "@/features/payments/components/register-button";
-import { fetchAllAuctionBids, createBuyNowOrderAction, createAuctionWinnerOrderAction } from "@/features/auctions/actions";
+import { fetchAllAuctionBids, createBuyNowOrderAction, createAuctionWinnerOrderAction, checkAuctionPaymentStatus } from "@/features/auctions/actions";
 import { pauseAuction, resumeAuction, forceEndAuction, updateAuction, deleteAuction } from "@/features/admin/actions";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
@@ -186,12 +186,23 @@ export function LiveRoom({
   const [selectedMethod, setSelectedMethod] = useState<"UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others" | null>(null);
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
   const [freshBalance, setFreshBalance] = useState<number>(0);
+  const [isAuctionPaid, setIsAuctionPaid] = useState(false);
   
   useEffect(() => {
     if (session?.user?.id) {
       getFreshBalance().then(bal => setFreshBalance(bal));
     }
   }, [session]);
+
+  useEffect(() => {
+    if (isConcluded) {
+      checkAuctionPaymentStatus(auction._id).then(res => {
+        if (res.success && res.isPaid) {
+          setIsAuctionPaid(true);
+        }
+      });
+    }
+  }, [isConcluded, auction._id]);
 
   const walletCreditAmount = freshBalance;
   const hasWalletCredit = walletCreditAmount > 0;
@@ -871,23 +882,43 @@ Please guide me on how to complete the payment!`;
         {isConcluded ? (
           highestBidderName ? (
             highestBidderId === session?.user?.id ? (
-              /* ====== THIS USER IS THE WINNER ====== */
-              <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/5 p-4 text-center space-y-3">
-                <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
-                <div className="space-y-1">
-                  <h4 className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">🎉 You Won!</h4>
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
-                    Congratulations! You won with a bid of <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>. Complete your payment to receive the account.
-                  </p>
+              isAuctionPaid ? (
+                /* ====== WINNER PAID STATE ====== */
+                <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-4 text-center space-y-3">
+                  <Trophy className="h-8 w-8 text-emerald-500 mx-auto animate-bounce" />
+                  <div className="space-y-1">
+                    <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-450 uppercase tracking-wider">🎉 Payment Confirmed!</h4>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
+                      Your payment has been successfully confirmed. You will receive the account details soon!
+                    </p>
+                  </div>
+                  <button
+                    disabled
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed opacity-60"
+                  >
+                    <Check className="h-4 w-4 text-emerald-500" />
+                    Payment Confirmed
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsWinnerPaymentOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-[#6133e1] hover:bg-violet-600 text-white cursor-pointer active:scale-[0.98] shadow-lg"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Complete Payment — <PriceDisplay amountInUSD={activeBid} />
-                </button>
-              </div>
+              ) : (
+                /* ====== THIS USER IS THE WINNER ====== */
+                <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/5 p-4 text-center space-y-3">
+                  <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
+                  <div className="space-y-1">
+                    <h4 className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">🎉 You Won!</h4>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
+                      Congratulations! You won with a bid of <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>. Complete your payment to receive the account.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsWinnerPaymentOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-[#6133e1] hover:bg-violet-600 text-white cursor-pointer active:scale-[0.98] shadow-lg"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Complete Payment — <PriceDisplay amountInUSD={activeBid} />
+                  </button>
+                </div>
+              )
             ) : (
               /* ====== VIEWER SEES WINNER ANNOUNCEMENT ====== */
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-3">
@@ -1681,23 +1712,43 @@ Please guide me on how to complete the payment!`;
                 {isConcluded ? (
                   highestBidderName ? (
                     highestBidderId === session?.user?.id ? (
-                      /* ====== WINNER SEES PAYMENT BUTTON ====== */
-                      <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/5 p-4 text-center space-y-3">
-                        <Trophy className="h-6 w-6 text-[#6133e1] mx-auto animate-bounce" />
-                        <div>
-                          <h4 className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">🎉 You Won!</h4>
-                          <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1">
-                            You won with <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>. Complete payment to get the account.
-                          </p>
+                      isAuctionPaid ? (
+                        /* ====== WINNER PAID STATE ====== */
+                        <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-4 text-center space-y-3">
+                          <Trophy className="h-6 w-6 text-emerald-500 mx-auto animate-bounce" />
+                          <div>
+                            <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-450 uppercase tracking-wider">🎉 Payment Confirmed!</h4>
+                            <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1">
+                              Your payment has been successfully confirmed. You will receive the account details soon!
+                            </p>
+                          </div>
+                          <button
+                            disabled
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed opacity-60"
+                          >
+                            <Check className="h-4 w-4 text-emerald-500" />
+                            Payment Confirmed
+                          </button>
                         </div>
-                        <button
-                          onClick={() => setIsWinnerPaymentOpen(true)}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-[#6133e1] hover:bg-violet-600 text-white cursor-pointer active:scale-[0.98] shadow-lg"
-                        >
-                          <CreditCard className="h-4 w-4" />
-                          Complete Payment
-                        </button>
-                      </div>
+                      ) : (
+                        /* ====== WINNER SEES PAYMENT BUTTON ====== */
+                        <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/5 p-4 text-center space-y-3">
+                          <Trophy className="h-6 w-6 text-[#6133e1] mx-auto animate-bounce" />
+                          <div>
+                            <h4 className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">🎉 You Won!</h4>
+                            <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1">
+                              You won with <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>. Complete payment to get the account.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setIsWinnerPaymentOpen(true)}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-[#6133e1] hover:bg-violet-600 text-white cursor-pointer active:scale-[0.98] shadow-lg"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Complete Payment
+                          </button>
+                        </div>
+                      )
                     ) : (
                       /* ====== OBSERVER SEES WINNER ANNOUNCEMENT ====== */
                       <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-2">

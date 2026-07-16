@@ -566,6 +566,13 @@ export async function cancelOrderUser(orderId: string) {
     order.status = "FAILED";
     await order.save();
 
+    if (order.walletDiscountApplied && order.walletDiscountApplied > 0) {
+      const User = (await import("@/models/User")).default;
+      await User.findByIdAndUpdate(session.user.id, {
+        $inc: { walletBalance: order.walletDiscountApplied }
+      });
+    }
+
     revalidatePath("/orders");
     revalidatePath("/console/orders");
     return { success: true };

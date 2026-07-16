@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft, ChevronRight, ScanQrCode, CreditCard, Coins, DollarSign, Globe, CircleDot, Loader2 } from "lucide-react";
+import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft, ChevronRight, ScanQrCode, CreditCard, Coins, DollarSign, Globe, CircleDot, Loader2, MessageSquare, HelpCircle } from "lucide-react";
+import Link from "next/link";
 import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
 import { cn } from "@/lib/utils";
@@ -1497,6 +1498,23 @@ This order has been completed automatically using your wallet balance. Admin wil
                     );
                   })()}
                 </div>
+                
+                {/* Inquiry Box */}
+                <div className="mt-4 p-3 rounded-lg border border-indigo-500/20 bg-indigo-50/50 dark:bg-indigo-500/5 flex items-start gap-3">
+                  <div className="mt-0.5 text-indigo-600 dark:text-indigo-400">
+                    <MessageSquare className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 mb-0.5">Need more details or want to negotiate?</h4>
+                    <p className="text-[10px] text-indigo-700 dark:text-indigo-400/80 leading-relaxed">
+                      If you have questions about this item, or want to make a custom offer, please {" "}
+                      <Link href="/chat" className="font-bold underline underline-offset-2 hover:text-indigo-500 transition-colors">
+                        create a support ticket
+                      </Link>.
+                    </p>
+                  </div>
+                </div>
+
               </div>
             </div>
 

@@ -529,3 +529,15 @@ export async function createAuctionWinnerOrderAction(auctionId: string) {
     return { success: false, error: error.message || "Failed to initiate payment." };
   }
 }
+
+export async function checkAuctionPaymentStatus(auctionId: string) {
+  try {
+    await connectDB();
+    const Order = (await import("@/models/Order")).default;
+    const completedOrder = await Order.findOne({ auctionId, status: "COMPLETED" }).lean();
+    return { success: true, isPaid: !!completedOrder };
+  } catch (error: any) {
+    console.error("Failed to check auction payment status:", error);
+    return { success: false, isPaid: false };
+  }
+}

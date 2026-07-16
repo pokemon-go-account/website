@@ -17,7 +17,7 @@ const WisePaymentSchema = new Schema<IWisePayment>(
     amount: { type: Number, required: true },
     currency: { type: String, required: true, default: "USD" },
     customerEmail: { type: String, required: true, trim: true, lowercase: true },
-    transactionReference: { type: String, required: true, trim: true },
+    transactionReference: { type: String, required: false, default: "N/A", trim: true },
     screenshotUrl: { type: String, required: true },
     status: {
       type: String,
