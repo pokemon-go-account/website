@@ -5,12 +5,16 @@ import { motion } from "framer-motion";
 import { ShoppingBag, ArrowRight } from "lucide-react";
 import { PriceDisplay } from "@/components/price-display";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface StoreProduct {
   _id: string;
   name: string;
   description?: string;
   price: number;
+  mrpPrice?: number;
+  discountedPrice?: number;
+  badge?: "MOST_PURCHASED" | "POPULAR" | "";
   imageUrl?: string;
   categoryId?: {
     _id: string;
@@ -54,7 +58,7 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
             className="group relative flex flex-col justify-between rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 hover:border-zinc-300 dark:hover:border-white/10 transition-all duration-300 hover:shadow-xs"
           >
             <div className="space-y-4">
-              {/* Product Image & Category Badge */}
+              {/* Product Image & Category Badge & Popular/Most Purchased Badge */}
               <div className="relative aspect-video w-full rounded-md overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/10 flex items-center justify-center">
                 {product.imageUrl ? (
                   <Image
@@ -68,8 +72,16 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
                   <span className="text-4xl select-none">🎁</span>
                 )}
                 {product.categoryId?.name && (
-                  <span className="absolute top-3 left-3 bg-zinc-900/80 backdrop-blur-xs text-white text-[9px] font-semibold px-2 py-0.5 rounded-md tracking-wider uppercase border border-white/10">
+                  <span className="absolute bottom-3 left-3 bg-zinc-900/80 backdrop-blur-xs text-white text-[9px] font-semibold px-2 py-0.5 rounded-md tracking-wider uppercase border border-white/10">
                     {product.categoryId.name}
+                  </span>
+                )}
+                {product.badge && (
+                  <span className={cn(
+                    "absolute top-3 right-3 z-10 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-md",
+                    product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                  )}>
+                    {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
                   </span>
                 )}
               </div>
@@ -88,10 +100,28 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
             {/* Price & Call To Action */}
             <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-200 dark:border-white/[0.06]">
               <div>
-                <span className="text-[9px] text-zinc-400 uppercase tracking-wider block">Price</span>
-                <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                  <PriceDisplay amountInUSD={product.price} />
-                </span>
+                {product.mrpPrice && product.discountedPrice && product.mrpPrice > product.discountedPrice ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 line-through">
+                        <PriceDisplay amountInUSD={product.mrpPrice} />
+                      </span>
+                      <span className="text-[9px] font-bold text-red-500 dark:text-red-400 bg-red-500/10 px-1 rounded">
+                        {Math.round(((product.mrpPrice - product.discountedPrice) / product.mrpPrice) * 100)}% OFF
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white">
+                      <PriceDisplay amountInUSD={product.discountedPrice} />
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    <span className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase tracking-widest block leading-none">Price</span>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white mt-0.5">
+                      <PriceDisplay amountInUSD={product.price} />
+                    </p>
+                  </div>
+                )}
               </div>
               <Link
                 href={`/store?category=${product.categoryId?.slug || ""}&productId=${product._id}`}
