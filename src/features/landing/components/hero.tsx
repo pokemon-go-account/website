@@ -21,7 +21,7 @@ const QUICK_TAGS = [
   { label: "✨ Shiny", query: "shiny" },
   { label: "🏆 Legendary", query: "legendary" },
   { label: "🪙 Coins", query: "coins" },
-  { label: "⭐ Level 50", query: "50" },
+  { label: "⭐ Level 80", query: "80" },
   { label: "🐉 Raid", query: "raid" },
 ];
 

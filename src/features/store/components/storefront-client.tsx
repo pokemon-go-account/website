@@ -160,6 +160,12 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
     }
   }, [searchParams, categories, products]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [selectedCategoryId]);
+
   const handleAddItem = (product: Product) => {
     const isAccountOrPokemon = product.categoryId?.slug === "accounts" || product.categoryId?.slug === "pokemons";
     const existing = items.find((item) => item.id === product._id);

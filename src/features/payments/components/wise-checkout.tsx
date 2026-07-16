@@ -19,10 +19,12 @@ import {
   Check,
   ExternalLink,
   Info,
+  HelpCircle,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrencyStore, CURRENCY_SYMBOLS, Currency } from "@/store/useCurrencyStore";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface WisePaymentCheckoutProps {
   orderId: string;
@@ -39,11 +41,18 @@ export function WisePaymentCheckout({
   amount,
   currency,
   customerEmail,
-  wiseLink = "https://wise.com/pay/me/deepanshus58",
+  wiseLink = "https://wise.com",
   walletDiscountApplied = 0,
   originalTotalPrice,
 }: WisePaymentCheckoutProps) {
   const { data: session } = useSession();
+  const rates = useCurrencyStore((state) => state.rates);
+  const inrRate = rates?.INR || 83.5;
+  const finalPriceUSD = (originalTotalPrice !== undefined) 
+    ? Math.max(0, originalTotalPrice - (walletDiscountApplied || 0)) 
+    : amount;
+  const amountInINR = finalPriceUSD * inrRate;
+
   const transactionReference = "N/A";
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
@@ -52,6 +61,7 @@ export function WisePaymentCheckout({
   const [submitted, setSubmitted] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
+  const [showHowToPay, setShowHowToPay] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatSelected = () => {
@@ -67,6 +77,13 @@ export function WisePaymentCheckout({
     navigator.clipboard.writeText(wiseLink);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText("Dipanshusingh697@gmail.com");
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2000);
   };
 
   const handleFileChange = useCallback((file: File | null) => {
@@ -302,25 +319,75 @@ Please verify my payment proof and approve my order!`;
           </div>
 
           {/* Amount Card */}
-          <div className="flex flex-col items-center justify-center bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 rounded-xl py-3 shadow-sm">
+          <div className="flex flex-col items-center justify-center bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 rounded-xl py-3.5 shadow-sm">
              <p className="text-[10px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Amount to Send ({currency})</p>
              <p className="text-2xl font-black text-zinc-950 dark:text-white tracking-tight text-center">
-               {formatSelected()}
+                {formatSelected()}
              </p>
+             
+             {/* Dynamic INR converted amount display */}
+             <div className="mt-2.5 px-3 py-1 rounded bg-[#6133e1]/5 dark:bg-[#6133e1]/10 border border-[#6133e1]/10 text-center">
+               <p className="text-[9px] text-[#6133e1] dark:text-[#a78bfa] font-bold uppercase tracking-wide">Or in INR (1$ = {inrRate.toFixed(2)} INR)</p>
+               <p className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 mt-0.5">
+                 {amountInINR.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} INR
+               </p>
+             </div>
           </div>
 
-          {/* Instruction Box */}
-          <div className="bg-emerald-50/30 dark:bg-emerald-950/5 border border-emerald-100 dark:border-emerald-950/20 rounded-xl p-3 flex items-start gap-2 shadow-xs">
-            <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-450 shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
-                Wise.com Profile Link
-              </p>
-              <p className="text-[10px] text-emerald-750 dark:text-emerald-450 font-medium leading-relaxed">
-                Click pay below or copy the Wise link to complete transfer. Send exact amount in **{currency}**.
-              </p>
-            </div>
-          </div>
+          {/* How to Pay Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setShowHowToPay(!showHowToPay)}
+            className="w-full py-2.5 px-4 rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 text-[#6133e1] dark:text-[#a78bfa] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 active:scale-[0.98] cursor-pointer shadow-xs"
+          >
+            <HelpCircle className="h-4 w-4" />
+            {showHowToPay ? "Hide Instructions" : "How to Pay? (Guided Steps)"}
+          </button>
+
+          {/* How to Pay Content */}
+          <AnimatePresence>
+            {showHowToPay && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden bg-[#111111]/5 dark:bg-[#050505]/40 border border-zinc-200 dark:border-white/[0.06] rounded-xl p-3.5 space-y-2.5 text-xs text-zinc-650 dark:text-zinc-400 leading-relaxed"
+              >
+                <h4 className="font-extrabold text-zinc-905 dark:text-zinc-100 uppercase text-[10px] tracking-wider mb-1 flex items-center gap-1.5 border-b border-zinc-200 dark:border-zinc-800 pb-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-[#6133e1]" />
+                  Guided Wise Transfer Instructions
+                </h4>
+                <ol className="list-decimal pl-4.5 space-y-2 text-[11px]">
+                  <li>
+                    Open your <strong>Wise</strong> application or log in to <a href="https://wise.com" target="_blank" rel="noopener noreferrer" className="text-[#6133e1] dark:text-[#a78bfa] font-bold hover:underline">wise.com</a>.
+                  </li>
+                  <li>
+                    Select <strong>Send Money</strong> and choose to <strong>Add a new recipient</strong>.
+                  </li>
+                  <li>
+                    Select <strong>India</strong> as the destination country and <strong>INR</strong> as the currency.
+                  </li>
+                  <li>
+                    Enter the recipient email address:{" "}
+                    <span className="text-zinc-950 dark:text-white font-mono select-all font-bold underline bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded text-[10px]">Dipanshusingh697@gmail.com</span>.
+                  </li>
+                  <li>
+                    Calculate the amount to send using our conversion rate (<strong>1 USD = {inrRate.toFixed(2)} INR</strong>):
+                    <div className="mt-1.5 p-2 bg-[#6133e1]/5 dark:bg-[#6133e1]/10 rounded border border-[#6133e1]/20 font-bold text-zinc-950 dark:text-white text-[10.5px] flex items-center justify-between">
+                      <span>Total INR to send:</span>
+                      <span className="text-[#6133e1] dark:text-[#a78bfa] text-xs font-black">
+                        {amountInINR.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} INR
+                      </span>
+                    </div>
+                  </li>
+                  <li>
+                    Once the payment is done, capture the receipt and proceed to <strong>Step 2</strong> to attach it.
+                  </li>
+                </ol>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
           {/* Mobile View: Launch App Directly & Fallback */}
           <div className="block sm:hidden w-full space-y-3">
@@ -389,20 +456,19 @@ Please verify my payment proof and approve my order!`;
               Open Wise Link in browser
             </a>
           </div>
-        </div>
 
         {/* Payment info + Logos */}
         <div className="space-y-3 pt-3 border-t border-zinc-200/60 dark:border-white/[0.04]">
           <div className="text-[10px] space-y-1.5">
             <div className="flex justify-between items-center">
-              <span className="text-zinc-450 dark:text-zinc-500">Wise Link:</span>
+              <span className="text-zinc-450 dark:text-zinc-500">Recipient Email:</span>
               <button
                 type="button"
-                onClick={handleCopyLink}
-                className="flex items-center gap-1 font-mono text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 px-2 py-0.5 rounded transition cursor-pointer text-[10px]"
+                onClick={handleCopyEmail}
+                className="flex items-center gap-1 font-mono text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-[#6133e1]/50 dark:hover:border-[#6133e1]/50 px-2 py-0.5 rounded transition cursor-pointer text-[10px]"
               >
-                deepanshus58
-                {copiedLink ? (
+                Dipanshusingh697@gmail.com
+                {copiedEmail ? (
                   <Check className="h-3 w-3 text-emerald-500" />
                 ) : (
                   <Copy className="h-3 w-3 text-zinc-450 hover:text-zinc-700 dark:hover:text-zinc-300" />
