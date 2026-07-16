@@ -3479,7 +3479,8 @@ This Buy Now order has been completed automatically using your wallet balance. A
 
           </div>
         </div>
-      )}\n\n      {/* ====================================================== */}
+      )} 
+      {/* ====================================================== */}
       {/* WINNER PAYMENT MODAL */}
       {/* ====================================================== */}
       {isWinnerPaymentOpen && (() => {
