@@ -17,29 +17,35 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
-  title: "Pokemon Go Services",
-  description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
+  title: {
+    default: "Pokémon GO Services | Premium Accounts, Rare Pokemon & Live Auctions",
+    template: "%s | PoGo Services"
+  },
+  description: "The ultimate destination for elite Pokémon GO players. Explore our massive storefront, bid in real-time live auctions, and access premium rental services.",
+  keywords: ["Pokemon Go", "PoGo", "Accounts", "Auctions", "Storefront", "Stardust", "Legendaries", "Services"],
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",
     apple: "/logo.png",
   },
   openGraph: {
-    title: "Pokemon Go Services",
-    description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
+    type: "website",
+    title: "Pokémon GO Services Hub | Accounts, Items & Live Bidding",
+    description: "The ultimate destination for elite Pokémon GO players. Explore our massive storefront, bid in real-time live auctions, and access premium rental services.",
+    siteName: "PoGo Services",
     images: [
       {
         url: "/og-logo.png",
         width: 1200,
         height: 630,
-        alt: "Pokemon Go Services Logo",
+        alt: "Pokemon Go Premium Services",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pokemon Go Services",
-    description: "Secure, real-time scheduled live auctions for high-tier gaming assets.",
+    title: "Pokémon GO Services Hub | Premium Store & Live Auctions",
+    description: "Your #1 destination for elite Pokémon GO accounts, storefront purchases, and real-time bidding.",
     images: ["/og-logo.png"],
   },
 };
