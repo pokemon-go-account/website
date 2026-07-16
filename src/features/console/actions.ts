@@ -430,7 +430,6 @@ export async function getOrdersConsole(
   }
 }
 
-/** Mark an order as completed */
 export async function completeOrderConsole(orderId: string) {
   try {
     await checkSuperAdminSession();
@@ -439,7 +438,25 @@ export async function completeOrderConsole(orderId: string) {
     const Order = (await import("@/models/Order")).default;
     const User = (await import("@/models/User")).default;
     
-    const order = await Order.findByIdAndUpdate(orderId, { status: "COMPLETED" });
+    const order = await Order.findById(orderId);
+    if (!order) return { success: false, error: "Order not found." };
+
+    order.status = "COMPLETED";
+    await order.save();
+
+    // Mark associated auction as COMPLETED (and populate buy-now buyer info if it was a Buy Now order)
+    if (order.auctionId) {
+      const Auction = (await import("@/models/Auction")).default;
+      const user = await User.findById(order.userId);
+      const updateData: any = { status: "COMPLETED" };
+      if (order.orderType === "BUY_NOW" && user) {
+        updateData.buyNowBuyerId = user._id;
+        updateData.buyNowBuyerName = user.username || user.name || "Unknown";
+      }
+      await Auction.findByIdAndUpdate(order.auctionId, updateData);
+      revalidatePath(`/auctions/${order.auctionId}`);
+    }
+
     // Note: Wallet balance is already deducted at the time of order creation.
     revalidatePath("/console/orders");
     revalidatePath("/feedback"); // revalidate to update review capability
@@ -458,13 +475,34 @@ export async function failOrderConsole(orderId: string) {
     const Order = (await import("@/models/Order")).default;
     const User = (await import("@/models/User")).default;
 
-    const order = await Order.findByIdAndUpdate(orderId, { status: "FAILED" });
+    const order = await Order.findById(orderId);
+    if (!order) return { success: false, error: "Order not found." };
+
+    order.status = "FAILED";
+    await order.save();
     
     // Refund wallet balance if the order had any wallet discount applied
-    if (order && order.walletDiscountApplied && order.walletDiscountApplied > 0) {
+    if (order.walletDiscountApplied && order.walletDiscountApplied > 0) {
       await User.findByIdAndUpdate(order.userId, {
         $inc: { walletBalance: order.walletDiscountApplied }
       });
+    }
+
+    // Revert associated auction to LIVE if it was completed (e.g. from Buy Now)
+    if (order.auctionId) {
+      const Auction = (await import("@/models/Auction")).default;
+      const auction = await Auction.findById(order.auctionId);
+      if (auction && auction.status === "COMPLETED") {
+        auction.status = "LIVE";
+        auction.buyNowBuyerId = undefined;
+        auction.buyNowBuyerName = undefined;
+        const now = new Date();
+        if (!auction.endTime || new Date(auction.endTime) <= now) {
+          auction.endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        }
+        await auction.save();
+        revalidatePath(`/auctions/${order.auctionId}`);
+      }
     }
 
     revalidatePath("/console/orders");
@@ -571,6 +609,23 @@ export async function cancelOrderUser(orderId: string) {
       await User.findByIdAndUpdate(session.user.id, {
         $inc: { walletBalance: order.walletDiscountApplied }
       });
+    }
+
+    // Revert associated auction to LIVE if it was completed (e.g. from Buy Now)
+    if (order.auctionId) {
+      const Auction = (await import("@/models/Auction")).default;
+      const auction = await Auction.findById(order.auctionId);
+      if (auction && auction.status === "COMPLETED") {
+        auction.status = "LIVE";
+        auction.buyNowBuyerId = undefined;
+        auction.buyNowBuyerName = undefined;
+        const now = new Date();
+        if (!auction.endTime || new Date(auction.endTime) <= now) {
+          auction.endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        }
+        await auction.save();
+        revalidatePath(`/auctions/${order.auctionId}`);
+      }
     }
 
     revalidatePath("/orders");

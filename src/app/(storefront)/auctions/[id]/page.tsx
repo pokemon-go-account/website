@@ -60,23 +60,24 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
 
   const initialIsRegistered = !!(registrationDoc && (registrationDoc as any).hasPaidVerificationDeposit);
 
-  // Format database objects into clean props
-  const listingDoc = auctionDoc.listingId as any;
+  // Format database objects into clean props and serialize BSON types
+  const serializedAuctionDoc = JSON.parse(JSON.stringify(auctionDoc));
+  const listingDoc = serializedAuctionDoc.listingId as any;
   const formattedAuction = {
-    ...auctionDoc,
-    _id: auctionDoc._id.toString(),
+    ...serializedAuctionDoc,
+    _id: serializedAuctionDoc._id,
     listingId: {
       ...listingDoc,
-      _id: listingDoc._id?.toString(),
-      sellerId: listingDoc.sellerId?.toString() || "",
+      _id: listingDoc._id,
+      sellerId: listingDoc.sellerId || "",
     },
-    currentHighestBid: auctionDoc.currentHighestBid,
-    highestBidderId: auctionDoc.highestBidderId ? (auctionDoc.highestBidderId as any)._id?.toString() || (auctionDoc.highestBidderId as any).toString() : null,
-    highestBidderName: (auctionDoc.highestBidderId as any)?.username || (auctionDoc.highestBidderId as any)?.name || null,
-    endTime: (auctionDoc.endTime as Date).toISOString(),
-    status: auctionDoc.status,
-    registrationFee: auctionDoc.registrationFee || 199,
-    viewers: auctionDoc.viewers || 0,
+    currentHighestBid: serializedAuctionDoc.currentHighestBid,
+    highestBidderId: serializedAuctionDoc.highestBidderId ? (serializedAuctionDoc.highestBidderId as any)._id || (serializedAuctionDoc.highestBidderId as any) : null,
+    highestBidderName: (serializedAuctionDoc.highestBidderId as any)?.username || (serializedAuctionDoc.highestBidderId as any)?.name || null,
+    endTime: serializedAuctionDoc.endTime,
+    status: serializedAuctionDoc.status,
+    registrationFee: serializedAuctionDoc.registrationFee || 199,
+    viewers: serializedAuctionDoc.viewers || 0,
   };
 
   const formattedBids = bidDocs.map((b: any) => ({

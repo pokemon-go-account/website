@@ -297,6 +297,35 @@ export async function deleteAuction(auctionId: string) {
 }
 
 /**
+ * Reactivate a completed/concluded/expired auction (SUPER_ADMIN only)
+ * Sets status to "LIVE" and extends the endTime by custom hours
+ */
+export async function reactivateAuction(auctionId: string, hours: number = 24) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    const auction = await Auction.findById(auctionId);
+    if (!auction) return { success: false, error: "Auction not found." };
+
+    const now = new Date();
+    const newEndTime = new Date(now.getTime() + hours * 60 * 60 * 1000);
+
+    auction.status = "LIVE";
+    auction.endTime = newEndTime;
+    // Keep current highest bid and highest bidder so the auction resumes normally
+    await auction.save();
+
+    revalidatePath("/admin");
+    revalidatePath(`/auctions/${auctionId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Rollback the highest bid (Kill Switch Option C)
  */
 export async function rollbackAuctionBid(auctionId: string) {

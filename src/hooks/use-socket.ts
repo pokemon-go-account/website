@@ -25,6 +25,7 @@ export function useSocket(
   const [status, setStatus] = useState<string>(initialStatus);
   const [endTime, setEndTime] = useState<string>(initialEndTime);
   const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([]);
+  const [hasPendingBuyNow, setHasPendingBuyNow] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export function useSocket(
         setHighestBidderId(res.highestBidderId ?? null);
         setHighestBidderName(res.highestBidderName ?? null);
         setIsRegistered(!!res.isRegistered);
+        setHasPendingBuyNow(!!res.hasPendingBuyNow);
         if (res.status) setStatus(res.status);
         if (res.endTime) setEndTime(res.endTime);
         if (res.bids) {
@@ -99,6 +101,7 @@ export function useSocket(
     endTime,
     setEndTime,
     bidHistory,
+    hasPendingBuyNow,
     error,
     placeBid,
     setError,

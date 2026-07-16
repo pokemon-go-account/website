@@ -113,6 +113,13 @@ export async function fetchAuctionRealtime(auctionId: string) {
       createdAt: b.createdAt.toISOString(),
     }));
 
+    const Order = (await import("@/models/Order")).default;
+    const hasPendingBuyNow = await Order.exists({
+      auctionId,
+      orderType: "BUY_NOW",
+      status: "PENDING"
+    });
+
     return {
       success: true,
       currentHighestBid: auction.currentHighestBid,
@@ -122,6 +129,7 @@ export async function fetchAuctionRealtime(auctionId: string) {
       endTime: auction.endTime ? auction.endTime.toISOString() : null,
       isRegistered,
       bids: formattedBids,
+      hasPendingBuyNow: !!hasPendingBuyNow,
     };
   } catch (error) {
     console.error("Realtime fetch failure:", error);
@@ -389,6 +397,18 @@ export async function createBuyNowOrderAction(auctionId: string) {
         });
       }
 
+      if (isCompleted) {
+        if (user) {
+          await Auction.findByIdAndUpdate(auction._id, {
+            status: "COMPLETED",
+            buyNowBuyerId: user._id,
+            buyNowBuyerName: (user as any).username || (user as any).name || "Unknown",
+          });
+        } else {
+          await Auction.findByIdAndUpdate(auction._id, { status: "COMPLETED" });
+        }
+      }
+
       return { success: true, orderId: existingOrder._id.toString(), autoCompleted: isCompleted };
     }
 
@@ -415,15 +435,17 @@ export async function createBuyNowOrderAction(auctionId: string) {
       });
     }
 
-    // Mark auction as COMPLETED with buy-now buyer info — removes from active bidding
-    if (user) {
-      await Auction.findByIdAndUpdate(auction._id, {
-        status: "COMPLETED",
-        buyNowBuyerId: user._id,
-        buyNowBuyerName: (user as any).username || (user as any).name || "Unknown",
-      });
-    } else {
-      await Auction.findByIdAndUpdate(auction._id, { status: "COMPLETED" });
+    // Mark auction as COMPLETED with buy-now buyer info only if auto-completed immediately
+    if (isCompleted) {
+      if (user) {
+        await Auction.findByIdAndUpdate(auction._id, {
+          status: "COMPLETED",
+          buyNowBuyerId: user._id,
+          buyNowBuyerName: (user as any).username || (user as any).name || "Unknown",
+        });
+      } else {
+        await Auction.findByIdAndUpdate(auction._id, { status: "COMPLETED" });
+      }
     }
 
     revalidatePath("/auctions");

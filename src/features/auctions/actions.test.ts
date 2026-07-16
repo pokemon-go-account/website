@@ -326,5 +326,39 @@ describe('Auctions Actions', () => {
       expect(res.success).toBe(false);
       expect(res.error).toContain('Buy Now is disabled');
     });
+
+    it('should keep the auction LIVE when creating a pending Buy Now order, and complete it only when the order is marked as completed', async () => {
+      const user = await User.create({ name: 'Buyer', username: 'buyer1', email: 'buyer@test.com' });
+      const listing = await Listing.create({
+        ...LISTING_FIXTURE,
+        status: 'APPROVED',
+        sellerId: new mongoose.Types.ObjectId(),
+      });
+      const auction = await Auction.create({ listingId: listing._id, status: 'LIVE', currentHighestBid: 10 });
+      
+      vi.mocked(auth).mockResolvedValue({ user: { id: user._id.toString() }, expires: '9999' } as any);
+
+      // 1. Create Buy Now order
+      const res = await createBuyNowOrderAction(auction._id.toString());
+      expect(res.success).toBe(true);
+      
+      // The auction status must remain LIVE
+      const updatedAuction1 = await Auction.findById(auction._id);
+      expect(updatedAuction1?.status).toBe('LIVE');
+
+      // 2. Complete order using completeOrderConsole
+      const { completeOrderConsole } = await import('@/features/console/actions');
+      
+      // Mock session for checkSuperAdminSession
+      vi.mocked(auth).mockResolvedValue({ user: { id: new mongoose.Types.ObjectId().toString(), role: 'SUPER_ADMIN' }, expires: '9999' } as any);
+
+      const completeRes = await completeOrderConsole(res.orderId!);
+      expect(completeRes.success).toBe(true);
+
+      // The auction status must now be COMPLETED
+      const updatedAuction2 = await Auction.findById(auction._id);
+      expect(updatedAuction2?.status).toBe('COMPLETED');
+      expect(updatedAuction2?.buyNowBuyerId?.toString()).toBe(user._id.toString());
+    });
   });
 });
