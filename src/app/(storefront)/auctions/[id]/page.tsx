@@ -15,6 +15,42 @@ interface AuctionPageProps {
 
 export const revalidate = 0; // Dynamic rendering
 
+import type { Metadata, ResolvingMetadata } from "next";
+
+export async function generateMetadata(
+  { params }: AuctionPageProps,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { id } = await params;
+  await connectDB();
+  
+  const auction = await Auction.findById(id).populate("listingId").lean();
+  if (!auction || !auction.listingId) {
+    return { title: "Auction Not Found" };
+  }
+
+  const listing = auction.listingId as any;
+  const title = `Live Auction: Level ${listing.level || '?'} ${listing.team || 'Account'} | ${listing.title}`;
+  const description = `Current Highest Bid: $${auction.currentHighestBid} | ${listing.shinyCount || 0} Shinies, ${listing.legendaryCount || 0} Legendaries. Bid in real-time now!`;
+  const imageUrl = listing.screenshots && listing.screenshots.length > 0 ? listing.screenshots[0] : "/og-logo.png";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [{ url: imageUrl }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
+
 export default async function AuctionPage({ params }: AuctionPageProps) {
   const { id } = await params;
 
