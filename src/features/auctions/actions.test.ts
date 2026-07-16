@@ -207,7 +207,8 @@ describe('Auctions Actions', () => {
       expect(res.success).toBe(true);
       if (res.success) {
         expect(res.currentHighestBid).toBe(20);
-        expect(res.highestBidderId).toBe(user._id.toString());
+        // Security: highestBidderId is no longer exposed; use boolean flag instead
+        expect(res.isCurrentUserHighestBidder).toBe(true);
         expect(res.isRegistered).toBe(true);
         expect(res.bids!.length).toBe(1);
         expect(res.bids![0].amount).toBe(20);
@@ -239,7 +240,8 @@ describe('Auctions Actions', () => {
       expect(res.success).toBe(true);
       if (res.success) {
         expect(res.currentHighestBid).toBe(20);
-        expect(res.highestBidderId).toBe(user._id.toString());
+        // Security: highestBidderId is no longer exposed; caller is always the new highest bidder
+        expect(res.isNowHighestBidder).toBe(true);
       }
     });
 

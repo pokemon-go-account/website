@@ -116,7 +116,17 @@ export async function fetchAuctionRealtime(auctionId: string) {
     return {
       success: true,
       currentHighestBid: auction.currentHighestBid,
-      highestBidderId: auction.highestBidderId ? (auction.highestBidderId as any)._id?.toString() || (auction.highestBidderId as any).toString() : null,
+      // SECURITY: Do not expose raw highestBidderId to the client. Compute access flags server-side.
+      // Note: highestBidderId is populated ({_id, username, name}), so we must extract _id before comparing.
+      isCurrentUserHighestBidder: !!(
+        userId &&
+        auction.highestBidderId &&
+        (
+          (auction.highestBidderId as any)._id?.toString() ||
+          (auction.highestBidderId as any).toString()
+        ) === userId
+      ),
+      hasHighestBidder: !!auction.highestBidderId,
       highestBidderName: (auction.highestBidderId as any)?.username || (auction.highestBidderId as any)?.name || null,
       status: auction.status,
       endTime: auction.endTime ? auction.endTime.toISOString() : null,
@@ -259,7 +269,8 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
     return { 
       success: true, 
       currentHighestBid: updatedAuction.currentHighestBid,
-      highestBidderId: updatedAuction.highestBidderId?.toString() || "",
+      // SECURITY: Caller is always the new highest bidder — no need to send back their own ObjectId
+      isNowHighestBidder: true,
       error: null 
     };
   } catch (error) {

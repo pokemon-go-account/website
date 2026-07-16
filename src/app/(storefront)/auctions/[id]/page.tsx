@@ -60,19 +60,36 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
 
   const initialIsRegistered = !!(registrationDoc && (registrationDoc as any).hasPaidVerificationDeposit);
 
-  // Format database objects into clean props
+  const currentUserId = session?.user?.id ?? null;
+  const currentUserRole = session?.user?.role ?? null;
+
+  // Format database objects into clean props.
+  // SECURITY: We deliberately do NOT pass raw MongoDB ObjectIds (sellerId, highestBidderId)
+  // to the client. Instead we compute access flags server-side where the session is trustworthy.
+  // Exposing raw user ObjectIds would enable account-takeover chaining with auth exploits.
   const listingDoc = auctionDoc.listingId as any;
+  const sellerIdStr = listingDoc.sellerId?.toString() ?? "";
+  const highestBidderIdStr = auctionDoc.highestBidderId
+    ? (auctionDoc.highestBidderId as any)._id?.toString() ||
+      (auctionDoc.highestBidderId as any).toString()
+    : null;
+
   const formattedAuction = {
     ...auctionDoc,
     _id: auctionDoc._id.toString(),
     listingId: {
       ...listingDoc,
       _id: listingDoc._id?.toString(),
-      sellerId: listingDoc.sellerId?.toString() || "",
+      // isCurrentUserSeller replaces sellerId — allows admin controls without leaking the ID
+      isCurrentUserSeller: !!(currentUserId && sellerIdStr && currentUserId === sellerIdStr),
+      // creatorRole tells the component if the seller is ADMIN or SUPER_ADMIN (for admin panel)
+      creatorRole: currentUserRole ?? null,
     },
     currentHighestBid: auctionDoc.currentHighestBid,
-    highestBidderId: auctionDoc.highestBidderId ? (auctionDoc.highestBidderId as any)._id?.toString() || (auctionDoc.highestBidderId as any).toString() : null,
+    // isCurrentUserHighestBidder replaces the raw highestBidderId
+    isCurrentUserHighestBidder: !!(currentUserId && highestBidderIdStr && currentUserId === highestBidderIdStr),
     highestBidderName: (auctionDoc.highestBidderId as any)?.username || (auctionDoc.highestBidderId as any)?.name || null,
+    hasHighestBidder: !!highestBidderIdStr,
     endTime: (auctionDoc.endTime as Date).toISOString(),
     status: auctionDoc.status,
     registrationFee: auctionDoc.registrationFee || 199,

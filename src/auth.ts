@@ -5,6 +5,7 @@ import { z } from "zod";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import { createHmac, timingSafeEqual } from "crypto";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -18,6 +19,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       async authorize(credentials) {
         if (credentials?.isFirebase === "true" && credentials?.firebaseUid) {
+          // Security: verify this call originated from our server-side loginWithFirebaseIdToken
+          // action, not a direct external POST. Without the correct HMAC nobody can forge a session.
+          const bridgeSecret = process.env.FIREBASE_AUTH_BRIDGE_SECRET;
+          const providedToken = credentials?.firebaseBridgeToken as string | undefined;
+          if (!bridgeSecret || !providedToken) return null;
+
+          const expected = createHmac("sha256", bridgeSecret)
+            .update(credentials.firebaseUid as string)
+            .digest("hex");
+          const expectedBuf = Buffer.from(expected, "hex");
+          const providedBuf = Buffer.from(providedToken, "hex");
+          if (
+            expectedBuf.length !== providedBuf.length ||
+            !timingSafeEqual(expectedBuf, providedBuf)
+          ) {
+            console.warn("[Auth] Rejected isFirebase credentials: invalid bridge token");
+            return null;
+          }
+
           await connectDB();
           const user = await User.findById(credentials.firebaseUid);
           if (!user) return null;

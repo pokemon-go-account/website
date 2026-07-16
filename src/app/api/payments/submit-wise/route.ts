@@ -2,15 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import WisePayment from "@/models/WisePayment";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { auth } from "@/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Require authentication
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in." }, { status: 401 });
+    }
+
     await connectDB();
 
     const body = await req.json();
     const { orderId, amount, currency, customerEmail, transactionReference, screenshotBase64 } = body;
 
-    // Validate required fields (excluding transactionReference)
+    // 2. Validate required fields (excluding transactionReference)
     if (!orderId || !amount || !currency || !customerEmail || !screenshotBase64) {
       return NextResponse.json(
         { error: "Required fields are missing." },
@@ -22,7 +29,21 @@ export async function POST(req: NextRequest) {
       ? transactionReference.trim()
       : "N/A";
 
-    // Upload screenshot to Cloudinary
+    // 3. Verify order ownership (IDOR protection)
+    const Order = (await import("@/models/Order")).default;
+    const order = await Order.findOne({ _id: orderId, userId: session.user.id });
+    if (!order) {
+      return NextResponse.json(
+        { error: "Order not found or does not belong to your account." },
+        { status: 403 }
+      );
+    }
+
+    // 4. Server-side amount: always use the DB order total, ignore client-sent amount
+    // (clients display amounts in local currency EUR/crypto/etc. which won't match the USD total)
+    const expectedAmount = order.totalPrice;
+
+    // 5. Upload to Cloudinary
     let screenshotUrl = "";
     try {
       screenshotUrl = await uploadToCloudinary(screenshotBase64);
@@ -36,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     const payment = await WisePayment.create({
       orderId,
-      amount: Number(amount),
+      amount: expectedAmount,
       currency,
       customerEmail,
       transactionReference: finalTxRef,
@@ -50,3 +71,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }
+

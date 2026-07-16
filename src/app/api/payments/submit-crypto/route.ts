@@ -2,15 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import CryptoPayment from "@/models/CryptoPayment";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { auth } from "@/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Require authentication
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in." }, { status: 401 });
+    }
+
     await connectDB();
 
     const body = await req.json();
     const { orderId, amount, customerEmail, coinSelected, txHash, screenshotBase64 } = body;
 
-    // Validate required fields
+    // 2. Validate required fields
     if (!orderId || !amount || !customerEmail || !coinSelected || !txHash || !screenshotBase64) {
       return NextResponse.json(
         { error: "All fields are required." },
@@ -25,7 +32,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Upload to Cloudinary (will fall back to mock sandbox if keys are unconfigured)
+    // 3. Verify order ownership (IDOR protection)
+    const Order = (await import("@/models/Order")).default;
+    const order = await Order.findOne({ _id: orderId, userId: session.user.id });
+    if (!order) {
+      return NextResponse.json(
+        { error: "Order not found or does not belong to your account." },
+        { status: 403 }
+      );
+    }
+
+    // 4. Server-side amount: always use the DB order total, ignore client-sent amount
+    // (clients display amounts in local currency EUR/crypto/etc. which won't match the USD total)
+    const expectedAmount = order.totalPrice;
+
+    // 5. Upload to Cloudinary
     let screenshotUrl = "";
     try {
       screenshotUrl = await uploadToCloudinary(screenshotBase64);
@@ -39,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     const payment = await CryptoPayment.create({
       orderId,
-      amount: Number(amount),
+      amount: expectedAmount,
       customerEmail,
       coinSelected,
       txHash,
@@ -53,3 +74,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }
+

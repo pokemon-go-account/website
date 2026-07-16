@@ -87,7 +87,9 @@ interface LiveRoomProps {
       luckyEggs?: number;
       lureModules?: number;
       premiumRaidPass: number;
-      sellerId?: string;
+      sellerId?: string; // deprecated — use isCurrentUserSeller
+      isCurrentUserSeller?: boolean;
+      creatorRole?: string | null;
 
       // New Stats & Telemetry Fields
       platinumMedals?: number;
@@ -124,7 +126,9 @@ interface LiveRoomProps {
       bansCount?: number;
     };
     currentHighestBid: number;
-    highestBidderId?: any;
+    highestBidderId?: any; // deprecated — use isCurrentUserHighestBidder
+    isCurrentUserHighestBidder?: boolean;
+    hasHighestBidder?: boolean;
     highestBidderName?: string | null;
     endTime: string;
     status: string;
@@ -145,7 +149,10 @@ export function LiveRoom({
   const { data: clientSession, status: sessionStatus } = useSession();
   const session = clientSession || propSession;
   const router = useRouter();
-  const isOwner = session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId);
+  // isOwner: use server-computed boolean if available, fall back to client-side comparison for backwards compat
+  const isOwner = auction.listingId.isCurrentUserSeller ?? (
+    session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId)
+  );
   const { convert } = useCurrencyStore();
   const {
     isConnected,
@@ -218,21 +225,18 @@ export function LiveRoom({
 
   // Admin Controls states
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
-  const isCreatorAdmin = session?.user?.role === "ADMIN" && session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId);
+  // isCreatorAdmin: use server-computed boolean if available, fall back to client-side comparison
+  const isCreatorAdmin = session?.user?.role === "ADMIN" && (
+    auction.listingId.isCurrentUserSeller ?? (
+      session?.user?.id && auction.listingId.sellerId && String(session.user.id) === String(auction.listingId.sellerId)
+    )
+  );
   const isAuthorizedAdmin = isSuperAdmin || isCreatorAdmin;
 
   useEffect(() => {
-    console.log("[LiveRoom Debug] session user:", session?.user);
-    console.log("[LiveRoom Debug] sellerId:", auction.listingId.sellerId);
-    console.log("[LiveRoom Debug] isAuthorizedAdmin:", {
-      role: session?.user?.role,
-      userId: session?.user?.id,
-      sellerId: auction.listingId.sellerId,
-      isSuperAdmin,
-      isCreatorAdmin,
-      isAuthorizedAdmin
-    });
-  }, [session, auction.listingId.sellerId, isSuperAdmin, isCreatorAdmin, isAuthorizedAdmin]);
+    // Debug log — does NOT log sellerId (removed to prevent ID leakage in browser console)
+    console.log("[LiveRoom Debug] isAuthorizedAdmin:", { isSuperAdmin, isCreatorAdmin, isAuthorizedAdmin });
+  }, [session, isSuperAdmin, isCreatorAdmin, isAuthorizedAdmin]);
 
   const [isAdminEditOpen, setIsAdminEditOpen] = useState(false);
   const [isAdminActionLoading, setIsAdminActionLoading] = useState(false);
@@ -641,13 +645,20 @@ Please guide me on how to complete the payment!`;
   // Initialize values from SSR state props
   useEffect(() => {
     setCurrentBid(auction.currentHighestBid);
-    setHighestBidderId(
-      typeof auction.highestBidderId === "object"
-        ? auction.highestBidderId?._id || ""
-        : auction.highestBidderId || ""
-    );
+    // Use server-computed boolean if available, otherwise use raw ID from socket for client-comparison
+    if (auction.isCurrentUserHighestBidder !== undefined) {
+      // Server already told us whether we're the highest bidder — set a sentinel value
+      // that matches session.user.id only when true, otherwise set empty string
+      setHighestBidderId(auction.isCurrentUserHighestBidder ? (session?.user?.id || "") : "");
+    } else {
+      setHighestBidderId(
+        typeof auction.highestBidderId === "object"
+          ? auction.highestBidderId?._id || ""
+          : auction.highestBidderId || ""
+      );
+    }
     setBidHistory(initialBids);
-  }, [auction, initialBids, setBidHistory, setCurrentBid, setHighestBidderId]);
+  }, [auction, initialBids, setBidHistory, setCurrentBid, setHighestBidderId, session]);
 
   // Countdown timer logic
   useEffect(() => {
@@ -819,7 +830,7 @@ Please guide me on how to complete the payment!`;
       {/* Bid Values */}
       <div className="space-y-1 text-center relative z-10">
         <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-bold">
-          {highestBidderId ? "Current Bid" : "Starting Bid"}
+          {(auction.hasHighestBidder ?? !!auction.highestBidderId) ? "Current Bid" : "Starting Bid"}
         </span>
         <motion.h3
           key={activeBid}

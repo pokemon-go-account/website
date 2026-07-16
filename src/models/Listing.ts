@@ -168,7 +168,7 @@ const ListingSchema: Schema<IListing> = new Schema(
 
 ListingSchema.index({ sellerId: 1, status: 1 });
 
-ListingSchema.pre('save', function (this: any, next: any) {
+ListingSchema.pre('save', async function (this: any) {
   // Sync shiny
   if (this.shinyPokemons !== undefined && this.shinyPokemons !== 0) {
     this.shinyCount = this.shinyPokemons;
@@ -189,7 +189,6 @@ ListingSchema.pre('save', function (this: any, next: any) {
   } else if (this.mythicalCount !== undefined && this.mythicalCount !== 0) {
     this.mythicalPokemons = this.mythicalCount;
   }
-  next();
 });
 
 const Listing: Model<IListing> = mongoose.models.Listing || mongoose.model<IListing>('Listing', ListingSchema);

@@ -64,7 +64,9 @@ export const authConfig = {
       if (trigger === "update" && session) {
         if (session.isOnboarded !== undefined) token.isOnboarded = session.isOnboarded;
         if (session.isEmailVerified !== undefined) token.isEmailVerified = session.isEmailVerified;
-        if (session.role) token.role = session.role;
+        // NOTE: role is intentionally NOT updatable via client session.update() — it is set once
+        // from the database during authorize() and is immutable for the lifetime of the JWT.
+        // Allowing session.role here would be a privilege escalation vulnerability.
         if (session.adminRentPaidUntil !== undefined) token.adminRentPaidUntil = session.adminRentPaidUntil;
         if (session.hasPaidVerificationDeposit !== undefined) token.hasPaidVerificationDeposit = session.hasPaidVerificationDeposit;
         if (session.walletBalance !== undefined) token.walletBalance = session.walletBalance;

@@ -242,10 +242,22 @@ export async function loginWithFirebaseIdToken(idToken: string) {
     }
 
     // Sign in via NextAuth credentials provider bypass
+    // We mint a short-lived HMAC token so the authorize() callback can verify
+    // this call came from this server-side action, not an external attacker.
     try {
+      const { createHmac } = await import("crypto");
+      const bridgeSecret = process.env.FIREBASE_AUTH_BRIDGE_SECRET;
+      if (!bridgeSecret) {
+        throw new Error("FIREBASE_AUTH_BRIDGE_SECRET is not configured.");
+      }
+      const firebaseBridgeToken = createHmac("sha256", bridgeSecret)
+        .update(user._id.toString())
+        .digest("hex");
+
       await signIn("credentials", {
         firebaseUid: user._id.toString(),
         isFirebase: "true",
+        firebaseBridgeToken,
         redirectTo: user.isOnboarded ? "/" : "/profile/complete",
       });
     } catch (error: any) {
