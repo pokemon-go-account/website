@@ -10,7 +10,7 @@ interface CustomRequestData {
   userId: string;
   username: string;
   email: string;
-  requestType: "POKEMON" | "ACCOUNT" | "STARDUST" | "XP";
+  requestType: "POKEMON" | "ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE";
   title: string;
   description: string;
   socialPlatform: string;
@@ -19,7 +19,7 @@ interface CustomRequestData {
   createdAt: string;
 }
 
-type TypeFilter = "ALL" | "POKEMON" | "ACCOUNT" | "STARDUST" | "XP";
+type TypeFilter = "ALL" | "POKEMON" | "ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE";
 
 export default function CustomRequestsPage() {
   const [requests, setRequests] = useState<CustomRequestData[]>([]);
@@ -91,7 +91,7 @@ export default function CustomRequestsPage() {
       {/* Filter Tabs */}
       <div className="flex items-center gap-1.5 border-b border-zinc-200 dark:border-white/[0.06] pb-2">
         <Filter className="h-3.5 w-3.5 text-zinc-400 mr-1" />
-        {(["ALL", "POKEMON", "ACCOUNT", "STARDUST", "XP"] as TypeFilter[]).map((filter) => {
+        {(["ALL", "POKEMON", "ACCOUNT", "STARDUST", "XP", "RAIDSERVICE"] as TypeFilter[]).map((filter) => {
           const count = filter === "ALL" 
             ? requests.length 
             : requests.filter((r) => r.requestType === filter).length;
@@ -169,7 +169,9 @@ export default function CustomRequestsPage() {
                         ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
                         : req.requestType === "STARDUST"
                         ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                        : "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"
+                        : req.requestType === "XP"
+                        ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"
+                        : "bg-teal-500/10 text-teal-650 dark:text-teal-400 border border-teal-500/20"
                     )}>
                       {req.requestType}
                     </span>

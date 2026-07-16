@@ -148,7 +148,7 @@ export async function createPokemonRequestAction(data: {
  * Record a new custom service request (Account, Stardust, XP)
  */
 export async function createCustomRequestAction(data: {
-  requestType: "ACCOUNT" | "STARDUST" | "XP";
+  requestType: "ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE";
   title: string;
   description: string;
   socialPlatform: string;

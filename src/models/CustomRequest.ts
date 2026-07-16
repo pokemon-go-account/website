@@ -4,7 +4,7 @@ export interface ICustomRequest extends Document {
   userId: mongoose.Types.ObjectId;
   username: string;
   email: string;
-  requestType: "POKEMON" | "ACCOUNT" | "STARDUST" | "XP";
+  requestType: "POKEMON" | "ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE";
   title: string;
   description: string;
   socialPlatform: string;
@@ -19,7 +19,7 @@ const CustomRequestSchema: Schema<ICustomRequest> = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     username: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true },
-    requestType: { type: String, enum: ["POKEMON", "ACCOUNT", "STARDUST", "XP"], required: true },
+    requestType: { type: String, enum: ["POKEMON", "ACCOUNT", "STARDUST", "XP", "RAIDSERVICE"], required: true },
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     socialPlatform: { type: String, required: true, trim: true },

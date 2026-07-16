@@ -10,6 +10,7 @@ import {
 } from "@/features/console/actions";
 import { CreditCard, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PriceDisplay } from "@/components/price-display";
 
 interface RegistrationData {
   _id: string;
@@ -344,7 +345,7 @@ export default function RegistrationsConsolePage() {
                           {reg.razorpayOrderId}
                         </div>
                         <div className="text-[10px] text-zinc-500 font-bold mt-0.5">
-                          $2.50 USD
+                          <PriceDisplay amountInUSD={2.5} />
                         </div>
                       </td>
 

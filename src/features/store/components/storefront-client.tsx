@@ -130,7 +130,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
 
   // Custom request states (Account, Stardust, XP)
   const [isCustomRequestModalOpen, setIsCustomRequestModalOpen] = useState(false);
-  const [customRequestType, setCustomRequestType] = useState<"ACCOUNT" | "STARDUST" | "XP">("ACCOUNT");
+  const [customRequestType, setCustomRequestType] = useState<"ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE">("ACCOUNT");
   const [customRequesting, setCustomRequesting] = useState(false);
   const [customRequestError, setCustomRequestError] = useState<string | null>(null);
   const [customRequestSuccess, setCustomRequestSuccess] = useState(false);
@@ -449,6 +449,26 @@ Please guide me on how to complete the payment!`;
                   className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
                 >
                   ★ Request Custom XP
+                </button>
+              )}
+
+              {(selectedCategoryObj?.slug === "raidservice" || 
+                selectedCategoryObj?.slug === "raid-services" || 
+                selectedCategoryObj?.slug === "raids" || 
+                selectedCategoryObj?.slug === "raid" || 
+                selectedCategoryObj?.slug === "raidservices") && (
+                <button
+                  onClick={() => {
+                    if (!session?.user) {
+                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                    } else {
+                      setCustomRequestType("RAIDSERVICE");
+                      setIsCustomRequestModalOpen(true);
+                    }
+                  }}
+                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
+                >
+                  ★ Request Custom Raid Service
                 </button>
               )}
             </div>
@@ -1511,7 +1531,7 @@ This order has been completed automatically using your wallet balance. Admin wil
                     <MessageSquare className="h-4 w-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 mb-0.5">Need more details or want to negotiate?</h4>
+                    <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 mb-0.5">Need more details about product or price?</h4>
                     <p className="text-[10px] text-indigo-700 dark:text-indigo-400/80 leading-relaxed">
                       If you have questions about this item, or want to make a custom offer, please {" "}
                       <Link href="/chat" className="font-bold underline underline-offset-2 hover:text-indigo-500 transition-colors">
@@ -1792,11 +1812,13 @@ This order has been completed automatically using your wallet balance. Admin wil
               <h3 className="font-semibold text-sm tracking-tight">
                 {customRequestType === "ACCOUNT" ? "Request a Custom Account" :
                  customRequestType === "STARDUST" ? "Request Custom Stardust" :
+                 customRequestType === "RAIDSERVICE" ? "Request Custom Raid Service" :
                  "Request Custom XP / Leveling"}
               </h3>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
                 {customRequestType === "ACCOUNT" ? "Can't find the account you need? Tell us your target level, shiny count, and rare assets, and we will source it for you." :
                  customRequestType === "STARDUST" ? "Need a specific amount of Stardust? Let us know your targets and we will calculate a secure sourcing timeline." :
+                 customRequestType === "RAIDSERVICE" ? "Looking for custom raid lobbies, coordinates, or boss clears? Let us know which raids you want us to run." :
                  "Looking for custom leveling or XP boosts? Provide your details and we will coordinate the training process."}
               </p>
             </div>

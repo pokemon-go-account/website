@@ -27,7 +27,7 @@ const navLinks = [
   { href: "/auctions", label: "Auctions" },
   { href: "/store", label: "Store" },
   { href: "/recovery", label: "Account Recovery" },
-  { href: "/feedback", label: "Feedback" },
+  { href: "/feedback", label: "Feedbacks" },
   { href: "/#faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];

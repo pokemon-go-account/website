@@ -947,7 +947,7 @@ Please guide me on how to complete the payment!`;
         ) : !isRegistered ? (
           <div className="space-y-3">
             <div className="rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light">
-              A refundable verification deposit of $2.50 is required to participate in bidding.
+              A refundable verification deposit of <PriceDisplay amountInUSD={2.50} /> is required to participate in bidding.
             </div>
             <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
             <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center leading-relaxed">
@@ -1773,7 +1773,7 @@ Please guide me on how to complete the payment!`;
                 ) : !isRegistered ? (
                   <div className="space-y-3">
                     <div className="rounded-xl bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-800 p-3.5 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-light text-center">
-                      A refundable verification deposit of $2.50 is required to participate in bidding.
+                      A refundable verification deposit of <PriceDisplay amountInUSD={2.50} /> is required to participate in bidding.
                     </div>
                     <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
                   </div>

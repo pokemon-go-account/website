@@ -12,6 +12,7 @@ import { PayPalPaymentCheckout } from "./paypal-checkout";
 import { CryptoPaymentCheckout } from "./crypto-checkout";
 import { WisePaymentCheckout } from "./wise-checkout";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
+import { PriceDisplay } from "@/components/price-display";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { AnimatedCardIcon, AnimatedCryptoIcon, PaypalIcon, WiseIcon } from "@/components/ui/animated-payment-icons";
@@ -58,11 +59,14 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
         const chatRef = doc(db, "supportChats", chatId);
 
         const methodLabel = method === "Card" ? "Card, Cash App, Apple Pay" : "Others";
-        
+        const { currency: currentCurrency, convert: convertCurrency } = useCurrencyStore.getState();
+        const { formatted: convertedFormatted } = convertCurrency(2.50);
+        const displayPrice = `${convertedFormatted} ${currentCurrency}`;
+
         const messageText = `📦 NEW ORDER: Bidding Registration Deposit
 ----------------------------------
 Order ID: ${orderId}
-Amount: $2.50 USD
+Amount: ${displayPrice}
 Payment Method: ${methodLabel}
 
 👤 USER DETAILS:
@@ -273,7 +277,7 @@ Please guide me on how to complete the payment!`;
                     Pay a one-time verification deposit to bid across all live auctions. This money is completely refundable and will be deducted from the total amount of any future purchase you make from our store, whether for services or products.
                   </p>
                   <div className="text-2xl font-black text-[#6133e1] pt-1">
-                    $2.50
+                    <PriceDisplay amountInUSD={2.50} />
                   </div>
                 </div>
 
