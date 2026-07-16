@@ -55,6 +55,7 @@ interface LiveAuction {
     legendaryPokemons?: number;
     team: string;
     startingBid: number;
+    screenshots?: string[];
   };
 }
 
@@ -141,7 +142,15 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
               >
                 {/* Visual */}
                 <div className="relative h-32 bg-zinc-50 dark:bg-black/10 border-b border-zinc-205 dark:border-white/[0.06] flex items-center justify-center overflow-hidden">
-                  <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>
+                  {auction.listing.screenshots && auction.listing.screenshots.length > 0 ? (
+                    <img 
+                      src={auction.listing.screenshots[0]} 
+                      alt={auction.listing.title} 
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>
+                  )}
                   <span className="absolute top-2.5 left-2.5 text-[9px] font-semibold px-2 py-0.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-650 dark:text-red-400 flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                     LIVE

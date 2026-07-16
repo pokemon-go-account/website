@@ -43,6 +43,7 @@ interface LiveAuction {
     legendaryCount: number;
     team: string;
     startingBid: number;
+    screenshots?: string[];
   };
 }
 
@@ -58,7 +59,7 @@ async function getLiveAuctions(): Promise<LiveAuction[]> {
     })
       .sort({ endTime: 1 })
       .limit(4)
-      .populate("listingId", "title level shinyCount legendaryCount shinyPokemons legendaryPokemons team startingBid")
+      .populate("listingId", "title level shinyCount legendaryCount shinyPokemons legendaryPokemons team startingBid screenshots")
       .lean();
     return auctions
       .filter((a: any) => a.listingId)
@@ -75,9 +76,11 @@ async function getLiveAuctions(): Promise<LiveAuction[]> {
           legendaryPokemons: a.listingId.legendaryPokemons,
           team: a.listingId.team,
           startingBid: a.listingId.startingBid,
+          screenshots: a.listingId.screenshots || [],
         },
       }));
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch live featured auctions:", error);
     return [];
   }
 }

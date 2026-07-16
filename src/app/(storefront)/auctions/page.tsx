@@ -117,9 +117,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
     const isLive = auc.status === "LIVE" && !hasEnded;
     const isScheduled = auc.status === "SCHEDULED" && !hasEnded;
     return !(isLive || isScheduled);
-  });
-
-  function renderAuctionCard(auc: any) {
+  });  function renderAuctionCard(auc: any) {
     const hasEnded = new Date() >= new Date(auc.endTime);
     const isLive = auc.status === "LIVE" && !hasEnded;
     const isScheduled = auc.status === "SCHEDULED" && !hasEnded;
@@ -139,105 +137,121 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
       visibleMetrics.length === 2 ? "grid-cols-2" :
       "grid-cols-1";
 
+    const screenshots = auc.listingId.screenshots || [];
+    const hasImage = screenshots.length > 0;
+
     return (
       <div
         key={auc._id.toString()}
         className={cn(
-          "relative flex flex-col justify-between rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 transition-all duration-200 hover:border-zinc-300 dark:hover:border-white/[0.1] space-y-5 shadow-xs",
+          "group relative flex flex-col justify-between rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] transition-all duration-200 hover:border-zinc-300 dark:hover:border-white/[0.1] shadow-xs overflow-hidden",
           isConcluded && "opacity-75 dark:opacity-50 hover:opacity-100"
         )}
       >
-        {/* Upper row: Badge, Level and Title */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            {/* Status Badge */}
+        {/* Upper row: Screenshot image header */}
+        <div className="relative h-36 bg-zinc-50 dark:bg-black/10 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-center overflow-hidden">
+          {hasImage ? (
+            <img 
+              src={screenshots[0]} 
+              alt={auc.listingId.title} 
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>
+          )}
+          
+          <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
             {isLive && (
-              <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-500/20">
-                <Flame className="h-3 w-3 animate-pulse" />
+              <span className="inline-flex items-center gap-1 bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-red-500/20 backdrop-blur-md">
+                <Flame className="h-2.5 w-2.5 animate-pulse" />
                 Live Now
               </span>
             )}
             {isScheduled && (
-              <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-yellow-500/20">
-                <CalendarDays className="h-3 w-3" />
+              <span className="inline-flex items-center gap-1 bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-yellow-500/20 backdrop-blur-md">
+                <CalendarDays className="h-2.5 w-2.5" />
                 Scheduled
               </span>
             )}
             {isConcluded && (
-              <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-550 dark:text-zinc-450 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-zinc-250 dark:border-zinc-700">
-                <Archive className="h-3 w-3" />
+              <span className="inline-flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-550 dark:text-zinc-450 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-zinc-250 dark:border-zinc-700 backdrop-blur-md">
+                <Archive className="h-2.5 w-2.5" />
                 Concluded
               </span>
             )}
-
-            {/* Level and Team */}
-            <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-semibold border", teamColors[auc.listingId.team as keyof typeof teamColors])}>
-              Lvl {auc.listingId.level} • {auc.listingId.team}
-            </span>
           </div>
 
-          {/* Title & region */}
-          <div>
-            <h3 className="font-semibold text-sm text-zinc-900 dark:text-white tracking-tight line-clamp-1">
-              {auc.listingId.title}
-            </h3>
-            <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-1">Region: {auc.listingId.region}</p>
-          </div>
+          <span className={cn("absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[9px] font-semibold border backdrop-blur-md", teamColors[auc.listingId.team as keyof typeof teamColors])}>
+            Lvl {auc.listingId.level} • {auc.listingId.team}
+          </span>
         </div>
 
-        {/* Middle row: Asset metrics */}
-        {visibleMetrics.length > 0 && (
-          <div className={cn("grid gap-2 py-2.5 border-y border-zinc-200 dark:border-white/[0.06] text-center bg-zinc-50/50 dark:bg-black/10 rounded-md", gridColsClass)}>
-            {visibleMetrics.map((m) => (
-              <div key={m.label} className="space-y-0.5">
-                <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">{m.label}</div>
-                <div className={cn("text-xs font-semibold", m.colorClass)}>{m.value}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Lower row: Telemetry and bidding actions */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs">
-            <div className="space-y-0.5">
-              <span className="text-[10px] text-zinc-450 dark:text-zinc-500">Highest Bid</span>
-              <div className="font-semibold text-zinc-900 dark:text-white text-sm">
-                <PriceDisplay amountInUSD={auc.currentHighestBid} />
-              </div>
-            </div>
-            
-            <div className="text-right space-y-0.5">
-              <span className="text-[10px] text-zinc-450 dark:text-zinc-500">End Time</span>
-              <div className="font-semibold text-zinc-800 dark:text-zinc-200 text-[10px] flex items-center gap-1 justify-end">
-                <Clock className="h-3 w-3 text-zinc-450" />
-                {new Date(auc.endTime).toLocaleDateString([], { month: "short", day: "numeric" })}
-              </div>
+        {/* Content Details */}
+        <div className="p-5 flex flex-col justify-between flex-grow space-y-4">
+          <div className="space-y-3">
+            {/* Title & region */}
+            <div>
+              <h3 className="font-semibold text-sm text-zinc-900 dark:text-white tracking-tight line-clamp-1">
+                {auc.listingId.title}
+              </h3>
+              <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-1">Region: {auc.listingId.region}</p>
             </div>
           </div>
 
-          {/* Join Link Button */}
-          <Link
-            href={`/auctions/${auc._id.toString()}`}
-            className={cn(
-              "w-full h-8 inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
-              isConcluded
-                ? "border border-zinc-300 hover:border-zinc-400 dark:border-white/[0.1] dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-zinc-900 dark:text-white shadow-xs"
-                : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 border border-transparent"
-            )}
-          >
-            {isLive ? (
-              <>
-                <Play className="h-3 w-3" />
-                Join Live Room
-              </>
-            ) : (
-              <>
-                <Trophy className="h-3 w-3" />
-                View Bidding Block
-              </>
-            )}
-          </Link>
+          {/* Middle row: Asset metrics */}
+          {visibleMetrics.length > 0 && (
+            <div className={cn("grid gap-2 py-2.5 border-y border-zinc-200 dark:border-white/[0.06] text-center bg-zinc-50/50 dark:bg-black/10 rounded-md", gridColsClass)}>
+              {visibleMetrics.map((m) => (
+                <div key={m.label} className="space-y-0.5">
+                  <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">{m.label}</div>
+                  <div className={cn("text-xs font-semibold", m.colorClass)}>{m.value}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Lower row: Telemetry and bidding actions */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs">
+              <div className="space-y-0.5">
+                <span className="text-[10px] text-zinc-450 dark:text-zinc-500">Highest Bid</span>
+                <div className="font-semibold text-zinc-900 dark:text-white text-sm">
+                  <PriceDisplay amountInUSD={auc.currentHighestBid} />
+                </div>
+              </div>
+              
+              <div className="text-right space-y-0.5">
+                <span className="text-[10px] text-zinc-450 dark:text-zinc-500">End Time</span>
+                <div className="font-semibold text-zinc-800 dark:text-zinc-200 text-[10px] flex items-center gap-1 justify-end">
+                  <Clock className="h-3 w-3 text-zinc-450" />
+                  {new Date(auc.endTime).toLocaleDateString([], { month: "short", day: "numeric" })}
+                </div>
+              </div>
+            </div>
+
+            {/* Join Link Button */}
+            <Link
+              href={`/auctions/${auc._id.toString()}`}
+              className={cn(
+                "w-full h-8 inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
+                isConcluded
+                  ? "border border-zinc-300 hover:border-zinc-400 dark:border-white/[0.1] dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-zinc-900 dark:text-white shadow-xs"
+                  : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 border border-transparent"
+              )}
+            >
+              {isLive ? (
+                <>
+                  <Play className="h-3 w-3" />
+                  Join Live Room
+                </>
+              ) : (
+                <>
+                  <Trophy className="h-3 w-3" />
+                  View Bidding Block
+                </>
+              )}
+            </Link>
+          </div>
         </div>
       </div>
     );

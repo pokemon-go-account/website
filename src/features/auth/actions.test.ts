@@ -168,6 +168,7 @@ describe('Auth Actions', () => {
       formData.set('name', 'John Doe');
       formData.set('preferredContactMethod', 'reddit');
       formData.set('preferredContactId', 'johndoe');
+      formData.set('country', 'United States');
       
       const res = await actions.completeUserProfile(null, formData);
       expect(res.success).toBe(true);
@@ -176,6 +177,7 @@ describe('Auth Actions', () => {
       const updated = await User.findById(user._id);
       expect(updated?.name).toBe('John Doe');
       expect(updated?.preferredContactId).toBe('u/johndoe');
+      expect(updated?.country).toBe('United States');
       expect(updated?.isOnboarded).toBe(true);
     });
   });
