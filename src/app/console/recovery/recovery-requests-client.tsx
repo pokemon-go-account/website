@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateRecoveryRequestStatus } from "@/features/recovery/actions";
+import { updateRecoveryRequestStatus, deleteRecoveryRequest } from "@/features/recovery/actions";
 import {
   CheckCircle2, Clock, Loader2, XCircle, ChevronDown,
-  ExternalLink, Calendar, Layers, ShieldCheck, Phone, MessageSquare
+  ExternalLink, Calendar, Layers, ShieldCheck, Phone, MessageSquare,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,8 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
   const [requests, setRequests] = useState<Request[]>(initialRequests);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [filter, setFilter] = useState<Status | "ALL">("ALL");
 
@@ -63,6 +66,23 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
         );
       }
       setUpdating(null);
+    });
+  };
+
+  const handleDelete = (requestId: string) => {
+    setDeleting(requestId);
+    startTransition(async () => {
+      const res = await deleteRecoveryRequest(requestId);
+      if (res.success) {
+        setRequests((prev) => prev.filter((r) => r._id !== requestId));
+        if (expanded === requestId) {
+          setExpanded(null);
+        }
+      } else {
+        alert(res.error || "Failed to delete recovery request");
+      }
+      setDeleting(null);
+      setConfirmDeleteId(null);
     });
   };
 
@@ -256,35 +276,74 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                           </div>
                         </div>
 
-                        {/* Status updater */}
-                        <div className="pt-3 border-t border-zinc-200 dark:border-white/[0.04] flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mr-1">Update Status:</span>
-                          {(["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"] as Status[]).map((s) => {
-                            const c = STATUS_CONFIG[s];
-                            const SIcon = c.icon;
-                            const isActive = req.status === s;
-                            const isLoading = updating === req._id && !isActive;
-                            return (
+                        {/* Status updater & delete */}
+                        <div className="pt-3 border-t border-zinc-200 dark:border-white/[0.04] flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mr-1">Update Status:</span>
+                            {(["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"] as Status[]).map((s) => {
+                              const c = STATUS_CONFIG[s];
+                              const SIcon = c.icon;
+                              const isActive = req.status === s;
+                              const isLoading = updating === req._id && !isActive;
+                              return (
+                                <button
+                                  key={s}
+                                  disabled={isActive || updating === req._id || deleting === req._id}
+                                  onClick={() => handleStatusChange(req._id, s)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed",
+                                    isActive
+                                      ? cn(c.bg, c.color, "opacity-100")
+                                      : "border-zinc-200 dark:border-white/[0.05] text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/10 opacity-80"
+                                  )}
+                                >
+                                  {isLoading && updating === req._id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <SIcon className="h-3 w-3" />
+                                  )}
+                                  {c.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Delete Request Action */}
+                          <div className="flex items-center gap-2">
+                            {confirmDeleteId === req._id ? (
+                              <>
+                                <span className="text-[10px] text-red-500 dark:text-red-400 font-medium">Are you sure?</span>
+                                <button
+                                  disabled={deleting === req._id}
+                                  onClick={() => handleDelete(req._id)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-650 hover:bg-red-600 text-white text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {deleting === req._id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-3 w-3" />
+                                  )}
+                                  Yes, Delete
+                                </button>
+                                <button
+                                  disabled={deleting === req._id}
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  className="inline-flex items-center px-2.5 py-1 rounded border border-zinc-200 dark:border-white/[0.06] text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/[0.02] text-xs font-semibold transition-all cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
                               <button
-                                key={s}
-                                disabled={isActive || updating === req._id}
-                                onClick={() => handleStatusChange(req._id, s)}
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed",
-                                  isActive
-                                    ? cn(c.bg, c.color, "opacity-100")
-                                    : "border-zinc-200 dark:border-white/[0.05] text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/10 opacity-80"
-                                )}
+                                disabled={updating === req._id || deleting === req._id}
+                                onClick={() => setConfirmDeleteId(req._id)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-red-500/10 text-red-500 hover:bg-red-500/5 dark:hover:bg-red-500/10 hover:border-red-500/20 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                {isLoading && updating === req._id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <SIcon className="h-3 w-3" />
-                                )}
-                                {c.label}
+                                <Trash2 className="h-3 w-3" />
+                                Delete Request
                               </button>
-                            );
-                          })}
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>

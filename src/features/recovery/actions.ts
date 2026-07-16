@@ -149,3 +149,45 @@ export async function updateRecoveryRequestStatus(requestId: string, status: "PE
     return { success: false, error: error.message || "Failed to update recovery request status." };
   }
 }
+
+export async function deleteRecoveryRequest(requestId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+      return { success: false, error: "Unauthorized. Super Admin access required." };
+    }
+
+    await connectDB();
+
+    const request = await RecoveryRequest.findById(requestId).lean() as any;
+    if (!request) {
+      return { success: false, error: "Recovery request not found." };
+    }
+
+    // Collect screenshot URLs to clean up from Cloudinary
+    const screenshotUrls: string[] = [];
+    if (request.screenshotUrl) screenshotUrls.push(request.screenshotUrl);
+    if (Array.isArray(request.screenshotUrls)) {
+      screenshotUrls.push(...request.screenshotUrls);
+    }
+
+    await RecoveryRequest.findByIdAndDelete(requestId);
+
+    // Delete Cloudinary assets after DB cleanup (non-blocking)
+    if (screenshotUrls.length > 0) {
+      try {
+        const { deleteFromCloudinary } = await import("@/lib/cloudinary");
+        await deleteFromCloudinary(screenshotUrls);
+      } catch (cloudinaryErr) {
+        console.error("Failed to delete screenshots from Cloudinary:", cloudinaryErr);
+      }
+    }
+
+    revalidatePath("/console/recovery");
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Failed to delete recovery request:", error);
+    return { success: false, error: error.message || "Failed to delete recovery request." };
+  }
+}
+
