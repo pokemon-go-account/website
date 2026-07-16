@@ -53,6 +53,7 @@ interface ChatMeta {
   closed?: boolean;
   assignedAdminId?: string;
   assignedAdminName?: string;
+  paymentMethod?: string;
 }
 
 interface Message {
@@ -75,6 +76,19 @@ function formatTime(ts: any) {
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
   return date.toLocaleDateString();
+}
+
+function getPaymentMethod(conv: ChatMeta) {
+  if (conv.paymentMethod) return conv.paymentMethod;
+  const lastMsg = (conv.lastMessage || "").toLowerCase();
+  const title = (conv.title || "").toLowerCase();
+  if (lastMsg.includes("wise") || title.includes("wise")) return "Wise";
+  if (lastMsg.includes("upi") || lastMsg.includes("utr") || title.includes("upi")) return "UPI";
+  if (lastMsg.includes("paypal") || title.includes("paypal")) return "PayPal";
+  if (lastMsg.includes("crypto") || lastMsg.includes("usdt") || lastMsg.includes("btc") || lastMsg.includes("eth") || lastMsg.includes("txid") || title.includes("crypto")) return "Crypto";
+  if (lastMsg.includes("card") || lastMsg.includes("cash app") || lastMsg.includes("apple pay") || title.includes("card")) return "Card";
+  if (lastMsg.includes("others") || lastMsg.includes("payoneer") || lastMsg.includes("alipay")) return "Others";
+  return null;
 }
 
 function formatMessageTime(ts: any) {
@@ -132,6 +146,7 @@ export function AdminChatPanel() {
   const { data: session } = useSession();
   const adminUsername = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "Admin";
   const adminId = (session?.user as any)?.id || "";
+  const isSuperAdmin = (session?.user as any)?.role === "SUPER_ADMIN";
 
   const handleAssign = async () => {
     if (!activeChatId) return;
@@ -713,10 +728,27 @@ export function AdminChatPanel() {
                 )}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 truncate">
                       {conv.title || "Chat Thread"}
                     </span>
+                    {isSuperAdmin && activeCategoryTab === "orders" && (() => {
+                      const method = getPaymentMethod(conv);
+                      if (!method) return null;
+                      const colors: Record<string, string> = {
+                        UPI: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/10",
+                        Wise: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10",
+                        PayPal: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/10",
+                        Crypto: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10",
+                        Card: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/10",
+                        Others: "bg-zinc-500/10 text-zinc-650 dark:text-zinc-400 border-zinc-500/10",
+                      };
+                      return (
+                        <span className={cn("text-[8px] font-black uppercase px-1 rounded border leading-none shrink-0", colors[method] || colors.Others)}>
+                          {method}
+                        </span>
+                      );
+                    })()}
                     {conv.unreadByAdmin > 0 && (
                       <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
                     )}
@@ -779,6 +811,23 @@ export function AdminChatPanel() {
                   ) : (
                     <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1 rounded text-[8px] font-black uppercase border border-amber-500/10">Support</span>
                   )}
+                  {activeChat?.type === "order" && isSuperAdmin && (() => {
+                    const method = getPaymentMethod(activeChat);
+                    if (!method) return null;
+                    const colors: Record<string, string> = {
+                      UPI: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/10",
+                      Wise: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10",
+                      PayPal: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/10",
+                      Crypto: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10",
+                      Card: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/10",
+                      Others: "bg-zinc-500/10 text-zinc-650 dark:text-zinc-400 border-zinc-500/10",
+                    };
+                    return (
+                      <span className={cn("px-1 rounded text-[8px] font-black uppercase border", colors[method] || colors.Others)}>
+                        {method}
+                      </span>
+                    );
+                  })()}
                 </div>
                 <p className="text-[8px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mt-0.5 leading-none">
                   {selectedUser?.username} · {selectedUser?.email}

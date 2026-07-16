@@ -86,6 +86,7 @@ Please guide me on how to complete the payment!`;
         unreadByAdmin: 1,
         unreadByUser: 0,
         createdAt: serverTimestamp(),
+        paymentMethod: method,
       }, { merge: true });
 
       const msgsRef = collection(db, "supportChats", chatId, "messages");

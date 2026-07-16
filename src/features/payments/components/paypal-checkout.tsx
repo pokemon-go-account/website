@@ -174,6 +174,7 @@ Please verify my payment proof and approve my order!`;
           unreadByAdmin: 1,
           unreadByUser: 0,
           createdAt: serverTimestamp(),
+          paymentMethod: "PayPal",
         });
 
         const msgsRef = collection(db, "supportChats", chatId, "messages");
