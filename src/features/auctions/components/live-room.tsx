@@ -183,6 +183,7 @@ export function LiveRoom({
   const [wiseCheckoutData, setWiseCheckoutData] = useState<{ orderId: string; amount: number; currency: Currency; email: string } | null>(null);
   const [paymentStage, setPaymentStage] = useState<"methods" | "platforms" | "upi" | "paypal" | "crypto" | "wise">("methods");
   const [selectedMethod, setSelectedMethod] = useState<"UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others" | null>(null);
+  const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
 
   // Admin Controls states
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
@@ -2827,6 +2828,7 @@ Please guide me on how to complete the payment!`;
                       {/* 1. UPI */}
                       <button
                         onClick={async () => {
+                          setLoadingMethod("UPI");
                           try {
                             const res = await createBuyNowOrderAction(auction._id);
                             if (res.success && res.orderId) {
@@ -2847,17 +2849,31 @@ Please guide me on how to complete the payment!`;
                           } catch (err) {
                             console.error("UPI checkout error:", err);
                             alert("Failed to initiate UPI transaction. Please try again.");
+                          } finally {
+                            setLoadingMethod(null);
                           }
                         }}
-                        className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-[#6133e1] dark:hover:border-[#6133e1]/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
+                        disabled={loadingMethod !== null}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition text-left w-full group shadow-xs",
+                          loadingMethod !== null
+                            ? "opacity-55 cursor-not-allowed"
+                            : "hover:border-[#6133e1] dark:hover:border-[#6133e1]/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
+                        )}
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-[#6133e1]/10 text-[#6133e1] dark:bg-[#6133e1]/20">
-                            <ScanQrCode className="h-5 w-5" />
+                            {loadingMethod === "UPI" ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <ScanQrCode className="h-5 w-5" />
+                            )}
                           </div>
                           <div>
                             <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">UPI Transfer</span>
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Zero fee instant payments</span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                              {loadingMethod === "UPI" ? "Generating UPI Gate..." : "Zero fee instant payments"}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2867,16 +2883,35 @@ Please guide me on how to complete the payment!`;
 
                       {/* 2. Credit Card */}
                       <button
-                        onClick={() => handleManualOrderChat("Card")}
-                        className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-blue-500 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
+                        onClick={async () => {
+                          setLoadingMethod("Card");
+                          try {
+                            await handleManualOrderChat("Card");
+                          } finally {
+                            setLoadingMethod(null);
+                          }
+                        }}
+                        disabled={loadingMethod !== null}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition text-left w-full group shadow-xs",
+                          loadingMethod !== null
+                            ? "opacity-55 cursor-not-allowed"
+                            : "hover:border-blue-500 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
+                        )}
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
-                            <AnimatedCardIcon className="h-5 w-5" />
+                            {loadingMethod === "Card" ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <AnimatedCardIcon className="h-5 w-5" />
+                            )}
                           </div>
                           <div>
                             <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Card, Cash App, Apple Pay</span>
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Global card processing</span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                              {loadingMethod === "Card" ? "Opening support chat..." : "Global card processing"}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2887,6 +2922,7 @@ Please guide me on how to complete the payment!`;
                       {/* 3. Crypto */}
                       <button
                         onClick={async () => {
+                          setLoadingMethod("Crypto");
                           try {
                             const res = await createBuyNowOrderAction(auction._id);
                             if (res.success && res.orderId) {
@@ -2905,17 +2941,31 @@ Please guide me on how to complete the payment!`;
                           } catch (err) {
                             console.error("Crypto checkout error:", err);
                             alert("Failed to initiate Crypto transaction. Please try again.");
+                          } finally {
+                            setLoadingMethod(null);
                           }
                         }}
-                        className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-amber-500 dark:hover:border-amber-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
+                        disabled={loadingMethod !== null}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition text-left w-full group shadow-xs",
+                          loadingMethod !== null
+                            ? "opacity-55 cursor-not-allowed"
+                            : "hover:border-amber-500 dark:hover:border-amber-500/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
+                        )}
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
-                            <AnimatedCryptoIcon className="h-5 w-5" />
+                            {loadingMethod === "Crypto" ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <AnimatedCryptoIcon className="h-5 w-5" />
+                            )}
                           </div>
                           <div>
                             <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Crypto</span>
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Secure USDT, BTC, ETH</span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                              {loadingMethod === "Crypto" ? "Generating Crypto Gate..." : "Secure USDT, BTC, ETH"}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2926,6 +2976,7 @@ Please guide me on how to complete the payment!`;
                       {/* 4. PayPal */}
                       <button
                         onClick={async () => {
+                          setLoadingMethod("PayPal");
                           try {
                             const res = await createBuyNowOrderAction(auction._id);
                             if (res.success && res.orderId) {
@@ -2946,17 +2997,31 @@ Please guide me on how to complete the payment!`;
                           } catch (err) {
                             console.error("PayPal checkout error:", err);
                             alert("Failed to initiate PayPal transaction. Please try again.");
+                          } finally {
+                            setLoadingMethod(null);
                           }
                         }}
-                        className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-sky-500 dark:hover:border-sky-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
+                        disabled={loadingMethod !== null}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition text-left w-full group shadow-xs",
+                          loadingMethod !== null
+                        ? "opacity-55 cursor-not-allowed"
+                        : "hover:border-sky-500 dark:hover:border-sky-500/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
+                        )}
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
-                            <PaypalIcon className="h-5 w-5" />
+                            {loadingMethod === "PayPal" ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <PaypalIcon className="h-5 w-5" />
+                            )}
                           </div>
                           <div>
                             <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">PayPal</span>
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Global instant verification</span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                              {loadingMethod === "PayPal" ? "Generating PayPal Gate..." : "Global instant verification"}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2973,6 +3038,7 @@ Please guide me on how to complete the payment!`;
                           <button
                             onClick={async () => {
                               if (isWiseDisabled) return;
+                              setLoadingMethod("Wise");
                               try {
                                 const res = await createBuyNowOrderAction(auction._id);
                                 if (res.success && res.orderId) {
@@ -2994,24 +3060,30 @@ Please guide me on how to complete the payment!`;
                               } catch (err) {
                                 console.error("Wise checkout error:", err);
                                 alert("Failed to initiate Wise transaction. Please try again.");
+                              } finally {
+                                setLoadingMethod(null);
                               }
                             }}
-                            disabled={isWiseDisabled}
+                            disabled={isWiseDisabled || loadingMethod !== null}
                             className={cn(
                               "flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition text-left w-full group shadow-xs",
-                              isWiseDisabled
+                              (isWiseDisabled || loadingMethod !== null)
                                 ? "opacity-55 cursor-not-allowed"
                                 : "hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
                             )}
                           >
                             <div className="flex items-center gap-3">
                               <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
-                                <WiseIcon className="h-5 w-5" />
+                                {loadingMethod === "Wise" ? (
+                                  <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                  <WiseIcon className="h-5 w-5" />
+                                )}
                               </div>
                               <div>
                                 <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Wise</span>
                                 <span className={cn("text-[10px] font-medium block", isWiseDisabled ? "text-red-500" : "text-zinc-500 dark:text-zinc-400")}>
-                                  {isWiseDisabled ? "Min $5.00 required" : "Direct international transfer"}
+                                  {loadingMethod === "Wise" ? "Generating Wise Gate..." : isWiseDisabled ? "Min $5.00 required" : "Direct international transfer"}
                                 </span>
                               </div>
                             </div>
@@ -3031,16 +3103,35 @@ Please guide me on how to complete the payment!`;
 
                       {/* 6. Others */}
                       <button
-                        onClick={() => handleManualOrderChat("Others")}
-                        className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-400 dark:hover:border-zinc-400/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
+                        onClick={async () => {
+                          setLoadingMethod("Others");
+                          try {
+                            await handleManualOrderChat("Others");
+                          } finally {
+                            setLoadingMethod(null);
+                          }
+                        }}
+                        disabled={loadingMethod !== null}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition text-left w-full group shadow-xs",
+                          loadingMethod !== null
+                            ? "opacity-55 cursor-not-allowed"
+                            : "hover:border-zinc-400 dark:hover:border-zinc-400/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
+                        )}
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-zinc-500/10 text-zinc-500 dark:bg-zinc-500/20">
-                            <CircleDot className="h-5 w-5" />
+                            {loadingMethod === "Others" ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <CircleDot className="h-5 w-5" />
+                            )}
                           </div>
                           <div>
                             <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Others</span>
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Payoneer, Alipay, Custom chat</span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                              {loadingMethod === "Others" ? "Opening support chat..." : "Payoneer, Alipay, Custom chat"}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">

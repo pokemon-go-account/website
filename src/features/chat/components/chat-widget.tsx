@@ -10,21 +10,30 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { getDb } from "@/lib/firestore";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, MessageSquare, ShoppingBag, X } from "lucide-react";
 import { UserChatPanel } from "./user-chat-panel";
+import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export function ChatWidget() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [activeNotification, setActiveNotification] = useState<{
+    id: string;
+    title: string;
+    message: string;
+    type: "support" | "order";
+    chatId: string;
+  } | null>(null);
 
   const userId = (session?.user as any)?.id as string | undefined;
 
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const prevUnreadCountRef = useRef(0);
+  const prevConvsRef = useRef<any[]>([]);
   const isFirstRender = useRef(true);
   const notifSoundRef = useRef<HTMLAudioElement | null>(null);
 
@@ -45,35 +54,65 @@ export function ChatWidget() {
     const q = query(chatsRef, where("userId", "==", userId));
     const unsub = onSnapshot(q, (snap) => {
       let sum = 0;
-      snap.docs.forEach((doc) => {
-        sum += doc.data()?.unreadByUser ?? 0;
+      const convs = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as any),
+      }));
+
+      convs.forEach((c) => {
+        sum += c.unreadByUser ?? 0;
       });
+
       setUnreadCount(sum);
+
+      // Sound and visual notification logic
+      if (isFirstRender.current) {
+        prevConvsRef.current = convs;
+        isFirstRender.current = false;
+        return;
+      }
+
+      convs.forEach((conv) => {
+        const prevConv = prevConvsRef.current.find((p) => p.id === conv.id);
+        const currentUnread = conv.unreadByUser ?? 0;
+        const prevUnread = prevConv ? (prevConv.unreadByUser ?? 0) : 0;
+
+        if (currentUnread > prevUnread) {
+          const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+          if (!isOpen || isMobile) {
+            // Play notification sound
+            try {
+              if (notifSoundRef.current) {
+                notifSoundRef.current.currentTime = 0;
+                notifSoundRef.current.play().catch(() => {});
+              }
+            } catch { /* silent */ }
+
+            // Trigger visual Toast notification
+            setActiveNotification({
+              id: Math.random().toString(),
+              title: conv.title || (conv.type === "order" ? "Order Update" : "Support Chat"),
+              message: conv.lastMessage || "New message received",
+              type: conv.type || (conv.id.startsWith("order-") ? "order" : "support"),
+              chatId: conv.id,
+            });
+          }
+        }
+      });
+
+      prevConvsRef.current = convs;
     });
     return unsub;
-  }, [userId]);
+  }, [userId, isOpen]);
 
-  // Play notification sound when unreadCount increases and panel is closed/on mobile
+  // Auto-close notification toast after 6 seconds
   useEffect(() => {
-    if (isFirstRender.current) {
-      prevUnreadCountRef.current = unreadCount;
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (unreadCount > prevUnreadCountRef.current) {
-      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-      if (!isOpen || isMobile) {
-        try {
-          if (notifSoundRef.current) {
-            notifSoundRef.current.currentTime = 0;
-            notifSoundRef.current.play().catch(() => {});
-          }
-        } catch { /* silent */ }
-      }
-    }
-    prevUnreadCountRef.current = unreadCount;
-  }, [unreadCount, isOpen]);
+    if (!activeNotification) return;
+    const timer = setTimeout(() => {
+      setActiveNotification(null);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [activeNotification]);
 
   // Click outside to close handler
   useEffect(() => {
@@ -101,6 +140,61 @@ export function ChatWidget() {
 
   return (
     <>
+      {/* Visual Toast Notification Banner */}
+      <AnimatePresence>
+        {activeNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, y: -10 }}
+            onClick={() => {
+              if (window.innerWidth < 768) {
+                window.location.href = `/chat?chatId=${activeNotification.chatId}`;
+              } else {
+                setIsOpen(true);
+                setActiveNotification(null);
+              }
+            }}
+            className="fixed top-6 right-6 z-[100] max-w-sm w-full bg-white/90 dark:bg-zinc-950/95 border border-zinc-200 dark:border-white/[0.08] p-4 rounded-2xl shadow-2xl flex gap-3 pointer-events-auto cursor-pointer backdrop-blur-md"
+          >
+            <div className="shrink-0">
+              <div className={cn(
+                "h-10 w-10 rounded-xl flex items-center justify-center border",
+                activeNotification.type === "order"
+                  ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                  : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+              )}>
+                {activeNotification.type === "order" ? (
+                  <ShoppingBag className="h-5 w-5" />
+                ) : (
+                  <MessageSquare className="h-5 w-5" />
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-550 tracking-wider block mb-0.5">
+                New Message
+              </span>
+              <h4 className="text-xs font-extrabold text-zinc-900 dark:text-white truncate">
+                {activeNotification.title}
+              </h4>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                {activeNotification.message}
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveNotification(null);
+              }}
+              className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer bg-transparent border-none shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Floating Button */}
       {!isOpen && (
         <button

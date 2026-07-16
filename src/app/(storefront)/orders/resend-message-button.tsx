@@ -28,6 +28,7 @@ export function ResendMessageButton({ orderId, orderType, items, price }: Resend
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
+  const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
 
   const { rates, currency, convert } = useCurrencyStore();
   const inrRate = rates.INR || 83.5;
@@ -45,6 +46,7 @@ export function ResendMessageButton({ orderId, orderType, items, price }: Resend
       alert("Please log in first.");
       return;
     }
+    setLoadingMethod(method);
     setIsSubmittingManual(true);
     const userId = (session.user as any).id as string;
     const username = (session.user as any).username || session.user.name || session.user.email || "User";
@@ -113,6 +115,7 @@ Please guide me on how to complete the payment!`;
       alert("Failed to initiate chat. Please try again.");
     } finally {
       setIsSubmittingManual(false);
+      setLoadingMethod(null);
     }
   };
 
@@ -260,7 +263,7 @@ Please guide me on how to complete the payment!`;
                   {/* 1. UPI */}
                   <button
                     onClick={() => setSelectedMethod("UPI")}
-                    disabled={isSubmittingManual}
+                    disabled={isSubmittingManual || loadingMethod !== null}
                     className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#6133e1] dark:hover:border-[#6133e1]/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2.5">
@@ -277,16 +280,22 @@ Please guide me on how to complete the payment!`;
                   {/* 2. Card */}
                   <button
                     onClick={() => handleManualOrderChat("Card")}
-                    disabled={isSubmittingManual}
+                    disabled={isSubmittingManual || loadingMethod !== null}
                     className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-blue-500 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="flex items-center justify-center w-7 h-7 text-zinc-900 dark:text-white">
-                        <AnimatedCardIcon className="h-4.5 w-4.5" />
+                        {loadingMethod === "Card" ? (
+                          <Loader2 className="h-4.5 w-4.5 animate-spin" />
+                        ) : (
+                          <AnimatedCardIcon className="h-4.5 w-4.5" />
+                        )}
                       </div>
                       <div>
                         <span className="text-xs font-black text-zinc-900 dark:text-white block">Card / Cash App</span>
-                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium">Apple Pay, DMs</span>
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium">
+                          {loadingMethod === "Card" ? "Opening chat..." : "Apple Pay, DMs"}
+                        </span>
                       </div>
                     </div>
                   </button>
@@ -294,7 +303,7 @@ Please guide me on how to complete the payment!`;
                   {/* 3. Crypto */}
                   <button
                     onClick={() => setSelectedMethod("Crypto")}
-                    disabled={isSubmittingManual}
+                    disabled={isSubmittingManual || loadingMethod !== null}
                     className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-amber-500 dark:hover:border-amber-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2.5">
@@ -311,7 +320,7 @@ Please guide me on how to complete the payment!`;
                   {/* 4. PayPal */}
                   <button
                     onClick={() => setSelectedMethod("PayPal")}
-                    disabled={isSubmittingManual}
+                    disabled={isSubmittingManual || loadingMethod !== null}
                     className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-sky-500 dark:hover:border-sky-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2.5">
@@ -335,10 +344,10 @@ Please guide me on how to complete the payment!`;
                           if (isWiseDisabled) return;
                           setSelectedMethod("Wise");
                         }}
-                        disabled={isSubmittingManual || isWiseDisabled}
+                        disabled={isSubmittingManual || loadingMethod !== null || isWiseDisabled}
                         className={cn(
                           "flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 transition text-left w-full group shadow-xs",
-                          isWiseDisabled
+                          (isWiseDisabled || loadingMethod !== null)
                             ? "opacity-55 cursor-not-allowed"
                             : "hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
                         )}
@@ -361,16 +370,22 @@ Please guide me on how to complete the payment!`;
                   {/* 6. Others */}
                   <button
                     onClick={() => handleManualOrderChat("Others")}
-                    disabled={isSubmittingManual}
+                    disabled={isSubmittingManual || loadingMethod !== null}
                     className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-zinc-500 dark:hover:border-zinc-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="p-1.5 rounded bg-zinc-500/10 text-zinc-500">
-                        <CircleDot className="h-4 w-4" />
+                        {loadingMethod === "Others" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CircleDot className="h-4 w-4" />
+                        )}
                       </div>
                       <div>
                         <span className="text-xs font-black text-zinc-900 dark:text-white block">Others</span>
-                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium">Alipay, Payoneer</span>
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium">
+                          {loadingMethod === "Others" ? "Opening chat..." : "Alipay, Payoneer"}
+                        </span>
                       </div>
                     </div>
                   </button>
