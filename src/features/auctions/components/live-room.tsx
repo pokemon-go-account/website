@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getFreshBalance } from "@/features/auth/actions";
 import {
   AlertCircle,
   Clock,
@@ -184,7 +185,15 @@ export function LiveRoom({
   const [paymentStage, setPaymentStage] = useState<"methods" | "platforms" | "upi" | "paypal" | "crypto" | "wise">("methods");
   const [selectedMethod, setSelectedMethod] = useState<"UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others" | null>(null);
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
-  const walletCreditAmount = session?.user ? ((session.user as any).walletBalance || 0) : 0;
+  const [freshBalance, setFreshBalance] = useState<number>(0);
+  
+  useEffect(() => {
+    if (session?.user?.id) {
+      getFreshBalance().then(bal => setFreshBalance(bal));
+    }
+  }, [session]);
+
+  const walletCreditAmount = freshBalance;
   const hasWalletCredit = walletCreditAmount > 0;
 
   // Winner payment modal state
@@ -678,7 +687,7 @@ Please guide me on how to complete the payment!`;
   const buyNowPrice = auction.listingId.startingBid * 4;
   const buyNowPriceDiscount = hasWalletCredit ? Math.min(buyNowPrice, walletCreditAmount) : 0;
   const finalBuyNowPrice = Math.max(0, buyNowPrice - buyNowPriceDiscount);
-  const isBuyNowDisabled = activeBid >= 0.8 * buyNowPrice;
+  const isBuyNowDisabled = isConcluded || activeBid >= 0.8 * buyNowPrice;
   const prevBidRef = useRef<number>(activeBid);
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 

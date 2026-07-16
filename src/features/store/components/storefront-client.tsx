@@ -10,6 +10,7 @@ import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
 import { useSession } from "next-auth/react";
+import { getFreshBalance } from "@/features/auth/actions";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useSearchParams } from "next/navigation";
@@ -97,7 +98,15 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
   const { convert } = useCurrencyStore();
   
   const { data: session, status } = useSession();
-  const walletBalance = (session?.user as any)?.walletBalance || 0;
+  const [freshBalance, setFreshBalance] = useState<number>(0);
+  
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.id) {
+      getFreshBalance().then(bal => setFreshBalance(bal));
+    }
+  }, [status, session]);
+
+  const walletBalance = freshBalance;
   const hasWalletCredit = walletBalance > 0;
   const walletCreditAmount = hasWalletCredit ? walletBalance : 0;
 

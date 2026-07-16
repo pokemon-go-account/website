@@ -2,11 +2,46 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowLeft, Sparkles, Store, Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { joinWaitlist } from "@/features/waitlist/actions";
+import { motion } from "framer-motion";
+import { ArrowLeft, Sparkles, TrendingUp, Shield, Globe, Mail, CheckCircle2, Loader2, Zap } from "lucide-react";
 
-export default function BecomeASellerPage() {
+const features = [
+  {
+    icon: TrendingUp,
+    color: "from-emerald-500 to-teal-500",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    title: "Premium Marketplace",
+    desc: "Reach thousands of active Pokémon GO players looking to buy high-value accounts globally.",
+  },
+  {
+    icon: Shield,
+    color: "from-violet-500 to-purple-600",
+    bg: "bg-violet-500/10",
+    border: "border-violet-500/20",
+    title: "Secure Transactions",
+    desc: "Every sale is verified and protected. We handle escrow, disputes, and buyer trust so you don't have to.",
+  },
+  {
+    icon: Globe,
+    color: "from-blue-500 to-cyan-500",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    title: "Global Reach",
+    desc: "List once and sell worldwide. We support USD, EUR, INR, GBP and more currencies.",
+  },
+  {
+    icon: Zap,
+    color: "from-amber-500 to-orange-500",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    title: "Fast Payouts",
+    desc: "Get paid quickly via UPI, PayPal, WISE, or crypto. Your earnings, your schedule.",
+  },
+];
+
+export default function SellWithUsPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -28,103 +63,149 @@ export default function BecomeASellerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#09090b] relative overflow-hidden flex items-center justify-center">
-      {/* Background decorative premium gradient blobs */}
+    <div className="min-h-screen bg-white dark:bg-[#09090b] relative overflow-hidden">
+      {/* Background decorative blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-violet-600/5 dark:bg-violet-600/10 blur-3xl animate-pulse" style={{ animationDuration: "8s" }} />
-        <div className="absolute -bottom-60 -left-40 w-[500px] h-[500px] rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-3xl animate-pulse" style={{ animationDuration: "12s" }} />
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-emerald-500/5 dark:bg-emerald-500/8 blur-3xl" />
+        <div className="absolute -bottom-60 -left-40 w-[500px] h-[500px] rounded-full bg-teal-500/5 dark:bg-teal-500/8 blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[300px] rounded-full bg-violet-500/3 dark:bg-violet-500/5 blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-2xl mx-auto px-6 py-12 text-center flex flex-col items-center">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-12 pb-24">
         {/* Back link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-550 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors mb-16 self-start"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors mb-12"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Home
         </Link>
 
-        {/* Main Card */}
+        {/* Hero section */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full relative p-8 sm:p-12 rounded-3xl border border-zinc-200/80 dark:border-white/[0.08] bg-white/60 dark:bg-zinc-950/40 backdrop-blur-xl shadow-2xl dark:shadow-black/40 overflow-hidden"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="text-center mb-16"
         >
-          {/* Inner ambient glow */}
-          <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-[#6133e1]/10 dark:bg-[#6133e1]/15 blur-2xl pointer-events-none" />
-
-          {/* Premium Icon Badge */}
-          <div className="mx-auto mb-8 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6133e1] to-violet-500 text-white shadow-xl shadow-violet-500/20 dark:shadow-violet-600/10 animate-bounce" style={{ animationDuration: "3s" }}>
-            <Store className="h-8 w-8 text-white" />
-          </div>
-
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#6133e1]/10 border border-[#6133e1]/20 text-[#6133e1] dark:text-violet-400 text-[10px] font-black uppercase tracking-widest mb-6">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-widest mb-6">
             <Sparkles className="h-3.5 w-3.5" />
-            Coming Soon
+            Seller Program
           </div>
 
-          {/* User's Exact Heading/Text requested */}
-          <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white tracking-tight leading-[1.15] mb-6">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-zinc-900 dark:text-white tracking-tight leading-[1.05] mb-6">
             Seller Marketplace
+            <br />
+            <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent">
+              Coming Soon!
+            </span>
           </h1>
 
-          <p className="text-sm sm:text-base text-zinc-550 dark:text-zinc-400 max-w-md mx-auto leading-relaxed font-medium mb-10">
-            Seller Marketplace Coming Soon! List your accounts and sell directly to buyers through our secure platform.
+          <p className="text-base sm:text-lg text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed font-medium">
+            List your accounts and sell directly to buyers through our secure platform. 
+            Join the waitlist to be first in line when we launch.
           </p>
 
-          {/* CTA Link / Button */}
-          {status === "success" ? (
-            <div className="text-center py-6 px-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl max-w-sm mx-auto">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-              </div>
-              <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-1">You're on the list! 🎉</h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                We'll notify you the moment the seller program opens.
-              </p>
-            </div>
-          ) : (
-            <div className="w-full flex flex-col items-center">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-white mb-4">
-                Join the waitlist to be first in line when we launch.
-              </p>
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-3 max-w-md mx-auto w-full">
-                <div className="relative w-full">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address"
-                  required
-                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-900/60 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-[#6133e1]/50 focus:bg-white dark:focus:bg-zinc-900 transition-all"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={status === "loading" || !email.trim()}
-                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-gradient-to-r from-[#6133e1] to-violet-600 hover:from-[#6c3be8] hover:to-violet-500 text-white font-bold text-sm tracking-tight transition-all shadow-lg shadow-violet-600/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-              >
-                {status === "loading" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Join Waitlist"
-                )}
-              </button>
-              </form>
-            </div>
-          )}
-          {status === "error" && (
-            <p className="text-xs text-red-500 font-medium mt-3 text-center">{errorMsg}</p>
-          )}
+          {/* Coming Soon pill */}
+          <div className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.06] text-zinc-600 dark:text-zinc-400 text-sm font-semibold">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            Coming Soon — Join the Waitlist Below
+          </div>
         </motion.div>
 
-        {/* Small subtle brand signature */}
-        <p className="mt-8 text-[10px] font-semibold text-zinc-400 dark:text-zinc-600 tracking-wider uppercase">
-          Secure Trading Environment
-        </p>
+        {/* Feature grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"
+        >
+          {features.map(({ icon: Icon, color, bg, border, title, desc }) => (
+            <div
+              key={title}
+              className={`group relative p-6 rounded-2xl border ${border} ${bg} backdrop-blur-sm transition-all hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/20`}
+            >
+              <div className={`inline-flex p-2.5 rounded-xl bg-gradient-to-br ${color} mb-4 shadow-sm`}>
+                <Icon className="h-4 w-4 text-white" />
+              </div>
+              <h3 className="text-sm font-black text-zinc-900 dark:text-white mb-1.5">{title}</h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Waitlist form */}
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+          className="max-w-md mx-auto"
+        >
+          <div className="relative p-8 rounded-3xl border border-zinc-200 dark:border-white/[0.07] bg-white dark:bg-zinc-950/80 backdrop-blur-xl shadow-xl dark:shadow-black/30">
+            {/* Glow */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
+
+            {status === "success" ? (
+              <div className="text-center py-4">
+                <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                </div>
+                <h3 className="text-lg font-black text-zinc-900 dark:text-white mb-2">You're on the list! 🎉</h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  We'll email you the moment the seller program opens. Stay tuned!
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+                <div className="text-center mb-2">
+                  <Mail className="h-7 w-7 text-emerald-500 mx-auto mb-3" />
+                  <h2 className="text-lg font-black text-zinc-900 dark:text-white">Join the Waitlist</h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                    Be the first seller on the platform. No spam, ever.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    required
+                    className="w-full h-10 px-4 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-900/60 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500/50 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                  />
+                  {status === "error" && (
+                    <p className="text-xs text-red-500 font-medium pl-1">{errorMsg}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={status === "loading" || !email.trim()}
+                  className="w-full h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-bold transition-all shadow-sm hover:shadow-emerald-500/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {status === "loading" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Notify Me When Live
+                    </>
+                  )}
+                </button>
+
+                <p className="text-[10px] text-zinc-400 text-center">
+                  By signing up you agree to our{" "}
+                  <Link href="/privacy" className="underline hover:text-zinc-600 dark:hover:text-zinc-300">Privacy Policy</Link>.
+                </p>
+              </form>
+            )}
+          </div>
+        </motion.div>
       </div>
     </div>
   );
