@@ -149,7 +149,7 @@ const CompleteProfileSchema = z.object({
   preferredContactMethod: z.string().min(1, "Preferred contact method is required"),
   preferredContactId: z.string().min(2, "Username or Profile Link must be at least 2 characters"),
   alternateContact: z.string().optional(),
-  country: z.string().optional(),
+  country: z.string().min(1, "Country is required"),
 });
 
 export async function completeUserProfile(prevState: any, formData: FormData) {
@@ -189,7 +189,7 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
       preferredContactMethod,
       preferredContactId: formattedHandle,
       alternateContact: alternateContact.trim() || undefined,
-      country: country.trim() || undefined,
+      country: country.trim(),
       role: "USER",
       isOnboarded: true,
     });

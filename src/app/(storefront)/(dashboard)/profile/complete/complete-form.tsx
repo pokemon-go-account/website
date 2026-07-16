@@ -219,9 +219,10 @@ export function CompleteProfileForm() {
             name="country"
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
+            required
             className="w-full h-8 pl-3 pr-8 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-white focus:outline-none cursor-pointer appearance-none shadow-xs"
           >
-            <option value="">Select your country (optional)</option>
+            <option value="">Select your country</option>
             {[
               "Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia","Australia",
               "Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Belarus","Belgium","Belize",
