@@ -58,7 +58,7 @@ async function getLiveAuctions(): Promise<LiveAuction[]> {
     })
       .sort({ endTime: 1 })
       .limit(4)
-      .populate("listingId", "title level shinyCount legendaryCount team startingBid")
+      .populate("listingId", "title level shinyCount legendaryCount shinyPokemons legendaryPokemons team startingBid")
       .lean();
     return auctions
       .filter((a: any) => a.listingId)
@@ -71,6 +71,8 @@ async function getLiveAuctions(): Promise<LiveAuction[]> {
           level: a.listingId.level,
           shinyCount: a.listingId.shinyCount,
           legendaryCount: a.listingId.legendaryCount,
+          shinyPokemons: a.listingId.shinyPokemons,
+          legendaryPokemons: a.listingId.legendaryPokemons,
           team: a.listingId.team,
           startingBid: a.listingId.startingBid,
         },

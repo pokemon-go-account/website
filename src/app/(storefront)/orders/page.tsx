@@ -262,25 +262,14 @@ export default async function UserOrdersPage() {
                     </div>
                   </div>
 
-                  {/* Review section — gated by delivery for AUCTION orders */}
+                  {/* Review section */}
                   {purchase.status === "COMPLETED" && (
-                    purchase.orderType === "AUCTION"
-                      ? purchase.deliveryStatus === "DELIVERED" && (
-                          <div className="px-5 pb-5">
-                            <OrderReviewSection
-                              orderId={purchase.id}
-                              initialReview={existingReview}
-                            />
-                          </div>
-                        )
-                      : (
-                          <div className="px-5 pb-5">
-                            <OrderReviewSection
-                              orderId={purchase.id}
-                              initialReview={existingReview}
-                            />
-                          </div>
-                        )
+                    <div className="px-5 pb-5">
+                      <OrderReviewSection
+                        orderId={purchase.id}
+                        initialReview={existingReview}
+                      />
+                    </div>
                   )}
                 </div>
               );

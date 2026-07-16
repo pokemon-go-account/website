@@ -51,6 +51,8 @@ interface LiveAuction {
     level: number;
     shinyCount: number;
     legendaryCount: number;
+    shinyPokemons?: number;
+    legendaryPokemons?: number;
     team: string;
     startingBid: number;
   };
@@ -155,9 +157,19 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
                     <p className={`text-[10px] mt-0.5 font-semibold ${teamColors[auction.listing.team] || "text-zinc-400"}`}>
                       Lv.{auction.listing.level} · Team {auction.listing.team}
                     </p>
-                    <p className="text-zinc-400 dark:text-zinc-500 text-[10px] mt-1 font-semibold">
-                      ✨ {auction.listing.shinyCount} Shinies · ⭐ {auction.listing.legendaryCount} Legendary
-                    </p>
+                    {(() => {
+                      const shiny = auction.listing.shinyPokemons || auction.listing.shinyCount || 0;
+                      const legendary = auction.listing.legendaryPokemons || auction.listing.legendaryCount || 0;
+                      const parts = [];
+                      if (shiny > 0) parts.push(`✨ ${shiny} Shinies`);
+                      if (legendary > 0) parts.push(`⭐ ${legendary} Legendary`);
+                      if (parts.length === 0) return null;
+                      return (
+                        <p className="text-zinc-400 dark:text-zinc-500 text-[10px] mt-1 font-semibold">
+                          {parts.join(" · ")}
+                        </p>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex items-end justify-between pt-2 border-t border-zinc-200 dark:border-white/[0.06] mt-auto">
