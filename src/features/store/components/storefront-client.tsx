@@ -169,6 +169,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
     if (status === "loading" || !session?.user) return;
     const userId = (session.user as any).id as string;
     const username = (session.user as any).username || session.user.name || session.user.email || "User";
+    const country = (session.user as any).country || "N/A";
 
     try {
       const res = await createStorefrontOrderAction(items, getTotalPrice());
@@ -206,6 +207,7 @@ Payment Method: ${methodLabel}
 Username: ${username}
 Email: ${session?.user?.email || "N/A"}
 User ID: ${userId}
+🌍 Country: ${country}
 
 Please guide me on how to complete the payment!`;
 
@@ -909,6 +911,7 @@ Please guide me on how to complete the payment!`;
                             const orderId = res.orderId;
                             const userId = (session?.user as any)?.id as string || "N/A";
                             const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+                            const country = (session?.user as any)?.country || "N/A";
                             const db = getDb();
                             const chatId = `order-${orderId}`;
                             const chatRef = doc(db, "supportChats", chatId);
@@ -926,6 +929,7 @@ Payment Method: Wallet Balance (Full Credit)
 Username: ${username}
 Email: ${session?.user?.email || "N/A"}
 User ID: ${userId}
+🌍 Country: ${country}
 
 This order has been completed automatically using your wallet balance. Admin will coordinate asset delivery here shortly!`;
 

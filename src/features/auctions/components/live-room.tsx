@@ -525,6 +525,7 @@ export function LiveRoom({
     if (sessionStatus === "loading" || !session?.user) return;
     const userId = (session.user as any).id as string;
     const username = (session.user as any).username || session.user.name || session.user.email || "User";
+    const country = (session.user as any).country || "N/A";
 
     try {
       const res = await createBuyNowOrderAction(auction._id);
@@ -555,6 +556,7 @@ Payment Method: ${methodLabel}
 Username: ${username}
 Email: ${session?.user?.email || "N/A"}
 User ID: ${userId}
+🌍 Country: ${country}
 
 Please guide me on how to complete the payment!`;
 
@@ -3438,6 +3440,7 @@ This Buy Now order has been completed automatically using your wallet balance. A
         const handleWinnerManualChat = async (method: "Card" | "Others") => {
           const userId = (session?.user as any)?.id as string;
           const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+          const country = (session?.user as any)?.country || "N/A";
           try {
             const res = await createAuctionWinnerOrderAction(auction._id);
             if (res.success && res.orderId) {
@@ -3449,7 +3452,7 @@ This Buy Now order has been completed automatically using your wallet balance. A
               const subtotalText = `\nSubtotal (Winning Bid): ${convert(winAmount).formatted}`;
               const walletText = winDiscount > 0 ? `\nWallet Discount: ${convert(winDiscount).formatted}` : "";
               const finalText = `\nFinal Amount Due: ${convert(finalWinPrice).formatted}`;
-              const msgText = `🏆 AUCTION WIN PAYMENT\n----------------------------------\nOrder ID: ${orderId}\nListing: ${auction.listingId.title}${subtotalText}${walletText}${finalText}\nPayment Method: ${methodLabel}\n\n👤 USER DETAILS:\n----------------------------------\nUsername: ${username}\nEmail: ${session?.user?.email || "N/A"}\nUser ID: ${userId}\n\nPlease guide me on completing my auction payment!`;
+              const msgText = `🏆 AUCTION WIN PAYMENT\n----------------------------------\nOrder ID: ${orderId}\nListing: ${auction.listingId.title}${subtotalText}${walletText}${finalText}\nPayment Method: ${methodLabel}\n\n👤 USER DETAILS:\n----------------------------------\nUsername: ${username}\nEmail: ${session?.user?.email || "N/A"}\nUser ID: ${userId}\n🌍 Country: ${country}\n\nPlease guide me on completing my auction payment!`;
               await setDoc(chatRef, {
                 userId, username, email: session?.user?.email ?? "", type: "order", orderId,
                 title: `Auction Win #${orderId.substring(0, 8).toUpperCase()}`,

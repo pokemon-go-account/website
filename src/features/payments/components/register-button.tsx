@@ -47,6 +47,7 @@ export function RegisterAuctionButton({ auctionId, onSuccess, label, className }
     if (status === "loading" || !session?.user) return;
     const userId = (session.user as any).id as string;
     const username = (session.user as any).username || session.user.name || session.user.email || "User";
+    const country = (session.user as any).country || "N/A";
 
     try {
       const res = await createRegistrationOrder(auctionId);
@@ -69,6 +70,7 @@ Payment Method: ${methodLabel}
 Username: ${username}
 Email: ${session?.user?.email || "N/A"}
 User ID: ${userId}
+🌍 Country: ${country}
 
 Please guide me on how to complete the payment!`;
 

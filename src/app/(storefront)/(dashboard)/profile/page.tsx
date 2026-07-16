@@ -74,14 +74,15 @@ export default async function UserProfilePage() {
             </span>
           </div>
 
-          {user.country && (
-            <div className="flex items-center justify-between py-1 border-b border-zinc-200 dark:border-white/[0.06]">
-              <span className="text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
-                <Globe className="h-3.5 w-3.5" /> Country
-              </span>
-              <span className="font-semibold text-zinc-900 dark:text-white">{user.country}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between py-1 border-b border-zinc-200 dark:border-white/[0.06]">
+            <span className="text-zinc-550 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
+              <Globe className="h-3.5 w-3.5" /> Country
+            </span>
+            <span className="font-semibold text-zinc-900 dark:text-white">
+              {(user as any).country || "Detecting..."}
+            </span>
+          </div>
+
         </div>
 
         {/* Interactive Update Handle Form */}

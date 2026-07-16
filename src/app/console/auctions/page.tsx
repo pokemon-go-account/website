@@ -59,6 +59,9 @@ export default function ConsoleAuctionsPage() {
   const [concludedSearch, setConcludedSearch] = useState("");
   const [concludedProcessing, setConcludedProcessing] = useState<string | null>(null);
 
+  // Pending search state
+  const [pendingSearch, setPendingSearch] = useState("");
+
   // Detail Modal state
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -184,93 +187,114 @@ export default function ConsoleAuctionsPage() {
         </button>
       </div>
 
-      {message && (
-        <div className={cn(
-          "rounded-md border p-3 text-xs flex items-center gap-2",
-          message.success 
-            ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400" 
-            : "border-red-500/20 bg-red-500/5 text-red-650 dark:text-red-400"
-        )}>
-          {message.success ? <CheckCircle className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
-          {message.text}
-        </div>
-      )}
+      {/* ======================== PENDING TAB ======================== */}
+      {activeTab === "pending" && (
+        <>
+          {/* Pending search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search pending listings by title..."
+              value={pendingSearch}
+              onChange={(e) => setPendingSearch(e.target.value)}
+              className="w-full h-9 pl-9 pr-4 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-lg text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+            />
+          </div>
 
-      {loading ? (
-        <p className="text-zinc-500 text-xs italic">Loading pending submissions...</p>
-      ) : listings.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] py-16 text-center">
-          <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
-          <p className="text-zinc-950 dark:text-white font-semibold text-sm">All Clear</p>
-          <p className="text-zinc-550 dark:text-zinc-500 text-xs mt-1">No pending auction listings to review.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {listings.map((listing) => (
-            <div key={listing._id} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-zinc-900 dark:text-white font-semibold text-sm">{listing.title}</h3>
-                  <p className="text-zinc-500 text-[10px] mt-1.5">
-                    By: <span className="text-zinc-700 dark:text-zinc-300 font-semibold">@{listing.sellerId?.username || "Unknown"}</span>
-                    {" · "}LVL {listing.level} · Team {listing.team}
-                    {" · "}Starting Bid: ${listing.startingBid.toLocaleString()}
-                  </p>
-                  <p className="text-zinc-500 dark:text-zinc-650 text-[10px] mt-0.5">
-                    Submitted {new Date(listing.createdAt).toLocaleDateString("en-IN")}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleViewClick(listing)}
-                    className="h-8 px-3 rounded-md border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/[0.05] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    Verify details
-                  </button>
-                  <button
-                    onClick={() => handleEditClick(listing)}
-                    className="h-8 px-3 rounded-md border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-650 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                    Edit
-                  </button>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400">
-                    Pending
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <textarea
-                  placeholder="Optional review notes (required for rejection)..."
-                  value={notes[listing._id] || ""}
-                  onChange={(e) => setNotes((prev) => ({ ...prev, [listing._id]: e.target.value }))}
-                  className="w-full min-h-[50px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-md text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal resize-none"
-                />
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => approve(listing._id)}
-                    disabled={processing === listing._id}
-                    className="h-8 px-4 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    {processing === listing._id ? "Processing..." : "Approve & Go Live"}
-                  </button>
-                  <button
-                    onClick={() => reject(listing._id)}
-                    disabled={processing === listing._id}
-                    className="h-8 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
-                  >
-                    <XCircle className="h-3.5 w-3.5" />
-                    Reject Application
-                  </button>
-                </div>
-              </div>
+          {message && (
+            <div className={cn(
+              "rounded-md border p-3 text-xs flex items-center gap-2",
+              message.success 
+                ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400" 
+                : "border-red-500/20 bg-red-500/5 text-red-650 dark:text-red-400"
+            )}>
+              {message.success ? <CheckCircle className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
+              {message.text}
             </div>
-          ))}
-        </div>
+          )}
+
+          {loading ? (
+            <p className="text-zinc-500 text-xs italic">Loading pending submissions...</p>
+          ) : listings.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] py-16 text-center">
+              <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
+              <p className="text-zinc-950 dark:text-white font-semibold text-sm">All Clear</p>
+              <p className="text-zinc-550 dark:text-zinc-500 text-xs mt-1">No pending auction listings to review.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {listings
+                .filter((listing) =>
+                  !pendingSearch || listing.title.toLowerCase().includes(pendingSearch.toLowerCase())
+                )
+                .map((listing) => (
+                <div key={listing._id} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-zinc-900 dark:text-white font-semibold text-sm">{listing.title}</h3>
+                      <p className="text-zinc-500 text-[10px] mt-1.5">
+                        By: <span className="text-zinc-700 dark:text-zinc-300 font-semibold">@{listing.sellerId?.username || "Unknown"}</span>
+                        {" · "}LVL {listing.level} · Team {listing.team}
+                        {" · "}Starting Bid: ${listing.startingBid.toLocaleString()}
+                      </p>
+                      <p className="text-zinc-500 dark:text-zinc-650 text-[10px] mt-0.5">
+                        Submitted {new Date(listing.createdAt).toLocaleDateString("en-IN")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleViewClick(listing)}
+                        className="h-8 px-3 rounded-md border border-zinc-200 hover:bg-zinc-50 dark:border-white/[0.08] dark:hover:bg-white/[0.05] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Verify details
+                      </button>
+                      <button
+                        onClick={() => handleEditClick(listing)}
+                        className="h-8 px-3 rounded-md border border-violet-500/20 hover:border-violet-500/40 bg-violet-600/10 text-violet-650 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                        Edit
+                      </button>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400">
+                        Pending
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      placeholder="Optional review notes (required for rejection)..."
+                      value={notes[listing._id] || ""}
+                      onChange={(e) => setNotes((prev) => ({ ...prev, [listing._id]: e.target.value }))}
+                      className="w-full min-h-[50px] p-2.5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-md text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors leading-normal resize-none"
+                    />
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => approve(listing._id)}
+                        disabled={processing === listing._id}
+                        className="h-8 px-4 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        {processing === listing._id ? "Processing..." : "Approve & Go Live"}
+                      </button>
+                      <button
+                        onClick={() => reject(listing._id)}
+                        disabled={processing === listing._id}
+                        className="h-8 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        Reject Application
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* ======================== CONCLUDED TAB ======================== */}

@@ -167,10 +167,10 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               </Link>
             ))}
             <Link
-              href="/sell-with-us"
-              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 transition-all shadow-sm hover:shadow-emerald-500/25 active:scale-[0.97]"
+              href="/become-a-seller"
+              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#6133e1] to-violet-600 text-white hover:from-violet-600 hover:to-violet-500 transition-all shadow-sm hover:shadow-violet-600/25 active:scale-[0.97]"
             >
-              Sell With Us
+              Become a Seller
             </Link>
           </nav>
 
@@ -422,12 +422,12 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                 </Link>
               ))}
               <Link
-                href="/sell-with-us"
+                href="/become-a-seller"
                 onClick={toggleMenu}
-                className="flex items-center gap-2 rounded-lg mx-1 px-3 py-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/8 hover:bg-emerald-500/15 border border-emerald-450/20 hover:border-emerald-400/40 transition-all mt-1"
+                className="flex items-center gap-2 rounded-lg mx-1 px-3 py-2 text-sm font-bold text-[#6133e1] dark:text-violet-400 bg-[#6133e1]/8 hover:bg-[#6133e1]/15 border border-[#6133e1]/20 hover:border-[#6133e1]/40 transition-all mt-1"
               >
-                <span>🌿</span>
-                Sell With Us
+                <span>💼</span>
+                Become a Seller
               </Link>
               {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
                 <Link

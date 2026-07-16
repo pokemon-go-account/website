@@ -120,7 +120,7 @@ export default async function FeedbackPage() {
             Client Testimonials & Feedback
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Read what other Trainers have to say about our scheduled live auctions and secure account recovery service.
+            Read what other Trainers have to say about our scheduled live auctions, products and secure account recovery service.
           </p>
         </div>
 
