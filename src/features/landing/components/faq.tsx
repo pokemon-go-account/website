@@ -94,7 +94,7 @@ const faqs = [
   },
   {
     q: "Can I sell my own Pokémon GO account?",
-    a: "Yes! Registered users can navigate to the admin console and submit a listing application. Our moderation team reviews listing parameters, verifies account statistics, and schedules the auction block."
+    a: "Yes! We are currently building a world-class seller marketplace. You can navigate to the 'Become a Seller' page from the main menu and join our waitlist to be notified as soon as it launches."
   },
 
   // Technical & Support (22-25)

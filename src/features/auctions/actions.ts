@@ -383,7 +383,7 @@ export async function createBuyNowOrderAction(auctionId: string) {
       existingOrder.status = isCompleted ? "COMPLETED" : "PENDING";
       await existingOrder.save();
 
-      if (isCompleted) {
+      if (discount > 0) {
         await User.findByIdAndUpdate(session.user.id, {
           $inc: { walletBalance: -discount }
         });
@@ -409,7 +409,7 @@ export async function createBuyNowOrderAction(auctionId: string) {
       deliveryStatus: "PENDING",
     });
 
-    if (isCompleted) {
+    if (discount > 0) {
       await User.findByIdAndUpdate(session.user.id, {
         $inc: { walletBalance: -discount }
       });
@@ -510,7 +510,7 @@ export async function createAuctionWinnerOrderAction(auctionId: string) {
       deliveryStatus: "PENDING",
     });
 
-    if (isCompleted && discount > 0) {
+    if (discount > 0) {
       await User.findByIdAndUpdate(session.user.id, {
         $inc: { walletBalance: -discount },
       });

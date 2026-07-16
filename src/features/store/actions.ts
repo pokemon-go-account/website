@@ -76,7 +76,7 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
       orderType: "STOREFRONT",
     });
 
-    if (isCompleted) {
+    if (discount > 0) {
       await User.findByIdAndUpdate(session.user.id, {
         $inc: { walletBalance: -discount }
       });

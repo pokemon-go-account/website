@@ -440,11 +440,7 @@ export async function completeOrderConsole(orderId: string) {
     const User = (await import("@/models/User")).default;
     
     const order = await Order.findByIdAndUpdate(orderId, { status: "COMPLETED" });
-    if (order && order.walletDiscountApplied && order.walletDiscountApplied > 0) {
-      await User.findByIdAndUpdate(order.userId, {
-        $inc: { walletBalance: -order.walletDiscountApplied }
-      });
-    }
+    // Note: Wallet balance is already deducted at the time of order creation.
     revalidatePath("/console/orders");
     revalidatePath("/feedback"); // revalidate to update review capability
     return { success: true };
@@ -460,8 +456,17 @@ export async function failOrderConsole(orderId: string) {
     await connectDB();
     
     const Order = (await import("@/models/Order")).default;
+    const User = (await import("@/models/User")).default;
+
+    const order = await Order.findByIdAndUpdate(orderId, { status: "FAILED" });
     
-    await Order.findByIdAndUpdate(orderId, { status: "FAILED" });
+    // Refund wallet balance if the order had any wallet discount applied
+    if (order && order.walletDiscountApplied && order.walletDiscountApplied > 0) {
+      await User.findByIdAndUpdate(order.userId, {
+        $inc: { walletBalance: order.walletDiscountApplied }
+      });
+    }
+
     revalidatePath("/console/orders");
     revalidatePath("/feedback");
     return { success: true };

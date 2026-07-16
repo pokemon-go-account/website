@@ -705,7 +705,7 @@ Please guide me on how to complete the payment!`;
                   </div>
                   {hasWalletCredit && (
                     <div className="flex items-center justify-between text-xs text-emerald-500">
-                      <span className="font-medium">Verification Credit Applied:</span>
+                      <span className="font-medium">Wallet Credit Applied:</span>
                       <span className="font-semibold">-{convert(Math.min(getTotalPrice(), walletCreditAmount)).formatted}</span>
                     </div>
                   )}
