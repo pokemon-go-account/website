@@ -209,7 +209,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
           <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-6 space-y-4 max-w-md shadow-xs">
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-3">
               <div>
-                <span className="text-[10px] text-zinc-450 dark:text-zinc-500 uppercase tracking-wider font-semibold">Service Fee</span>
+                <span className="text-[10px] text-zinc-450 dark:text-zinc-500 uppercase tracking-wider font-semibold">Starts At</span>
                 <div className="text-2xl font-semibold text-zinc-900 dark:text-white mt-0.5">
                   <PriceDisplay amountInUSD={product.price} />
                 </div>
