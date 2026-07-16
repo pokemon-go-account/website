@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShoppingBag, ArrowRight } from "lucide-react";
@@ -15,6 +16,8 @@ interface StoreProduct {
   mrpPrice?: number;
   discountedPrice?: number;
   badge?: "MOST_PURCHASED" | "POPULAR" | "";
+  isLimitedDeal?: boolean;
+  dealExpiry?: string | Date;
   imageUrl?: string;
   categoryId?: {
     _id: string;
@@ -25,6 +28,45 @@ interface StoreProduct {
 
 interface FeaturedStoreClientProps {
   products: StoreProduct[];
+}
+
+function CountdownTimer({ expiry }: { expiry: string | Date }) {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(expiry) - +new Date();
+      if (difference <= 0) {
+        setTimeLeft("EXPIRED");
+        setIsExpired(true);
+        return;
+      }
+      
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+      
+      let timeStr = "";
+      if (days > 0) timeStr += `${days}d `;
+      timeStr += `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      setTimeLeft(timeStr);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, [expiry]);
+
+  if (isExpired) return null;
+
+  return (
+    <div className="absolute bottom-2 left-2 z-10 bg-red-600/90 dark:bg-red-500/95 text-white font-bold text-[9px] px-2 py-0.5 rounded flex items-center gap-1 shadow-sm animate-pulse">
+      <span className="h-1.5 w-1.5 rounded-full bg-white block"></span>
+      <span>ENDS IN: {timeLeft}</span>
+    </div>
+  );
 }
 
 export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
@@ -72,7 +114,7 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
                   <span className="text-4xl select-none">🎁</span>
                 )}
                 {product.categoryId?.name && (
-                  <span className="absolute bottom-3 left-3 bg-zinc-900/80 backdrop-blur-xs text-white text-[9px] font-semibold px-2 py-0.5 rounded-md tracking-wider uppercase border border-white/10">
+                  <span className="absolute bottom-3 right-3 bg-zinc-900/80 backdrop-blur-xs text-white text-[9px] font-semibold px-2 py-0.5 rounded-md tracking-wider uppercase border border-white/10">
                     {product.categoryId.name}
                   </span>
                 )}
@@ -83,6 +125,10 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
                   )}>
                     {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
                   </span>
+                )}
+                {/* Limited Time Deal Countdown */}
+                {product.isLimitedDeal && product.dealExpiry && (
+                  <CountdownTimer expiry={product.dealExpiry} />
                 )}
               </div>
 
@@ -103,7 +149,7 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
                 {product.mrpPrice && product.discountedPrice && product.mrpPrice > product.discountedPrice ? (
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 line-through">
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-550 line-through">
                         <PriceDisplay amountInUSD={product.mrpPrice} />
                       </span>
                       <span className="text-[9px] font-bold text-red-500 dark:text-red-400 bg-red-500/10 px-1 rounded">

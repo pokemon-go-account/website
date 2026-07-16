@@ -41,7 +41,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { RegisterAuctionButton } from "@/features/payments/components/register-button";
-import { fetchAllAuctionBids, createBuyNowOrderAction } from "@/features/auctions/actions";
+import { fetchAllAuctionBids, createBuyNowOrderAction, createAuctionWinnerOrderAction } from "@/features/auctions/actions";
 import { pauseAuction, resumeAuction, forceEndAuction, updateAuction, deleteAuction } from "@/features/admin/actions";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
@@ -184,6 +184,17 @@ export function LiveRoom({
   const [paymentStage, setPaymentStage] = useState<"methods" | "platforms" | "upi" | "paypal" | "crypto" | "wise">("methods");
   const [selectedMethod, setSelectedMethod] = useState<"UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others" | null>(null);
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
+  const walletCreditAmount = session?.user ? ((session.user as any).walletBalance || 0) : 0;
+  const hasWalletCredit = walletCreditAmount > 0;
+
+  // Winner payment modal state
+  const [isWinnerPaymentOpen, setIsWinnerPaymentOpen] = useState(false);
+  const [winnerPaymentStage, setWinnerPaymentStage] = useState<"methods" | "upi" | "paypal" | "crypto" | "wise">("methods");
+  const [winnerUpiCheckoutData, setWinnerUpiCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
+  const [winnerPaypalCheckoutData, setWinnerPaypalCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
+  const [winnerCryptoCheckoutData, setWinnerCryptoCheckoutData] = useState<{ orderId: string; amount: number; email: string } | null>(null);
+  const [winnerWiseCheckoutData, setWinnerWiseCheckoutData] = useState<{ orderId: string; amount: number; currency: Currency; email: string } | null>(null);
+  const [winnerLoadingMethod, setWinnerLoadingMethod] = useState<string | null>(null);
 
   // Admin Controls states
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
@@ -526,13 +537,17 @@ export function LiveRoom({
         const methodLabel = method === "Card" ? "Card, Cash App, Apple Pay" : "Others";
         
         const buyNowPrice = auction.listingId.startingBid * 4;
-        const formattedPrice = convert(buyNowPrice).formatted;
+        const discount = Math.min(buyNowPrice, walletCreditAmount);
+        const finalPrice = Math.max(0, buyNowPrice - discount);
+
+        const subtotalText = `\nSubtotal Price: ${convert(buyNowPrice).formatted}`;
+        const walletDiscountText = discount > 0 ? `\nWallet Discount: ${convert(discount).formatted}` : "";
+        const finalPriceText = `\nFinal Amount Paid: ${convert(finalPrice).formatted}`;
 
         const messageText = `📦 NEW ORDER: Auction Buy Now
 ----------------------------------
 Order ID: ${orderId}
-Auction/Listing: ${auction.listingId.title}
-Price: ${formattedPrice}
+Auction/Listing: ${auction.listingId.title}${subtotalText}${walletDiscountText}${finalPriceText}
 Payment Method: ${methodLabel}
 
 👤 USER DETAILS:
@@ -659,6 +674,8 @@ Please guide me on how to complete the payment!`;
 
   const activeBid = currentBid !== null ? currentBid : auction.currentHighestBid;
   const buyNowPrice = auction.listingId.startingBid * 4;
+  const buyNowPriceDiscount = hasWalletCredit ? Math.min(buyNowPrice, walletCreditAmount) : 0;
+  const finalBuyNowPrice = Math.max(0, buyNowPrice - buyNowPriceDiscount);
   const isBuyNowDisabled = activeBid >= 0.8 * buyNowPrice;
   const prevBidRef = useRef<number>(activeBid);
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
@@ -842,15 +859,36 @@ Please guide me on how to complete the payment!`;
 
         {isConcluded ? (
           highestBidderName ? (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-3">
-              <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
-              <div className="space-y-1">
-                <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
-                  Congratulations to <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>!
-                </p>
+            highestBidderId === session?.user?.id ? (
+              /* ====== THIS USER IS THE WINNER ====== */
+              <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/5 p-4 text-center space-y-3">
+                <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
+                <div className="space-y-1">
+                  <h4 className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">🎉 You Won!</h4>
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
+                    Congratulations! You won with a bid of <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>. Complete your payment to receive the account.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsWinnerPaymentOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-[#6133e1] hover:bg-violet-600 text-white cursor-pointer active:scale-[0.98] shadow-lg"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Complete Payment — <PriceDisplay amountInUSD={activeBid} />
+                </button>
               </div>
-            </div>
+            ) : (
+              /* ====== VIEWER SEES WINNER ANNOUNCEMENT ====== */
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-3">
+                <Trophy className="h-8 w-8 text-[#6133e1] mx-auto animate-bounce" />
+                <div className="space-y-1">
+                  <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-light leading-snug">
+                    Congratulations to <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for winning this auction with a final bid of <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>!
+                  </p>
+                </div>
+              </div>
+            )
           ) : (
             <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-4 text-center space-y-2">
               <AlertCircle className="h-6 w-6 text-zinc-550 mx-auto" />
@@ -1631,13 +1669,34 @@ Please guide me on how to complete the payment!`;
               <div className="pt-2">
                 {isConcluded ? (
                   highestBidderName ? (
-                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-2">
-                      <Trophy className="h-6 w-6 text-[#6133e1] mx-auto animate-bounce" />
-                      <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
-                      <p className="text-[11px] text-zinc-600 dark:text-zinc-300">
-                        Won by <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>
-                      </p>
-                    </div>
+                    highestBidderId === session?.user?.id ? (
+                      /* ====== WINNER SEES PAYMENT BUTTON ====== */
+                      <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/5 p-4 text-center space-y-3">
+                        <Trophy className="h-6 w-6 text-[#6133e1] mx-auto animate-bounce" />
+                        <div>
+                          <h4 className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">🎉 You Won!</h4>
+                          <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1">
+                            You won with <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>. Complete payment to get the account.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setIsWinnerPaymentOpen(true)}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-[#6133e1] hover:bg-violet-600 text-white cursor-pointer active:scale-[0.98] shadow-lg"
+                        >
+                          <CreditCard className="h-4 w-4" />
+                          Complete Payment
+                        </button>
+                      </div>
+                    ) : (
+                      /* ====== OBSERVER SEES WINNER ANNOUNCEMENT ====== */
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center space-y-2">
+                        <Trophy className="h-6 w-6 text-[#6133e1] mx-auto animate-bounce" />
+                        <h4 className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winner Announced!</h4>
+                        <p className="text-[11px] text-zinc-600 dark:text-zinc-300">
+                          Won by <strong className="font-bold text-zinc-900 dark:text-white">{highestBidderName}</strong> for <strong className="font-bold text-zinc-900 dark:text-white"><PriceDisplay amountInUSD={activeBid} /></strong>
+                        </p>
+                      </div>
+                    )
                   ) : (
                     <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-955 p-4 text-center">
                       <h4 className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 uppercase">Concluded</h4>
@@ -2733,6 +2792,8 @@ Please guide me on how to complete the payment!`;
                       amount={wiseCheckoutData.amount}
                       currency={wiseCheckoutData.currency}
                       customerEmail={wiseCheckoutData.email}
+                      walletDiscountApplied={Math.min(buyNowPrice, walletCreditAmount)}
+                      originalTotalPrice={buyNowPrice}
                     />
                   </div>
                 ) : paymentStage === "crypto" && cryptoCheckoutData ? (
@@ -2757,6 +2818,8 @@ Please guide me on how to complete the payment!`;
                       orderId={cryptoCheckoutData.orderId}
                       amount={cryptoCheckoutData.amount}
                       customerEmail={cryptoCheckoutData.email}
+                      walletDiscountApplied={Math.min(buyNowPrice, walletCreditAmount)}
+                      originalTotalPrice={buyNowPrice}
                     />
                   </div>
                 ) : paymentStage === "paypal" && paypalCheckoutData ? (
@@ -2781,6 +2844,8 @@ Please guide me on how to complete the payment!`;
                       orderId={paypalCheckoutData.orderId}
                       amount={paypalCheckoutData.amount}
                       customerEmail={paypalCheckoutData.email}
+                      walletDiscountApplied={Math.min(buyNowPrice, walletCreditAmount)}
+                      originalTotalPrice={buyNowPrice}
                     />
                   </div>
                 ) : paymentStage === "upi" && upiCheckoutData ? (
@@ -2805,10 +2870,11 @@ Please guide me on how to complete the payment!`;
                       orderId={upiCheckoutData.orderId}
                       amount={upiCheckoutData.amount}
                       customerEmail={upiCheckoutData.email}
+                      walletDiscountApplied={Math.min(buyNowPrice, walletCreditAmount)}
+                      originalTotalPrice={buyNowPrice}
                     />
                   </div>
                 ) : (
-                  
                   /* STAGE 3: CHOOSE PAYMENT METHOD (6 OPTIONS) */
                   <div className="space-y-5">
                     {/* Header */}
@@ -2818,32 +2884,121 @@ Please guide me on how to complete the payment!`;
                         Select Gateway
                       </h2>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Choose your checkout method. Automated validation is available for UPI payments.
+                        {finalBuyNowPrice === 0 
+                          ? "Your wallet balance fully covers this purchase. No external gateway payment is required!"
+                          : "Choose your checkout method. Automated validation is available for UPI payments."}
                       </p>
                     </div>
 
-                    {/* 6 Payment Methods Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {finalBuyNowPrice === 0 ? (
+                      <div className="pt-4">
+                        <button
+                          onClick={async () => {
+                            setLoadingMethod("WALLET");
+                            try {
+                              const res = await createBuyNowOrderAction(auction._id);
+                              if (res.success && res.orderId) {
+                                const orderId = res.orderId;
+                                const userId = (session?.user as any)?.id as string || "N/A";
+                                const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+                                const db = getDb();
+                                const chatId = `order-${orderId}`;
+                                const chatRef = doc(db, "supportChats", chatId);
 
-                      {/* 1. UPI */}
-                      <button
-                        onClick={async () => {
-                          setLoadingMethod("UPI");
-                          try {
-                            const res = await createBuyNowOrderAction(auction._id);
-                            if (res.success && res.orderId) {
-                              const buyNowPrice = auction.listingId.startingBid * 4;
-                              const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
-                              const amountInINR = Math.round(buyNowPrice * inrRate);
+                                const messageText = `📦 ORDER COMPLETED (Paid via Wallet)
+----------------------------------
+Order ID: ${orderId}
+Auction/Listing: ${auction.listingId.title}
+Subtotal Price: $${buyNowPrice.toFixed(2)} USD
+Wallet Balance Applied: $${buyNowPrice.toFixed(2)} USD
+Remaining Amount Paid: $0.00 USD
+Payment Method: Wallet Balance (Full Credit)
 
-                              setUpiCheckoutData({
-                                orderId: res.orderId,
-                                amount: amountInINR,
-                                email: session?.user?.email || "customer@store.com",
-                              });
-                              setSelectedMethod("UPI");
-                              setPaymentStage("upi");
-                            } else {
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${session?.user?.email || "N/A"}
+User ID: ${userId}
+
+This Buy Now order has been completed automatically using your wallet balance. Admin will deliver your account shortly!`;
+
+                                await setDoc(chatRef, {
+                                  userId,
+                                  username,
+                                  email: session?.user?.email ?? "",
+                                  type: "order",
+                                  orderId,
+                                  title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
+                                  lastMessage: "Paid automatically via wallet credit.",
+                                  lastMessageAt: serverTimestamp(),
+                                  unreadByAdmin: 1,
+                                  unreadByUser: 0,
+                                  createdAt: serverTimestamp(),
+                                  paymentMethod: "Wallet",
+                                });
+
+                                const msgsRef = collection(db, "supportChats", chatId, "messages");
+                                await addDoc(msgsRef, {
+                                  text: messageText,
+                                  sender: "user",
+                                  senderName: username,
+                                  timestamp: serverTimestamp(),
+                                  read: false,
+                                });
+
+                                await addDoc(msgsRef, {
+                                  text: `System: Buy Now Order #${orderId.substring(0, 8).toUpperCase()} has been successfully created and fully paid via wallet balance. Support representative will deliver your account details soon!`,
+                                  sender: "admin",
+                                  senderName: "Support Team",
+                                  timestamp: serverTimestamp(),
+                                  read: false,
+                                });
+
+                                setIsBuyNowOpen(false);
+                                window.location.href = `/chat?chatId=${chatId}`;
+                              } else {
+                                alert("Error: " + (res.error || "Failed to complete order"));
+                              }
+                            } catch (err) {
+                              console.error("Wallet Buy Now checkout error:", err);
+                              alert("Failed to pay using wallet balance. Please try again.");
+                            } finally {
+                              setLoadingMethod(null);
+                            }
+                          }}
+                          disabled={loadingMethod !== null}
+                          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingMethod === "WALLET" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Confirm Wallet Purchase ($0.00)"
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      /* 6 Payment Methods Grid */
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+
+                        {/* 1. UPI */}
+                        <button
+                          onClick={async () => {
+                            setLoadingMethod("UPI");
+                            try {
+                              const res = await createBuyNowOrderAction(auction._id);
+                              if (res.success && res.orderId) {
+                                const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                                const amountInINR = Math.round(finalBuyNowPrice * inrRate);
+
+                                setUpiCheckoutData({
+                                  orderId: res.orderId,
+                                  amount: amountInINR,
+                                  email: session?.user?.email || "customer@store.com",
+                                });
+                                setSelectedMethod("UPI");
+                                setPaymentStage("upi");
+                              } else {
                               alert("Error: " + (res.error || "Failed to create order"));
                             }
                           } catch (err) {
@@ -2926,11 +3081,9 @@ Please guide me on how to complete the payment!`;
                           try {
                             const res = await createBuyNowOrderAction(auction._id);
                             if (res.success && res.orderId) {
-                              const buyNowPriceUSD = auction.listingId.startingBid * 4;
-
                               setCryptoCheckoutData({
                                 orderId: res.orderId,
-                                amount: buyNowPriceUSD,
+                                amount: finalBuyNowPrice,
                                 email: session?.user?.email || "customer@store.com",
                               });
                               setSelectedMethod("Crypto");
@@ -2980,9 +3133,8 @@ Please guide me on how to complete the payment!`;
                           try {
                             const res = await createBuyNowOrderAction(auction._id);
                             if (res.success && res.orderId) {
-                              const buyNowPriceUSD = auction.listingId.startingBid * 4;
                               const eurRate = useCurrencyStore.getState().rates.EUR || 0.92;
-                              const amountInEUR = Math.round(buyNowPriceUSD * eurRate * 100) / 100;
+                              const amountInEUR = Math.round(finalBuyNowPrice * eurRate * 100) / 100;
 
                               setPaypalCheckoutData({
                                 orderId: res.orderId,
@@ -3029,10 +3181,8 @@ Please guide me on how to complete the payment!`;
                         </div>
                       </button>
 
-                      {/* 5. Wise */}
                       {(() => {
-                        const buyNowPriceUSD = auction.listingId.startingBid * 4;
-                        const isWiseDisabled = buyNowPriceUSD < 5.00;
+                        const isWiseDisabled = finalBuyNowPrice < 5.00;
 
                         return (
                           <button
@@ -3044,7 +3194,7 @@ Please guide me on how to complete the payment!`;
                                 if (res.success && res.orderId) {
                                   const selectedCurrency = useCurrencyStore.getState().currency;
                                   const rate = useCurrencyStore.getState().rates[selectedCurrency] || 1.0;
-                                  const amountInSelected = Math.round(buyNowPriceUSD * rate * 100) / 100;
+                                  const amountInSelected = Math.round(finalBuyNowPrice * rate * 100) / 100;
 
                                   setWiseCheckoutData({
                                     orderId: res.orderId,
@@ -3146,8 +3296,10 @@ Please guide me on how to complete the payment!`;
                       <ShieldCheck className="h-4 w-4 text-emerald-500" />
                       <span>🔒 256-bit Secure manual billing protocol</span>
                     </div>
-                  </div>
+                  </>
                 )}
+              </div>
+            )}
 
               </div>
 
@@ -3208,6 +3360,14 @@ Please guide me on how to complete the payment!`;
                       <PriceDisplay amountInUSD={buyNowPrice} />
                     </span>
                   </div>
+                  {hasWalletCredit && (
+                    <div className="flex justify-between text-zinc-555 dark:text-zinc-400">
+                      <span>Wallet Credit Applied</span>
+                      <span className="text-emerald-500 font-bold">
+                        -<PriceDisplay amountInUSD={buyNowPriceDiscount} />
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-zinc-555 dark:text-zinc-400">
                     <span>Secure Protection</span>
                     <span className="text-emerald-600 dark:text-emerald-450 font-black uppercase text-[9px] bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Free</span>
@@ -3223,12 +3383,12 @@ Please guide me on how to complete the payment!`;
                   <span className="text-xs font-bold text-zinc-805 dark:text-zinc-300">Total Due</span>
                   <div className="text-right">
                     <div className="text-xl font-black text-[#6133e1] dark:text-purple-400 tracking-tight">
-                      <PriceDisplay amountInUSD={buyNowPrice} />
+                      <PriceDisplay amountInUSD={finalBuyNowPrice} />
                     </div>
                     {/* Show INR amount if UPI selected */}
                     {selectedMethod === "UPI" && (
-                      <div className="text-[10px] text-zinc-450 dark:text-zinc-500 font-bold mt-0.5">
-                        ≈ ₹{Math.round(buyNowPrice * (useCurrencyStore.getState().rates.INR || 83.5)).toLocaleString("en-IN")}
+                      <div className="text-[10px] text-zinc-450 dark:text-zinc-550 font-bold mt-0.5">
+                        ≈ ₹{Math.round(finalBuyNowPrice * (useCurrencyStore.getState().rates.INR || 83.5)).toLocaleString("en-IN")}
                       </div>
                     )}
                   </div>
@@ -3257,7 +3417,257 @@ Please guide me on how to complete the payment!`;
 
           </div>
         </div>
-      )}
+      )}\n\n      {/* ====================================================== */}
+      {/* WINNER PAYMENT MODAL */}
+      {/* ====================================================== */}
+      {isWinnerPaymentOpen && (() => {
+        const winAmount = activeBid;
+        const winDiscount = hasWalletCredit ? Math.min(winAmount, walletCreditAmount) : 0;
+        const finalWinPrice = Math.max(0, winAmount - winDiscount);
+        const isWinnerWiseDisabled = finalWinPrice < 5;
+
+        const closeWinnerModal = () => {
+          setWinnerUpiCheckoutData(null);
+          setWinnerPaypalCheckoutData(null);
+          setWinnerCryptoCheckoutData(null);
+          setWinnerWiseCheckoutData(null);
+          setWinnerPaymentStage("methods");
+          setIsWinnerPaymentOpen(false);
+        };
+
+        const handleWinnerManualChat = async (method: "Card" | "Others") => {
+          const userId = (session?.user as any)?.id as string;
+          const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+          try {
+            const res = await createAuctionWinnerOrderAction(auction._id);
+            if (res.success && res.orderId) {
+              const orderId = res.orderId;
+              const db = getDb();
+              const chatId = `order-${orderId}`;
+              const chatRef = doc(db, "supportChats", chatId);
+              const methodLabel = method === "Card" ? "Card, Cash App, Apple Pay" : "Others";
+              const subtotalText = `\nSubtotal (Winning Bid): ${convert(winAmount).formatted}`;
+              const walletText = winDiscount > 0 ? `\nWallet Discount: ${convert(winDiscount).formatted}` : "";
+              const finalText = `\nFinal Amount Due: ${convert(finalWinPrice).formatted}`;
+              const msgText = `🏆 AUCTION WIN PAYMENT\n----------------------------------\nOrder ID: ${orderId}\nListing: ${auction.listingId.title}${subtotalText}${walletText}${finalText}\nPayment Method: ${methodLabel}\n\n👤 USER DETAILS:\n----------------------------------\nUsername: ${username}\nEmail: ${session?.user?.email || "N/A"}\nUser ID: ${userId}\n\nPlease guide me on completing my auction payment!`;
+              await setDoc(chatRef, {
+                userId, username, email: session?.user?.email ?? "", type: "order", orderId,
+                title: `Auction Win #${orderId.substring(0, 8).toUpperCase()}`,
+                lastMessage: `Auction win payment started via ${methodLabel}.`,
+                lastMessageAt: serverTimestamp(), unreadByAdmin: 1, unreadByUser: 0, createdAt: serverTimestamp(),
+              });
+              const msgsRef = collection(db, "supportChats", chatId, "messages");
+              await addDoc(msgsRef, { text: msgText, sender: "user", senderName: username, timestamp: serverTimestamp(), read: false });
+              await addDoc(msgsRef, { text: `System: Hi ${username}! We've received your auction win order. A support team member will shortly guide you through the payment.`, sender: "admin", senderName: "Support Team", timestamp: serverTimestamp(), read: false });
+              closeWinnerModal();
+              window.location.href = `/chat?chatId=${chatId}`;
+            } else {
+              alert("Error: " + (res.error || "Please try again."));
+            }
+          } catch (err) {
+            console.error("Winner manual chat error:", err);
+            alert("Failed to initiate support chat. Please try again.");
+          }
+        };
+
+        return (
+          <div
+            onClick={(e) => { if (e.target === e.currentTarget) closeWinnerModal(); }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+          >
+            <div className="relative w-full max-w-lg rounded-2xl border border-violet-500/20 bg-white dark:bg-[#111] p-6 shadow-2xl text-zinc-900 dark:text-white transition-all duration-300 cursor-default overflow-y-auto max-h-[90vh]">
+              <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#6133e1]/5 rounded-full blur-3xl pointer-events-none" />
+              <button onClick={closeWinnerModal} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-950 dark:hover:text-white cursor-pointer bg-transparent border-none z-10">
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="space-y-5 relative z-10">
+                {/* Header */}
+                <div className="space-y-1 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-[#6133e1]" />
+                    <h2 className="text-base font-black uppercase tracking-tight text-zinc-950 dark:text-white">Complete Auction Payment</h2>
+                  </div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {auction.listingId.title} — Winning Bid: <strong className="text-zinc-700 dark:text-zinc-200"><PriceDisplay amountInUSD={winAmount} /></strong>
+                  </p>
+                </div>
+
+                {/* Price Breakdown */}
+                <div className="bg-zinc-50 dark:bg-zinc-900/60 rounded-xl p-4 space-y-2 text-xs">
+                  <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
+                    <span>Winning Bid</span>
+                    <span className="font-bold text-zinc-800 dark:text-zinc-200"><PriceDisplay amountInUSD={winAmount} /></span>
+                  </div>
+                  {winDiscount > 0 && (
+                    <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
+                      <span>Wallet Credit</span>
+                      <span className="font-bold text-emerald-500">−<PriceDisplay amountInUSD={winDiscount} /></span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-black text-sm pt-1 border-t border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white">
+                    <span>Total Due</span>
+                    <span className="text-[#6133e1]"><PriceDisplay amountInUSD={finalWinPrice} /></span>
+                  </div>
+                </div>
+
+                {/* Gateway stages */}
+                {winnerPaymentStage === "wise" && winnerWiseCheckoutData ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-sm flex items-center gap-1.5"><Globe className="h-4 w-4 text-emerald-500" />Wise Gate</h3>
+                      <button onClick={() => { setWinnerWiseCheckoutData(null); setWinnerPaymentStage("methods"); }} className="text-[10px] font-bold text-zinc-500 hover:text-emerald-600 cursor-pointer bg-transparent border-none">Change Method</button>
+                    </div>
+                    <WisePaymentCheckout orderId={winnerWiseCheckoutData.orderId} amount={winnerWiseCheckoutData.amount} currency={winnerWiseCheckoutData.currency} customerEmail={winnerWiseCheckoutData.email} walletDiscountApplied={winDiscount} originalTotalPrice={winAmount} />
+                  </div>
+                ) : winnerPaymentStage === "crypto" && winnerCryptoCheckoutData ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-sm flex items-center gap-1.5"><Coins className="h-4 w-4 text-amber-500" />Crypto Gate</h3>
+                      <button onClick={() => { setWinnerCryptoCheckoutData(null); setWinnerPaymentStage("methods"); }} className="text-[10px] font-bold text-zinc-500 hover:text-amber-600 cursor-pointer bg-transparent border-none">Change Method</button>
+                    </div>
+                    <CryptoPaymentCheckout orderId={winnerCryptoCheckoutData.orderId} amount={winnerCryptoCheckoutData.amount} customerEmail={winnerCryptoCheckoutData.email} walletDiscountApplied={winDiscount} originalTotalPrice={winAmount} />
+                  </div>
+                ) : winnerPaymentStage === "paypal" && winnerPaypalCheckoutData ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-sm flex items-center gap-1.5"><DollarSign className="h-4 w-4 text-blue-500" />PayPal Gate</h3>
+                      <button onClick={() => { setWinnerPaypalCheckoutData(null); setWinnerPaymentStage("methods"); }} className="text-[10px] font-bold text-zinc-500 hover:text-blue-600 cursor-pointer bg-transparent border-none">Change Method</button>
+                    </div>
+                    <PayPalPaymentCheckout orderId={winnerPaypalCheckoutData.orderId} amount={winnerPaypalCheckoutData.amount} customerEmail={winnerPaypalCheckoutData.email} walletDiscountApplied={winDiscount} originalTotalPrice={winAmount} />
+                  </div>
+                ) : winnerPaymentStage === "upi" && winnerUpiCheckoutData ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-sm flex items-center gap-1.5"><ScanQrCode className="h-4 w-4 text-[#6133e1]" />UPI Gate</h3>
+                      <button onClick={() => { setWinnerUpiCheckoutData(null); setWinnerPaymentStage("methods"); }} className="text-[10px] font-bold text-zinc-500 hover:text-violet-600 cursor-pointer bg-transparent border-none">Change Method</button>
+                    </div>
+                    <UpiPaymentCheckout orderId={winnerUpiCheckoutData.orderId} amount={winnerUpiCheckoutData.amount} customerEmail={winnerUpiCheckoutData.email} walletDiscountApplied={winDiscount} originalTotalPrice={winAmount} />
+                  </div>
+                ) : finalWinPrice === 0 ? (
+                  /* Wallet-fully-covered */
+                  <button
+                    onClick={async () => {
+                      setWinnerLoadingMethod("WALLET");
+                      try {
+                        const res = await createAuctionWinnerOrderAction(auction._id);
+                        if (res.success && res.orderId) {
+                          const orderId = res.orderId;
+                          const userId = (session?.user as any)?.id as string;
+                          const username = (session?.user as any)?.username || session?.user?.name || "User";
+                          const db = getDb();
+                          const chatId = `order-${orderId}`;
+                          await setDoc(doc(db, "supportChats", chatId), {
+                            userId, username, email: session?.user?.email ?? "", type: "order", orderId,
+                            title: `Auction Win #${orderId.substring(0, 8).toUpperCase()}`,
+                            lastMessage: "Paid via wallet balance.",
+                            lastMessageAt: serverTimestamp(), unreadByAdmin: 1, unreadByUser: 0, createdAt: serverTimestamp(),
+                          });
+                          const msgsRef = collection(db, "supportChats", chatId, "messages");
+                          await addDoc(msgsRef, { text: `🏆 AUCTION WIN — WALLET PAYMENT\n----------------------------------\nOrder ID: ${orderId}\nListing: ${auction.listingId.title}\nWinning Bid: ${convert(winAmount).formatted}\nWallet Applied: ${convert(winDiscount).formatted}\nFinal Due: $0.00\n\nPaid automatically via wallet balance!`, sender: "user", senderName: username, timestamp: serverTimestamp(), read: false });
+                          await addDoc(msgsRef, { text: `System: Your auction win for ${auction.listingId.title} has been fully paid using wallet credit. Account will be delivered shortly!`, sender: "admin", senderName: "Support Team", timestamp: serverTimestamp(), read: false });
+                          closeWinnerModal();
+                          window.location.href = `/chat?chatId=${chatId}`;
+                        } else { alert("Error: " + (res.error || "Failed")); }
+                      } catch (err) { console.error(err); alert("Failed. Please try again."); }
+                      finally { setWinnerLoadingMethod(null); }
+                    }}
+                    disabled={winnerLoadingMethod !== null}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase text-xs tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {winnerLoadingMethod === "WALLET" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Wallet Payment ($0.00)"}
+                  </button>
+                ) : (
+                  /* Payment method selection grid */
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* UPI */}
+                    <button onClick={async () => {
+                      setWinnerLoadingMethod("UPI");
+                      try {
+                        const res = await createAuctionWinnerOrderAction(auction._id);
+                        if (res.success && res.orderId) {
+                          const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                          setWinnerUpiCheckoutData({ orderId: res.orderId, amount: Math.round(finalWinPrice * inrRate), email: session?.user?.email || "" });
+                          setWinnerPaymentStage("upi");
+                        } else { alert(res.error || "Failed"); }
+                      } catch (err) { console.error(err); } finally { setWinnerLoadingMethod(null); }
+                    }} disabled={winnerLoadingMethod !== null} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-[#6133e1] hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer transition disabled:opacity-50">
+                      {winnerLoadingMethod === "UPI" ? <Loader2 className="h-5 w-5 animate-spin" /> : <ScanQrCode className="h-5 w-5 text-[#6133e1]" />}
+                      <span className="text-xs font-black text-zinc-900 dark:text-white">UPI</span>
+                    </button>
+                    {/* PayPal */}
+                    <button onClick={async () => {
+                      setWinnerLoadingMethod("PayPal");
+                      try {
+                        const res = await createAuctionWinnerOrderAction(auction._id);
+                        if (res.success && res.orderId) {
+                          setWinnerPaypalCheckoutData({ orderId: res.orderId, amount: finalWinPrice, email: session?.user?.email || "" });
+                          setWinnerPaymentStage("paypal");
+                        } else { alert(res.error || "Failed"); }
+                      } catch (err) { console.error(err); } finally { setWinnerLoadingMethod(null); }
+                    }} disabled={winnerLoadingMethod !== null} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-blue-500 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer transition disabled:opacity-50">
+                      {winnerLoadingMethod === "PayPal" ? <Loader2 className="h-5 w-5 animate-spin" /> : <PaypalIcon className="h-5 w-5" />}
+                      <span className="text-xs font-black text-zinc-900 dark:text-white">PayPal</span>
+                    </button>
+                    {/* Crypto */}
+                    <button onClick={async () => {
+                      setWinnerLoadingMethod("Crypto");
+                      try {
+                        const res = await createAuctionWinnerOrderAction(auction._id);
+                        if (res.success && res.orderId) {
+                          setWinnerCryptoCheckoutData({ orderId: res.orderId, amount: finalWinPrice, email: session?.user?.email || "" });
+                          setWinnerPaymentStage("crypto");
+                        } else { alert(res.error || "Failed"); }
+                      } catch (err) { console.error(err); } finally { setWinnerLoadingMethod(null); }
+                    }} disabled={winnerLoadingMethod !== null} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-amber-500 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer transition disabled:opacity-50">
+                      {winnerLoadingMethod === "Crypto" ? <Loader2 className="h-5 w-5 animate-spin" /> : <AnimatedCryptoIcon className="h-5 w-5" />}
+                      <span className="text-xs font-black text-zinc-900 dark:text-white">Crypto</span>
+                    </button>
+                    {/* Wise */}
+                    <button onClick={async () => {
+                      if (isWinnerWiseDisabled) return;
+                      setWinnerLoadingMethod("Wise");
+                      try {
+                        const res = await createAuctionWinnerOrderAction(auction._id);
+                        if (res.success && res.orderId) {
+                          const cur = useCurrencyStore.getState().currency;
+                          const rate = useCurrencyStore.getState().rates[cur] || 1;
+                          setWinnerWiseCheckoutData({ orderId: res.orderId, amount: Math.round(finalWinPrice * rate * 100) / 100, currency: cur, email: session?.user?.email || "" });
+                          setWinnerPaymentStage("wise");
+                        } else { alert(res.error || "Failed"); }
+                      } catch (err) { console.error(err); } finally { setWinnerLoadingMethod(null); }
+                    }} disabled={isWinnerWiseDisabled || winnerLoadingMethod !== null} className={cn("flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition", isWinnerWiseDisabled ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer")}>
+                      {winnerLoadingMethod === "Wise" ? <Loader2 className="h-5 w-5 animate-spin" /> : <WiseIcon className="h-5 w-5" />}
+                      <span className="text-xs font-black text-zinc-900 dark:text-white">{isWinnerWiseDisabled ? "Wise (Min $5)" : "Wise"}</span>
+                    </button>
+                    {/* Card */}
+                    <button onClick={async () => {
+                      setWinnerLoadingMethod("Card");
+                      try { await handleWinnerManualChat("Card"); } finally { setWinnerLoadingMethod(null); }
+                    }} disabled={winnerLoadingMethod !== null} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-400 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer transition disabled:opacity-50">
+                      {winnerLoadingMethod === "Card" ? <Loader2 className="h-5 w-5 animate-spin" /> : <AnimatedCardIcon className="h-5 w-5" />}
+                      <span className="text-xs font-black text-zinc-900 dark:text-white">Card</span>
+                    </button>
+                    {/* Others */}
+                    <button onClick={async () => {
+                      setWinnerLoadingMethod("Others");
+                      try { await handleWinnerManualChat("Others"); } finally { setWinnerLoadingMethod(null); }
+                    }} disabled={winnerLoadingMethod !== null} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-zinc-400 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer transition disabled:opacity-50">
+                      {winnerLoadingMethod === "Others" ? <Loader2 className="h-5 w-5 animate-spin" /> : <CircleDot className="h-5 w-5 text-zinc-500" />}
+                      <span className="text-xs font-black text-zinc-900 dark:text-white">Others</span>
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-450 dark:text-zinc-500 font-semibold pt-1">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>🔒 Secure payment — buyer protected</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

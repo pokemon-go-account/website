@@ -19,11 +19,12 @@ interface ResendMessageButtonProps {
   orderType: string;
   items: string[];
   price: number;
+  walletDiscountApplied?: number;
 }
 
 type PaymentMethod = "UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others";
 
-export function ResendMessageButton({ orderId, orderType, items, price }: ResendMessageButtonProps) {
+export function ResendMessageButton({ orderId, orderType, items, price, walletDiscountApplied = 0 }: ResendMessageButtonProps) {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
@@ -60,12 +61,19 @@ export function ResendMessageButton({ orderId, orderType, items, price }: Resend
       const methodLabel = method === "Card" ? "Card, Cash App, Apple Pay" : "Others";
       const itemsList = items.map(item => `- ${item}`).join("\n");
 
+      const subtotalVal = price + walletDiscountApplied;
+      const discountVal = walletDiscountApplied;
+      const finalPriceVal = price;
+
+      const subtotalText = `\nSubtotal Price: $${subtotalVal.toFixed(2)} USD`;
+      const walletDiscountText = discountVal > 0 ? `\nWallet Discount: $${discountVal.toFixed(2)} USD` : "";
+      const finalPriceText = `\nFinal Amount Paid: $${finalPriceVal.toFixed(2)} USD`;
+
       const messageText = `📦 ORDER FOLLOW UP: Manual Payment
 ----------------------------------
 Order ID: ${orderId}
 Items:
-${itemsList}
-Total Price: $${price.toFixed(2)} USD
+${itemsList}${subtotalText}${walletDiscountText}${finalPriceText}
 Payment Method: ${methodLabel}
 
 👤 USER DETAILS:
@@ -167,6 +175,8 @@ Please guide me on how to complete the payment!`;
                   orderId={orderId}
                   amount={amountInINR}
                   customerEmail={email}
+                  walletDiscountApplied={walletDiscountApplied}
+                  originalTotalPrice={price + walletDiscountApplied}
                 />
               </div>
             ) : selectedMethod === "PayPal" ? (
@@ -187,6 +197,8 @@ Please guide me on how to complete the payment!`;
                   orderId={orderId}
                   amount={amountInEUR}
                   customerEmail={email}
+                  walletDiscountApplied={walletDiscountApplied}
+                  originalTotalPrice={price + walletDiscountApplied}
                 />
               </div>
             ) : selectedMethod === "Crypto" ? (
@@ -207,6 +219,8 @@ Please guide me on how to complete the payment!`;
                   orderId={orderId}
                   amount={price}
                   customerEmail={email}
+                  walletDiscountApplied={walletDiscountApplied}
+                  originalTotalPrice={price + walletDiscountApplied}
                 />
               </div>
             ) : selectedMethod === "Wise" ? (
@@ -228,6 +242,8 @@ Please guide me on how to complete the payment!`;
                   amount={amountInSelected}
                   currency={selectedCurrency}
                   customerEmail={email}
+                  walletDiscountApplied={walletDiscountApplied}
+                  originalTotalPrice={price + walletDiscountApplied}
                 />
               </div>
             ) : (

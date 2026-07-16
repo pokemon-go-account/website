@@ -44,17 +44,26 @@ export default async function UserOrdersPage() {
     status: o.status,
     items: o.items.map((i: any) => `${i.name} (x${i.quantity})`),
     link: o.orderType === "BUY_NOW" && o.auctionId ? `/auctions/${o.auctionId.toString()}` : null,
+    walletDiscountApplied: o.walletDiscountApplied || 0,
+    deliveryStatus: o.deliveryStatus || null,
+    auctionId: o.auctionId?.toString() || null,
   }));
 
-  const wonAuctions = wonAuctionsDocs.map((a: any) => ({
-    id: a._id.toString(),
-    orderType: "AUCTION",
-    date: a.endTime || a.updatedAt,
-    price: a.currentHighestBid,
-    status: "COMPLETED",
-    items: [a.listingId?.title || "Pokémon GO Account Win"],
-    link: `/auctions/${a._id.toString()}`,
-  }));
+  const wonAuctions = wonAuctionsDocs
+    // Only show auctions that don't already have an AUCTION order (to avoid duplicates)
+    .filter((a: any) => !directOrders.some((o) => o.auctionId === a._id.toString() && o.orderType === "AUCTION"))
+    .map((a: any) => ({
+      id: a._id.toString(),
+      orderType: "AUCTION" as const,
+      date: a.endTime || a.updatedAt,
+      price: a.currentHighestBid,
+      status: "PENDING" as const,
+      items: [a.listingId?.title || "Pokémon GO Account Win"],
+      link: `/auctions/${a._id.toString()}`,
+      walletDiscountApplied: 0,
+      deliveryStatus: null,
+      auctionId: a._id.toString(),
+    }));
 
   const allPurchases = [...directOrders, ...wonAuctions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -193,6 +202,7 @@ export default async function UserOrdersPage() {
                             orderType={purchase.orderType}
                             items={purchase.items}
                             price={purchase.price}
+                            walletDiscountApplied={purchase.walletDiscountApplied}
                           />
                           <CancelOrderButton orderId={purchase.id} />
                         </>
@@ -233,14 +243,25 @@ export default async function UserOrdersPage() {
                     </div>
                   </div>
 
-                  {/* Review section */}
+                  {/* Review section — gated by delivery for AUCTION orders */}
                   {purchase.status === "COMPLETED" && (
-                    <div className="px-5 pb-5">
-                      <OrderReviewSection
-                        orderId={purchase.id}
-                        initialReview={existingReview}
-                      />
-                    </div>
+                    purchase.orderType === "AUCTION"
+                      ? purchase.deliveryStatus === "DELIVERED" && (
+                          <div className="px-5 pb-5">
+                            <OrderReviewSection
+                              orderId={purchase.id}
+                              initialReview={existingReview}
+                            />
+                          </div>
+                        )
+                      : (
+                          <div className="px-5 pb-5">
+                            <OrderReviewSection
+                              orderId={purchase.id}
+                              initialReview={existingReview}
+                            />
+                          </div>
+                        )
                   )}
                 </div>
               );

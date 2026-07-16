@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getPendingAuctionListings, approveListingConsole, rejectListingConsole, updateListingConsole } from "@/features/console/actions";
-import { Gavel, CheckCircle, XCircle, AlertTriangle, Eye, Edit2, X, Sparkles, Trophy, CalendarDays, Coins } from "lucide-react";
+import { getPendingAuctionListings, approveListingConsole, rejectListingConsole, updateListingConsole, getConcludedAuctions, markAuctionPaymentReceived, markAuctionDelivered } from "@/features/console/actions";
+import { Gavel, CheckCircle, XCircle, AlertTriangle, Eye, Edit2, X, Sparkles, Trophy, CalendarDays, Coins, CreditCard, Package, Truck, Clock, Search, ChevronRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Listing {
@@ -46,11 +46,18 @@ interface Listing {
 }
 
 export default function ConsoleAuctionsPage() {
+  const [activeTab, setActiveTab] = useState<"pending" | "concluded">("pending");
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; success: boolean } | null>(null);
+
+  // Concluded auctions state
+  const [concluded, setConcluded] = useState<any[]>([]);
+  const [concludedLoading, setConcludedLoading] = useState(false);
+  const [concludedSearch, setConcludedSearch] = useState("");
+  const [concludedProcessing, setConcludedProcessing] = useState<string | null>(null);
 
   // Detail Modal state
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -64,7 +71,15 @@ export default function ConsoleAuctionsPage() {
     setLoading(false);
   };
 
+  const loadConcluded = async (search = "") => {
+    setConcludedLoading(true);
+    const res = await getConcludedAuctions(1, 50, search);
+    if (res.success) setConcluded(res.auctions || []);
+    setConcludedLoading(false);
+  };
+
   useEffect(() => { load(); }, []);
+  useEffect(() => { if (activeTab === "concluded") loadConcluded(concludedSearch); }, [activeTab]);
 
   const approve = async (id: string, customNotes?: string) => {
     setProcessing(id);
@@ -137,8 +152,36 @@ export default function ConsoleAuctionsPage() {
     <div className="max-w-5xl space-y-8">
       {/* Title Header */}
       <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Auction Approvals</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 font-medium">Review, verify, edit, and approve/reject seller-submitted listings.</p>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Auction Management</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 font-medium">Review pending listings and manage concluded auctions.</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border border-zinc-200 dark:border-white/[0.06] rounded-lg p-1 bg-zinc-50 dark:bg-white/[0.02] w-fit">
+        <button
+          onClick={() => setActiveTab("pending")}
+          className={cn(
+            "h-8 px-4 rounded-md text-xs font-semibold transition-all cursor-pointer",
+            activeTab === "pending"
+              ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs"
+              : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          )}
+        >
+          <Gavel className="h-3.5 w-3.5 inline-block mr-1.5 -mt-0.5" />
+          Pending Approvals
+        </button>
+        <button
+          onClick={() => setActiveTab("concluded")}
+          className={cn(
+            "h-8 px-4 rounded-md text-xs font-semibold transition-all cursor-pointer",
+            activeTab === "concluded"
+              ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs"
+              : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          )}
+        >
+          <Trophy className="h-3.5 w-3.5 inline-block mr-1.5 -mt-0.5" />
+          Concluded Auctions
+        </button>
       </div>
 
       {message && (
@@ -230,8 +273,161 @@ export default function ConsoleAuctionsPage() {
         </div>
       )}
 
-      {/* Verification / Details Modal */}
-      {selectedListing && (
+      {/* ======================== CONCLUDED TAB ======================== */}
+      {activeTab === "concluded" && (
+        <div className="space-y-5">
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search by listing title..."
+              value={concludedSearch}
+              onChange={(e) => setConcludedSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") loadConcluded(concludedSearch); }}
+              className="w-full h-9 pl-9 pr-20 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-lg text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+            />
+            <button
+              onClick={() => loadConcluded(concludedSearch)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 px-2.5 rounded-md bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[10px] font-semibold cursor-pointer"
+            >Search</button>
+          </div>
+
+          {concludedLoading ? (
+            <p className="text-zinc-500 text-xs italic">Loading concluded auctions...</p>
+          ) : concluded.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] py-16 text-center">
+              <Trophy className="h-8 w-8 text-zinc-400 mx-auto mb-3" />
+              <p className="text-zinc-950 dark:text-white font-semibold text-sm">No Concluded Auctions</p>
+              <p className="text-zinc-500 text-xs mt-1">Auctions that have ended will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {concluded.map((a) => {
+                const order = a.associatedOrder;
+                const buyMethod = a.buyNowBuyerId ? "BUY_NOW" : "AUCTION_BID";
+                const buyer = a.buyNowBuyerId ? a.buyNowBuyerId : a.highestBidderId;
+                const buyerName = a.buyNowBuyerName || buyer?.username || buyer?.name || "Unknown";
+                const deliveryStatus: string = order?.deliveryStatus || "PENDING";
+
+                const deliveryConfig: Record<string, { label: string; className: string; icon: any }> = {
+                  PENDING: { label: "Awaiting Payment", className: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20", icon: Clock },
+                  PAYMENT_RECEIVED: { label: "Payment Received", className: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20", icon: CreditCard },
+                  DELIVERED: { label: "Delivered", className: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20", icon: Truck },
+                };
+                const dConfig = deliveryConfig[deliveryStatus] || deliveryConfig.PENDING;
+                const DIcon = dConfig.icon;
+
+                return (
+                  <div key={a._id} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-5 space-y-4 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-zinc-900 dark:text-white font-semibold text-sm truncate max-w-xs">
+                            {a.listingId?.title || "Unnamed Listing"}
+                          </h3>
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border",
+                            buyMethod === "BUY_NOW"
+                              ? "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20"
+                              : "text-violet-600 dark:text-violet-400 bg-violet-500/10 border-violet-500/20"
+                          )}>
+                            {buyMethod === "BUY_NOW" ? "Buy Now" : "Auction Bid"}
+                          </span>
+                          <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border", dConfig.className)}>
+                            <DIcon className="h-3 w-3 inline-block mr-1 -mt-0.5" />
+                            {dConfig.label}
+                          </span>
+                        </div>
+                        <p className="text-zinc-500 text-[10px]">
+                          {buyMethod === "BUY_NOW" ? (
+                            <>🛒 Bought via Buy Now by <strong className="text-zinc-700 dark:text-zinc-300">@{buyerName}</strong></>
+                          ) : (
+                            <>🏆 Won by <strong className="text-zinc-700 dark:text-zinc-300">@{buyerName}</strong></>
+                          )}
+                          {" · "}
+                          Final price: <strong className="text-zinc-700 dark:text-zinc-300">${a.currentHighestBid?.toLocaleString()}</strong>
+                          {" · "}
+                          {new Date(a.updatedAt || a.endTime).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                        {buyer?.email && (
+                          <p className="text-zinc-400 text-[10px]">
+                            <User className="h-3 w-3 inline-block mr-1" />
+                            {buyer.email}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Action buttons */}
+                      {order ? (
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          {deliveryStatus === "PENDING" && (
+                            <button
+                              onClick={async () => {
+                                setConcludedProcessing(order._id);
+                                const res = await markAuctionPaymentReceived(order._id);
+                                if (res.success) loadConcluded(concludedSearch);
+                                else alert(res.error || "Failed.");
+                                setConcludedProcessing(null);
+                              }}
+                              disabled={concludedProcessing === order._id}
+                              className="h-8 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+                            >
+                              <CreditCard className="h-3.5 w-3.5" />
+                              {concludedProcessing === order._id ? "..." : "Mark Payment Received"}
+                            </button>
+                          )}
+                          {deliveryStatus === "PAYMENT_RECEIVED" && (
+                            <button
+                              onClick={async () => {
+                                setConcludedProcessing(order._id);
+                                const res = await markAuctionDelivered(order._id);
+                                if (res.success) loadConcluded(concludedSearch);
+                                else alert(res.error || "Failed.");
+                                setConcludedProcessing(null);
+                              }}
+                              disabled={concludedProcessing === order._id}
+                              className="h-8 px-3 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+                            >
+                              <Truck className="h-3.5 w-3.5" />
+                              {concludedProcessing === order._id ? "..." : "Mark Delivered"}
+                            </button>
+                          )}
+                          {deliveryStatus === "DELIVERED" && (
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              Delivered — Feedback Unlocked
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-amber-500 dark:text-amber-400 font-semibold border border-amber-500/20 bg-amber-500/5 px-2 py-1 rounded-md">
+                          ⏳ No order yet — winner has not paid
+                        </span>
+                      )}
+                    </div>
+
+                    {order && (
+                      <div className="border-t border-zinc-100 dark:border-white/[0.04] pt-3 flex flex-wrap gap-4 text-[10px] text-zinc-500">
+                        <span>Order ID: <span className="font-mono text-zinc-700 dark:text-zinc-300">{order._id.substring(0, 16)}…</span></span>
+                        <span>Paid: <strong className="text-zinc-700 dark:text-zinc-300">${order.totalPrice?.toFixed(2)}</strong></span>
+                        {order.walletDiscountApplied > 0 && (
+                          <span>Wallet Used: <strong className="text-emerald-600">−${order.walletDiscountApplied?.toFixed(2)}</strong></span>
+                        )}
+                        <span>Type: <strong className="text-zinc-700 dark:text-zinc-300">{order.orderType}</strong></span>
+                        <span>Status: <strong className={order.status === "COMPLETED" ? "text-emerald-600" : "text-amber-500"}>{order.status}</strong></span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Verification / Details Modal (pending tab only) */}
+      {activeTab === "pending" && selectedListing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-xs overflow-y-auto">
           <div className="relative w-full max-w-4xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto transition-colors duration-300">
             {/* Modal Header */}

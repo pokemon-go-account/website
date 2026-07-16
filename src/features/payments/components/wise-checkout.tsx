@@ -30,6 +30,8 @@ interface WisePaymentCheckoutProps {
   currency: Currency; // e.g. "USD", "EUR", "INR" etc.
   customerEmail: string;
   wiseLink?: string;
+  walletDiscountApplied?: number;
+  originalTotalPrice?: number;
 }
 
 export function WisePaymentCheckout({
@@ -38,6 +40,8 @@ export function WisePaymentCheckout({
   currency,
   customerEmail,
   wiseLink = "https://wise.com/pay/me/deepanshus58",
+  walletDiscountApplied = 0,
+  originalTotalPrice,
 }: WisePaymentCheckoutProps) {
   const { data: session } = useSession();
   const [transactionReference, setTransactionReference] = useState("");
@@ -137,9 +141,12 @@ export function WisePaymentCheckout({
         const chatId = `order-${orderId}`;
         const chatRef = doc(db, "supportChats", chatId);
 
+        const subtotalText = originalTotalPrice ? `\nSubtotal Price: $${originalTotalPrice.toFixed(2)} USD` : "";
+        const walletDiscountText = walletDiscountApplied > 0 ? `\nWallet Discount: $${walletDiscountApplied.toFixed(2)} USD` : "";
+
         const messageText = `📦 ORDER PAID & SUBMITTED (Wise)
 ----------------------------------
-Order ID: ${orderId}
+Order ID: ${orderId}${subtotalText}${walletDiscountText}
 Paid Amount: ${amount.toLocaleString()} ${currency}
 Payment Method: Wise Transfer
 

@@ -65,16 +65,24 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
       quantity: item.quantity,
     }));
 
+    const isCompleted = finalPrice === 0;
+
     const order = await Order.create({
       userId: session.user.id,
       items: formattedItems,
       totalPrice: finalPrice,
       walletDiscountApplied: discount,
-      status: "PENDING",
+      status: isCompleted ? "COMPLETED" : "PENDING",
       orderType: "STOREFRONT",
     });
 
-    return { success: true, orderId: order._id.toString() };
+    if (isCompleted) {
+      await User.findByIdAndUpdate(session.user.id, {
+        $inc: { walletBalance: -discount }
+      });
+    }
+
+    return { success: true, orderId: order._id.toString(), autoCompleted: isCompleted };
   } catch (error: any) {
     console.error("Failed to create storefront order:", error);
     return { success: false, error: error.message || "Failed to record order." };

@@ -9,6 +9,8 @@ export interface IAuction extends Document {
   status: 'SCHEDULED' | 'LIVE' | 'COMPLETED' | 'PAUSED' | 'CANCELLED';
   registrationFee: number;
   viewers?: number;
+  buyNowBuyerId?: mongoose.Types.ObjectId;
+  buyNowBuyerName?: string;
 }
 
 const AuctionSchema: Schema<IAuction> = new Schema(
@@ -25,6 +27,8 @@ const AuctionSchema: Schema<IAuction> = new Schema(
     },
     registrationFee: { type: Number, default: 199 }, // Default entry fee constraint
     viewers: { type: Number, default: 0 },
+    buyNowBuyerId: { type: Schema.Types.ObjectId, ref: 'User' },
+    buyNowBuyerName: { type: String },
   },
   { timestamps: true }
 );

@@ -794,6 +794,8 @@ Please guide me on how to complete the payment!`;
                   amount={wiseCheckoutData.amount}
                   currency={wiseCheckoutData.currency}
                   customerEmail={wiseCheckoutData.email}
+                  walletDiscountApplied={Math.min(getTotalPrice(), walletCreditAmount)}
+                  originalTotalPrice={getTotalPrice()}
                 />
               </div>
             ) : paymentStage === "crypto" && cryptoCheckoutData ? (
@@ -817,6 +819,8 @@ Please guide me on how to complete the payment!`;
                   orderId={cryptoCheckoutData.orderId}
                   amount={cryptoCheckoutData.amount}
                   customerEmail={cryptoCheckoutData.email}
+                  walletDiscountApplied={Math.min(getTotalPrice(), walletCreditAmount)}
+                  originalTotalPrice={getTotalPrice()}
                 />
               </div>
             ) : paymentStage === "paypal" && paypalCheckoutData ? (
@@ -840,6 +844,8 @@ Please guide me on how to complete the payment!`;
                   orderId={paypalCheckoutData.orderId}
                   amount={paypalCheckoutData.amount}
                   customerEmail={paypalCheckoutData.email}
+                  walletDiscountApplied={Math.min(getTotalPrice(), walletCreditAmount)}
+                  originalTotalPrice={getTotalPrice()}
                 />
               </div>
             ) : paymentStage === "upi" && upiCheckoutData ? (
@@ -863,10 +869,11 @@ Please guide me on how to complete the payment!`;
                   orderId={upiCheckoutData.orderId}
                   amount={upiCheckoutData.amount}
                   customerEmail={upiCheckoutData.email}
+                  walletDiscountApplied={Math.min(getTotalPrice(), walletCreditAmount)}
+                  originalTotalPrice={getTotalPrice()}
                 />
               </div>
             ) : (
-              /* STAGE 3: CHOOSE PAYMENT METHOD (6 OPTIONS) */
               <>
                 {/* Header */}
                 <div className="space-y-1.5 text-left">
@@ -875,7 +882,9 @@ Please guide me on how to complete the payment!`;
                     Complete Checkout
                   </h2>
                   <p className="text-xs text-zinc-550 dark:text-zinc-400">
-                    Choose your preferred payment method below. The total price is:
+                    {getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount) <= 0 
+                      ? "Your wallet balance fully covers this purchase. No external gateway payment is required!" 
+                      : "Choose your preferred payment method below. The total price is:"}
                   </p>
                   {hasWalletCredit && (
                     <div className="text-[11px] text-zinc-400 dark:text-zinc-550 flex items-center gap-1.5 mt-1">
@@ -889,8 +898,95 @@ Please guide me on how to complete the payment!`;
                   </div>
                 </div>
 
-                {/* 6 Payment Methods Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {getTotalPrice() - Math.min(getTotalPrice(), walletCreditAmount) <= 0 ? (
+                  <div className="pt-4">
+                    <button
+                      onClick={async () => {
+                        setLoadingMethod("WALLET");
+                        try {
+                          const res = await createStorefrontOrderAction(items, getTotalPrice());
+                          if (res.success && res.orderId) {
+                            const orderId = res.orderId;
+                            const userId = (session?.user as any)?.id as string || "N/A";
+                            const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+                            const db = getDb();
+                            const chatId = `order-${orderId}`;
+                            const chatRef = doc(db, "supportChats", chatId);
+
+                            const messageText = `📦 ORDER COMPLETED (Paid via Wallet)
+----------------------------------
+Order ID: ${orderId}
+Subtotal Price: $${getTotalPrice().toFixed(2)} USD
+Wallet Balance Applied: $${getTotalPrice().toFixed(2)} USD
+Remaining Amount Paid: $0.00 USD
+Payment Method: Wallet Balance (Full Credit)
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${session?.user?.email || "N/A"}
+User ID: ${userId}
+
+This order has been completed automatically using your wallet balance. Admin will coordinate asset delivery here shortly!`;
+
+                            await setDoc(chatRef, {
+                              userId,
+                              username,
+                              email: session?.user?.email ?? "",
+                              type: "order",
+                              orderId,
+                              title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
+                              lastMessage: "Paid automatically via wallet credit.",
+                              lastMessageAt: serverTimestamp(),
+                              unreadByAdmin: 1,
+                              unreadByUser: 0,
+                              createdAt: serverTimestamp(),
+                              paymentMethod: "Wallet",
+                            });
+
+                            const msgsRef = collection(db, "supportChats", chatId, "messages");
+                            await addDoc(msgsRef, {
+                              text: messageText,
+                              sender: "user",
+                              senderName: username,
+                              timestamp: serverTimestamp(),
+                              read: false,
+                            });
+
+                            await addDoc(msgsRef, {
+                              text: `System: Order #${orderId.substring(0, 8).toUpperCase()} has been successfully created and fully paid via wallet balance. Support representative will deliver your items soon!`,
+                              sender: "admin",
+                              senderName: "Support Team",
+                              timestamp: serverTimestamp(),
+                              read: false,
+                            });
+
+                            useCartStore.getState().clearCart();
+                            window.location.href = `/chat?chatId=${chatId}`;
+                          } else {
+                            alert("Error: " + (res.error || "Failed to complete order"));
+                          }
+                        } catch (err) {
+                          console.error("Wallet checkout error:", err);
+                          alert("Failed to pay using wallet balance. Please try again.");
+                        } finally {
+                          setLoadingMethod(null);
+                        }
+                      }}
+                      disabled={loadingMethod !== null}
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loadingMethod === "WALLET" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Confirm Wallet Purchase ($0.00)"
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  /* 6 Payment Methods Grid */
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   
                   {/* 1. UPI */}
                   <button
@@ -1214,12 +1310,14 @@ Please guide me on how to complete the payment!`;
                     </div>
                   </button>
 
-                </div>
+                    </div>
 
-                {/* Footer */}
-                <div className="pt-2 flex items-center justify-center text-[10px] text-zinc-450 dark:text-zinc-500">
-                  <span>🔒 Secured &amp; encrypted manual payment system</span>
-                </div>
+                    {/* Footer */}
+                    <div className="pt-2 flex items-center justify-center text-[10px] text-zinc-450 dark:text-zinc-500">
+                      <span>🔒 Secured &amp; encrypted manual payment system</span>
+                    </div>
+                  </>
+                )}
               </>
             )}
 

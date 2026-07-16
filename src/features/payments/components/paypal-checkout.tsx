@@ -28,6 +28,8 @@ interface PayPalPaymentCheckoutProps {
   amount: number; // in USD or appropriate currency
   customerEmail: string;
   paypalLink?: string; 
+  walletDiscountApplied?: number;
+  originalTotalPrice?: number;
 }
 
 export function PayPalPaymentCheckout({
@@ -35,6 +37,8 @@ export function PayPalPaymentCheckout({
   amount,
   customerEmail,
   paypalLink = "https://www.paypal.me/Gasphernus",
+  walletDiscountApplied = 0,
+  originalTotalPrice,
 }: PayPalPaymentCheckoutProps) {
   const { data: session } = useSession();
   const [transactionId, setTransactionId] = useState("");
@@ -143,9 +147,12 @@ export function PayPalPaymentCheckout({
         const chatId = `order-${orderId}`;
         const chatRef = doc(db, "supportChats", chatId);
 
+        const subtotalText = originalTotalPrice ? `\nSubtotal Price: $${originalTotalPrice.toFixed(2)} USD` : "";
+        const walletDiscountText = walletDiscountApplied > 0 ? `\nWallet Discount: $${walletDiscountApplied.toFixed(2)} USD` : "";
+
         const messageText = `📦 ORDER PAID & SUBMITTED (PayPal)
 ----------------------------------
-Order ID: ${orderId}
+Order ID: ${orderId}${subtotalText}${walletDiscountText}
 Paid Amount: €${amount.toLocaleString("en-IE")} EUR
 Payment Method: PayPal Transfer
 

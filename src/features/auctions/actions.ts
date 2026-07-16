@@ -368,10 +368,28 @@ export async function createBuyNowOrderAction(auctionId: string) {
       userId: session.user.id,
       auctionId: auction._id,
       orderType: "BUY_NOW",
+      status: "PENDING",
     });
 
+    const user = await User.findById(session.user.id);
+    const walletBalance = user?.walletBalance || 0;
+    const discount = walletBalance > 0 ? Math.min(buyNowPrice, walletBalance) : 0;
+    const finalPrice = Math.max(0, buyNowPrice - discount);
+    const isCompleted = finalPrice === 0;
+
     if (existingOrder) {
-      return { success: true, orderId: existingOrder._id.toString() };
+      existingOrder.totalPrice = finalPrice;
+      existingOrder.walletDiscountApplied = discount;
+      existingOrder.status = isCompleted ? "COMPLETED" : "PENDING";
+      await existingOrder.save();
+
+      if (isCompleted) {
+        await User.findByIdAndUpdate(session.user.id, {
+          $inc: { walletBalance: -discount }
+        });
+      }
+
+      return { success: true, orderId: existingOrder._id.toString(), autoCompleted: isCompleted };
     }
 
     const order = await Order.create({
@@ -383,15 +401,131 @@ export async function createBuyNowOrderAction(auctionId: string) {
           quantity: 1,
         },
       ],
-      totalPrice: buyNowPrice,
-      status: "PENDING",
+      totalPrice: finalPrice,
+      walletDiscountApplied: discount,
+      status: isCompleted ? "COMPLETED" : "PENDING",
       orderType: "BUY_NOW",
       auctionId: auction._id,
+      deliveryStatus: "PENDING",
     });
 
-    return { success: true, orderId: order._id.toString() };
+    if (isCompleted) {
+      await User.findByIdAndUpdate(session.user.id, {
+        $inc: { walletBalance: -discount }
+      });
+    }
+
+    // Mark auction as COMPLETED with buy-now buyer info — removes from active bidding
+    if (user) {
+      await Auction.findByIdAndUpdate(auction._id, {
+        status: "COMPLETED",
+        buyNowBuyerId: user._id,
+        buyNowBuyerName: (user as any).username || (user as any).name || "Unknown",
+      });
+    } else {
+      await Auction.findByIdAndUpdate(auction._id, { status: "COMPLETED" });
+    }
+
+    revalidatePath("/auctions");
+    revalidatePath(`/auctions/${auction._id.toString()}`);
+
+    return { success: true, orderId: order._id.toString(), autoCompleted: isCompleted };
   } catch (error: any) {
     console.error("Failed to create Buy Now order:", error);
     return { success: false, error: error.message || "Failed to initiate Buy Now purchase." };
+  }
+}
+
+/**
+ * Server Action: Create a pending payment order for the auction winner
+ */
+export async function createAuctionWinnerOrderAction(auctionId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized. Please sign in first." };
+    }
+
+    await connectDB();
+
+    const auction = await Auction.findById(auctionId);
+    if (!auction) {
+      return { success: false, error: "Auction not found." };
+    }
+
+    // Validate caller is the winner
+    const winnerId = auction.highestBidderId?.toString();
+    if (winnerId !== session.user.id) {
+      return { success: false, error: "You are not the winner of this auction." };
+    }
+
+    if (auction.status !== "COMPLETED") {
+      return { success: false, error: "Auction is not yet concluded." };
+    }
+
+    const listing = await Listing.findById(auction.listingId);
+    if (!listing) {
+      return { success: false, error: "Listing details not found." };
+    }
+
+    const Order = (await import("@/models/Order")).default;
+
+    // Idempotency: return existing order if one was already created
+    const existingOrder = await Order.findOne({
+      userId: session.user.id,
+      auctionId: auction._id,
+      orderType: "AUCTION",
+    });
+
+    if (existingOrder) {
+      return {
+        success: true,
+        orderId: existingOrder._id.toString(),
+        autoCompleted: existingOrder.status === "COMPLETED",
+        alreadyExists: true,
+      };
+    }
+
+    const winAmount = auction.currentHighestBid;
+    const user = await User.findById(session.user.id);
+    const walletBalance = user?.walletBalance || 0;
+    const discount = walletBalance > 0 ? Math.min(winAmount, walletBalance) : 0;
+    const finalPrice = Math.max(0, winAmount - discount);
+    const isCompleted = finalPrice === 0;
+
+    const order = await Order.create({
+      userId: session.user.id,
+      items: [
+        {
+          name: `${listing.title} (Auction Win)`,
+          price: winAmount,
+          quantity: 1,
+        },
+      ],
+      totalPrice: finalPrice,
+      walletDiscountApplied: discount,
+      status: isCompleted ? "COMPLETED" : "PENDING",
+      orderType: "AUCTION",
+      auctionId: auction._id,
+      deliveryStatus: "PENDING",
+    });
+
+    if (isCompleted && discount > 0) {
+      await User.findByIdAndUpdate(session.user.id, {
+        $inc: { walletBalance: -discount },
+      });
+    }
+
+    return {
+      success: true,
+      orderId: order._id.toString(),
+      autoCompleted: isCompleted,
+      winAmount,
+      finalPrice,
+      walletDiscount: discount,
+    };
+  } catch (error: any) {
+    console.error("Failed to create auction winner order:", error);
+    return { success: false, error: error.message || "Failed to initiate payment." };
   }
 }

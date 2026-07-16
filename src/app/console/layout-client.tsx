@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -83,6 +83,20 @@ interface ConsoleLayoutClientProps {
 export function ConsoleLayoutClient({ children, user }: ConsoleLayoutClientProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
+
+  // Force-reload the page when navigating back via browser history (BFCache)
+  // to avoid hydration or "Failed to load payload" errors in Safari on iOS
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
 
   const initials = user.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)

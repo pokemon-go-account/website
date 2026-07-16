@@ -13,6 +13,7 @@ export interface IOrder extends Document {
   status: "PENDING" | "COMPLETED" | "FAILED";
   orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION";
   auctionId?: mongoose.Types.ObjectId;
+  deliveryStatus?: "PENDING" | "PAYMENT_RECEIVED" | "DELIVERED";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +43,11 @@ const OrderSchema = new Schema<IOrder>(
       required: true,
     },
     auctionId: { type: Schema.Types.ObjectId, ref: "Auction" },
+    deliveryStatus: {
+      type: String,
+      enum: ["PENDING", "PAYMENT_RECEIVED", "DELIVERED"],
+      default: "PENDING",
+    },
   },
   { timestamps: true }
 );

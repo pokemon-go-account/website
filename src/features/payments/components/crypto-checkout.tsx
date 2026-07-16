@@ -31,6 +31,8 @@ interface CryptoPaymentCheckoutProps {
   orderId: string;
   amount: number; // in USD (default store pricing is USD)
   customerEmail: string;
+  walletDiscountApplied?: number;
+  originalTotalPrice?: number;
 }
 
 interface CoinOption {
@@ -152,6 +154,8 @@ export function CryptoPaymentCheckout({
   orderId,
   amount, // base USD amount
   customerEmail,
+  walletDiscountApplied = 0,
+  originalTotalPrice,
 }: CryptoPaymentCheckoutProps) {
   const { data: session } = useSession();
   const [selectedCoin, setSelectedCoin] = useState<CoinOption | null>(null);
@@ -270,9 +274,12 @@ export function CryptoPaymentCheckout({
         const chatId = `order-${orderId}`;
         const chatRef = doc(db, "supportChats", chatId);
 
+        const subtotalText = originalTotalPrice ? `\nSubtotal Price: $${originalTotalPrice.toFixed(2)} USD` : "";
+        const walletDiscountText = walletDiscountApplied > 0 ? `\nWallet Discount: $${walletDiscountApplied.toFixed(2)} USD` : "";
+
         const messageText = `📦 ORDER PAID & SUBMITTED (Crypto)
 ----------------------------------
-Order ID: ${orderId}
+Order ID: ${orderId}${subtotalText}${walletDiscountText}
 Base USD Amount: $${amount.toLocaleString()}
 Selected Coin: ${selectedCoin.name} (${selectedCoin.network})
 Payment Method: Cryptocurrency

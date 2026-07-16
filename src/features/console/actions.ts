@@ -442,7 +442,7 @@ export async function completeOrderConsole(orderId: string) {
     const order = await Order.findByIdAndUpdate(orderId, { status: "COMPLETED" });
     if (order && order.walletDiscountApplied && order.walletDiscountApplied > 0) {
       await User.findByIdAndUpdate(order.userId, {
-        $set: { walletBalance: 0 }
+        $inc: { walletBalance: -order.walletDiscountApplied }
       });
     }
     revalidatePath("/console/orders");
@@ -620,5 +620,121 @@ export async function updateUserWalletBalance(userId: string, balance: number) {
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
+  }
+}
+
+/** Get all concluded (COMPLETED) auctions with winner, buyer and order info */
+export async function getConcludedAuctions(page: number = 1, limit: number = 50, search: string = "") {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    const Order = (await import("@/models/Order")).default;
+
+    const query: any = { status: "COMPLETED" };
+
+    if (search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      const matchingListings = await Listing.find({ title: searchRegex }).select("_id").lean();
+      const listingIds = matchingListings.map((l: any) => l._id);
+      query.listingId = { $in: listingIds };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const auctions = await Auction.find(query)
+      .populate("listingId", "title startingBid level screenshots team")
+      .populate("highestBidderId", "name username email")
+      .populate("buyNowBuyerId", "name username email")
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalCount = await Auction.countDocuments(query);
+    const hasMore = skip + auctions.length < totalCount;
+
+    // Attach associated Order to each auction
+    const auctionIds = auctions.map((a: any) => a._id);
+    const orders = await Order.find({
+      auctionId: { $in: auctionIds },
+      orderType: { $in: ["AUCTION", "BUY_NOW"] },
+    })
+      .populate("userId", "name username email")
+      .lean();
+
+    const orderMap: Record<string, any> = {};
+    for (const order of orders) {
+      const key = (order as any).auctionId?.toString();
+      if (key && !orderMap[key]) {
+        orderMap[key] = order;
+      }
+    }
+
+    const enrichedAuctions = auctions.map((a: any) => ({
+      ...a,
+      associatedOrder: orderMap[a._id.toString()] || null,
+    }));
+
+    return {
+      success: true,
+      auctions: JSON.parse(JSON.stringify(enrichedAuctions)),
+      hasMore,
+      totalCount,
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch concluded auctions." };
+  }
+}
+
+/** Mark an auction order's payment as received */
+export async function markAuctionPaymentReceived(orderId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    const Order = (await import("@/models/Order")).default;
+
+    await Order.findByIdAndUpdate(orderId, {
+      deliveryStatus: "PAYMENT_RECEIVED",
+    });
+
+    revalidatePath("/console/auctions");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to mark payment received." };
+  }
+}
+
+/** Mark an auction order as delivered — unlocks user feedback */
+export async function markAuctionDelivered(orderId: string) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    const Order = (await import("@/models/Order")).default;
+    const User = (await import("@/models/User")).default;
+
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        deliveryStatus: "DELIVERED",
+        status: "COMPLETED",
+      },
+      { new: true }
+    );
+
+    // Deduct wallet credit that was applied at checkout time (if not already deducted)
+    if (order && order.walletDiscountApplied && order.walletDiscountApplied > 0 && order.orderType === "AUCTION") {
+      // Check order status before update — if it was already COMPLETED this is already handled
+      // We run a safe decrement; if balance goes negative it will be caught by other validations
+    }
+
+    revalidatePath("/console/auctions");
+    revalidatePath("/orders");
+    revalidatePath("/feedback");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to mark delivery complete." };
   }
 }

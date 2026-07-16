@@ -27,6 +27,8 @@ interface UpiPaymentCheckoutProps {
   customerEmail: string;
   upiId?: string; // Your UPI ID e.g. "yourname@upi"
   payeeName?: string; // Real name associated with UPI ID to prevent risk blocks
+  walletDiscountApplied?: number;
+  originalTotalPrice?: number;
 }
 
 export function UpiPaymentCheckout({
@@ -35,6 +37,8 @@ export function UpiPaymentCheckout({
   customerEmail,
   upiId = "adarshsingh9888-3@oksbi",
   payeeName = "Pokemon GO Services",
+  walletDiscountApplied = 0,
+  originalTotalPrice,
 }: UpiPaymentCheckoutProps) {
   const { data: session } = useSession();
   const [utrNumber, setUtrNumber] = useState("");
@@ -129,9 +133,12 @@ export function UpiPaymentCheckout({
         const chatId = `order-${orderId}`;
         const chatRef = doc(db, "supportChats", chatId);
 
+        const subtotalText = originalTotalPrice ? `\nSubtotal Price: $${originalTotalPrice.toFixed(2)} USD` : "";
+        const walletDiscountText = walletDiscountApplied > 0 ? `\nWallet Discount: $${walletDiscountApplied.toFixed(2)} USD` : "";
+
         const messageText = `📦 ORDER PAID & SUBMITTED (UPI)
 ----------------------------------
-Order ID: ${orderId}
+Order ID: ${orderId}${subtotalText}${walletDiscountText}
 Paid Amount: ₹${amount.toLocaleString("en-IN")}
 Payment Method: UPI Transfer
 
