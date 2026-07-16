@@ -7,12 +7,12 @@ export async function getLiveExchangeRates() {
   try {
     await connectDB();
     
-    // Check if we have recent rates in DB (within 20 minutes)
-    const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000);
+    // Check if we have recent rates in DB (within 5 minutes)
+    const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
     const existingRate = await ExchangeRate.findOne({ baseCurrency: "USD" });
 
-    // If we have rates and they are less than 20 minutes old, return them directly from MongoDB
-    if (existingRate && existingRate.updatedAt > twentyMinsAgo) {
+    // If we have rates and they are less than 5 minutes old, return them directly from MongoDB
+    if (existingRate && existingRate.updatedAt > fiveMinsAgo) {
       console.log(`[Currency API] Serving rates from MongoDB Cache (Last updated: ${existingRate.updatedAt.toISOString()})`);
       return { 
         success: true, 
