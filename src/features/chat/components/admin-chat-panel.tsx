@@ -145,7 +145,7 @@ export function AdminChatPanel() {
     });
 
     await addDoc(msgsRef, {
-      text: `System: admin - ${adminUsername} joined the chat`,
+      text: `System: Admin - ${adminUsername} joined the chat`,
       sender: "admin",
       senderName: "System",
       timestamp: serverTimestamp(),
@@ -153,7 +153,7 @@ export function AdminChatPanel() {
     });
 
     await updateDoc(chatRef, {
-      lastMessage: `admin - ${adminUsername} joined the chat`,
+      lastMessage: `Admin - ${adminUsername} joined the chat`,
       lastMessageAt: serverTimestamp(),
       unreadByUser: increment(1),
     });

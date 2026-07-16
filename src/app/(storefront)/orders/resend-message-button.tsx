@@ -325,21 +325,37 @@ Please guide me on how to complete the payment!`;
                   </button>
 
                   {/* 5. Wise */}
-                  <button
-                    onClick={() => setSelectedMethod("Wise")}
-                    disabled={isSubmittingManual}
-                    className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] disabled:opacity-50"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex items-center justify-center w-7 h-7 text-zinc-900 dark:text-white">
-                        <WiseIcon className="h-4.5 w-4.5" />
-                      </div>
-                      <div>
-                        <span className="text-xs font-black text-zinc-900 dark:text-white block">Wise Transfer</span>
-                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium">Wise-to-Wise link</span>
-                      </div>
-                    </div>
-                  </button>
+                  {(() => {
+                    const isWiseDisabled = price < 5.00;
+
+                    return (
+                      <button
+                        onClick={() => {
+                          if (isWiseDisabled) return;
+                          setSelectedMethod("Wise");
+                        }}
+                        disabled={isSubmittingManual || isWiseDisabled}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 transition text-left w-full group shadow-xs",
+                          isWiseDisabled
+                            ? "opacity-55 cursor-not-allowed"
+                            : "hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex items-center justify-center w-7 h-7 text-zinc-900 dark:text-white">
+                            <WiseIcon className="h-4.5 w-4.5" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-black text-zinc-900 dark:text-white block">Wise Transfer</span>
+                            <span className={cn("text-[9px] font-medium block", isWiseDisabled ? "text-red-500" : "text-zinc-500 dark:text-zinc-400")}>
+                              {isWiseDisabled ? "Min $5.00 required" : "Wise-to-Wise link"}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })()}
 
                   {/* 6. Others */}
                   <button

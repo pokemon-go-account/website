@@ -24,6 +24,19 @@ export function ChatWidget() {
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
+  const prevUnreadCountRef = useRef(0);
+  const isFirstRender = useRef(true);
+  const notifSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize notification sound
+  useEffect(() => {
+    notifSoundRef.current = new Audio("/audio/sound-7(1).mp3");
+    if (notifSoundRef.current) {
+      notifSoundRef.current.preload = "auto";
+      notifSoundRef.current.volume = 0.6;
+    }
+  }, []);
+
   // Listen for all unread messages belonging to this user
   useEffect(() => {
     if (!userId) return;
@@ -39,6 +52,28 @@ export function ChatWidget() {
     });
     return unsub;
   }, [userId]);
+
+  // Play notification sound when unreadCount increases and panel is closed/on mobile
+  useEffect(() => {
+    if (isFirstRender.current) {
+      prevUnreadCountRef.current = unreadCount;
+      isFirstRender.current = false;
+      return;
+    }
+
+    if (unreadCount > prevUnreadCountRef.current) {
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (!isOpen || isMobile) {
+        try {
+          if (notifSoundRef.current) {
+            notifSoundRef.current.currentTime = 0;
+            notifSoundRef.current.play().catch(() => {});
+          }
+        } catch { /* silent */ }
+      }
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount, isOpen]);
 
   // Click outside to close handler
   useEffect(() => {
@@ -71,7 +106,13 @@ export function ChatWidget() {
         <button
           ref={buttonRef}
           id="chat-widget-toggle"
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            if (window.innerWidth < 768) {
+              window.location.href = "/chat";
+            } else {
+              setIsOpen(true);
+            }
+          }}
           aria-label="Open support chat"
           className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-[#6133e1] hover:bg-[#5028c7] shadow-lg shadow-violet-500/30 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 cursor-pointer"
         >

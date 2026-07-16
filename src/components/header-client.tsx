@@ -308,6 +308,13 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                               My Account
                             </Link>
                             <Link
+                              href="/chat"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs hover:bg-zinc-50 dark:hover:bg-white/5 font-semibold text-zinc-650 dark:text-zinc-300 transition-colors"
+                            >
+                              Live Chat
+                            </Link>
+                            <Link
                               href="/orders"
                               onClick={() => setIsUserMenuOpen(false)}
                               className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs hover:bg-zinc-50 dark:hover:bg-white/5 font-semibold text-zinc-650 dark:text-zinc-300 transition-colors"
@@ -457,6 +464,9 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                     </div>
                     <Link href="/profile" onClick={toggleMenu} className="block text-xs font-semibold text-zinc-650 dark:text-zinc-400 py-1">
                       My Account ({user.role?.replace("_", " ")})
+                    </Link>
+                    <Link href="/chat" onClick={toggleMenu} className="block text-xs font-semibold text-zinc-650 dark:text-zinc-400 py-1">
+                      Live Chat
                     </Link>
                     <Link href="/orders" onClick={toggleMenu} className="block text-xs font-semibold text-zinc-650 dark:text-zinc-400 py-1">
                       My Orders

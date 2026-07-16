@@ -417,32 +417,8 @@ Please guide me on how to complete the payment!`;
 
                   {/* 5. Wise */}
                   <button
-                    onClick={async () => {
-                      try {
-                        const res = await createRegistrationOrder(auctionId);
-                        if (res.success && res.orderContext?.id) {
-                          const depositPriceUSD = 2.50; // USD
-                          const selectedCurrency = useCurrencyStore.getState().currency;
-                          const rate = useCurrencyStore.getState().rates[selectedCurrency] || 1.0;
-                          const amountInSelected = Math.round(depositPriceUSD * rate * 100) / 100;
-                          
-                          setWiseCheckoutData({
-                            orderId: res.orderContext.id,
-                            amount: amountInSelected,
-                            currency: selectedCurrency,
-                            email: session?.user?.email || "customer@deposit.com",
-                          });
-                          setSelectedMethod("Wise");
-                          setPaymentStage("wise");
-                        } else {
-                          alert("Error creating registration: " + (res.error || "Please try again."));
-                        }
-                      } catch (err) {
-                        console.error("Wise registration error:", err);
-                        alert("Failed to initiate Wise transaction. Please try again.");
-                      }
-                    }}
-                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
+                    disabled={true}
+                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 opacity-55 cursor-not-allowed text-left w-full group shadow-xs"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
@@ -450,11 +426,11 @@ Please guide me on how to complete the payment!`;
                       </div>
                       <div>
                         <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Wise</span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Direct international transfer</span>
+                        <span className="text-[10px] text-red-500 font-semibold">Min $5.00 required</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[9px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-500/20">Instant</span>
+                      <span className="text-[9px] bg-zinc-500/10 text-zinc-400 px-2 py-0.5 rounded-full font-bold uppercase border border-zinc-500/20">Disabled</span>
                     </div>
                   </button>
 

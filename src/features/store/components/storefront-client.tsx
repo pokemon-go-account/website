@@ -1037,49 +1037,71 @@ Please guide me on how to complete the payment!`;
                   </button>
 
                   {/* 5. Wise */}
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await createStorefrontOrderAction(items, getTotalPrice());
-                        if (res.success && res.orderId) {
-                          const totalPrice = getTotalPrice();
-                          const discount = Math.min(totalPrice, walletCreditAmount);
-                          const finalPriceUSD = Math.max(0, totalPrice - discount);
-                          const selectedCurrency = useCurrencyStore.getState().currency;
-                          const rate = useCurrencyStore.getState().rates[selectedCurrency] || 1.0;
-                          const amountInSelected = Math.round(finalPriceUSD * rate * 100) / 100;
+                  {(() => {
+                    const totalPrice = getTotalPrice();
+                    const discount = Math.min(totalPrice, walletCreditAmount);
+                    const finalPriceUSD = Math.max(0, totalPrice - discount);
+                    const isWiseDisabled = finalPriceUSD < 5.00;
 
-                          setWiseCheckoutData({
-                            orderId: res.orderId,
-                            amount: amountInSelected,
-                            currency: selectedCurrency,
-                            email: session?.user?.email || "customer@store.com",
-                          });
-                          setSelectedMethod("Wise");
-                          setPaymentStage("wise");
-                        } else {
-                          alert("Error: " + (res.error || "Failed to create order"));
-                        }
-                      } catch (err) {
-                        console.error("Wise checkout error:", err);
-                        alert("Failed to initiate Wise transaction. Please try again.");
-                      }
-                    }}
-                    className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] transition cursor-pointer text-left w-full group active:scale-[0.98] shadow-xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
-                        <WiseIcon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Wise</span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Direct international transfer</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-500/20">Instant</span>
-                    </div>
-                  </button>
+                    return (
+                      <button
+                        onClick={async () => {
+                          if (isWiseDisabled) return;
+                          try {
+                            const res = await createStorefrontOrderAction(items, getTotalPrice());
+                            if (res.success && res.orderId) {
+                              const selectedCurrency = useCurrencyStore.getState().currency;
+                              const rate = useCurrencyStore.getState().rates[selectedCurrency] || 1.0;
+                              const amountInSelected = Math.round(finalPriceUSD * rate * 100) / 100;
+
+                              setWiseCheckoutData({
+                                orderId: res.orderId,
+                                amount: amountInSelected,
+                                currency: selectedCurrency,
+                                email: session?.user?.email || "customer@store.com",
+                              });
+                              setSelectedMethod("Wise");
+                              setPaymentStage("wise");
+                            } else {
+                              alert("Error: " + (res.error || "Failed to create order"));
+                            }
+                          } catch (err) {
+                            console.error("Wise checkout error:", err);
+                            alert("Failed to initiate Wise transaction. Please try again.");
+                          }
+                        }}
+                        disabled={isWiseDisabled}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 transition text-left w-full group shadow-xs",
+                          isWiseDisabled
+                            ? "opacity-55 cursor-not-allowed"
+                            : "hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-9 h-9 shrink-0 text-zinc-900 dark:text-white">
+                            <WiseIcon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-black text-zinc-900 dark:text-white block tracking-tight">Wise</span>
+                            <span className={cn("text-[10px] font-medium block", isWiseDisabled ? "text-red-500" : "text-zinc-500 dark:text-zinc-400")}>
+                              {isWiseDisabled ? "Min $5.00 required" : "Direct international transfer"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border",
+                            isWiseDisabled
+                              ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/10"
+                              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                          )}>
+                            {isWiseDisabled ? "Disabled" : "Instant"}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })()}
 
                   {/* 6. Others */}
                   <button
