@@ -197,16 +197,6 @@ export function CompleteProfileForm() {
         </p>
       </div>
 
-      {/* Optional Divider */}
-      <div className="relative py-2 flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-zinc-200 dark:border-white/[0.06]" />
-        </div>
-        <span className="relative z-10 px-3 bg-white dark:bg-[#111111] text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-          Optional
-        </span>
-      </div>
-
       {/* Country Select */}
       <div className="space-y-2">
         <Label htmlFor="country" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
@@ -252,6 +242,16 @@ export function CompleteProfileForm() {
         <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1 font-medium">
           Your country will be visible in your profile and helps us serve you better.
         </p>
+      </div>
+
+      {/* Optional Divider */}
+      <div className="relative py-2 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-zinc-200 dark:border-white/[0.06]" />
+        </div>
+        <span className="relative z-10 px-3 bg-white dark:bg-[#111111] text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+          Optional
+        </span>
       </div>
 
       {/* Additional Contact (Optional) field */}
