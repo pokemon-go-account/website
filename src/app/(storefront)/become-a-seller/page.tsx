@@ -86,8 +86,12 @@ export default function BecomeASellerPage() {
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-3 max-w-md mx-auto w-full">
-              <div className="relative w-full">
+            <div className="w-full flex flex-col items-center">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-white mb-4">
+                Join the waitlist to be first in line when we launch.
+              </p>
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-3 max-w-md mx-auto w-full">
+                <div className="relative w-full">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <input
                   type="email"
@@ -109,7 +113,8 @@ export default function BecomeASellerPage() {
                   "Join Waitlist"
                 )}
               </button>
-            </form>
+              </form>
+            </div>
           )}
           {status === "error" && (
             <p className="text-xs text-red-500 font-medium mt-3 text-center">{errorMsg}</p>
