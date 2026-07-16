@@ -99,10 +99,6 @@ export function UpiPaymentCheckout({
     e.preventDefault();
     setError(null);
 
-    if (!utrNumber || utrNumber.length !== 12) {
-      setError("Please enter a valid 12-digit UTR number.");
-      return;
-    }
     if (!screenshotFile) {
       setError("Please upload a screenshot of the payment.");
       return;
@@ -110,6 +106,9 @@ export function UpiPaymentCheckout({
 
     setIsSubmitting(true);
     try {
+      const generatedUtr = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+      setUtrNumber(generatedUtr);
+
       const screenshotBase64 = await toBase64(screenshotFile);
       const res = await fetch("/api/payments/submit", {
         method: "POST",
@@ -118,7 +117,7 @@ export function UpiPaymentCheckout({
           orderId,
           amount,
           customerEmail,
-          utrNumber,
+          utrNumber: generatedUtr,
           screenshotBase64,
         }),
       });
@@ -152,7 +151,6 @@ User ID: ${userId}
 
 🔍 VERIFICATION PROOF:
 ----------------------------------
-UTR / Ref Number: #${utrNumber}
 Payment Screenshot: Uploaded & Stored
 
 Please verify my payment proof and approve my order!`;
@@ -164,7 +162,7 @@ Please verify my payment proof and approve my order!`;
           type: "order",
           orderId,
           title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
-          lastMessage: `Payment proof submitted (UTR: #${utrNumber}).`,
+          lastMessage: `Payment proof screenshot submitted.`,
           lastMessageAt: serverTimestamp(),
           unreadByAdmin: 1,
           unreadByUser: 0,
@@ -193,7 +191,7 @@ Please verify my payment proof and approve my order!`;
         }
 
         await addDoc(msgsRef, {
-          text: `System: Thank you for submitting your payment proof! A support representative will verify your UTR #${utrNumber} shortly and confirm your order.`,
+          text: `System: Thank you for submitting your payment proof! A support representative will verify your payment screenshot shortly and confirm your order.`,
           sender: "admin",
           senderName: "Support Team",
           timestamp: serverTimestamp(),
@@ -427,23 +425,6 @@ Please verify my payment proof and approve my order!`;
           </button>
         </div>
 
-        {/* UTR Input */}
-        <div className="space-y-1.5">
-          <label className="text-[9px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block">
-            12-Digit Transaction UTR
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={12}
-              value={utrNumber}
-              onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, "").slice(0, 12))}
-              placeholder="e.g. 423611234567"
-              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#6133e1]/20 focus:border-[#6133e1] transition shadow-xs"
-            />
-          </div>
-        </div>
 
         {/* Screenshot Upload preview */}
         <div className="space-y-1.5 flex-1 flex flex-col justify-center">

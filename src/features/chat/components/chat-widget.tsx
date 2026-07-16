@@ -14,12 +14,16 @@ import { MessageCircle, MessageSquare, ShoppingBag, X } from "lucide-react";
 import { UserChatPanel } from "./user-chat-panel";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { signInWithCustomToken } from "firebase/auth";
+import { auth as clientAuth } from "@/lib/firebase";
+import { getFirebaseCustomToken } from "@/features/chat/actions";
 
 export function ChatWidget() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [activeNotification, setActiveNotification] = useState<{
     id: string;
     title: string;
@@ -46,9 +50,40 @@ export function ChatWidget() {
     }
   }, []);
 
+  // Sign in to Firebase Auth using NextAuth session ID
+  useEffect(() => {
+    if (!clientAuth || !userId) {
+      setIsAuthReady(false);
+      return;
+    }
+
+    if (clientAuth.currentUser?.uid === userId) {
+      setIsAuthReady(true);
+      return;
+    }
+
+    getFirebaseCustomToken().then((res) => {
+      if (res.success && res.customToken) {
+        signInWithCustomToken(clientAuth, res.customToken)
+          .then(() => {
+            console.log("Firebase Auth signed in with custom token successfully.");
+            setIsAuthReady(true);
+          })
+          .catch((err) => {
+            console.error("Firebase custom token auth error:", err);
+            setIsAuthReady(false);
+          });
+      } else {
+        setIsAuthReady(false);
+      }
+    }).catch(() => {
+      setIsAuthReady(false);
+    });
+  }, [userId]);
+
   // Listen for all unread messages belonging to this user
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !isAuthReady) return;
     const db = getDb();
     const chatsRef = collection(db, "supportChats");
     const q = query(chatsRef, where("userId", "==", userId));

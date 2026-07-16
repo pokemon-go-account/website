@@ -89,6 +89,17 @@ export function UserChatPanel({
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -589,7 +600,7 @@ export function UserChatPanel({
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-zinc-950">
           <div className="flex items-center gap-2 min-w-0">
             {/* Back button for compact view */}
-            {(!isFullScreen || window.innerWidth < 768) && (
+            {(!isFullScreen || isMobile) && (
               <button
                 onClick={() => setActiveChatId(null)}
                 className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors mr-1 cursor-pointer"

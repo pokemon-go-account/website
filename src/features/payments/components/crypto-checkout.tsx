@@ -239,10 +239,6 @@ export function CryptoPaymentCheckout({
       setError("Please select a coin first.");
       return;
     }
-    if (!txHash || txHash.trim().length < 8) {
-      setError("Please enter a valid Crypto Transaction Hash (TxHash).");
-      return;
-    }
     if (!screenshotFile) {
       setError("Please upload a screenshot of the payment proof.");
       return;
@@ -250,6 +246,9 @@ export function CryptoPaymentCheckout({
 
     setIsSubmitting(true);
     try {
+      const generatedTxHash = "CRYPTO_SS_" + Date.now();
+      setTxHash(generatedTxHash);
+
       const screenshotBase64 = await toBase64(screenshotFile);
       const res = await fetch("/api/payments/submit-crypto", {
         method: "POST",
@@ -259,7 +258,7 @@ export function CryptoPaymentCheckout({
           amount,
           customerEmail,
           coinSelected: `${selectedCoin.name} (${selectedCoin.network})`,
-          txHash,
+          txHash: generatedTxHash,
           screenshotBase64,
         }),
       });
@@ -294,7 +293,6 @@ User ID: ${userId}
 
 🔍 VERIFICATION PROOF:
 ----------------------------------
-TxHash / Hash ID: #${txHash}
 Payment Screenshot: Uploaded & Stored
 
 Please verify my payment proof and approve my order!`;
@@ -306,7 +304,7 @@ Please verify my payment proof and approve my order!`;
           type: "order",
           orderId,
           title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
-          lastMessage: `Payment proof submitted (Crypto Hash: #${txHash.substring(0, 8)}...).`,
+          lastMessage: `Payment proof screenshot submitted.`,
           lastMessageAt: serverTimestamp(),
           unreadByAdmin: 1,
           unreadByUser: 0,
@@ -335,7 +333,7 @@ Please verify my payment proof and approve my order!`;
         }
 
         await addDoc(msgsRef, {
-          text: `System: Thank you for submitting your payment proof! A support representative will verify your Crypto TxHash #${txHash} shortly and confirm your order.`,
+          text: `System: Thank you for submitting your payment proof! A support representative will verify your payment screenshot shortly and confirm your order.`,
           sender: "admin",
           senderName: "Support Team",
           timestamp: serverTimestamp(),
@@ -672,21 +670,6 @@ Please verify my payment proof and approve my order!`;
           </button>
         </div>
 
-        {/* Transaction Hash Input */}
-        <div className="space-y-1.5 text-left">
-          <label className="text-[9px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block">
-            Transaction Hash (TxHash / TxID)
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={txHash}
-              onChange={(e) => setTxHash(e.target.value)}
-              placeholder="e.g. 0x5a18b52f9c5d0a6..."
-              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition shadow-xs"
-            />
-          </div>
-        </div>
 
         {/* Screenshot Upload preview */}
         <div className="space-y-1.5 flex-1 flex flex-col justify-center text-left">

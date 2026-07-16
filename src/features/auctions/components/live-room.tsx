@@ -632,6 +632,19 @@ Please guide me on how to complete the payment!`;
       "https://images.unsplash.com/photo-1608889175123-8ec330b86f84?w=800&auto=format&fit=crop&q=80",
     ];
   const [activeImgIndex, setActiveImgIndex] = useState(0);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+
+  // Lock body scroll when zoom modal is open
+  useEffect(() => {
+    if (isZoomOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isZoomOpen]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "details" | "terms" | "reviews">("overview");
 
@@ -1179,7 +1192,8 @@ Please guide me on how to complete the payment!`;
           <img
             src={screenshots[activeImgIndex]}
             alt="Account preview screenshot"
-            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-102"
+            onClick={() => setIsZoomOpen(true)}
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-102 cursor-zoom-in"
           />
 
           {/* Left/Right Controls */}
@@ -3732,6 +3746,67 @@ This Buy Now order has been completed automatically using your wallet balance. A
           </div>
         );
       })()}
+
+      {/* Zoom Lightbox Modal */}
+      {isZoomOpen && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-md transition-all duration-300 animate-in fade-in"
+          onClick={() => setIsZoomOpen(false)}
+        >
+          {/* Close button */}
+          <button 
+            type="button"
+            className="absolute top-4 right-4 z-50 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+            onClick={() => setIsZoomOpen(false)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+
+          {/* Navigation Controls in Zoom Modal if multiple screenshots */}
+          {screenshots.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          {/* Image Container with native pinch zoom capability */}
+          <div 
+            className="relative max-w-[90vw] max-h-[85vh] overflow-auto flex items-center justify-center animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={screenshots[activeImgIndex]}
+              alt="Zoomed preview screenshot"
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl transition-transform duration-300 hover:scale-110 cursor-zoom-out"
+              onClick={() => setIsZoomOpen(false)}
+            />
+          </div>
+
+          {/* Image index indicator */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-semibold">
+            {activeImgIndex + 1} / {screenshots.length}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

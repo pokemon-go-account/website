@@ -113,10 +113,6 @@ export function PayPalPaymentCheckout({
     e.preventDefault();
     setError(null);
 
-    if (!transactionId || transactionId.trim().length < 5) {
-      setError("Please enter a valid PayPal Transaction ID.");
-      return;
-    }
     if (!screenshotFile) {
       setError("Please upload a screenshot of the payment.");
       return;
@@ -124,6 +120,9 @@ export function PayPalPaymentCheckout({
 
     setIsSubmitting(true);
     try {
+      const generatedTxId = "PAYPAL_SS_" + Date.now();
+      setTransactionId(generatedTxId);
+
       const screenshotBase64 = await toBase64(screenshotFile);
       const res = await fetch("/api/payments/submit-paypal", {
         method: "POST",
@@ -132,7 +131,7 @@ export function PayPalPaymentCheckout({
           orderId,
           amount,
           customerEmail,
-          transactionId,
+          transactionId: generatedTxId,
           screenshotBase64,
         }),
       });
@@ -166,7 +165,6 @@ User ID: ${userId}
 
 🔍 VERIFICATION PROOF:
 ----------------------------------
-PayPal Transaction ID: #${transactionId}
 Payment Screenshot: Uploaded & Stored
 
 Please verify my payment proof and approve my order!`;
@@ -178,7 +176,7 @@ Please verify my payment proof and approve my order!`;
           type: "order",
           orderId,
           title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
-          lastMessage: `Payment proof submitted (PayPal ID: #${transactionId}).`,
+          lastMessage: `Payment proof screenshot submitted.`,
           lastMessageAt: serverTimestamp(),
           unreadByAdmin: 1,
           unreadByUser: 0,
@@ -207,7 +205,7 @@ Please verify my payment proof and approve my order!`;
         }
 
         await addDoc(msgsRef, {
-          text: `System: Thank you for submitting your payment proof! A support representative will verify your PayPal Transaction ID #${transactionId} shortly and confirm your order.`,
+          text: `System: Thank you for submitting your payment proof! A support representative will verify your payment screenshot shortly and confirm your order.`,
           sender: "admin",
           senderName: "Support Team",
           timestamp: serverTimestamp(),
@@ -505,21 +503,6 @@ Please verify my payment proof and approve my order!`;
           </button>
         </div>
 
-        {/* Transaction ID Input */}
-        <div className="space-y-1.5">
-          <label className="text-[9px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block">
-            PayPal Transaction ID
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={transactionId}
-              onChange={(e) => setTransactionId(e.target.value)}
-              placeholder="e.g. 3L409384930..."
-              className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 text-xs font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#0070ba]/20 focus:border-[#0070ba] transition shadow-xs"
-            />
-          </div>
-        </div>
 
         {/* Screenshot Upload preview */}
         <div className="space-y-1.5 flex-1 flex flex-col justify-center">
