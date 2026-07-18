@@ -80,7 +80,7 @@ function HeroSearch() {
       >
         <Search
           className={`absolute left-3.5 h-4 w-4 shrink-0 transition-colors duration-200 ${
-            isFocused ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500"
+            isFocused ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"
           }`}
         />
         <input
@@ -91,19 +91,22 @@ function HeroSearch() {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
+          aria-label="Search auctions and accounts"
           placeholder="Search team, level, region, shiny, legendary..."
-          className="flex-1 bg-transparent pl-10 pr-10 py-2.5 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-650 font-semibold focus:outline-none"
+          className="flex-1 bg-transparent pl-10 pr-10 py-2.5 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-400 font-semibold focus:outline-none"
         />
         {query && (
           <button
             onClick={() => { setQuery(""); inputRef.current?.focus(); }}
-            className="absolute right-[44px] text-zinc-450 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer p-1"
+            aria-label="Clear search query"
+            className="absolute right-[44px] text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer p-1"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
         <button
           onClick={() => handleSubmit(query)}
+          aria-label="Submit search query"
           className="absolute right-1.5 h-7 w-7 flex items-center justify-center rounded-md bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all active:scale-[0.98] cursor-pointer"
         >
           <ArrowRight className="h-3.5 w-3.5" />
@@ -116,7 +119,8 @@ function HeroSearch() {
           <button
             key={tag.query}
             onClick={() => handleTagClick(tag.query)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/10 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors"
+            aria-label={`Search tag ${tag.label}`}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/10 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors"
           >
             {tag.label}
           </button>
@@ -157,7 +161,7 @@ export function Hero() {
           >
             <motion.p
               variants={itemVariants}
-              className="text-zinc-400 dark:text-zinc-500 text-[10px] font-semibold uppercase tracking-wider mb-4"
+              className="text-zinc-650 dark:text-zinc-350 text-[10px] font-bold uppercase tracking-wider mb-4"
             >
               WELCOME TO
             </motion.p>

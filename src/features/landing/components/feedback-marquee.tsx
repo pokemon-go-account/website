@@ -74,15 +74,15 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
         </div>
 
         {/* Review text */}
-        <p className="text-xs text-zinc-550 dark:text-zinc-450 leading-relaxed italic font-medium">
+        <p className="text-xs text-zinc-650 dark:text-zinc-300 leading-relaxed italic font-normal">
           "{item.comment}"
         </p>
       </div>
 
       {/* Footer metadata */}
-      <div className="pt-2.5 mt-3 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between text-[9px] text-zinc-400 dark:text-zinc-500 font-semibold">
-        <span className="flex items-center gap-0.5 text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-          <Award className="h-3 w-3" /> Verified Trainer
+      <div className="pt-2.5 mt-3 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between text-[9px] text-zinc-600 dark:text-zinc-400 font-semibold">
+        <span className="flex items-center gap-0.5 text-zinc-600 dark:text-zinc-350 uppercase tracking-wider">
+          <Award className="h-3 w-3 text-emerald-500" /> Verified Trainer
         </span>
       </div>
     </div>
@@ -120,7 +120,7 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
         <h2 className="text-zinc-900 dark:text-white font-semibold text-xl tracking-tight">
           Real Feedback from Real Trainers
         </h2>
-        <p className="text-zinc-550 dark:text-zinc-450 text-xs">
+        <p className="text-zinc-650 dark:text-zinc-350 text-xs font-normal">
           Hear what trainers worldwide say about our secure accounts, custom catching, and live auction trades.
         </p>
       </div>

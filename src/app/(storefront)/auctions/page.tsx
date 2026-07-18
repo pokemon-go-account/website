@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import connectDB from "@/lib/db";
 import { PriceDisplay } from "@/components/price-display";
 import Auction from "@/models/Auction";
@@ -173,10 +174,12 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
         {/* Upper row: Screenshot image header */}
         <div className="relative h-36 bg-zinc-50 dark:bg-black/10 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-center overflow-hidden">
           {hasImage ? (
-            <img 
+            <Image 
               src={screenshots[0]} 
               alt={auc.listingId.title} 
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>
@@ -361,7 +364,13 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                       {/* Product Image & Category */}
                       <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800/80 bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
                         {prod.imageUrl ? (
-                          <img src={prod.imageUrl} alt={prod.name} className="h-full w-full object-cover" />
+                          <Image
+                            src={prod.imageUrl}
+                            alt={prod.name}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover"
+                          />
                         ) : (
                           <ShoppingBag className="h-8 w-8 text-zinc-400" />
                         )}

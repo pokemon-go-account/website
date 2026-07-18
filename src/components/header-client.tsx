@@ -150,6 +150,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               alt="Pokémon GO Services"
               width={160}
               height={40}
+              sizes="160px"
               priority
               className="h-9 w-auto object-contain"
             />
@@ -161,7 +162,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               <Link
                 key={label}
                 href={href}
-                className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors relative group py-1"
+                className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors relative group py-1"
               >
                 {label}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-zinc-950 dark:bg-white transition-all group-hover:w-full" />
@@ -180,6 +181,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             {/* Currency Selector */}
             <div className="relative inline-flex items-center">
               <select
+                aria-label="Select preferred currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as Currency)}
                 className="h-8 pl-2.5 pr-7 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 text-xs font-semibold focus:outline-none cursor-pointer appearance-none hover:border-zinc-300 dark:hover:border-white/20 transition-colors"
@@ -190,7 +192,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                 <option value="GBP" className="bg-white dark:bg-[#09090b] text-foreground">GBP (£)</option>
                 <option value="JPY" className="bg-white dark:bg-[#09090b] text-foreground">JPY (¥)</option>
               </select>
-              <div className="absolute right-2.5 pointer-events-none flex items-center text-zinc-400 dark:text-zinc-500">
+              <div className="absolute right-2.5 pointer-events-none flex items-center text-zinc-500 dark:text-zinc-400">
                 {isConverting ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
@@ -202,8 +204,8 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-650 dark:text-zinc-350 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
+              aria-label="Toggle light or dark theme"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
             >
               {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             </button>
@@ -365,9 +367,10 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             {/* Currency Selector */}
             <div className="relative inline-flex items-center">
               <select
+                aria-label="Select preferred currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as Currency)}
-                className="h-8 pl-2 pr-6 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-650 dark:text-zinc-300 text-xs font-semibold focus:outline-none cursor-pointer appearance-none"
+                className="h-8 pl-2 pr-6 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 text-xs font-semibold focus:outline-none cursor-pointer appearance-none"
               >
                 <option value="USD" className="bg-white dark:bg-[#09090b] text-foreground">USD ($)</option>
                 <option value="EUR" className="bg-white dark:bg-[#09090b] text-foreground">EUR (€)</option>
@@ -375,7 +378,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                 <option value="GBP" className="bg-white dark:bg-[#09090b] text-foreground">GBP (£)</option>
                 <option value="JPY" className="bg-white dark:bg-[#09090b] text-foreground">JPY (¥)</option>
               </select>
-              <div className="absolute right-2 pointer-events-none flex items-center text-zinc-400 dark:text-zinc-550">
+              <div className="absolute right-2 pointer-events-none flex items-center text-zinc-500 dark:text-zinc-400">
                 {isConverting ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
@@ -386,14 +389,15 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
             <button
               onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
+              aria-label="Toggle light or dark theme"
+              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
             >
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button
               onClick={toggleMenu}
-              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
+              aria-label="Toggle navigation menu"
+              className="flex items-center justify-center rounded-lg h-8 w-8 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
             >
               {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>

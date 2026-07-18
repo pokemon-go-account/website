@@ -222,6 +222,7 @@ export function ChatWidget() {
                 e.stopPropagation();
                 setActiveNotification(null);
               }}
+              aria-label="Close notification"
               className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer bg-transparent border-none shrink-0"
             >
               <X className="h-4 w-4" />

@@ -39,22 +39,23 @@ export function Footer() {
                 alt="Pokémon GO Services Logo"
                 width={144}
                 height={36}
+                sizes="144px"
                 className="h-9 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
               />
               <span className="font-extrabold text-sm tracking-wider uppercase bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-700 dark:from-white dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">
                 Pokémon GO Services
               </span>
             </Link>
-            <p className="text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed font-light max-w-sm">
+            <p className="text-xs text-zinc-650 dark:text-zinc-350 leading-relaxed font-normal max-w-sm">
               The premier marketplace and recovery network for high-tier Pokémon GO assets. Trusted globally for safety, real-time live bidding, and certified trainers.
             </p>
           </div>
 
           {/* Quick Links Column */}
           <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
               Navigation
-            </h4>
+            </h3>
             <ul className="space-y-2 text-xs">
               {[
                 { name: "Live Auctions", href: "/auctions" },
@@ -66,7 +67,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="flex items-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors group"
+                    className="flex items-center text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white transition-colors group"
                   >
                     <ChevronRight className="h-3 w-3 opacity-0 -ml-3 group-hover:opacity-100 group-hover:ml-0 transition-all text-[#6133e1] dark:text-purple-400 mr-1" />
                     <span>{link.name}</span>
@@ -78,9 +79,9 @@ export function Footer() {
 
           {/* Legal / Trust Column */}
           <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
               Legal & Trust
-            </h4>
+            </h3>
             <ul className="space-y-2 text-xs">
               {[
                 { name: "Terms of Service", href: "/terms" },
@@ -91,7 +92,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="flex items-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors group"
+                    className="flex items-center text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white transition-colors group"
                   >
                     <ChevronRight className="h-3 w-3 opacity-0 -ml-3 group-hover:opacity-100 group-hover:ml-0 transition-all text-[#6133e1] dark:text-purple-400 mr-1" />
                     <span>{link.name}</span>
@@ -103,9 +104,9 @@ export function Footer() {
 
           {/* Contact Support Channels Column */}
           <div className="lg:col-span-4 space-y-4">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
               Direct Contact
-            </h4>
+            </h3>
             <div className="space-y-3">
               {[
                 { label: "Support", email: "support@pokemongoservices.com" },
@@ -117,9 +118,9 @@ export function Footer() {
                   href={`mailto:${channel.email}`}
                   className="flex items-start gap-2.5 p-2 rounded-lg border border-zinc-200 dark:border-white/[0.04] bg-zinc-50 dark:bg-white/[0.01] hover:border-zinc-300 dark:hover:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.03] transition-all group"
                 >
-                  <Mail className="h-4 w-4 text-zinc-400 group-hover:text-[#6133e1] dark:group-hover:text-purple-400 transition-colors mt-0.5 shrink-0" />
+                  <Mail className="h-4 w-4 text-zinc-500 group-hover:text-[#6133e1] dark:group-hover:text-purple-400 transition-colors mt-0.5 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] font-bold uppercase text-zinc-400 dark:text-zinc-550 leading-none mb-0.5">{channel.label}</p>
+                    <p className="text-[9px] font-bold uppercase text-zinc-600 dark:text-zinc-400 leading-none mb-0.5">{channel.label}</p>
                     <p className="text-xs font-semibold text-[#6133e1] dark:text-[#a78bfa] truncate group-hover:text-zinc-950 dark:group-hover:text-white transition-colors">{channel.email}</p>
                   </div>
                 </a>

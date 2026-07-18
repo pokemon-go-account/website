@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Clock, CheckCircle2 } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 import { PriceDisplay } from "@/components/price-display";
@@ -9,7 +10,7 @@ const teamColors: Record<string, string> = {
   MYSTIC: "text-blue-500",
   VALOR: "text-red-500",
   INSTINCT: "text-yellow-500",
-  NONE: "text-gray-400",
+  NONE: "text-zinc-600 dark:text-zinc-400",
 };
 
 
@@ -143,10 +144,12 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
                 {/* Visual */}
                 <div className="relative h-32 bg-zinc-50 dark:bg-black/10 border-b border-zinc-205 dark:border-white/[0.06] flex items-center justify-center overflow-hidden">
                   {auction.listing.screenshots && auction.listing.screenshots.length > 0 ? (
-                    <img 
+                    <Image 
                       src={auction.listing.screenshots[0]} 
                       alt={auction.listing.title} 
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>

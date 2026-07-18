@@ -58,7 +58,7 @@ export function Features() {
               <p className="text-2xl font-semibold text-zinc-900 dark:text-white tracking-tight leading-none mb-2">
                 {value}
               </p>
-              <p className="text-zinc-550 dark:text-zinc-500 text-xs font-semibold tracking-wide">
+              <p className="text-zinc-700 dark:text-zinc-350 text-xs font-semibold tracking-wide">
                 {label}
               </p>
             </motion.div>

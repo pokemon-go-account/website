@@ -153,11 +153,12 @@ export function FAQ() {
               >
                 <button
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
+                  aria-label={`Toggle question: ${faq.q}`}
                   className="flex w-full items-center justify-between px-5 py-4 text-left text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   <span className="pr-4">{faq.q}</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-300 ml-4 ${isOpen ? "rotate-180 text-zinc-900 dark:text-white" : ""}`}
+                    className={`h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 transition-transform duration-300 ml-4 ${isOpen ? "rotate-180 text-zinc-900 dark:text-white" : ""}`}
                   />
                 </button>
                 <AnimatePresence initial={false}>
@@ -168,7 +169,7 @@ export function FAQ() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.22, ease: "easeInOut" }}
                     >
-                      <div className="border-t border-zinc-200 dark:border-white/[0.06] px-5 py-4 text-xs sm:text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 font-medium">
+                      <div className="border-t border-zinc-200 dark:border-white/[0.06] px-5 py-4 text-xs sm:text-sm leading-relaxed text-zinc-650 dark:text-zinc-350 font-normal">
                         {faq.a}
                       </div>
                     </motion.div>
