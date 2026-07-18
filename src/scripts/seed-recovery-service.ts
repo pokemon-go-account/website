@@ -137,8 +137,14 @@ async function seed() {
   console.log("Checking existing feedbacks...");
   const feedbackCount = await Feedback.countDocuments();
   if (feedbackCount === 0) {
-    console.log(`Inserting ${mockReviews.length} mock feedbacks...`);
-    await Feedback.insertMany(mockReviews);
+    console.log(`Inserting ${mockReviews.length} mock feedbacks with realistic dates...`);
+    const startDate = new Date("2026-05-06T08:00:00.000Z").getTime();
+    const endDate = new Date("2026-07-06T20:00:00.000Z").getTime();
+    const reviewsWithDates = mockReviews.map((r) => ({
+      ...r,
+      createdAt: new Date(startDate + Math.random() * (endDate - startDate)),
+    }));
+    await Feedback.insertMany(reviewsWithDates);
     console.log("✅ Seeded mock feedbacks successfully!");
   } else {
     console.log(`Feedback database already has ${feedbackCount} entries. Skipping seeding.`);

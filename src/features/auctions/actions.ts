@@ -113,13 +113,6 @@ export async function fetchAuctionRealtime(auctionId: string) {
       createdAt: b.createdAt.toISOString(),
     }));
 
-    const Order = (await import("@/models/Order")).default;
-    const hasPendingBuyNow = await Order.exists({
-      auctionId,
-      orderType: "BUY_NOW",
-      status: "PENDING"
-    });
-
     return {
       success: true,
       currentHighestBid: auction.currentHighestBid,
@@ -129,7 +122,7 @@ export async function fetchAuctionRealtime(auctionId: string) {
       endTime: auction.endTime ? auction.endTime.toISOString() : null,
       isRegistered,
       bids: formattedBids,
-      hasPendingBuyNow: !!hasPendingBuyNow,
+      hasPendingBuyNow: false,
     };
   } catch (error) {
     console.error("Realtime fetch failure:", error);

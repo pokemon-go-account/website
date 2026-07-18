@@ -710,11 +710,6 @@ Please guide me on how to complete the payment!`;
       setIsConcluded(true);
       return;
     }
-    if (hasPendingBuyNow) {
-      setTimeLeft("Buy Now Pending");
-      setIsConcluded(false);
-      return;
-    }
 
     const end = new Date(endTime).getTime();
 
@@ -751,7 +746,7 @@ Please guide me on how to complete the payment!`;
   const buyNowPrice = auction.listingId.startingBid * 4;
   const buyNowPriceDiscount = hasWalletCredit ? Math.min(buyNowPrice, walletCreditAmount) : 0;
   const finalBuyNowPrice = Math.max(0, buyNowPrice - buyNowPriceDiscount);
-  const isBuyNowDisabled = isConcluded || hasPendingBuyNow || activeBid >= 0.8 * buyNowPrice;
+  const isBuyNowDisabled = isConcluded || activeBid >= 0.8 * buyNowPrice;
   const prevBidRef = useRef<number>(activeBid);
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 
@@ -1006,11 +1001,6 @@ Please guide me on how to complete the payment!`;
             <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center leading-relaxed">
               This verification deposit is completely refundable. It will automatically act as store credit and be deducted from the total amount of any future purchase you make from our store, including products and services.
             </p>
-          </div>
-        ) : hasPendingBuyNow ? (
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-            <h4 className="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Buy Now Pending</h4>
-            <p className="text-[11px] text-zinc-500 mt-1">An order is currently pending verification. Bidding is temporarily locked.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -1835,11 +1825,6 @@ Please guide me on how to complete the payment!`;
                       A refundable verification deposit of <PriceDisplay amountInUSD={2.50} /> is required to participate in bidding.
                     </div>
                     <RegisterAuctionButton auctionId={auction._id} onSuccess={() => setIsRegistered(true)} />
-                  </div>
-                ) : hasPendingBuyNow ? (
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-                    <h4 className="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Buy Now Pending</h4>
-                    <p className="text-[11px] text-zinc-500 mt-1">An order is currently pending verification. Bidding is temporarily locked.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
