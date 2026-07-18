@@ -15,14 +15,14 @@ const trustBadges = [
 ];
 
 const QUICK_TAGS = [
-  { label: "🔵 Mystic", query: "mystic" },
-  { label: "🔴 Valor", query: "valor" },
-  { label: "🟡 Instinct", query: "instinct" },
-  { label: "✨ Shiny", query: "shiny" },
-  { label: "🏆 Legendary", query: "legendary" },
-  { label: "🪙 Coins", query: "coins" },
-  { label: "⭐ Level 80", query: "80" },
-  { label: "🐉 Raid", query: "raid" },
+  { label: "⚡ Buy Accounts", query: "buy pokemon go accounts" },
+  { label: "⭐ Level 40", query: "level 40 pokemon go account" },
+  { label: "✨ Shiny Pokemon", query: "shiny" },
+  { label: "🔮 Mewtwo", query: "mewtwo" },
+  { label: "🔥 Charizard", query: "charizard" },
+  { label: "🐉 Dragonite", query: "dragonite" },
+  { label: "🪙 Buy Stardust", query: "stardust" },
+  { label: "🐉 Raids", query: "raid" },
 ];
 
 const containerVariants: Variants = {

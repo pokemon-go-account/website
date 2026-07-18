@@ -26,9 +26,10 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/auctions", label: "Auctions" },
   { href: "/store", label: "Store" },
+  { href: "/news", label: "News & Updates" },
   { href: "/recovery", label: "Account Recovery" },
   { href: "/feedback", label: "Feedbacks" },
-  { href: "/#faq", label: "FAQ" },
+  // { href: "/#faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 

@@ -24,6 +24,7 @@ import {
   DollarSign,
   Coins,
   BarChart3,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,7 @@ const navGroups = [
     items: [
       { href: "/console/categories", label: "Categories", icon: FolderTree },
       { href: "/console/products", label: "Products", icon: Package2 },
+      { href: "/console/news", label: "News & Updates", icon: Newspaper },
     ],
   },
   {

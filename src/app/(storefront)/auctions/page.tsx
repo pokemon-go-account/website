@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import { PriceDisplay } from "@/components/price-display";
@@ -8,6 +9,27 @@ import Product from "@/models/Product";
 import Category from "@/models/Category";
 import { Trophy, Clock, Play, CalendarDays, Archive, Sparkles, Flame, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: "Live Auctions | Buy Pokémon GO Accounts, Shiny Pokémon & Level 40 Accounts",
+  description: "Bid live on verified Pokémon GO accounts, level 40 accounts, shiny Mewtwo, Charizard, Dragonite, and Stardust packages in our real-time auction marketplace.",
+  keywords: [
+    "pokemon go accounts",
+    "buy pokemon go accounts",
+    "buy pokemon go pokemon",
+    "cheap pokemon go accounts",
+    "level 40 pokemon go account",
+    "best place to buy pokemon go accounts",
+    "purchase pokemon go account",
+    "shiny pokemon for sale pokemon go",
+    "mewtwo pokemon go",
+    "charizard pokemon go",
+    "buy stardust pokemon go",
+    "buy cheap pokemon go accounts",
+    "best pokemon go account",
+    "the rarest pokemon"
+  ],
+};
 
 export const revalidate = 0; // Dynamic rendering
 

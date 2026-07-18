@@ -58,6 +58,7 @@ export function Footer() {
             <ul className="space-y-2 text-xs">
               {[
                 { name: "Live Auctions", href: "/auctions" },
+                { name: "News & Updates", href: "/news" },
                 { name: "Account Recovery", href: "/recovery" },
                 { name: "Feedback Portal", href: "/feedback" },
                 { name: "Contact Support", href: "/contact" },
