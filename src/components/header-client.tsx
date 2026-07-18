@@ -170,7 +170,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             ))}
             <Link
               href="/become-a-seller"
-              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#6133e1] to-violet-600 text-white hover:from-violet-600 hover:to-violet-500 transition-all shadow-sm hover:shadow-violet-600/25 active:scale-[0.97]"
+              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#28a745] to-green-600 text-white hover:from-green-600 hover:to-green-500 transition-all shadow-sm hover:shadow-green-600/25 active:scale-[0.97]"
             >
               Become a Seller
             </Link>
