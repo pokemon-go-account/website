@@ -32,10 +32,10 @@ export default async function ConsolePage() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-200 dark:bg-white/[0.06] rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06]">
         {[
+          { label: "Live Analytics", value: "Real-time", href: "/console/analytics" },
           { label: "Admins", value: admins.length, href: "/console/users" },
           { label: "Overdue Rent", value: expiredAdmins.length, href: "/console/rent", danger: expiredAdmins.length > 0 },
           { label: "Pending Listings", value: listings.length, href: "/console/auctions", warn: listings.length > 0 },
-          { label: "Nav Routes", value: 11, href: "/console" },
         ].map(({ label, value, href, danger, warn }) => (
           <Link
             key={label}
