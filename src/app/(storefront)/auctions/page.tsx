@@ -12,14 +12,14 @@ import { Trophy, Clock, Play, CalendarDays, Archive, Sparkles, Flame, ShoppingBa
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Live Auctions | Buy Pokémon GO Accounts, Shiny Pokémon & Level 40 Accounts",
-  description: "Bid live on verified Pokémon GO accounts, level 40 accounts, shiny Mewtwo, Charizard, Dragonite, and Stardust packages in our real-time auction marketplace.",
+  title: "Live Auctions | Buy Pokémon GO Accounts, Shiny Pokémon & Level 80 Accounts",
+  description: "Bid live on verified Pokémon GO accounts, level 80 accounts, shiny Mewtwo, Charizard, Dragonite, and Stardust packages in our real-time auction marketplace.",
   keywords: [
     "pokemon go accounts",
     "buy pokemon go accounts",
     "buy pokemon go pokemon",
     "cheap pokemon go accounts",
-    "level 40 pokemon go account",
+    "level 80 pokemon go account",
     "best place to buy pokemon go accounts",
     "purchase pokemon go account",
     "shiny pokemon for sale pokemon go",

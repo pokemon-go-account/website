@@ -39,6 +39,8 @@ import {
   ShieldCheck,
   Headset,
   Sparkles,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadChatImage, deleteChatImages, getFirebaseCustomToken } from "@/features/chat/actions";
@@ -116,6 +118,10 @@ export function AdminChatPanel() {
   const [conversations, setConversations] = useState<ChatMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Archiving state
+  const [customerView, setCustomerView] = useState<"active" | "archived">("active");
+  const [archivedUserIds, setArchivedUserIds] = useState<string[]>([]);
+
   // Selected state
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeCategoryTab, setActiveCategoryTab] = useState<"support" | "orders">("support");
@@ -198,6 +204,22 @@ export function AdminChatPanel() {
     } catch { /* silent */ }
   }, []);
 
+  // Listen for archived users in Firestore
+  useEffect(() => {
+    if (!isAuthReady) return;
+    const db = getDb();
+    const archivedRef = collection(db, "archivedChatUsers");
+
+    const unsub = onSnapshot(archivedRef, (snap) => {
+      const ids = snap.docs.map((d) => d.id);
+      setArchivedUserIds(ids);
+    }, (error) => {
+      console.warn("[AdminChatPanel] Archived users listener warning:", error.message);
+    });
+
+    return unsub;
+  }, [isAuthReady]);
+
   // 1. Listen for all support & order chats in Firestore
   useEffect(() => {
     if (!isAuthReady) return;
@@ -219,6 +241,14 @@ export function AdminChatPanel() {
 
       setConversations(list);
 
+      // Auto-unarchive users if they send a new message (unreadByAdmin > 0)
+      list.forEach((conv) => {
+        const uId = conv.userId || conv.id;
+        if (conv.unreadByAdmin > 0 && archivedUserIds.includes(uId)) {
+          deleteDoc(doc(db, "archivedChatUsers", uId)).catch(() => {});
+        }
+      });
+
       // Auto-select user if query param is passed
       if (!autoSelectedRef.current && queryUserId) {
         autoSelectedRef.current = true;
@@ -229,7 +259,33 @@ export function AdminChatPanel() {
     });
 
     return unsub;
-  }, [isAuthReady, queryUserId]);
+  }, [isAuthReady, queryUserId, archivedUserIds]);
+
+  const handleArchiveUser = async (targetUserId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!isAuthReady || !targetUserId) return;
+    try {
+      const db = getDb();
+      await setDoc(doc(db, "archivedChatUsers", targetUserId), {
+        userId: targetUserId,
+        archivedAt: serverTimestamp(),
+        archivedBy: adminUsername,
+      });
+    } catch (err) {
+      console.error("Failed to archive user:", err);
+    }
+  };
+
+  const handleUnarchiveUser = async (targetUserId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!isAuthReady || !targetUserId) return;
+    try {
+      const db = getDb();
+      await deleteDoc(doc(db, "archivedChatUsers", targetUserId));
+    } catch (err) {
+      console.error("Failed to unarchive user:", err);
+    }
+  };
 
   // 2. Listen for messages in active chat & mark unreadByAdmin = 0
   useEffect(() => {
@@ -771,6 +827,10 @@ export function AdminChatPanel() {
 
   const totalUnread = conversations.reduce((acc, c) => acc + (c.unreadByAdmin ?? 0), 0);
 
+  const activeUsers = filteredUsers.filter((u) => !archivedUserIds.includes(u.userId));
+  const archivedUsers = filteredUsers.filter((u) => archivedUserIds.includes(u.userId));
+  const displayedUsers = customerView === "active" ? activeUsers : archivedUsers;
+
   // Get active selected user chats
   const selectedUser = uniqueUsers.find((u) => u.userId === selectedUserId);
   const selectedUserChats = (selectedUser?.chats || []).sort((a, b) => {
@@ -827,6 +887,35 @@ export function AdminChatPanel() {
               </span>
             )}
           </div>
+
+          {/* Active vs Archives Top Segment Control */}
+          <div className="flex p-0.5 rounded-xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200/60 dark:border-white/[0.06]">
+            <button
+              type="button"
+              onClick={() => setCustomerView("active")}
+              className={cn(
+                "flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                customerView === "active"
+                  ? "bg-white dark:bg-[#181820] text-zinc-900 dark:text-white shadow-xs font-bold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              <span>Active ({activeUsers.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCustomerView("archived")}
+              className={cn(
+                "flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                customerView === "archived"
+                  ? "bg-white dark:bg-[#181820] text-zinc-900 dark:text-white shadow-xs font-bold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              <Archive className="h-3.5 w-3.5 text-amber-500" />
+              <span>Archives ({archivedUsers.length})</span>
+            </button>
+          </div>
           
           {/* Search */}
           <div className="relative">
@@ -852,16 +941,20 @@ export function AdminChatPanel() {
 
         {/* User list content */}
         <div className="flex-1 overflow-y-auto">
-          {filteredUsers.length === 0 && (
+          {displayedUsers.length === 0 && (
             <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
               <Users className="h-8 w-8 text-zinc-350 dark:text-zinc-650" />
               <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                {searchQuery ? "No matching customers found" : "No active customer threads"}
+                {searchQuery 
+                  ? "No matching customers found" 
+                  : customerView === "archived" 
+                  ? "No archived customer threads" 
+                  : "No active customer threads"}
               </p>
             </div>
           )}
 
-          {filteredUsers.map((u) => (
+          {displayedUsers.map((u) => (
             <button
               key={u.userId}
               onClick={() => {
@@ -869,7 +962,7 @@ export function AdminChatPanel() {
                 setActiveChatId(null); // Reset active thread
               }}
               className={cn(
-                "w-full text-left px-4 py-3 border-b border-zinc-100 dark:border-white/[0.03] hover:bg-zinc-100/70 dark:hover:bg-white/[0.03] transition cursor-pointer flex items-center justify-between gap-3",
+                "w-full text-left px-4 py-3 border-b border-zinc-100 dark:border-white/[0.03] hover:bg-zinc-100/70 dark:hover:bg-white/[0.03] transition cursor-pointer flex items-center justify-between gap-3 group/row",
                 selectedUserId === u.userId ? "bg-[#6133e1]/5 dark:bg-[#6133e1]/10 border-l-4 border-l-[#6133e1]" : ""
               )}
             >
@@ -888,8 +981,27 @@ export function AdminChatPanel() {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1 shrink-0">
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">{formatTime(u.lastMessageAt)}</span>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">{formatTime(u.lastMessageAt)}</span>
+                  {customerView === "active" ? (
+                    <span
+                      onClick={(e) => handleArchiveUser(u.userId, e)}
+                      className="p-1 rounded-md text-zinc-400 hover:text-amber-500 hover:bg-amber-500/10 opacity-0 group-hover/row:opacity-100 transition cursor-pointer"
+                      title="Archive Customer"
+                    >
+                      <Archive className="h-3.5 w-3.5" />
+                    </span>
+                  ) : (
+                    <span
+                      onClick={(e) => handleUnarchiveUser(u.userId, e)}
+                      className="p-1 rounded-md text-zinc-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition cursor-pointer"
+                      title="Unarchive Customer"
+                    >
+                      <ArchiveRestore className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                </div>
                 {u.unreadCount > 0 && (
                   <span className="h-4.5 min-w-[18px] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
                     {u.unreadCount > 9 ? "9+" : u.unreadCount}
@@ -907,22 +1019,48 @@ export function AdminChatPanel() {
         !selectedUserId ? "hidden md:flex" : activeChatId ? "hidden md:flex" : "flex"
       )}>
         {/* Header with back button */}
-        <div className="p-4 border-b border-zinc-200/80 dark:border-white/[0.08] flex items-center gap-2.5 bg-white dark:bg-[#0d0d12] shrink-0">
-          <button
-            onClick={() => setSelectedUserId(null)}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition"
-            title="Back to Customers"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <div className="min-w-0">
-            <h3 className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
-              @{selectedUser?.username || "Customer Chats"}
-            </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-normal leading-none mt-0.5">
-              Support & Order Threads
-            </p>
+        <div className="p-4 border-b border-zinc-200/80 dark:border-white/[0.08] flex items-center justify-between bg-white dark:bg-[#0d0d12] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              onClick={() => setSelectedUserId(null)}
+              className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition"
+              title="Back to Customers"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="min-w-0">
+              <h3 className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
+                @{selectedUser?.username || "Customer Chats"}
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-normal leading-none mt-0.5">
+                Support & Order Threads
+              </p>
+            </div>
           </div>
+
+          {selectedUserId && (
+            archivedUserIds.includes(selectedUserId) ? (
+              <button
+                type="button"
+                onClick={(e) => handleUnarchiveUser(selectedUserId, e)}
+                className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold flex items-center gap-1 transition cursor-pointer border border-emerald-500/20 shrink-0"
+                title="Unarchive Customer"
+              >
+                <ArchiveRestore className="h-3 w-3" />
+                <span>Unarchive</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => handleArchiveUser(selectedUserId, e)}
+                className="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold flex items-center gap-1 transition cursor-pointer border border-amber-500/20 shrink-0"
+                title="Archive Customer"
+              >
+                <Archive className="h-3 w-3" />
+                <span>Archive</span>
+              </button>
+            )
+          )}
         </div>
 
         {/* Super Admin Open Direct Ticket Action */}

@@ -16,7 +16,7 @@ const trustBadges = [
 
 const QUICK_TAGS = [
   { label: "⚡ Buy Accounts", query: "buy pokemon go accounts" },
-  { label: "⭐ Level 40", query: "level 40 pokemon go account" },
+  { label: "⭐ Level 80", query: "level 80 pokemon go account" },
   { label: "✨ Shiny Pokemon", query: "shiny" },
   { label: "🔮 Mewtwo", query: "mewtwo" },
   { label: "🔥 Charizard", query: "charizard" },

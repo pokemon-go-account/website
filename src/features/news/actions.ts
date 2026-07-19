@@ -47,7 +47,7 @@ The **Wild Area 2026** is officially here, bringing unprecedented encounters, br
 
 ## 🗡️ Recommended Raid Counters & Teams
 
-To maximize your raid Premier Balls and XL candy gains, ensure your team utilizes Level 40+ Shadow Counters:
+To maximize your raid Premier Balls and XL candy gains, ensure your team utilizes Level 80+ Shadow Counters:
 
 - **Primal Groudon**: Mud Shot + Precipice Blades (Top Ground Attacker)
 - **Mega Rayquaza**: Dragon Tail + Dragon Ascent (Top Generalist)
@@ -109,7 +109,7 @@ View prices dynamically in your local currency: **USD ($)**, **EUR (€)**, **IN
 
 Your security is our highest priority. All accounts listed on our auction house undergo automated pre-auction validation:
 - **Instant Credential Verification**: Email and binding verification.
-- **Medal & Stardust Audit**: Automated verification of Level 40/50 status and Stardust counts.
+- **Medal & Stardust Audit**: Automated verification of Level 80/50 status and Stardust counts.
 - **100% Money-Back Escrow**: Funds are safely held in escrow until buyer verification completes successfully.
 `,
   },

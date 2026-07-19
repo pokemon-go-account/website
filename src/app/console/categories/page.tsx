@@ -254,7 +254,7 @@ export default function ManageCategoriesPage() {
                 <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category Name</label>
                 <input
                   type="text"
-                  placeholder="e.g., Rare Items, Accounts Level 40"
+                  placeholder="e.g., Rare Items, Accounts Level 80"
                   {...register("name")}
                   className={cn(
                     "w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-900 dark:text-white placeholder:text-zinc-405 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors",

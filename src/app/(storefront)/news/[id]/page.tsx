@@ -30,7 +30,7 @@ const DEFAULT_ARTICLE_SEO_KEYWORDS = [
   "best pokemon go account",
   "charizard pokemon go",
   "buy stardust pokemon go",
-  "level 40 pokemon go account",
+  "level 80 pokemon go account",
   "purchase pokemon go account",
   "shiny pokemon for sale pokemon go",
   "buy cheap pokemon go accounts",

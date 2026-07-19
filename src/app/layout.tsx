@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "Buy Pokémon GO Accounts & Rare Pokémon | Best Place to Buy PoGo Accounts",
     template: "%s | Pokémon GO Services & Marketplace"
   },
-  description: "Best place to buy Pokémon GO accounts, rare shiny Pokémon, Level 40 accounts, Stardust, Mewtwo, and Charizard. Safe escrow, sub-millisecond live auctions, and cheap Pokémon GO store items.",
+  description: "Best place to buy Pokémon GO accounts, rare shiny Pokémon, Level 80 accounts, Stardust, Mewtwo, and Charizard. Safe escrow, sub-millisecond live auctions, and cheap Pokémon GO store items.",
   keywords: [
     "pokemon go accounts",
     "pokemon go",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     "buy stardust pokemon go",
     "best pokemon in pokemon go",
     "snorlax pokemon go",
-    "level 40 pokemon go account",
+    "level 80 pokemon go account",
     "purchase pokemon go account",
     "the rarest pokemon",
     "pokemon go pokemon",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     title: "Buy Pokémon GO Accounts & Rare Pokémon | Pokémon GO Services & Auctions",
-    description: "Your #1 trusted storefront to buy Pokémon GO accounts, shiny legendaries, Level 40 accounts, Stardust, and rare Pokémon with 100% instant escrow delivery.",
+    description: "Your #1 trusted storefront to buy Pokémon GO accounts, shiny legendaries, Level 80 accounts, Stardust, and rare Pokémon with 100% instant escrow delivery.",
     siteName: "Pokémon GO Services & Marketplace",
     images: [
       {
@@ -79,7 +79,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Buy Cheap Pokémon GO Accounts & Rare Pokémon | PoGo Marketplace",
-    description: "Safe & cheap place to buy Pokémon GO accounts, Level 40 accounts, shiny Mewtwo, Dragonite & live auction rooms.",
+    description: "Safe & cheap place to buy Pokémon GO accounts, Level 80 accounts, shiny Mewtwo, Dragonite & live auction rooms.",
     images: ["/og-logo.png"],
   },
 };

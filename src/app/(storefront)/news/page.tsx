@@ -8,7 +8,7 @@ import { NewsClientFilter } from "./news-client-filter";
 
 export const metadata: Metadata = {
   title: "Pokémon GO News, Event Guides & Account Buying Market Updates",
-  description: "Stay updated with Pokémon GO news, raids, event guides, shiny Pokémon for sale updates, and market trends for buying cheap level 40 Pokémon GO accounts.",
+  description: "Stay updated with Pokémon GO news, raids, event guides, shiny Pokémon for sale updates, and market trends for buying cheap level 80 Pokémon GO accounts.",
   keywords: [
     "pokemon go accounts",
     "buy pokemon go accounts",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "pokemon go services",
     "best pokemon go account",
     "buy stardust pokemon go",
-    "level 40 pokemon go account",
+    "level 80 pokemon go account",
     "purchase pokemon go account",
     "shiny pokemon for sale pokemon go",
     "pokemon go shiny",
