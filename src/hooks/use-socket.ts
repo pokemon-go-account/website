@@ -35,6 +35,7 @@ export function useSocket(
 
     // High frequency poll query function
     const pollAuctionState = async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
       const res = await fetchAuctionRealtime(auctionId);
       if (!isMounted) return;
 
@@ -59,8 +60,8 @@ export function useSocket(
     // Initial query
     pollAuctionState();
 
-    // Setup polling interval (5 seconds to prevent server overload)
-    const interval = setInterval(pollAuctionState, 5000);
+    // Setup polling interval (8 seconds, only when tab is visible)
+    const interval = setInterval(pollAuctionState, 8000);
 
     return () => {
       isMounted = false;

@@ -144,23 +144,37 @@ export function AdminChatPanel() {
     });
   }, []);
 
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
   // 0. Client-side custom token sign-in to Firestore rules
   useEffect(() => {
-    if (!clientAuth || !adminId) return;
+    if (!clientAuth || !adminId) {
+      setIsAuthReady(false);
+      return;
+    }
 
     // Skip if already signed in as the correct user
-    if (clientAuth.currentUser?.uid === adminId) return;
+    if (clientAuth.currentUser?.uid === adminId) {
+      setIsAuthReady(true);
+      return;
+    }
 
     getFirebaseCustomToken().then((res) => {
       if (res.success && res.customToken) {
         signInWithCustomToken(clientAuth, res.customToken)
           .then(() => {
             console.log("Firebase Auth signed in as Admin successfully.");
+            setIsAuthReady(true);
           })
           .catch((err) => {
             console.error("Firebase admin custom token auth error:", err);
+            setIsAuthReady(false);
           });
+      } else {
+        setIsAuthReady(false);
       }
+    }).catch(() => {
+      setIsAuthReady(false);
     });
   }, [adminId]);
 
@@ -379,6 +393,7 @@ export function AdminChatPanel() {
 
   // Load all conversations (real-time)
   useEffect(() => {
+    if (!isAuthReady) return;
     const db = getDb();
     const chatsRef = collection(db, "supportChats");
     const q = query(chatsRef, orderBy("lastMessageAt", "desc"), limit(200));
@@ -389,10 +404,12 @@ export function AdminChatPanel() {
         ...(d.data() as Omit<ChatMeta, "id">),
       }));
       setConversations(convs);
+    }, (error) => {
+      console.warn("[AdminChatPanel] Conversations snapshot warning:", error.message);
     });
 
     return unsub;
-  }, []);
+  }, [isAuthReady]);
 
   // Sync activeChat when activeChatId or conversations change
   useEffect(() => {
@@ -420,7 +437,7 @@ export function AdminChatPanel() {
 
   // Load messages for active conversation (real-time)
   useEffect(() => {
-    if (!activeChatId) {
+    if (!activeChatId || !isAuthReady) {
       setMessages([]);
       prevMessagesRef.current = [];
       return;
@@ -450,10 +467,12 @@ export function AdminChatPanel() {
       // Mark as read by admin
       const chatRef = doc(db, "supportChats", activeChatId);
       updateDoc(chatRef, { unreadByAdmin: 0 }).catch(() => {});
+    }, (error) => {
+      console.warn("[AdminChatPanel] Messages snapshot warning:", error.message);
     });
 
     return unsub;
-  }, [activeChatId, playSound]);
+  }, [activeChatId, isAuthReady, playSound]);
 
   // Scroll to bottom on new messages
   useEffect(() => {

@@ -121,23 +121,37 @@ export function UserChatPanel({
     });
   }, []);
 
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
   // 0. Client-side custom token sign-in to Firestore rules
   useEffect(() => {
-    if (!clientAuth || !userId) return;
+    if (!clientAuth || !userId) {
+      setIsAuthReady(false);
+      return;
+    }
 
     // Skip if already signed in as the correct user
-    if (clientAuth.currentUser?.uid === userId) return;
+    if (clientAuth.currentUser?.uid === userId) {
+      setIsAuthReady(true);
+      return;
+    }
 
     getFirebaseCustomToken().then((res) => {
       if (res.success && res.customToken) {
         signInWithCustomToken(clientAuth, res.customToken)
           .then(() => {
             console.log("Firebase Auth signed in with custom token successfully.");
+            setIsAuthReady(true);
           })
           .catch((err) => {
             console.error("Firebase custom token auth error:", err);
+            setIsAuthReady(false);
           });
+      } else {
+        setIsAuthReady(false);
       }
+    }).catch(() => {
+      setIsAuthReady(false);
     });
   }, [userId]);
 
@@ -236,7 +250,7 @@ export function UserChatPanel({
 
   // 1. Listen for ALL conversations belonging to this user
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !isAuthReady) return;
     const db = getDb();
     const chatsRef = collection(db, "supportChats");
     // Filter index-free by userId and sort client-side
@@ -262,14 +276,16 @@ export function UserChatPanel({
       });
 
       setConversations(convs);
+    }, (error) => {
+      console.warn("[UserChatPanel] Conversations snapshot warning:", error.message);
     });
 
     return unsub;
-  }, [userId]);
+  }, [userId, isAuthReady]);
 
   // 2. Listen for messages in the active conversation
   useEffect(() => {
-    if (!activeChatId) {
+    if (!activeChatId || !isAuthReady) {
       setMessages([]);
       return;
     }
@@ -296,10 +312,12 @@ export function UserChatPanel({
       // Mark as read by user
       const chatRef = doc(db, "supportChats", activeChatId);
       updateDoc(chatRef, { unreadByUser: 0 }).catch(() => {});
+    }, (error) => {
+      console.warn("[UserChatPanel] Messages snapshot warning:", error.message);
     });
 
     return unsub;
-  }, [activeChatId, playSound]);
+  }, [activeChatId, isAuthReady, playSound]);
 
   // Scroll to bottom on new messages
   useEffect(() => {

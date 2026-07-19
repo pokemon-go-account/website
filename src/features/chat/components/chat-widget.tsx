@@ -136,6 +136,8 @@ export function ChatWidget() {
       });
 
       prevConvsRef.current = convs;
+    }, (error) => {
+      console.warn("[ChatWidget] Firestore unread listener warning:", error.message);
     });
     return unsub;
   }, [userId, isOpen]);

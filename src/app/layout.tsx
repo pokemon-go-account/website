@@ -3,13 +3,8 @@ import "@/styles/globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SessionProvider } from "next-auth/react";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { auth } from "@/auth";
 import { ChatWidget } from "@/features/chat/components/chat-widget";
-import { PokemonClickBurst } from "@/components/pokemon-click-burst";
 import { PageTransitionLoader } from "@/components/page-transition-loader";
-import { AnalyticsTracker } from "@/components/analytics/analytics-tracker";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -116,12 +111,8 @@ export default function RootLayout({
           <main className="flex-1 flex flex-col">
             {children}
           </main>
-          {/* <PokemonClickBurst /> */}
           <PageTransitionLoader />
-          <AnalyticsTracker />
         </SessionProvider>
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
