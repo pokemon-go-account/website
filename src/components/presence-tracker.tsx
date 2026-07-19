@@ -12,21 +12,74 @@ interface GeoInfo {
   flag: string;
 }
 
-// Map timezone prefixes to fast country defaults as immediate fallback
+// Extensive timezone to specific country mapping
 function getFallbackGeo(): GeoInfo {
-  if (typeof window === "undefined") return { country: "Global", countryCode: "UN", flag: "🌐" };
+  if (typeof window === "undefined") return { country: "United States", countryCode: "US", flag: "🇺🇸" };
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    
+    // South Asia
     if (tz.includes("Kolkata") || tz.includes("India")) return { country: "India", countryCode: "IN", flag: "🇮🇳" };
-    if (tz.includes("New_York") || tz.includes("Chicago") || tz.includes("Los_Angeles") || tz.includes("Denver")) return { country: "United States", countryCode: "US", flag: "🇺🇸" };
+    if (tz.includes("Dhaka")) return { country: "Bangladesh", countryCode: "BD", flag: "🇧🇩" };
+    if (tz.includes("Karachi")) return { country: "Pakistan", countryCode: "PK", flag: "🇵🇰" };
+    if (tz.includes("Kathmandu")) return { country: "Nepal", countryCode: "NP", flag: "🇳🇵" };
+    if (tz.includes("Colombo")) return { country: "Sri Lanka", countryCode: "LK", flag: "🇱🇰" };
+
+    // Middle East
+    if (tz.includes("Dubai") || tz.includes("Abu_Dhabi")) return { country: "United Arab Emirates", countryCode: "AE", flag: "🇦🇪" };
+    if (tz.includes("Riyadh")) return { country: "Saudi Arabia", countryCode: "SA", flag: "🇸🇦" };
+    if (tz.includes("Istanbul")) return { country: "Turkey", countryCode: "TR", flag: "🇹🇷" };
+
+    // East / South-East Asia
+    if (tz.includes("Singapore")) return { country: "Singapore", countryCode: "SG", flag: "🇸🇬" };
+    if (tz.includes("Kuala_Lumpur")) return { country: "Malaysia", countryCode: "MY", flag: "🇲🇾" };
+    if (tz.includes("Bangkok")) return { country: "Thailand", countryCode: "TH", flag: "🇹🇭" };
+    if (tz.includes("Jakarta")) return { country: "Indonesia", countryCode: "ID", flag: "🇮🇩" };
+    if (tz.includes("Manila")) return { country: "Philippines", countryCode: "PH", flag: "🇵🇭" };
+    if (tz.includes("Ho_Chi_Minh")) return { country: "Vietnam", countryCode: "VN", flag: "🇻🇳" };
+    if (tz.includes("Hong_Kong")) return { country: "Hong Kong", countryCode: "HK", flag: "🇭🇰" };
+    if (tz.includes("Seoul")) return { country: "South Korea", countryCode: "KR", flag: "🇰🇷" };
+    if (tz.includes("Tokyo")) return { country: "Japan", countryCode: "JP", flag: "🇯🇵" };
+
+    // North America
+    if (tz.includes("New_York") || tz.includes("Chicago") || tz.includes("Los_Angeles") || tz.includes("Denver") || tz.includes("Phoenix") || tz.includes("Honolulu")) {
+      return { country: "United States", countryCode: "US", flag: "🇺🇸" };
+    }
+    if (tz.includes("Toronto") || tz.includes("Vancouver") || tz.includes("Edmonton") || tz.includes("Halifax")) {
+      return { country: "Canada", countryCode: "CA", flag: "🇨🇦" };
+    }
+    if (tz.includes("Mexico_City")) return { country: "Mexico", countryCode: "MX", flag: "🇲🇽" };
+
+    // Europe
     if (tz.includes("London")) return { country: "United Kingdom", countryCode: "GB", flag: "🇬🇧" };
-    if (tz.includes("Toronto") || tz.includes("Vancouver")) return { country: "Canada", countryCode: "CA", flag: "🇨🇦" };
-    if (tz.includes("Sydney") || tz.includes("Melbourne")) return { country: "Australia", countryCode: "AU", flag: "🇦🇺" };
     if (tz.includes("Berlin") || tz.includes("Frankfurt")) return { country: "Germany", countryCode: "DE", flag: "🇩🇪" };
     if (tz.includes("Paris")) return { country: "France", countryCode: "FR", flag: "🇫🇷" };
-    if (tz.includes("Tokyo")) return { country: "Japan", countryCode: "JP", flag: "🇯🇵" };
+    if (tz.includes("Rome")) return { country: "Italy", countryCode: "IT", flag: "🇮🇹" };
+    if (tz.includes("Madrid")) return { country: "Spain", countryCode: "ES", flag: "🇪🇸" };
+    if (tz.includes("Amsterdam")) return { country: "Netherlands", countryCode: "NL", flag: "🇳🇱" };
+    if (tz.includes("Brussels")) return { country: "Belgium", countryCode: "BE", flag: "🇧🇪" };
+    if (tz.includes("Vienna")) return { country: "Austria", countryCode: "AT", flag: "🇦🇹" };
+    if (tz.includes("Zurich")) return { country: "Switzerland", countryCode: "CH", flag: "🇨🇭" };
+    if (tz.includes("Stockholm")) return { country: "Sweden", countryCode: "SE", flag: "🇸🇪" };
+    if (tz.includes("Oslo")) return { country: "Norway", countryCode: "NO", flag: "🇳🇴" };
+    if (tz.includes("Helsinki")) return { country: "Finland", countryCode: "FI", flag: "🇫🇮" };
+    if (tz.includes("Copenhagen")) return { country: "Denmark", countryCode: "DK", flag: "🇩🇰" };
+    if (tz.includes("Warsaw")) return { country: "Poland", countryCode: "PL", flag: "🇵🇱" };
+
+    // Oceania
+    if (tz.includes("Sydney") || tz.includes("Melbourne") || tz.includes("Brisbane") || tz.includes("Perth") || tz.includes("Adelaide")) {
+      return { country: "Australia", countryCode: "AU", flag: "🇦🇺" };
+    }
+    if (tz.includes("Auckland")) return { country: "New Zealand", countryCode: "NZ", flag: "🇳🇿" };
+
+    // Latin America & Africa
+    if (tz.includes("Sao_Paulo")) return { country: "Brazil", countryCode: "BR", flag: "🇧🇷" };
+    if (tz.includes("Buenos_Aires")) return { country: "Argentina", countryCode: "AR", flag: "🇦🇷" };
+    if (tz.includes("Johannesburg")) return { country: "South Africa", countryCode: "ZA", flag: "🇿🇦" };
+    if (tz.includes("Cairo")) return { country: "Egypt", countryCode: "EG", flag: "🇪🇬" };
   } catch (_) {}
-  return { country: "Global", countryCode: "UN", flag: "🌐" };
+
+  return { country: "United States", countryCode: "US", flag: "🇺🇸" };
 }
 
 // Encode pathname for Firebase key safety
@@ -56,12 +109,13 @@ export function PresenceTracker() {
     const db = database || (app ? getDatabase(app) : null);
     if (!db) return;
 
-    // Session ID (unique per tab)
-    let sessionId = sessionStorage.getItem("pogo_presence_sid");
-    if (!sessionId) {
-      sessionId = `s_${Math.random().toString(36).substring(2, 10)}`;
-      sessionStorage.setItem("pogo_presence_sid", sessionId);
+    // Unique Tab ID per browser window/tab
+    let tabId = window.name;
+    if (!tabId || !tabId.startsWith("tab_")) {
+      tabId = `tab_${Math.random().toString(36).substring(2, 10)}`;
+      window.name = tabId;
     }
+    const sessionId = tabId;
 
     // Persistent Visitor ID (shared across all tabs on the same browser/device)
     let storedId = localStorage.getItem("pogo_visitor_id");
@@ -78,49 +132,83 @@ export function PresenceTracker() {
     const pathKey = encodePathKey(pathname || "/");
     const pageTitle = typeof document !== "undefined" ? document.title || pathname || "/" : pathname || "/";
 
-    // Deduplicate view counts in current tab session for exact same page refresh
-    const pageViewKey = `pv_${todayStr}_${pathKey}`;
-    if (!sessionStorage.getItem(pageViewKey)) {
-      sessionStorage.setItem(pageViewKey, "1");
-
-      const dailyTotalRef = ref(db, `analytics/dailyViews/${todayStr}`);
-      set(dailyTotalRef, increment(1)).catch(() => {});
-
-      const pageViewsRef = ref(db, `analytics/pageViews/${todayStr}/${pathKey}`);
-      set(pageViewsRef, increment(1)).catch(() => {});
-
-      const pageTitleRef = ref(db, `analytics/pageTitles/${pathKey}`);
-      set(pageTitleRef, pageTitle).catch(() => {});
-
-      const uniqueRef = ref(db, `analytics/uniqueVisitors/${todayStr}/${visitorId}`);
-      set(uniqueRef, {
-        userName: session?.user?.name || session?.user?.email?.split("@")[0] || "Guest",
-        lastPath: pathname,
-        timestamp: Date.now(),
-      }).catch(() => {});
-    }
-
     // Resolve Geo location (Cached in sessionStorage)
     let geo = getFallbackGeo();
     const cachedGeo = sessionStorage.getItem("pogo_presence_geo");
     if (cachedGeo) {
       try { geo = JSON.parse(cachedGeo); } catch (_) {}
     } else {
+      // Primary API: ipapi.co with fallback to ip-api.com
       fetch("https://ipapi.co/json/")
         .then((res) => res.json())
         .then((data) => {
-          if (data && data.country_name) {
-            const countryCode = data.country_code || "UN";
+          if (data && data.country_name && data.country_name !== "Global") {
+            const countryCode = data.country_code || "US";
             const flag = countryCode
               .toUpperCase()
               .replace(/./g, (char: string) => String.fromCodePoint(127397 + char.charCodeAt(0)));
             const newGeo = { country: data.country_name, countryCode, flag };
             sessionStorage.setItem("pogo_presence_geo", JSON.stringify(newGeo));
             updatePresence(newGeo);
+            recordAnalytics(newGeo);
+          } else {
+            throw new Error("Fallback required");
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          fetch("https://ip-api.com/json")
+            .then((res) => res.json())
+            .then((data) => {
+              if (data && data.country) {
+                const countryCode = data.countryCode || "US";
+                const flag = countryCode
+                  .toUpperCase()
+                  .replace(/./g, (char: string) => String.fromCodePoint(127397 + char.charCodeAt(0)));
+                const newGeo = { country: data.country, countryCode, flag };
+                sessionStorage.setItem("pogo_presence_geo", JSON.stringify(newGeo));
+                updatePresence(newGeo);
+                recordAnalytics(newGeo);
+              }
+            })
+            .catch(() => {});
+        });
     }
+
+    function recordAnalytics(currentGeo: GeoInfo) {
+      if (!db) return;
+      const pageViewKey = `pv_${todayStr}_${pathKey}`;
+      if (!sessionStorage.getItem(pageViewKey)) {
+        sessionStorage.setItem(pageViewKey, "1");
+
+        const dailyTotalRef = ref(db, `analytics/dailyViews/${todayStr}`);
+        set(dailyTotalRef, increment(1)).catch(() => {});
+
+        const pageViewsRef = ref(db, `analytics/pageViews/${todayStr}/${pathKey}`);
+        set(pageViewsRef, increment(1)).catch(() => {});
+
+        const pageTitleRef = ref(db, `analytics/pageTitles/${pathKey}`);
+        set(pageTitleRef, pageTitle).catch(() => {});
+
+        // Record Country Analytics
+        const countryViewsRef = ref(db, `analytics/countryViews/${todayStr}/${currentGeo.countryCode}`);
+        set(countryViewsRef, increment(1)).catch(() => {});
+
+        const countryMetaRef = ref(db, `analytics/countryMeta/${currentGeo.countryCode}`);
+        set(countryMetaRef, { country: currentGeo.country, flag: currentGeo.flag, countryCode: currentGeo.countryCode }).catch(() => {});
+
+        const uniqueRef = ref(db, `analytics/uniqueVisitors/${todayStr}/${visitorId}`);
+        set(uniqueRef, {
+          userName: session?.user?.name || session?.user?.email?.split("@")[0] || "Guest",
+          lastPath: pathname,
+          country: currentGeo.country,
+          countryCode: currentGeo.countryCode,
+          flag: currentGeo.flag,
+          timestamp: Date.now(),
+        }).catch(() => {});
+      }
+    }
+
+    recordAnalytics(geo);
 
     const userRootRef = ref(db, `presence/${presenceKey}`);
     const tabRef = ref(db, `presence/${presenceKey}/tabs/${sessionId}`);
@@ -155,10 +243,7 @@ export function PresenceTracker() {
         lastSeen: Date.now()
       };
 
-      // Set disconnect handler specifically for THIS tab's sub-node
       onDisconnect(tabRef).remove().catch(() => {});
-
-      // Update root metadata & write tab node
       update(userRootRef, rootPayload).catch(() => {});
       set(tabRef, tabPayload).catch(() => {});
     }
@@ -169,17 +254,32 @@ export function PresenceTracker() {
       }
     });
 
-    // Handle tab focus switch (when returning to an open tab)
+    const heartbeatTimer = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        updatePresence(geo);
+      }
+    }, 12000);
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         updatePresence(geo);
       }
     };
+
+    const handleUnload = () => {
+      remove(tabRef).catch(() => {});
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload);
 
     return () => {
       unsubscribeConnected();
+      clearInterval(heartbeatTimer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("pagehide", handleUnload);
       remove(tabRef).catch(() => {});
     };
   }, [pathname, session?.user?.id, session?.user?.name, status]);

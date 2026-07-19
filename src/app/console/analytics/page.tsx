@@ -19,10 +19,13 @@ import {
   Eye,
   Calendar,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  MapPin,
+  Sparkles
 } from "lucide-react";
 
 interface VisitorPresence {
+  presenceKey?: string;
   sessionId: string;
   visitorId?: string;
   userId?: string | null;
@@ -69,7 +72,7 @@ export default function AnalyticsConsolePage() {
           if (tabList.length > 0) {
             tabList.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
             const latestTab = tabList[0];
-            if (latestTab.lastSeen && now - latestTab.lastSeen < 120000) {
+            if (latestTab.lastSeen && now - latestTab.lastSeen < 30000) {
               activeList.push({
                 ...v,
                 pathname: latestTab.pathname || v.pathname || "/",
@@ -78,8 +81,6 @@ export default function AnalyticsConsolePage() {
               });
             }
           }
-        } else if (v.lastSeen && now - v.lastSeen < 120000) {
-          activeList.push(v);
         }
       });
 
@@ -123,20 +124,23 @@ export default function AnalyticsConsolePage() {
     return dates;
   }, [timeRange]);
 
-  // Aggregate Total Views and Unique Views over selected date range
-  const { totalViewsPeriod, uniqueViewsPeriod, pageViewStatsPeriod } = useMemo(() => {
+  // Aggregate Total Views, Unique Views, and Country Breakdown over selected date range
+  const { totalViewsPeriod, uniqueViewsPeriod, pageViewStatsPeriod, countryTrafficPeriod } = useMemo(() => {
     if (!analyticsData) {
-      return { totalViewsPeriod: 0, uniqueViewsPeriod: 0, pageViewStatsPeriod: [] };
+      return { totalViewsPeriod: 0, uniqueViewsPeriod: 0, pageViewStatsPeriod: [], countryTrafficPeriod: [] };
     }
 
     const dailyViews = analyticsData.dailyViews || {};
     const pageViews = analyticsData.pageViews || {};
     const pageTitles = analyticsData.pageTitles || {};
     const uniqueVisitors = analyticsData.uniqueVisitors || {};
+    const countryViews = analyticsData.countryViews || {};
+    const countryMeta = analyticsData.countryMeta || {};
 
     let totalViews = 0;
     const uniqueVisitorSet = new Set<string>();
     const pageMap = new Map<string, { pathKey: string; pathname: string; pageTitle: string; views: number; uniqueSet: Set<string> }>();
+    const countryMap = new Map<string, { countryCode: string; country: string; flag: string; views: number; uniqueSet: Set<string> }>();
 
     dateList.forEach((dateStr) => {
       // Daily total views
@@ -146,7 +150,45 @@ export default function AnalyticsConsolePage() {
 
       // Unique visitors per date
       if (uniqueVisitors[dateStr]) {
-        Object.keys(uniqueVisitors[dateStr]).forEach((vId) => uniqueVisitorSet.add(vId));
+        Object.entries(uniqueVisitors[dateStr]).forEach(([vId, val]: [string, any]) => {
+          uniqueVisitorSet.add(vId);
+          if (val && val.countryCode) {
+            const cCode = val.countryCode;
+            const existing = countryMap.get(cCode);
+            const meta = countryMeta[cCode] || { country: val.country || cCode, flag: val.flag || "🌐", countryCode: cCode };
+            if (existing) {
+              existing.uniqueSet.add(vId);
+            } else {
+              countryMap.set(cCode, {
+                countryCode: cCode,
+                country: meta.country,
+                flag: meta.flag,
+                views: 0,
+                uniqueSet: new Set([vId]),
+              });
+            }
+          }
+        });
+      }
+
+      // Country views per date
+      if (countryViews[dateStr]) {
+        Object.entries(countryViews[dateStr]).forEach(([cCode, count]) => {
+          const numCount = Number(count) || 0;
+          const meta = countryMeta[cCode] || { country: cCode, flag: "🌐", countryCode: cCode };
+          const existing = countryMap.get(cCode);
+          if (existing) {
+            existing.views += numCount;
+          } else {
+            countryMap.set(cCode, {
+              countryCode: cCode,
+              country: meta.country,
+              flag: meta.flag,
+              views: numCount,
+              uniqueSet: new Set(),
+            });
+          }
+        });
       }
 
       // Page level views per date
@@ -169,7 +211,6 @@ export default function AnalyticsConsolePage() {
             });
           }
 
-          // Count unique visitors for this page on this date
           if (uniqueVisitors[dateStr]) {
             Object.entries(uniqueVisitors[dateStr]).forEach(([vId, val]: [string, any]) => {
               if (val?.lastPath === path) {
@@ -188,10 +229,18 @@ export default function AnalyticsConsolePage() {
       }))
       .sort((a, b) => b.views - a.views);
 
+    const countryList = Array.from(countryMap.values())
+      .map((item) => ({
+        ...item,
+        uniqueVisitors: item.uniqueSet.size || Math.min(item.views, uniqueVisitorSet.size),
+      }))
+      .sort((a, b) => b.views - a.views);
+
     return {
       totalViewsPeriod: totalViews,
       uniqueViewsPeriod: uniqueVisitorSet.size,
       pageViewStatsPeriod: pageStatsList,
+      countryTrafficPeriod: countryList,
     };
   }, [analyticsData, dateList]);
 
@@ -220,8 +269,8 @@ export default function AnalyticsConsolePage() {
   const liveCountryStats = useMemo(() => {
     const map = new Map<string, { country: string; flag: string; count: number; users: VisitorPresence[] }>();
     visitors.forEach((v) => {
-      const country = v.country || "Global";
-      const flag = v.flag || "🌐";
+      const country = v.country || "United States";
+      const flag = v.flag || "🇺🇸";
       const existing = map.get(country);
       if (existing) {
         existing.count += 1;
@@ -234,159 +283,162 @@ export default function AnalyticsConsolePage() {
   }, [visitors]);
 
   return (
-    <div className="space-y-8 max-w-6xl pb-16">
+    <div className="space-y-8 max-w-6xl pb-20">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Web Analytics & Traffic
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-gradient-to-r from-zinc-900/80 via-zinc-900/40 to-zinc-900/80 border border-white/[0.08] p-6 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden">
+        <div className="space-y-1.5 z-10">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              Web Analytics & Live Telemetry
+              <Sparkles className="h-5 w-5 text-amber-400 animate-pulse" />
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
               Live Direct WebSocket
             </span>
           </div>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Realtime Presence & Page View Telemetry · 0 Vercel Fluid CPU Billing
+          <p className="text-xs text-zinc-400 font-medium">
+            Real-time visitor presence & historical traffic telemetry · 0 Vercel Fluid CPU Charges
           </p>
         </div>
 
-        {/* Time Window Switcher */}
-        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-white/[0.04] p-1 rounded-xl border border-zinc-200 dark:border-white/[0.08]">
+        {/* REDESIGNED PREMIUM TIME RANGE SELECTOR */}
+        <div className="z-10 inline-flex items-center p-1.5 bg-black/40 border border-white/10 rounded-2xl shadow-inner backdrop-blur-md self-start md:self-auto">
           <button
             onClick={() => setTimeRange("7d")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
               timeRange === "7d"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm font-semibold"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
+                : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
             }`}
           >
-            Last 7 Days
+            <Calendar className="h-3.5 w-3.5" />
+            7 Days
           </button>
           <button
             onClick={() => setTimeRange("14d")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
               timeRange === "14d"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm font-semibold"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
+                : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
             }`}
           >
-            Last 14 Days
+            <Calendar className="h-3.5 w-3.5" />
+            14 Days
           </button>
           <button
             onClick={() => setTimeRange("30d")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
               timeRange === "30d"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm font-semibold"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
+                : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
             }`}
           >
-            Last 30 Days
+            <Calendar className="h-3.5 w-3.5" />
+            30 Days
           </button>
         </div>
+
+        {/* Ambient glow background */}
+        <div className="absolute -right-10 -top-10 h-32 w-32 bg-[#6133e1]/20 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* Primary Metrics Row */}
+      {/* Primary Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Views in Period */}
-        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl p-5">
+        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-5 relative overflow-hidden group hover:border-amber-500/40 transition-all shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Total Views ({timeRange})</span>
-            <div className="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20">
-              <Eye className="h-4 w-4" />
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Total Views ({timeRange})</span>
+            <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 group-hover:scale-110 transition-transform">
+              <Eye className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              {totalViewsPeriod}
-            </span>
-            <span className="text-xs text-amber-500 font-medium flex items-center gap-0.5">
-              <TrendingUp className="h-3 w-3" /> page hits
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">{totalViewsPeriod}</span>
+            <span className="text-xs text-amber-500 font-bold flex items-center gap-0.5">
+              <TrendingUp className="h-3.5 w-3.5" /> page hits
             </span>
           </div>
         </div>
 
         {/* Unique Views in Period */}
-        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl p-5">
+        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-5 relative overflow-hidden group hover:border-purple-500/40 transition-all shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Unique Visitors ({timeRange})</span>
-            <div className="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center border border-purple-500/20">
-              <BarChart3 className="h-4 w-4" />
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Unique Visitors ({timeRange})</span>
+            <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20 group-hover:scale-110 transition-transform">
+              <BarChart3 className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              {uniqueViewsPeriod}
-            </span>
-            <span className="text-xs text-purple-500 font-medium">unique devices</span>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">{uniqueViewsPeriod}</span>
+            <span className="text-xs text-purple-400 font-bold">unique devices</span>
           </div>
         </div>
 
         {/* Online Right Now */}
-        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl p-5">
+        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-500/40 transition-all shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Online Right Now</span>
-            <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
-              <Users className="h-4 w-4" />
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Online Right Now</span>
+            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform">
+              <Users className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-emerald-500 tracking-tight">{visitors.length}</span>
-            <span className="text-xs text-emerald-500 font-medium">active visitors</span>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-emerald-400 tracking-tight">{visitors.length}</span>
+            <span className="text-xs text-emerald-400 font-bold">live visitors</span>
           </div>
         </div>
 
         {/* Vercel Execution Metric */}
-        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl p-5">
+        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-5 relative overflow-hidden group hover:border-blue-500/40 transition-all shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Vercel Fluid CPU</span>
-            <div className="h-9 w-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20">
-              <ShieldCheck className="h-4 w-4" />
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Vercel Fluid CPU</span>
+            <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
+              <ShieldCheck className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">0.00 ms</span>
-            <span className="text-xs text-zinc-400">0 serverless pings</span>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">0.00 ms</span>
+            <span className="text-xs text-zinc-400 font-bold">0 serverless pings</span>
           </div>
         </div>
       </div>
 
-    
-      {/* Grid: Live Pages & Countries with User Hover Tooltips */}
+      {/* Grid: Currently Active Pages & Active Countries with User Hover Tooltips */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Live Active Pages Breakdown */}
-        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-3xl p-6 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-4">
             <div>
-              <h2 className="text-base font-bold text-zinc-900 dark:text-white">Currently Active Pages</h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Hover over any page to view active usernames right now</p>
+              <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <Compass className="h-4 w-4 text-amber-500" />
+                Currently Active Pages
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Hover over any page to view active usernames right now</p>
             </div>
-            <span className="text-xs font-medium px-2 py-1 bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300 rounded-lg">
+            <span className="text-xs font-bold px-2.5 py-1 bg-zinc-100 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-300 rounded-xl border border-zinc-200 dark:border-white/10">
               {livePageStats.length} Pages
             </span>
           </div>
 
-          
-
           {livePageStats.length === 0 ? (
-            <div className="py-8 text-center text-xs text-zinc-400">No active page sessions detected</div>
+            <div className="py-10 text-center text-xs text-zinc-400">No active page sessions detected right now</div>
           ) : (
             <div className="space-y-3">
-              {livePageStats.map((item) => {
+              {livePageStats.map((item, idx) => {
                 const pct = Math.round((item.count / visitors.length) * 100) || 0;
                 const isHovered = hoveredPage === item.pathname;
 
                 return (
                   <div
-                    key={item.pathname}
+                    key={`${item.pathname}_${idx}`}
                     onMouseEnter={() => setHoveredPage(item.pathname)}
                     onMouseLeave={() => setHoveredPage(null)}
-                    className="relative group p-3 rounded-xl transition-colors hover:bg-zinc-50 dark:hover:bg-white/[0.03] border border-transparent hover:border-zinc-200 dark:hover:border-white/[0.08]"
+                    className="relative group p-3 rounded-2xl transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.03] border border-transparent hover:border-zinc-200 dark:hover:border-white/[0.08]"
                   >
                     <div className="flex items-center justify-between text-xs font-medium mb-1.5">
                       <div className="flex items-center gap-2 truncate max-w-[75%]">
-                        <span className="font-mono text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded font-semibold shrink-0">
+                        <span className="font-mono text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-lg font-bold shrink-0">
                           {item.pathname}
                         </span>
                         <span className="text-zinc-500 dark:text-zinc-400 truncate">{item.pageTitle}</span>
@@ -398,24 +450,26 @@ export default function AnalyticsConsolePage() {
 
                     <div className="h-1.5 w-full bg-zinc-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-500"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
 
                     {/* Hover User Tooltip */}
                     {isHovered && item.users.length > 0 && (
-                      <div className="absolute left-0 top-full mt-1 z-30 w-72 bg-zinc-900 text-white rounded-xl p-3 shadow-2xl border border-white/10 text-xs space-y-2">
-                        <div className="font-semibold border-b border-white/10 pb-1 flex items-center justify-between">
+                      <div className="absolute left-0 top-full mt-2 z-30 w-72 bg-zinc-900 text-white rounded-2xl p-4 shadow-2xl border border-white/10 text-xs space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="font-bold border-b border-white/10 pb-2 flex items-center justify-between text-zinc-300">
                           <span>People on {item.pathname}:</span>
-                          <span className="text-amber-400 font-mono">{item.users.length}</span>
+                          <span className="text-amber-400 font-mono font-bold">{item.users.length}</span>
                         </div>
-                        <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
-                          {item.users.map((u, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                              <span className="font-medium text-zinc-200 truncate">{u.userName}</span>
-                              <span className="text-[10px] text-zinc-400 ml-auto shrink-0">{u.flag} {u.country}</span>
+                        <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+                          {item.users.map((u, uIdx) => (
+                            <div key={u.presenceKey ? `${u.presenceKey}_${uIdx}` : `u_${uIdx}`} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 truncate">
+                                <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                                <span className="font-semibold text-zinc-200 truncate">{u.userName}</span>
+                              </div>
+                              <span className="text-[10px] text-zinc-400 shrink-0 font-medium">{u.flag} {u.country}</span>
                             </div>
                           ))}
                         </div>
@@ -429,36 +483,39 @@ export default function AnalyticsConsolePage() {
         </div>
 
         {/* Live Active Countries Breakdown */}
-        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-3xl p-6 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-4">
             <div>
-              <h2 className="text-base font-bold text-zinc-900 dark:text-white">Active Countries</h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Hover over any country to view active usernames right now</p>
+              <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <Globe className="h-4 w-4 text-purple-400" />
+                Active Countries Right Now
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Hover over any country to view active usernames right now</p>
             </div>
-            <span className="text-xs font-medium px-2 py-1 bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300 rounded-lg">
+            <span className="text-xs font-bold px-2.5 py-1 bg-zinc-100 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-300 rounded-xl border border-zinc-200 dark:border-white/10">
               {liveCountryStats.length} Countries
             </span>
           </div>
 
           {liveCountryStats.length === 0 ? (
-            <div className="py-8 text-center text-xs text-zinc-400">No active locations detected</div>
+            <div className="py-8 text-center text-xs text-zinc-400">No active locations detected right now</div>
           ) : (
             <div className="space-y-3">
-              {liveCountryStats.map((item) => {
+              {liveCountryStats.map((item, idx) => {
                 const pct = Math.round((item.count / visitors.length) * 100) || 0;
                 const isHovered = hoveredCountry === item.country;
 
                 return (
                   <div
-                    key={item.country}
+                    key={`${item.country}_${idx}`}
                     onMouseEnter={() => setHoveredCountry(item.country)}
                     onMouseLeave={() => setHoveredCountry(null)}
-                    className="relative group p-3 rounded-xl transition-colors hover:bg-zinc-50 dark:hover:bg-white/[0.03] border border-transparent hover:border-zinc-200 dark:hover:border-white/[0.08]"
+                    className="relative group p-3 rounded-2xl transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.03] border border-transparent hover:border-zinc-200 dark:hover:border-white/[0.08]"
                   >
                     <div className="flex items-center justify-between text-xs font-medium mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{item.flag}</span>
-                        <span className="text-zinc-900 dark:text-white font-semibold">{item.country}</span>
+                        <span className="text-lg">{item.flag}</span>
+                        <span className="text-zinc-900 dark:text-white font-bold">{item.country}</span>
                       </div>
                       <span className="text-zinc-900 dark:text-white font-bold">
                         {item.count} {item.count === 1 ? "visitor" : "visitors"} ({pct}%)
@@ -467,26 +524,26 @@ export default function AnalyticsConsolePage() {
 
                     <div className="h-1.5 w-full bg-zinc-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
 
                     {/* Hover User Tooltip */}
                     {isHovered && item.users.length > 0 && (
-                      <div className="absolute left-0 top-full mt-1 z-30 w-72 bg-zinc-900 text-white rounded-xl p-3 shadow-2xl border border-white/10 text-xs space-y-2">
-                        <div className="font-semibold border-b border-white/10 pb-1 flex items-center justify-between">
+                      <div className="absolute left-0 top-full mt-2 z-30 w-72 bg-zinc-900 text-white rounded-2xl p-4 shadow-2xl border border-white/10 text-xs space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="font-bold border-b border-white/10 pb-2 flex items-center justify-between text-zinc-300">
                           <span>{item.flag} Users from {item.country}:</span>
-                          <span className="text-purple-400 font-mono">{item.users.length}</span>
+                          <span className="text-purple-400 font-mono font-bold">{item.users.length}</span>
                         </div>
-                        <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
-                          {item.users.map((u, idx) => (
-                            <div key={idx} className="flex items-center justify-between">
+                        <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+                          {item.users.map((u, uIdx) => (
+                            <div key={u.presenceKey ? `${u.presenceKey}_${uIdx}` : `u_${uIdx}`} className="flex items-center justify-between">
                               <div className="flex items-center gap-2 truncate">
                                 <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                                <span className="font-medium text-zinc-200 truncate">{u.userName}</span>
+                                <span className="font-semibold text-zinc-200 truncate">{u.userName}</span>
                               </div>
-                              <span className="font-mono text-[10px] text-zinc-400 bg-white/10 px-1.5 py-0.5 rounded truncate max-w-[100px]">
+                              <span className="font-mono text-[10px] text-zinc-400 bg-white/10 px-2 py-0.5 rounded-lg truncate max-w-[110px]">
                                 {u.pathname}
                               </span>
                             </div>
@@ -502,19 +559,19 @@ export default function AnalyticsConsolePage() {
         </div>
       </div>
 
-      {/* Live Visitor Table */}
-      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl overflow-hidden space-y-4">
-        <div className="p-6 pb-0 flex items-center justify-between">
+      {/* Live Online Visitors Stream Table */}
+      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-3xl overflow-hidden shadow-sm space-y-4">
+        <div className="p-6 pb-0 flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-4">
           <div>
             <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-              <Activity className="h-4 w-4 text-emerald-500" />
+              <Activity className="h-4 w-4 text-emerald-400" />
               Live Online Visitors Stream
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Live updating list of connected users & their current pages
+              Live updating stream of connected users & their current pages
             </p>
           </div>
-          <span className="text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+          <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">
             {visitors.length} Connected
           </span>
         </div>
@@ -527,52 +584,52 @@ export default function AnalyticsConsolePage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50 dark:bg-white/[0.02] border-y border-zinc-200 dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
+              <thead className="bg-zinc-50 dark:bg-white/[0.02] border-y border-zinc-200 dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="px-6 py-3">User / Visitor</th>
-                  <th className="px-6 py-3">Current Location</th>
-                  <th className="px-6 py-3">Country</th>
-                  <th className="px-6 py-3">Device</th>
-                  <th className="px-6 py-3 text-right">Status</th>
+                  <th className="px-6 py-3.5">User / Visitor</th>
+                  <th className="px-6 py-3.5">Current Location</th>
+                  <th className="px-6 py-3.5">Country</th>
+                  <th className="px-6 py-3.5">Device</th>
+                  <th className="px-6 py-3.5 text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] text-zinc-900 dark:text-zinc-200">
-                {visitors.map((visitor) => (
-                  <tr key={visitor.sessionId} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-3.5">
+              <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] text-zinc-900 dark:text-zinc-200 font-medium">
+                {visitors.map((visitor, idx) => (
+                  <tr key={visitor.presenceKey ? `${visitor.presenceKey}_${idx}` : `v_${visitor.sessionId}_${idx}`} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <td className="px-6 py-4">
                       <Link
                         href={`/console/users?search=${encodeURIComponent(visitor.userName || visitor.userEmail || "")}`}
                         className="flex items-center gap-3 group/user hover:opacity-80 transition-opacity"
                         title="View user details in User Directory"
                       >
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center font-black text-xs uppercase shadow-md">
                           {visitor.userName ? visitor.userName.charAt(0) : "V"}
                         </div>
                         <div>
-                          <div className="font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5 group-hover/user:text-amber-500 transition-colors">
+                          <div className="font-bold text-zinc-900 dark:text-white flex items-center gap-1.5 group-hover/user:text-amber-500 transition-colors">
                             {visitor.userName}
                             {visitor.userId && (
                               <span title="Registered User">
-                                <UserCheck className="h-3 w-3 text-emerald-500 inline" />
+                                <UserCheck className="h-3.5 w-3.5 text-emerald-400 inline" />
                               </span>
                             )}
                           </div>
                           {visitor.userEmail ? (
-                            <div className="text-[10px] text-zinc-400">{visitor.userEmail}</div>
+                            <div className="text-[10px] text-zinc-400 font-medium">{visitor.userEmail}</div>
                           ) : (
-                            <div className="text-[10px] text-zinc-400">Guest Visitor</div>
+                            <div className="text-[10px] text-zinc-400 font-medium">Guest Visitor</div>
                           )}
                         </div>
                       </Link>
                     </td>
 
-                    <td className="px-6 py-3.5">
+                    <td className="px-6 py-4">
                       <div className="space-y-0.5">
                         <a
                           href={visitor.pathname}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-mono text-xs font-semibold text-amber-500 hover:underline inline-flex items-center gap-1"
+                          className="font-mono text-xs font-bold text-amber-500 hover:underline inline-flex items-center gap-1"
                         >
                           {visitor.pathname}
                           <ExternalLink className="h-2.5 w-2.5" />
@@ -583,27 +640,27 @@ export default function AnalyticsConsolePage() {
                       </div>
                     </td>
 
-                    <td className="px-6 py-3.5">
-                      <div className="flex items-center gap-1.5 font-medium">
-                        <span className="text-base">{visitor.flag}</span>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 font-semibold text-zinc-900 dark:text-white">
+                        <span className="text-lg">{visitor.flag}</span>
                         <span>{visitor.country}</span>
                       </div>
                     </td>
 
-                    <td className="px-6 py-3.5">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
                         {visitor.device === "Mobile" ? (
                           <Smartphone className="h-3.5 w-3.5" />
                         ) : (
                           <Laptop className="h-3.5 w-3.5" />
                         )}
-                        <span>{visitor.device}</span>
+                        <span className="font-medium">{visitor.device}</span>
                       </div>
                     </td>
 
-                    <td className="px-6 py-3.5 text-right">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <td className="px-6 py-4 text-right">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         Active Now
                       </span>
                     </td>
@@ -615,9 +672,9 @@ export default function AnalyticsConsolePage() {
         )}
       </div>
 
-        {/* Views Per Page Table (7d / 14d / 30d) */}
-      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl overflow-hidden space-y-4">
-        <div className="p-6 pb-0 flex items-center justify-between">
+      {/* Views Per Page Table (7d / 14d / 30d) */}
+      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-3xl overflow-hidden shadow-sm space-y-4">
+        <div className="p-6 pb-0 flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-4">
           <div>
             <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               <Eye className="h-4 w-4 text-amber-500" />
@@ -627,7 +684,7 @@ export default function AnalyticsConsolePage() {
               Historical view count and unique visitor breakdown by page path
             </p>
           </div>
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.06] px-3 py-1 rounded-lg">
+          <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.06] px-3 py-1 rounded-xl border border-zinc-200 dark:border-white/10">
             {pageViewStatsPeriod.length} Tracked Pages
           </span>
         </div>
@@ -636,31 +693,30 @@ export default function AnalyticsConsolePage() {
           <div className="py-12 text-center text-xs text-zinc-400 space-y-1">
             <Calendar className="h-8 w-8 text-zinc-300 dark:text-zinc-700 mx-auto" />
             <p>No page view data recorded yet for the selected period.</p>
-            <p className="text-[11px] text-zinc-500">Visit any page on the storefront to record view counts!</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50 dark:bg-white/[0.02] border-y border-zinc-200 dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
+              <thead className="bg-zinc-50 dark:bg-white/[0.02] border-y border-zinc-200 dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="px-6 py-3">Page Path</th>
-                  <th className="px-6 py-3">Page Title</th>
-                  <th className="px-6 py-3">Total Views</th>
-                  <th className="px-6 py-3">Unique Visitors</th>
-                  <th className="px-6 py-3 text-right">% Traffic Share</th>
+                  <th className="px-6 py-3.5">Page Path</th>
+                  <th className="px-6 py-3.5">Page Title</th>
+                  <th className="px-6 py-3.5">Total Views</th>
+                  <th className="px-6 py-3.5">Unique Visitors</th>
+                  <th className="px-6 py-3.5 text-right">% Traffic Share</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] text-zinc-900 dark:text-zinc-200">
-                {pageViewStatsPeriod.map((item) => {
+              <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] text-zinc-900 dark:text-zinc-200 font-medium">
+                {pageViewStatsPeriod.map((item, idx) => {
                   const pct = totalViewsPeriod > 0 ? Math.round((item.views / totalViewsPeriod) * 100) : 0;
                   return (
-                    <tr key={item.pathKey} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <tr key={`${item.pathKey}_${idx}`} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
                       <td className="px-6 py-3.5">
                         <a
                           href={item.pathname}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-mono text-xs font-semibold text-amber-500 hover:underline inline-flex items-center gap-1"
+                          className="font-mono text-xs font-bold text-amber-500 hover:underline inline-flex items-center gap-1"
                         >
                           {item.pathname}
                           <ExternalLink className="h-2.5 w-2.5" />
@@ -672,13 +728,86 @@ export default function AnalyticsConsolePage() {
                       <td className="px-6 py-3.5 font-bold text-zinc-900 dark:text-white">
                         {item.views}
                       </td>
-                      <td className="px-6 py-3.5 font-semibold text-purple-400">
+                      <td className="px-6 py-3.5 font-bold text-purple-400">
                         {item.uniqueViews}
                       </td>
-                      <td className="px-6 py-3.5 text-right font-semibold text-zinc-900 dark:text-white">
+                      <td className="px-6 py-3.5 text-right font-bold text-zinc-900 dark:text-white">
                         <div className="flex items-center justify-end gap-2">
                           <div className="w-16 bg-zinc-100 dark:bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
                             <div className="bg-amber-500 h-full rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span>{pct}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* NEW SECTION: TOP COUNTRIES VIEWS COME FROM (HISTORICAL TRAFFIC BREAKDOWN) */}
+      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.08] rounded-3xl overflow-hidden shadow-sm space-y-4">
+        <div className="p-6 pb-0 flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-4">
+          <div>
+            <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-purple-400" />
+              Top Countries Views Come From ({timeRange === "7d" ? "Last 7 Days" : timeRange === "14d" ? "Last 14 Days" : "Last 30 Days"})
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Historical country traffic breakdown and unique visitor distribution
+            </p>
+          </div>
+          <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.06] px-3 py-1 rounded-xl border border-zinc-200 dark:border-white/10">
+            {countryTrafficPeriod.length} Countries Recorded
+          </span>
+        </div>
+
+        {countryTrafficPeriod.length === 0 ? (
+          <div className="py-12 text-center text-xs text-zinc-400 space-y-1">
+            <Globe className="h-8 w-8 text-zinc-300 dark:text-zinc-700 mx-auto" />
+            <p>No historical country traffic recorded yet for the selected period.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-50 dark:bg-white/[0.02] border-y border-zinc-200 dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="px-6 py-3.5">Country</th>
+                  <th className="px-6 py-3.5">Country Code</th>
+                  <th className="px-6 py-3.5">Total Page Views</th>
+                  <th className="px-6 py-3.5">Unique Visitors</th>
+                  <th className="px-6 py-3.5 text-right">% Traffic Share</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] text-zinc-900 dark:text-zinc-200 font-medium">
+                {countryTrafficPeriod.map((c, idx) => {
+                  const pct = totalViewsPeriod > 0 ? Math.round((c.views / totalViewsPeriod) * 100) : 0;
+                  return (
+                    <tr key={`${c.countryCode}_${idx}`} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2.5 font-bold text-zinc-900 dark:text-white">
+                          <span className="text-xl">{c.flag}</span>
+                          <span>{c.country}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
+                          {c.countryCode}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white">
+                        {c.views}
+                      </td>
+                      <td className="px-6 py-4 font-bold text-purple-400">
+                        {c.uniqueVisitors}
+                      </td>
+                      <td className="px-6 py-4 text-right font-bold text-zinc-900 dark:text-white">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-20 bg-zinc-100 dark:bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full" style={{ width: `${pct}%` }} />
                           </div>
                           <span>{pct}%</span>
                         </div>
