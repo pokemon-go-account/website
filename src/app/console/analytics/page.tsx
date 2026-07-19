@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { database, app } from "@/lib/firebase";
 import { ref, onValue, getDatabase } from "firebase/database";
 import { decodePathKey } from "@/components/presence-tracker";
+import Link from "next/link";
 import { 
   Users, 
   Globe, 
@@ -59,8 +60,28 @@ export default function AnalyticsConsolePage() {
         return;
       }
       const now = Date.now();
-      const list: VisitorPresence[] = Object.values(data);
-      const activeList = list.filter((v) => v.lastSeen && now - v.lastSeen < 120000);
+      const list: any[] = Object.values(data);
+      const activeList: VisitorPresence[] = [];
+
+      list.forEach((v) => {
+        if (v.tabs && typeof v.tabs === "object") {
+          const tabList: any[] = Object.values(v.tabs);
+          if (tabList.length > 0) {
+            tabList.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+            const latestTab = tabList[0];
+            if (latestTab.lastSeen && now - latestTab.lastSeen < 120000) {
+              activeList.push({
+                ...v,
+                pathname: latestTab.pathname || v.pathname || "/",
+                pageTitle: latestTab.pageTitle || v.pageTitle || "/",
+                lastSeen: latestTab.lastSeen || v.lastSeen,
+              });
+            }
+          }
+        } else if (v.lastSeen && now - v.lastSeen < 120000) {
+          activeList.push(v);
+        }
+      });
 
       // Deduplicate multi-tab visitors by userId or visitorId
       const deduplicatedMap = new Map<string, VisitorPresence>();
@@ -331,83 +352,7 @@ export default function AnalyticsConsolePage() {
         </div>
       </div>
 
-      {/* Views Per Page Table (7d / 14d / 30d) */}
-      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl overflow-hidden space-y-4">
-        <div className="p-6 pb-0 flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-              <Eye className="h-4 w-4 text-amber-500" />
-              Views Per Page ({timeRange === "7d" ? "Last 7 Days" : timeRange === "14d" ? "Last 14 Days" : "Last 30 Days"})
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Historical view count and unique visitor breakdown by page path
-            </p>
-          </div>
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.06] px-3 py-1 rounded-lg">
-            {pageViewStatsPeriod.length} Tracked Pages
-          </span>
-        </div>
-
-        {pageViewStatsPeriod.length === 0 ? (
-          <div className="py-12 text-center text-xs text-zinc-400 space-y-1">
-            <Calendar className="h-8 w-8 text-zinc-300 dark:text-zinc-700 mx-auto" />
-            <p>No page view data recorded yet for the selected period.</p>
-            <p className="text-[11px] text-zinc-500">Visit any page on the storefront to record view counts!</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50 dark:bg-white/[0.02] border-y border-zinc-200 dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="px-6 py-3">Page Path</th>
-                  <th className="px-6 py-3">Page Title</th>
-                  <th className="px-6 py-3">Total Views</th>
-                  <th className="px-6 py-3">Unique Visitors</th>
-                  <th className="px-6 py-3 text-right">% Traffic Share</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] text-zinc-900 dark:text-zinc-200">
-                {pageViewStatsPeriod.map((item) => {
-                  const pct = totalViewsPeriod > 0 ? Math.round((item.views / totalViewsPeriod) * 100) : 0;
-                  return (
-                    <tr key={item.pathKey} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-3.5">
-                        <a
-                          href={item.pathname}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-mono text-xs font-semibold text-amber-500 hover:underline inline-flex items-center gap-1"
-                        >
-                          {item.pathname}
-                          <ExternalLink className="h-2.5 w-2.5" />
-                        </a>
-                      </td>
-                      <td className="px-6 py-3.5 text-zinc-500 dark:text-zinc-400 max-w-[260px] truncate">
-                        {item.pageTitle}
-                      </td>
-                      <td className="px-6 py-3.5 font-bold text-zinc-900 dark:text-white">
-                        {item.views}
-                      </td>
-                      <td className="px-6 py-3.5 font-semibold text-purple-400">
-                        {item.uniqueViews}
-                      </td>
-                      <td className="px-6 py-3.5 text-right font-semibold text-zinc-900 dark:text-white">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className="w-16 bg-zinc-100 dark:bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-amber-500 h-full rounded-full" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span>{pct}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
+    
       {/* Grid: Live Pages & Countries with User Hover Tooltips */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Live Active Pages Breakdown */}
@@ -421,6 +366,8 @@ export default function AnalyticsConsolePage() {
               {livePageStats.length} Pages
             </span>
           </div>
+
+          
 
           {livePageStats.length === 0 ? (
             <div className="py-8 text-center text-xs text-zinc-400">No active page sessions detected</div>
@@ -593,12 +540,16 @@ export default function AnalyticsConsolePage() {
                 {visitors.map((visitor) => (
                   <tr key={visitor.sessionId} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
                     <td className="px-6 py-3.5">
-                      <div className="flex items-center gap-3">
+                      <Link
+                        href={`/console/users?search=${encodeURIComponent(visitor.userName || visitor.userEmail || "")}`}
+                        className="flex items-center gap-3 group/user hover:opacity-80 transition-opacity"
+                        title="View user details in User Directory"
+                      >
                         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                           {visitor.userName ? visitor.userName.charAt(0) : "V"}
                         </div>
                         <div>
-                          <div className="font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5">
+                          <div className="font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5 group-hover/user:text-amber-500 transition-colors">
                             {visitor.userName}
                             {visitor.userId && (
                               <span title="Registered User">
@@ -612,7 +563,7 @@ export default function AnalyticsConsolePage() {
                             <div className="text-[10px] text-zinc-400">Guest Visitor</div>
                           )}
                         </div>
-                      </div>
+                      </Link>
                     </td>
 
                     <td className="px-6 py-3.5">
@@ -663,6 +614,84 @@ export default function AnalyticsConsolePage() {
           </div>
         )}
       </div>
+
+        {/* Views Per Page Table (7d / 14d / 30d) */}
+      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/[0.06] rounded-2xl overflow-hidden space-y-4">
+        <div className="p-6 pb-0 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+              <Eye className="h-4 w-4 text-amber-500" />
+              Views Per Page ({timeRange === "7d" ? "Last 7 Days" : timeRange === "14d" ? "Last 14 Days" : "Last 30 Days"})
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Historical view count and unique visitor breakdown by page path
+            </p>
+          </div>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.06] px-3 py-1 rounded-lg">
+            {pageViewStatsPeriod.length} Tracked Pages
+          </span>
+        </div>
+
+        {pageViewStatsPeriod.length === 0 ? (
+          <div className="py-12 text-center text-xs text-zinc-400 space-y-1">
+            <Calendar className="h-8 w-8 text-zinc-300 dark:text-zinc-700 mx-auto" />
+            <p>No page view data recorded yet for the selected period.</p>
+            <p className="text-[11px] text-zinc-500">Visit any page on the storefront to record view counts!</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-50 dark:bg-white/[0.02] border-y border-zinc-200 dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="px-6 py-3">Page Path</th>
+                  <th className="px-6 py-3">Page Title</th>
+                  <th className="px-6 py-3">Total Views</th>
+                  <th className="px-6 py-3">Unique Visitors</th>
+                  <th className="px-6 py-3 text-right">% Traffic Share</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] text-zinc-900 dark:text-zinc-200">
+                {pageViewStatsPeriod.map((item) => {
+                  const pct = totalViewsPeriod > 0 ? Math.round((item.views / totalViewsPeriod) * 100) : 0;
+                  return (
+                    <tr key={item.pathKey} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-3.5">
+                        <a
+                          href={item.pathname}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono text-xs font-semibold text-amber-500 hover:underline inline-flex items-center gap-1"
+                        >
+                          {item.pathname}
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      </td>
+                      <td className="px-6 py-3.5 text-zinc-500 dark:text-zinc-400 max-w-[260px] truncate">
+                        {item.pageTitle}
+                      </td>
+                      <td className="px-6 py-3.5 font-bold text-zinc-900 dark:text-white">
+                        {item.views}
+                      </td>
+                      <td className="px-6 py-3.5 font-semibold text-purple-400">
+                        {item.uniqueViews}
+                      </td>
+                      <td className="px-6 py-3.5 text-right font-semibold text-zinc-900 dark:text-white">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 bg-zinc-100 dark:bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-amber-500 h-full rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span>{pct}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

@@ -15,6 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { PriceDisplay } from "@/components/price-display";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 interface FoundUser {
   _id: string;
@@ -96,11 +98,14 @@ function renderContactMethod(method: string, contactId: string) {
   }
 }
 
-export default function ConsoleUsersPage() {
+function ConsoleUsersContent() {
+  const searchParams = useSearchParams();
+  const paramSearch = searchParams.get("search") || searchParams.get("username") || searchParams.get("email") || "";
+
   const [users, setUsers] = useState<FoundUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<FoundUser | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState(paramSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(paramSearch);
   
   // Pagination & Loading states
   const [page, setPage] = useState(1);
@@ -119,6 +124,13 @@ export default function ConsoleUsersPage() {
   const [newBalance, setNewBalance] = useState("");
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (paramSearch) {
+      setSearchQuery(paramSearch);
+      setDebouncedSearch(paramSearch);
+    }
+  }, [paramSearch]);
 
   // Debounce search input
   useEffect(() => {
@@ -585,5 +597,18 @@ export default function ConsoleUsersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ConsoleUsersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-20 gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-[#6133e1]" />
+        <p className="text-xs text-zinc-500">Loading user directory...</p>
+      </div>
+    }>
+      <ConsoleUsersContent />
+    </Suspense>
   );
 }

@@ -7,7 +7,6 @@ export const authConfig = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      console.log("[Auth Redirect Callback Input]", { url, baseUrl });
       // In production use the canonical domain; in dev always use baseUrl (localhost)
       let canonicalBase =
         process.env.NODE_ENV === "production"
@@ -20,14 +19,10 @@ export const authConfig = {
         canonicalBase = canonicalBase.replace("http://", "https://");
       }
 
-      console.log("[Auth Redirect Callback Canonical]", { canonicalBase });
-
       const baseClean = canonicalBase.endsWith("/") ? canonicalBase.slice(0, -1) : canonicalBase;
 
       if (url.startsWith("/")) {
-        const res = `${baseClean}${url}`;
-        console.log("[Auth Redirect Callback Resolved - relative startsWith]", { res });
-        return res;
+        return `${baseClean}${url}`;
       }
       try {
         let parsedUrl = new URL(url);
@@ -38,14 +33,11 @@ export const authConfig = {
 
         const parsedBase = new URL(canonicalBase);
         if (parsedUrl.origin === parsedBase.origin) {
-          const resUrl = parsedUrl.toString();
-          console.log("[Auth Redirect Callback Resolved - matches origin]", { url: resUrl });
-          return resUrl;
+          return parsedUrl.toString();
         }
       } catch (err: any) {
-        console.error("[Auth Redirect Callback Error parsedBase/parsedUrl]", err.message);
+        console.error("[Auth Redirect Error]", err.message);
       }
-      console.log("[Auth Redirect Callback Resolved - fallback]", { canonicalBase });
       return canonicalBase;
     },
 
@@ -89,12 +81,22 @@ export const authConfig = {
       return session;
     },
 
-    authorized({ auth, request: { nextUrl } }) {
+    authorized({ auth, request: { nextUrl, headers } }) {
       const isLoggedIn = !!auth?.user;
       const role = auth?.user?.role as string | undefined;
       const isOnboarded = (auth?.user as any)?.isOnboarded;
       const isEmailVerified = (auth?.user as any)?.isEmailVerified;
       const adminRentPaidUntil = (auth?.user as any)?.adminRentPaidUntil;
+
+      // Extract client IP & Username for clean access logging
+      const ip = headers?.get("x-forwarded-for")?.split(",")[0]?.trim() || headers?.get("x-real-ip") || "127.0.0.1";
+      const username = (auth?.user as any)?.username || auth?.user?.name || (auth?.user?.email ? auth.user.email.split("@")[0] : null);
+      const userLabel = username ? `@${username}` : "Guest";
+
+      // Log clean access line for page requests
+      if (!nextUrl.pathname.startsWith("/_next") && !nextUrl.pathname.startsWith("/api/auth") && !nextUrl.pathname.includes(".")) {
+        console.log(`[Auth Access] User: ${userLabel} | IP: ${ip} | Path: ${nextUrl.pathname}`);
+      }
 
       const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
       const isProfileCompleteRoute = nextUrl.pathname.startsWith("/profile/complete");

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { database, app } from "@/lib/firebase";
-import { ref, onValue, set, onDisconnect, remove, increment, getDatabase } from "firebase/database";
+import { ref, onValue, set, update, onDisconnect, remove, increment, getDatabase } from "firebase/database";
 
 interface GeoInfo {
   country: string;
@@ -47,10 +47,16 @@ export function PresenceTracker() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // Do not track console routes for guests or non-super-admins
+    if (pathname?.startsWith("/console") && session?.user?.role !== "SUPER_ADMIN") {
+      return;
+    }
+
     const db = database || (app ? getDatabase(app) : null);
     if (!db) return;
 
-    // Session ID (temporary per tab/window)
+    // Session ID (unique per tab)
     let sessionId = sessionStorage.getItem("pogo_presence_sid");
     if (!sessionId) {
       sessionId = `s_${Math.random().toString(36).substring(2, 10)}`;
@@ -65,7 +71,7 @@ export function PresenceTracker() {
     }
     const visitorId: string = storedId;
 
-    // Unique presence key per person/device (deduplicates multi-tab online presence)
+    // Unique presence key per person/device
     const presenceKey = session?.user?.id ? `u_${session.user.id}` : visitorId;
 
     const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -77,7 +83,6 @@ export function PresenceTracker() {
     if (!sessionStorage.getItem(pageViewKey)) {
       sessionStorage.setItem(pageViewKey, "1");
 
-      // Record page views & unique visitor directly via Firebase WebSocket (0 serverless API pings)
       const dailyTotalRef = ref(db, `analytics/dailyViews/${todayStr}`);
       set(dailyTotalRef, increment(1)).catch(() => {});
 
@@ -117,15 +122,17 @@ export function PresenceTracker() {
         .catch(() => {});
     }
 
-    const userRef = ref(db, `presence/${presenceKey}`);
+    const userRootRef = ref(db, `presence/${presenceKey}`);
+    const tabRef = ref(db, `presence/${presenceKey}/tabs/${sessionId}`);
     const connectedRef = ref(db, ".info/connected");
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     function updatePresence(currentGeo: GeoInfo) {
-      if (!db || !presenceKey) return;
-      const userName = session?.user?.name || (session?.user?.email ? session.user.email.split("@")[0] : `Guest #${visitorId.slice(-4)}`);
+      if (!db || !presenceKey || !sessionId) return;
+      const userName = session?.user?.name || (session?.user?.email ? session.user.email.split("@")[0] : `Guest #${visitorId ? visitorId.slice(-4) : "0000"}`);
       
-      const payload = {
+      const rootPayload = {
+        presenceKey,
         sessionId,
         visitorId,
         userId: session?.user?.id || null,
@@ -141,8 +148,19 @@ export function PresenceTracker() {
         lastSeen: Date.now()
       };
 
-      onDisconnect(userRef).remove().catch(() => {});
-      set(userRef, payload).catch(() => {});
+      const tabPayload = {
+        sessionId,
+        pathname: pathname || "/",
+        pageTitle,
+        lastSeen: Date.now()
+      };
+
+      // Set disconnect handler specifically for THIS tab's sub-node
+      onDisconnect(tabRef).remove().catch(() => {});
+
+      // Update root metadata & write tab node
+      update(userRootRef, rootPayload).catch(() => {});
+      set(tabRef, tabPayload).catch(() => {});
     }
 
     const unsubscribeConnected = onValue(connectedRef, (snap) => {
@@ -151,14 +169,18 @@ export function PresenceTracker() {
       }
     });
 
-    const handleBeforeUnload = () => {
-      // Optional: keep presence if other tabs are still open
+    // Handle tab focus switch (when returning to an open tab)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updatePresence(geo);
+      }
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       unsubscribeConnected();
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      remove(tabRef).catch(() => {});
     };
   }, [pathname, session?.user?.id, session?.user?.name, status]);
 

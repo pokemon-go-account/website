@@ -423,14 +423,23 @@ export function AdminChatPanel() {
     }
   }, [activeChatId, conversations]);
 
-  // Auto-select user from query params if active
+  // Auto-select user and open active chat from query params if active
   useEffect(() => {
-    if (queryUserId && !autoSelectedRef.current && conversations.length > 0) {
-      // Find a conversation by this userId to extract details
+    if (queryUserId && !autoSelectedRef.current) {
+      setSelectedUserId(queryUserId);
+      autoSelectedRef.current = true;
+
       const userMatch = conversations.find((c) => c.userId === queryUserId);
       if (userMatch) {
-        setSelectedUserId(queryUserId);
-        autoSelectedRef.current = true;
+        setActiveChatId(userMatch.id);
+        if (userMatch.type === "order" || userMatch.id.startsWith("order-")) {
+          setActiveCategoryTab("orders");
+        } else {
+          setActiveCategoryTab("support");
+        }
+      } else {
+        setActiveChatId(`support-${queryUserId}`);
+        setActiveCategoryTab("support");
       }
     }
   }, [queryUserId, conversations]);
@@ -565,6 +574,33 @@ export function AdminChatPanel() {
     const tB = b.lastMessageAt?.toDate ? b.lastMessageAt.toDate().getTime() : 0;
     return tB - tA;
   });
+
+  // Ensure user from query param exists in uniqueUsers list
+  if (queryUserId && !uniqueUsers.some((u) => u.userId === queryUserId)) {
+    const syntheticId = `support-${queryUserId}`;
+    uniqueUsers.unshift({
+      userId: queryUserId,
+      username: queryUsername || "User",
+      email: queryEmail || "",
+      lastMessageAt: new Date(),
+      lastMessage: "Start a conversation",
+      unreadCount: 0,
+      chats: [
+        {
+          id: syntheticId,
+          userId: queryUserId,
+          username: queryUsername || "User",
+          email: queryEmail || "",
+          lastMessage: "",
+          lastMessageAt: new Date(),
+          unreadByAdmin: 0,
+          unreadByUser: 0,
+          type: "support",
+          title: "Support Ticket",
+        },
+      ],
+    });
+  }
 
   // Filter unique users by search query
   const filteredUsers = searchQuery.trim()
