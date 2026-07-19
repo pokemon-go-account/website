@@ -346,9 +346,17 @@ export function UserChatPanel({
 
     let rtdbTypingActive = false;
     let firestoreTypingActive = false;
+    let fallbackTimer: NodeJS.Timeout | null = null;
 
     const updateTypingStatus = () => {
-      setIsAdminTyping(rtdbTypingActive || firestoreTypingActive);
+      const active = rtdbTypingActive || firestoreTypingActive;
+      setIsAdminTyping(active);
+      if (active) {
+        if (fallbackTimer) clearTimeout(fallbackTimer);
+        fallbackTimer = setTimeout(() => {
+          setIsAdminTyping(false);
+        }, 3500);
+      }
     };
 
     const db = getDb();
@@ -356,11 +364,11 @@ export function UserChatPanel({
     
     // Realtime Firestore snapshot for Admin typing
     const unsubDoc = onSnapshot(chatDocRef, (snap) => {
-      if (!snap.exists()) {
-        firestoreTypingActive = false;
-      } else {
+      if (snap.exists()) {
         const data = snap.data();
-        firestoreTypingActive = data?.adminTyping === true && Date.now() - (data?.adminTypingAt || 0) < 4000;
+        firestoreTypingActive = data?.adminTyping === true;
+      } else {
+        firestoreTypingActive = false;
       }
       updateTypingStatus();
     });
@@ -374,7 +382,7 @@ export function UserChatPanel({
       const adminTypingRef = ref(rtdb, `chatTyping/${activeChatId}/admin`);
       unsubRTDBTyping = onValue(adminTypingRef, (snap) => {
         const val = snap.val();
-        rtdbTypingActive = val?.isTyping === true && Date.now() - (val.timestamp || 0) < 4000;
+        rtdbTypingActive = val?.isTyping === true;
         updateTypingStatus();
       });
 
@@ -395,6 +403,7 @@ export function UserChatPanel({
     }
 
     return () => {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
       unsubDoc();
       unsubRTDBTyping();
       unsubPresence();
