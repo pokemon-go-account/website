@@ -95,6 +95,7 @@ export function UserChatPanel({
   const [isAdminTyping, setIsAdminTyping] = useState(false);
   const [isAdminOnline, setIsAdminOnline] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingActiveRef = useRef(false);
 
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -335,47 +336,70 @@ export function UserChatPanel({
     return unsub;
   }, [activeChatId, isAuthReady, playSound]);
 
-  // 3. Listen for Admin typing state and Admin online presence in RTDB
+  // 3. Listen for Admin typing state (RTDB + Firestore) & Admin online presence in RTDB
   useEffect(() => {
-    if (!activeChatId) {
+    if (!activeChatId || !isAuthReady) {
       setIsAdminTyping(false);
       setIsAdminOnline(false);
       return;
     }
 
-    const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
-    if (!rtdb) return;
+    let rtdbTypingActive = false;
+    let firestoreTypingActive = false;
 
-    const adminTypingRef = ref(rtdb, `chatTyping/${activeChatId}/admin`);
-    const unsubTyping = onValue(adminTypingRef, (snap) => {
-      const val = snap.val();
-      if (val?.isTyping && Date.now() - (val.timestamp || 0) < 3500) {
-        setIsAdminTyping(true);
+    const updateTypingStatus = () => {
+      setIsAdminTyping(rtdbTypingActive || firestoreTypingActive);
+    };
+
+    const db = getDb();
+    const chatDocRef = doc(db, "supportChats", activeChatId);
+    
+    // Realtime Firestore snapshot for Admin typing
+    const unsubDoc = onSnapshot(chatDocRef, (snap) => {
+      if (!snap.exists()) {
+        firestoreTypingActive = false;
       } else {
-        setIsAdminTyping(false);
+        const data = snap.data();
+        firestoreTypingActive = data?.adminTyping === true && Date.now() - (data?.adminTypingAt || 0) < 4000;
       }
+      updateTypingStatus();
     });
 
-    const presenceRef = ref(rtdb, "presence");
-    const unsubPresence = onValue(presenceRef, (snap) => {
-      const data = snap.val();
-      if (!data) {
-        setIsAdminOnline(false);
-        return;
-      }
-      const now = Date.now();
-      const isAnyAdminOnline = Object.values(data).some((v: any) => {
-        const isSuperAdmin = v.userId && (v.presenceKey?.startsWith("u_") || v.userId);
-        return isSuperAdmin && v.lastSeen && now - v.lastSeen < 35000;
+    // RTDB presence & typing listener
+    const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
+    let unsubPresence = () => {};
+    let unsubRTDBTyping = () => {};
+
+    if (rtdb) {
+      const adminTypingRef = ref(rtdb, `chatTyping/${activeChatId}/admin`);
+      unsubRTDBTyping = onValue(adminTypingRef, (snap) => {
+        const val = snap.val();
+        rtdbTypingActive = val?.isTyping === true && Date.now() - (val.timestamp || 0) < 4000;
+        updateTypingStatus();
       });
-      setIsAdminOnline(isAnyAdminOnline);
-    });
+
+      const presenceRef = ref(rtdb, "presence");
+      unsubPresence = onValue(presenceRef, (snap) => {
+        const data = snap.val();
+        if (!data) {
+          setIsAdminOnline(false);
+          return;
+        }
+        const now = Date.now();
+        const isAnyAdminOnline = Object.values(data).some((v: any) => {
+          const isSuperAdmin = v.userId && (v.presenceKey?.startsWith("u_") || v.userId);
+          return isSuperAdmin && v.lastSeen && now - v.lastSeen < 35000;
+        });
+        setIsAdminOnline(isAnyAdminOnline);
+      });
+    }
 
     return () => {
-      unsubTyping();
+      unsubDoc();
+      unsubRTDBTyping();
       unsubPresence();
     };
-  }, [activeChatId]);
+  }, [activeChatId, isAuthReady]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -460,9 +484,14 @@ export function UserChatPanel({
     setInputText("");
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
-    if (rtdb && activeChatId) {
-      remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
+    isTypingActiveRef.current = false;
+    if (activeChatId) {
+      const db = getDb();
+      updateDoc(doc(db, "supportChats", activeChatId), { userTyping: false }).catch(() => {});
+      const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
+      if (rtdb) {
+        remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
+      }
     }
 
     try {
@@ -482,6 +511,7 @@ export function UserChatPanel({
         lastMessage: text,
         lastMessageAt: serverTimestamp(),
         unreadByAdmin: increment(1),
+        userTyping: false,
       });
 
       // Play send sound after message is written
@@ -498,23 +528,38 @@ export function UserChatPanel({
     const val = e.target.value;
     setInputText(val);
 
-    if (!activeChatId) return;
+    if (!activeChatId || !isAuthReady) return;
+    const db = getDb();
+    const chatRef = doc(db, "supportChats", activeChatId);
     const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
-    if (!rtdb) return;
-
-    const userTypingRef = ref(rtdb, `chatTyping/${activeChatId}/user`);
 
     if (val.trim().length > 0) {
-      set(userTypingRef, { isTyping: true, name: username, timestamp: Date.now() }).catch(() => {});
-      onDisconnect(userTypingRef).remove().catch(() => {});
+      if (!isTypingActiveRef.current) {
+        isTypingActiveRef.current = true;
+        updateDoc(chatRef, { userTyping: true, userTypingAt: Date.now() }).catch(() => {});
+      }
+
+      if (rtdb) {
+        const userTypingRef = ref(rtdb, `chatTyping/${activeChatId}/user`);
+        set(userTypingRef, { isTyping: true, name: username, timestamp: Date.now() }).catch(() => {});
+        onDisconnect(userTypingRef).remove().catch(() => {});
+      }
 
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        remove(userTypingRef).catch(() => {});
+        isTypingActiveRef.current = false;
+        updateDoc(chatRef, { userTyping: false }).catch(() => {});
+        if (rtdb) {
+          remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
+        }
       }, 2500);
     } else {
+      isTypingActiveRef.current = false;
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      remove(userTypingRef).catch(() => {});
+      updateDoc(chatRef, { userTyping: false }).catch(() => {});
+      if (rtdb) {
+        remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
+      }
     }
   };
 

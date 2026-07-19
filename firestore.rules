@@ -41,14 +41,20 @@ service cloud.firestore {
       // Messages subcollection
       match /messages/{messageId} {
         
-        // Allow read/list and write if user is owner of the parent chat or admin
+        // Allow read/list and create if user is owner of the parent chat or admin
         allow read, create: if request.auth != null && (
           isAdmin() || 
           get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
         );
         
-        // Only allow admins to update/delete individual chat messages
-        allow update, delete: if request.auth != null && isAdmin();
+        // Allow update (such as marking read = true) if admin or owner of parent chat
+        allow update: if request.auth != null && (
+          isAdmin() || 
+          get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
+        );
+
+        // Only allow admins to delete individual chat messages
+        allow delete: if request.auth != null && isAdmin();
       }
     }
     
