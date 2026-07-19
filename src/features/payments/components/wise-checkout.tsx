@@ -22,7 +22,7 @@ import {
   HelpCircle,
   Sparkles,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getUserCountry } from "@/lib/utils";
 import { useCurrencyStore, CURRENCY_SYMBOLS, Currency } from "@/store/useCurrencyStore";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -151,7 +151,7 @@ export function WisePaymentCheckout({
       try {
         const userId = (session?.user as any)?.id as string || "N/A";
         const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
-        const country = (session?.user as any)?.country || "N/A";
+        const country = getUserCountry(session?.user);
         const db = getDb();
         const chatId = `order-${orderId}`;
         const chatRef = doc(db, "supportChats", chatId);

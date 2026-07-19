@@ -19,7 +19,7 @@ import {
   Check,
   ExternalLink,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getUserCountry } from "@/lib/utils";
 import { useCurrencyStore, CURRENCY_SYMBOLS } from "@/store/useCurrencyStore";
 import { motion } from "framer-motion";
 
@@ -142,7 +142,7 @@ export function PayPalPaymentCheckout({
       try {
         const userId = (session?.user as any)?.id as string || "N/A";
         const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
-        const country = (session?.user as any)?.country || "N/A";
+        const country = getUserCountry(session?.user);
         const db = getDb();
         const chatId = `order-${orderId}`;
         const chatRef = doc(db, "supportChats", chatId);

@@ -254,10 +254,13 @@ export default function OrdersConsolePage() {
                 </tr>
               ) : (
                 orders.map((order) => {
-                  const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
-                    day: "numeric",
+                  const orderDate = new Date(order.createdAt).toLocaleString("en-US", {
                     month: "short",
+                    day: "numeric",
                     year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
                   });
 
                   return (

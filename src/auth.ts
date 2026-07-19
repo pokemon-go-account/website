@@ -35,6 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             hasPaidVerificationDeposit: user.hasPaidVerificationDeposit,
             walletBalance: user.walletBalance,
             username: user.username,
+            country: user.country,
           } as any;
         }
 
@@ -65,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           hasPaidVerificationDeposit: user.hasPaidVerificationDeposit,
           walletBalance: user.walletBalance,
           username: user.username,
+          country: user.country,
         } as any;
       },
     }),

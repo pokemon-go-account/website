@@ -30,6 +30,10 @@ import {
   Image as ImageIcon,
   Check,
   CheckCheck,
+  Sparkles,
+  Inbox,
+  ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadChatImage, getFirebaseCustomToken } from "@/features/chat/actions";
@@ -111,7 +115,7 @@ export function UserChatPanel({
   }, []);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Sound effects
@@ -198,16 +202,19 @@ export function UserChatPanel({
       const base64Data = await base64Promise;
       const res = await uploadChatImage(base64Data);
       if (!res.success || !res.url) {
-        throw new Error(res.error || "Failed to upload image.");
+        alert(res.error || "Failed to upload image.");
+        setIsUploadingImage(false);
+        return;
       }
 
+      const imageUrl = res.url;
       const db = getDb();
-      const chatRef = doc(db, "supportChats", activeChatId);
       const msgsRef = collection(db, "supportChats", activeChatId, "messages");
+      const chatRef = doc(db, "supportChats", activeChatId);
 
       await addDoc(msgsRef, {
-        image: res.url,
-        text: "",
+        image: imageUrl,
+        text: inputText.trim() || undefined,
         sender: "user",
         senderName: username,
         timestamp: serverTimestamp(),
@@ -215,126 +222,131 @@ export function UserChatPanel({
       });
 
       await updateDoc(chatRef, {
-        lastMessage: "Sent an image",
+        lastMessage: "📷 Image attached",
         lastMessageAt: serverTimestamp(),
         unreadByAdmin: increment(1),
+        userTyping: false,
       });
-    } catch (err: any) {
-      console.error("Failed to upload/send image:", err);
-      alert(err.message || "Failed to send image.");
+
+      setInputText("");
+      playSound(sendSoundRef);
+    } catch (err) {
+      console.error("Image upload error:", err);
+      alert("Error sending image.");
     } finally {
       setIsUploadingImage(false);
-      if (imageInputRef.current) {
-        imageInputRef.current.value = "";
-      }
+      if (imageInputRef.current) imageInputRef.current.value = "";
     }
   };
 
-
-
-  // Auto-select initialChatId if provided
-  useEffect(() => {
-    if (initialChatId) {
-      setActiveChatId(initialChatId);
-      // Auto-set the tab based on prefix
-      if (initialChatId.startsWith("order-")) {
-        setActiveTab("orders");
-      } else {
-        setActiveTab("support");
-      }
-    }
-  }, [initialChatId]);
-
-  // Sync activeChat when activeChatId or conversations change
-  useEffect(() => {
-    if (activeChatId) {
-      const match = conversations.find((c) => c.id === activeChatId);
-      if (match) {
-        setActiveChat(match);
-      }
-    } else {
-      setActiveChat(null);
-    }
-  }, [activeChatId, conversations]);
-
-  // 1. Listen for ALL conversations belonging to this user
+  // 1. Listen for user's support/order chats
   useEffect(() => {
     if (!userId || !isAuthReady) return;
     const db = getDb();
     const chatsRef = collection(db, "supportChats");
-    // Filter index-free by userId and sort client-side
     const q = query(chatsRef, where("userId", "==", userId));
 
-    const unsub = onSnapshot(q, (snap) => {
-      const convs = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<ChatMeta, "id">),
-      }));
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list: ChatMeta[] = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        }));
 
-      // Sort client-side by status and then lastMessageAt descending
-      convs.sort((a, b) => {
-        const isClosedA = a.status === "closed" || a.closed === true;
-        const isClosedB = b.status === "closed" || b.closed === true;
+        list.sort((a, b) => {
+          const tA = a.lastMessageAt?.toDate
+            ? a.lastMessageAt.toDate().getTime()
+            : a.createdAt?.toDate
+            ? a.createdAt.toDate().getTime()
+            : 0;
+          const tB = b.lastMessageAt?.toDate
+            ? b.lastMessageAt.toDate().getTime()
+            : b.createdAt?.toDate
+            ? b.createdAt.toDate().getTime()
+            : 0;
+          return tB - tA;
+        });
 
-        if (isClosedA && !isClosedB) return 1;
-        if (!isClosedA && isClosedB) return -1;
+        // Detect new unread message from admin
+        if (prevConversationsRef.current.length > 0) {
+          list.forEach((c) => {
+            const prev = prevConversationsRef.current.find((p) => p.id === c.id);
+            if (prev && c.unreadByUser > prev.unreadByUser && c.id !== activeChatId) {
+              playSound(notifSoundRef);
+            }
+          });
+        }
 
-        const timeA = a.lastMessageAt?.toDate ? a.lastMessageAt.toDate().getTime() : 0;
-        const timeB = b.lastMessageAt?.toDate ? b.lastMessageAt.toDate().getTime() : 0;
-        return timeB - timeA;
-      });
+        prevConversationsRef.current = list;
+        setConversations(list);
 
-      setConversations(convs);
-    }, (error) => {
-      console.warn("[UserChatPanel] Conversations snapshot warning:", error.message);
-    });
+        if (initialChatId && list.some((c) => c.id === initialChatId)) {
+          setActiveChatId(initialChatId);
+        }
+      },
+      (error) => {
+        console.warn("[UserChatPanel] Firestore conversations listener warning:", error.message);
+      }
+    );
 
     return unsub;
-  }, [userId, isAuthReady]);
+  }, [userId, isAuthReady, initialChatId, activeChatId, playSound]);
 
-  // 2. Listen for messages in the active conversation & mark admin messages as read
+  // 2. Listen for messages in active chat & mark read
   useEffect(() => {
     if (!activeChatId || !isAuthReady) {
+      setActiveChat(null);
       setMessages([]);
       return;
     }
+
+    const currentMeta = conversations.find((c) => c.id === activeChatId) || null;
+    setActiveChat(currentMeta);
 
     const db = getDb();
     const msgsRef = collection(db, "supportChats", activeChatId, "messages");
     const q = query(msgsRef, orderBy("timestamp", "asc"));
 
-    const unsub = onSnapshot(q, (snap) => {
-      const newMessages = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Message, "id">) }));
-      const prev = prevMessagesRef.current;
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const msgs: Message[] = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        }));
 
-      // Detect incoming admin messages while chat is open → play receive sound
-      if (prev.length > 0 && newMessages.length > prev.length) {
-        const newest = newMessages[newMessages.length - 1];
-        if (newest.sender === "admin") {
-          playSound(receiveSoundRef);
+        // Detect new incoming message from admin
+        if (prevMessagesRef.current.length > 0 && msgs.length > prevMessagesRef.current.length) {
+          const lastMsg = msgs[msgs.length - 1];
+          if (lastMsg.sender === "admin") {
+            playSound(receiveSoundRef);
+          }
         }
+        prevMessagesRef.current = msgs;
+        setMessages(msgs);
+
+        // Mark unreadByUser as 0 and update unread admin messages to read: true
+        if (userId) {
+          const chatRef = doc(db, "supportChats", activeChatId);
+          updateDoc(chatRef, { unreadByUser: 0 }).catch(() => {});
+
+          // Auto mark admin messages as read in real-time
+          snap.docs.forEach((d) => {
+            const data = d.data();
+            if (data.sender === "admin" && !data.read) {
+              updateDoc(d.ref, { read: true }).catch(() => {});
+            }
+          });
+        }
+      },
+      (error) => {
+        console.warn("[UserChatPanel] Firestore messages listener warning:", error.message);
       }
-
-      prevMessagesRef.current = newMessages;
-      setMessages(newMessages);
-
-      // Mark unread admin messages as read (triggers blue ticks on admin screen)
-      snap.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (data.sender === "admin" && !data.read) {
-          updateDoc(doc(db, "supportChats", activeChatId, "messages", docSnap.id), { read: true }).catch(() => {});
-        }
-      });
-
-      // Reset unreadByUser count on room document
-      const chatRef = doc(db, "supportChats", activeChatId);
-      updateDoc(chatRef, { unreadByUser: 0 }).catch(() => {});
-    }, (error) => {
-      console.warn("[UserChatPanel] Messages snapshot warning:", error.message);
-    });
+    );
 
     return unsub;
-  }, [activeChatId, isAuthReady, playSound]);
+  }, [activeChatId, isAuthReady, userId, conversations, playSound]);
 
   // 3. Listen for Admin typing state (RTDB + Firestore) & Admin online presence in RTDB
   useEffect(() => {
@@ -410,46 +422,20 @@ export function UserChatPanel({
     };
   }, [activeChatId, isAuthReady]);
 
-  // Scroll to bottom on new messages
+  // Auto scroll to bottom when messages change
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isAdminTyping]);
 
-  // Notification sound: play when unreadByUser increases on a non-active chat
-  useEffect(() => {
-    const prev = prevConversationsRef.current;
-    if (prev.length > 0) {
-      conversations.forEach((conv) => {
-        if (conv.id === activeChatId) return; // skip active chat
-        const oldConv = prev.find((p) => p.id === conv.id);
-        if (!oldConv) return;
-        if ((conv.unreadByUser ?? 0) > (oldConv.unreadByUser ?? 0)) {
-          playSound(notifSoundRef);
-        }
-      });
-    }
-    prevConversationsRef.current = conversations;
-  }, [conversations, activeChatId, playSound]);
-
-  // Filter conversations based on current tab
-  const supportTickets = conversations.filter((c) => c.type === "support" || c.id.startsWith("support-"));
-  const orderChats = conversations.filter((c) => c.type === "order" || c.id.startsWith("order-"));
-
-  // Unread counts for tab badges
-  const supportUnread = supportTickets.reduce((sum, c) => sum + (c.unreadByUser ?? 0), 0);
-  const ordersUnread = orderChats.reduce((sum, c) => sum + (c.unreadByUser ?? 0), 0);
-
-
-
+  // Handle creating a new general support ticket
   const handleCreateTicket = async () => {
-    if (!userId || isCreatingTicket) return;
+    if (!userId || isCreatingTicket || !isAuthReady) return;
     setIsCreatingTicket(true);
 
     try {
       const db = getDb();
-      // Generate a ticket ID: support-xxxxxxxx (8 hex chars)
       const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
       const ticketId = `support-${randomId}`;
       const chatRef = doc(db, "supportChats", ticketId);
@@ -460,8 +446,8 @@ export function UserChatPanel({
         email: session?.user?.email ?? "",
         type: "support",
         ticketId,
-        title: `Ticket #${randomId}`,
-        lastMessage: "Ticket created. Please describe your issue.",
+        title: `Support Ticket #${randomId}`,
+        lastMessage: "Ticket opened. Type your query below.",
         lastMessageAt: serverTimestamp(),
         unreadByAdmin: 1,
         unreadByUser: 0,
@@ -470,7 +456,7 @@ export function UserChatPanel({
 
       const msgsRef = collection(db, "supportChats", ticketId, "messages");
       await addDoc(msgsRef, {
-        text: "System: Support ticket created. Please write your question below and an administrator will reply shortly.",
+        text: `System: Support ticket #${randomId} opened. Someone from our support team will reply shortly.`,
         sender: "admin",
         senderName: "Support Team",
         timestamp: serverTimestamp(),
@@ -479,34 +465,33 @@ export function UserChatPanel({
 
       setActiveChatId(ticketId);
       setActiveTab("support");
-    } catch (err) {
-      console.error("Failed to create ticket:", err);
+    } catch (err: any) {
+      console.error("Failed to create support ticket:", err);
+      alert("Error creating ticket: " + (err.message || "Please try again."));
     } finally {
       setIsCreatingTicket(false);
     }
   };
 
+  // Handle sending user message
   const handleSend = async () => {
+    if (!inputText.trim() || !activeChatId || isSending || !isAuthReady) return;
     const text = inputText.trim();
-    if (!text || isSending || !activeChatId) return;
-    setIsSending(true);
     setInputText("");
+    setIsSending(true);
 
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     isTypingActiveRef.current = false;
-    if (activeChatId) {
-      const db = getDb();
-      updateDoc(doc(db, "supportChats", activeChatId), { userTyping: false }).catch(() => {});
-      const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
-      if (rtdb) {
-        remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
-      }
-    }
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
     try {
       const db = getDb();
-      const chatRef = doc(db, "supportChats", activeChatId);
       const msgsRef = collection(db, "supportChats", activeChatId, "messages");
+      const chatRef = doc(db, "supportChats", activeChatId);
+      const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
+
+      if (rtdb) {
+        remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
+      }
 
       await addDoc(msgsRef, {
         text,
@@ -533,7 +518,7 @@ export function UserChatPanel({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setInputText(val);
 
@@ -572,7 +557,7 @@ export function UserChatPanel({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -585,106 +570,120 @@ export function UserChatPanel({
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
-  // --- RENDERING SUB-VIEWS ---
+  // Filter lists by tab
+  const supportChats = conversations.filter(
+    (c) => c.type === "support" || c.id.startsWith("support-")
+  );
+  const orderChats = conversations.filter(
+    (c) => c.type === "order" || c.id.startsWith("order-")
+  );
 
-  // Sidebar list view
+  const activeList = activeTab === "support" ? supportChats : orderChats;
+
+  const supportUnread = supportChats.reduce((acc, c) => acc + (c.unreadByUser ?? 0), 0);
+  const ordersUnread = orderChats.reduce((acc, c) => acc + (c.unreadByUser ?? 0), 0);
+
+  // Render list of conversations
   const renderSidebar = () => {
-    const activeList = activeTab === "support" ? supportTickets : orderChats;
-
     return (
-      <div className="flex flex-col h-full bg-zinc-50 dark:bg-black/10">
-        {/* Compact Mode Header */}
-        {!isFullScreen && (
-          <div className="flex items-center justify-between px-4 py-3 bg-[#6133e1] text-white shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center">
-                <MessageSquare className="h-3.5 w-3.5" />
-              </div>
-              <div>
-                <p className="text-xs font-extrabold leading-none uppercase tracking-wider">Live Chat</p>
-                <p className="text-[9px] text-violet-200 mt-0.5 font-bold uppercase tracking-wide">Support & Orders</p>
-              </div>
+      <div className="flex flex-col h-full bg-white dark:bg-[#0d0d12]">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-zinc-200/80 dark:border-white/[0.08] flex items-center justify-between bg-white dark:bg-[#0d0d12] shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-[#6133e1]/10 text-[#6133e1] dark:text-violet-400 flex items-center justify-center border border-[#6133e1]/20">
+              <MessageCircle className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-1.5">
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-white leading-none">
+                Live Support
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">
+                Customer Care & Orders
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {!isFullScreen && (
               <button
                 onClick={() => {
                   window.location.href = "/chat";
                 }}
-                className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition cursor-pointer"
                 title="Expand to Full Screen"
               >
-                <Maximize2 className="h-3.5 w-3.5" />
+                <Maximize2 className="h-4 w-4" />
               </button>
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="p-1 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                  aria-label="Close Chat"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            )}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition cursor-pointer"
+                aria-label="Close Chat"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        )}
-
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-zinc-200 dark:border-white/[0.06] p-2 bg-white dark:bg-zinc-950">
-          <button
-            onClick={() => setActiveTab("support")}
-            className={cn(
-              "flex-1 py-2 text-xs font-extrabold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer relative",
-              activeTab === "support"
-                ? "bg-[#6133e1]/10 text-[#6133e1] dark:text-purple-400"
-                : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            )}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Support
-            {supportUnread > 0 && (
-              <span className="ml-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center leading-none">
-                {supportUnread > 99 ? "99+" : supportUnread}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={cn(
-              "flex-1 py-2 text-xs font-extrabold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer relative",
-              activeTab === "orders"
-                ? "bg-[#6133e1]/10 text-[#6133e1] dark:text-purple-400"
-                : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            )}
-          >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            Orders
-            {ordersUnread > 0 && (
-              <span className="ml-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center leading-none">
-                {ordersUnread > 99 ? "99+" : ordersUnread}
-              </span>
-            )}
-          </button>
         </div>
 
+        {/* Navigation Tabs (Tactile Segmented Control) */}
+        <div className="p-3 bg-white dark:bg-[#0d0d12] border-b border-zinc-200/80 dark:border-white/[0.08] shrink-0">
+          <div className="p-1 rounded-xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200/60 dark:border-white/[0.06] flex gap-1">
+            <button
+              onClick={() => setActiveTab("support")}
+              className={cn(
+                "flex-1 py-1.5 px-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer relative",
+                activeTab === "support"
+                  ? "bg-white dark:bg-[#181820] text-zinc-900 dark:text-white shadow-xs font-bold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-[#6133e1]" />
+              <span>Support</span>
+              {supportUnread > 0 && (
+                <span className="ml-0.5 min-w-[18px] h-4 px-1 rounded-full bg-[#6133e1] text-white text-[10px] font-bold flex items-center justify-center">
+                  {supportUnread > 99 ? "99+" : supportUnread}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("orders")}
+              className={cn(
+                "flex-1 py-1.5 px-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer relative",
+                activeTab === "orders"
+                  ? "bg-white dark:bg-[#181820] text-zinc-900 dark:text-white shadow-xs font-bold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              <ShoppingBag className="h-3.5 w-3.5 text-blue-500" />
+              <span>Orders</span>
+              {ordersUnread > 0 && (
+                <span className="ml-0.5 min-w-[18px] h-4 px-1 rounded-full bg-[#6133e1] text-white text-[10px] font-bold flex items-center justify-center">
+                  {ordersUnread > 99 ? "99+" : ordersUnread}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
 
         {/* Action Header */}
-        <div className="p-3 bg-white dark:bg-zinc-950 border-b border-zinc-150 dark:border-white/[0.04]">
+        <div className="px-3 py-2 bg-zinc-50/50 dark:bg-white/[0.02] border-b border-zinc-200/80 dark:border-white/[0.08] shrink-0">
           {activeTab === "support" ? (
             <button
               onClick={handleCreateTicket}
               disabled={isCreatingTicket}
-              className="w-full h-8 flex items-center justify-center gap-1.5 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full h-8 flex items-center justify-center gap-1.5 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-semibold rounded-xl transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-xs"
             >
               {isCreatingTicket ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Plus className="h-3.5 w-3.5" />
               )}
-              Create Support Ticket
+              <span>New Support Ticket</span>
             </button>
           ) : (
-            <p className="text-[10px] text-zinc-450 dark:text-zinc-550 font-bold uppercase tracking-wider text-center">
-              Order Specific Live Chats
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center font-normal py-0.5">
+              Order payment & coordination threads
             </p>
           )}
         </div>
@@ -692,14 +691,17 @@ export function UserChatPanel({
         {/* Chats List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {activeList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-              <p className="text-xs font-bold text-zinc-400 dark:text-zinc-650 uppercase tracking-wide">
-                No chats found
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="h-12 w-12 rounded-2xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200/60 dark:border-white/[0.06] flex items-center justify-center text-zinc-400 mb-3">
+                <Inbox className="h-6 w-6" />
+              </div>
+              <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                No conversation threads yet
               </p>
-              <p className="text-[10px] text-zinc-500 mt-1 max-w-[200px]">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-[220px] leading-relaxed">
                 {activeTab === "support"
-                  ? "Create a ticket above to start a conversation with support."
-                  : "Manual order payments automatically spawn chats here."}
+                  ? "Click above to open a direct support ticket with our team."
+                  : "Order chats appear here automatically upon checkout."}
               </p>
             </div>
           ) : (
@@ -708,26 +710,31 @@ export function UserChatPanel({
                 key={conv.id}
                 onClick={() => setActiveChatId(conv.id)}
                 className={cn(
-                  "w-full flex items-center justify-between p-3 rounded-xl transition-all text-left cursor-pointer",
+                  "w-full flex items-center justify-between p-3 rounded-xl transition-all text-left cursor-pointer border gap-2",
                   activeChatId === conv.id
-                    ? "bg-[#6133e1]/5 border border-[#6133e1]/20 dark:border-[#6133e1]/30"
-                    : "hover:bg-zinc-100 dark:hover:bg-zinc-900/50 border border-transparent"
+                    ? "bg-[#6133e1]/5 border-[#6133e1]/20 dark:border-[#6133e1]/30 shadow-2xs"
+                    : "hover:bg-zinc-100 dark:hover:bg-white/[0.04] border-transparent"
                 )}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-xs text-zinc-900 dark:text-white truncate">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="font-semibold text-xs text-zinc-900 dark:text-white truncate">
                       {conv.title || "Support Thread"}
                     </span>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium shrink-0">
+                      {formatTime(conv.lastMessageAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-1 mt-0.5">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate font-normal flex-1">
+                      {conv.lastMessage || "Click to view chat"}
+                    </p>
                     {conv.unreadByUser > 0 && (
-                      <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-[#6133e1] shrink-0" />
                     )}
                   </div>
-                  <p className="text-[10px] text-zinc-450 dark:text-zinc-500 truncate mt-0.5 font-medium">
-                    {conv.lastMessage || "Click to open chat"}
-                  </p>
                 </div>
-                <ChevronRight className="h-3.5 w-3.5 text-zinc-400 shrink-0 ml-2" />
+                <ChevronRight className="h-4 w-4 text-zinc-400 shrink-0 ml-1" />
               </button>
             ))
           )}
@@ -740,14 +747,14 @@ export function UserChatPanel({
   const renderThread = () => {
     if (!activeChatId) {
       return (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-8 bg-zinc-50/20 dark:bg-black/5">
-          <div className="h-16 w-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-            <MessageSquare className="h-7 w-7 text-zinc-400" />
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8 bg-zinc-50/50 dark:bg-[#0c0c10]">
+          <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200/80 dark:border-white/[0.06] flex items-center justify-center text-zinc-400 shadow-xs">
+            <MessageSquare className="h-6 w-6 text-[#6133e1]" />
           </div>
           <div>
-            <p className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200">No Chat Selected</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-[240px]">
-              Select a conversation from the tab panel, or create a new support ticket.
+            <p className="text-sm font-semibold text-zinc-900 dark:text-white">No Chat Selected</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-[240px] leading-relaxed">
+              Choose a support ticket or order thread from the list to begin chatting.
             </p>
           </div>
         </div>
@@ -755,35 +762,36 @@ export function UserChatPanel({
     }
 
     return (
-      <div className="flex-1 flex flex-col h-full bg-zinc-50/20 dark:bg-zinc-950/20">
+      <div className="flex-1 flex flex-col h-full bg-zinc-50/30 dark:bg-[#0d0d12]">
         {/* Thread Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-zinc-950">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0d0d12] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             {/* Back button for compact view */}
             {(!isFullScreen || isMobile) && (
               <button
                 onClick={() => setActiveChatId(null)}
-                className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors mr-1 cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition cursor-pointer mr-0.5"
+                title="Back to threads"
               >
-                <ArrowLeft className="h-4.5 w-4.5" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
             )}
             <div className="min-w-0">
-              <h3 className="text-xs font-black text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <h3 className="text-xs font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5 truncate">
                 {activeChat?.type === "order" ? (
-                  <ShoppingBag className="h-3.5 w-3.5 text-[#6133e1]" />
+                  <ShoppingBag className="h-4 w-4 text-blue-500 shrink-0" />
                 ) : (
-                  <MessageSquare className="h-3.5 w-3.5 text-[#6133e1]" />
+                  <MessageSquare className="h-4 w-4 text-[#6133e1] shrink-0" />
                 )}
-                {activeChat?.title || "Live Chat"}
+                <span className="truncate">{activeChat?.title || "Live Chat"}</span>
               </h3>
               {isAdminTyping ? (
-                <p className="text-[10px] text-emerald-500 font-extrabold animate-pulse leading-none mt-0.5">
+                <p className="text-xs text-emerald-500 font-semibold animate-pulse leading-none mt-0.5">
                   Support Team is typing...
                 </p>
               ) : (
-                <p className="text-[8px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mt-0.5 leading-none">
-                  {activeChat?.type === "order" ? "Order Coordination" : "Support Ticket"}
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-normal leading-none mt-0.5">
+                  {activeChat?.type === "order" ? "Order Support & Coordination" : "Dedicated Support Ticket"}
                 </p>
               )}
             </div>
@@ -796,16 +804,16 @@ export function UserChatPanel({
                 onClick={() => {
                   window.location.href = `/chat?chatId=${activeChatId}`;
                 }}
-                className="p-1.5 rounded-lg text-zinc-450 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition cursor-pointer"
                 title="Expand to Full Screen"
               >
-                <Maximize2 className="h-3.5 w-3.5" />
+                <Maximize2 className="h-4 w-4" />
               </button>
             )}
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-zinc-450 hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition cursor-pointer"
                 aria-label="Close Chat"
               >
                 <X className="h-4 w-4" />
@@ -813,12 +821,13 @@ export function UserChatPanel({
             )}
           </div>
         </div>
+
         {/* Scrollable Messages */}
         <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[220px]">
           {messages.length === 0 && (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-bold uppercase tracking-wider">
-                No messages yet
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">
+                No messages yet in this conversation
               </p>
             </div>
           )}
@@ -831,7 +840,7 @@ export function UserChatPanel({
               <div
                 key={msg.id}
                 className={cn(
-                  "flex flex-col gap-1",
+                  "flex flex-col gap-1 max-w-full",
                   isSystem
                     ? "items-center"
                     : msg.sender === "user"
@@ -841,36 +850,36 @@ export function UserChatPanel({
               >
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-2xl text-xs leading-relaxed px-3.5 py-2 select-text",
+                    "max-w-[88%] sm:max-w-[78%] rounded-2xl text-xs sm:text-sm leading-relaxed px-4 py-3 select-text break-words [word-break:break-word] overflow-hidden shadow-xs",
                     isSystem
-                      ? "bg-zinc-100 dark:bg-zinc-900 text-zinc-550 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 text-center rounded-xl font-medium"
+                      ? "bg-zinc-100 dark:bg-[#18181c] text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-white/[0.06] text-center rounded-xl font-medium max-w-[90%]"
                       : msg.sender === "user"
-                      ? "bg-[#6133e1] text-white rounded-br-sm shadow-sm"
-                      : "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-150 dark:border-zinc-800 rounded-bl-sm shadow-xs"
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-tr-xs border border-zinc-800 dark:border-white/20 font-medium"
+                      : "bg-white text-zinc-900 dark:bg-[#1e1e22] dark:text-zinc-100 border border-zinc-200 dark:border-white/[0.08] rounded-tl-xs"
                   )}
                 >
                   {msg.image && (
-                    <div className="mb-1.5 rounded-lg overflow-hidden border border-white/10 max-w-full">
+                    <div className="mb-2 rounded-xl overflow-hidden border border-zinc-200/60 dark:border-white/10 max-w-full shadow-xs">
                       <img
                         src={msg.image}
                         alt={msg.text || "Attached Image"}
-                        className="max-h-48 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
+                        className="max-h-56 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
                         onClick={() => window.open(msg.image, "_blank")}
                       />
                     </div>
                   )}
-                  {displayMsg && <p className="whitespace-pre-wrap">{displayMsg}</p>}
+                  {displayMsg && <p className="whitespace-pre-wrap break-words [word-break:break-word] max-w-full overflow-hidden leading-relaxed">{displayMsg}</p>}
                 </div>
-                <div className="flex items-center gap-1 text-[9px] text-zinc-400 px-1 font-medium leading-none">
+                <div className="flex items-center gap-1 text-[10px] text-zinc-400 px-1 font-medium leading-none">
                   <span>{!isSystem && msg.sender === "admin" ? "Support Team · " : ""}{formatTime(msg.timestamp)}</span>
                   {!isSystem && msg.sender === "user" && (
                     <span className="inline-flex items-center select-none">
                       {msg.read ? (
-                        <span title="Read"><CheckCheck className="h-3.5 w-3.5 text-[#34B7F1] dark:text-[#53bdeb] stroke-[2.5]" /></span>
+                        <span title="Read"><CheckCheck className="h-4 w-4 text-[#34B7F1] dark:text-[#34B7F1] stroke-[2.5]" /></span>
                       ) : isAdminOnline ? (
-                        <span title="Delivered"><CheckCheck className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
+                        <span title="Delivered"><CheckCheck className="h-4 w-4 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
                       ) : (
-                        <span title="Sent"><Check className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
+                        <span title="Sent"><Check className="h-4 w-4 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
                       )}
                     </span>
                   )}
@@ -880,25 +889,25 @@ export function UserChatPanel({
           })}
 
           {isAdminTyping && (
-            <div className="flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl rounded-bl-sm text-xs font-semibold text-zinc-600 dark:text-zinc-300 shadow-xs w-max animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#1e1e22] border border-zinc-200 dark:border-white/[0.08] rounded-2xl rounded-tl-xs text-xs font-medium text-zinc-600 dark:text-zinc-300 shadow-xs w-max animate-in fade-in zoom-in-95 duration-150">
               <span className="text-zinc-500 font-medium">Support Team is typing</span>
-              <span className="flex items-center gap-0.5 ml-0.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+              <span className="flex items-center gap-0.5 ml-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-zinc-400 dark:bg-zinc-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-zinc-400 dark:bg-zinc-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-zinc-400 dark:bg-zinc-400 animate-bounce" style={{ animationDelay: "300ms" }} />
               </span>
             </div>
           )}
         </div>
 
-        {/* Input */}
-        <div className="p-3 border-t border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-zinc-950 shrink-0">
+        {/* Bigger WhatsApp Style Input Container */}
+        <div className="p-3.5 sm:p-4 border-t border-zinc-200/80 dark:border-white/[0.08] bg-zinc-100/70 dark:bg-[#121216] shrink-0">
           {activeChat?.status === "closed" ? (
-            <div className="flex items-center justify-center p-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-550 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center justify-center p-3 rounded-2xl bg-zinc-200/60 dark:bg-white/[0.04] border border-zinc-300/60 dark:border-white/[0.06] text-zinc-500 text-xs font-semibold">
               🔒 This ticket has been closed
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-end gap-2.5">
               <input
                 ref={imageInputRef}
                 type="file"
@@ -910,35 +919,35 @@ export function UserChatPanel({
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isSending || isUploadingImage}
-                className="h-9 w-9 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-355 hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-center transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                className="h-11 w-11 rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#1a1a20] text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-white/[0.06] flex items-center justify-center transition cursor-pointer shrink-0 disabled:opacity-50 shadow-xs"
                 title="Attach Image"
               >
                 {isUploadingImage ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-[#6133e1]" />
+                  <Loader2 className="h-5 w-5 animate-spin text-zinc-900 dark:text-white" />
                 ) : (
-                  <ImageIcon className="h-4 w-4" />
+                  <ImageIcon className="h-5 w-5" />
                 )}
               </button>
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
+                rows={2}
                 value={inputText}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message…"
+                placeholder="Type a message… (Shift + Enter for new line)"
                 disabled={isSending || isUploadingImage}
-                className="flex-1 bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-white placeholder:text-zinc-400 rounded-xl px-3 h-9 text-xs outline-none border border-transparent focus:border-[#6133e1]/40 focus:bg-white dark:focus:bg-zinc-950 transition-all disabled:opacity-50"
+                className="flex-1 bg-white dark:bg-[#1b1b20] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 rounded-2xl px-4 py-3 text-xs sm:text-sm outline-none border border-zinc-200 dark:border-white/[0.08] focus:border-zinc-400 dark:focus:border-white/30 transition-all resize-none max-h-40 min-h-[50px] leading-relaxed disabled:opacity-50 break-words [word-break:break-word] shadow-xs"
               />
               <button
                 onClick={handleSend}
                 disabled={(!inputText.trim() && !isUploadingImage) || isSending || isUploadingImage}
-                className="h-9 w-9 rounded-xl bg-[#6133e1] hover:bg-[#5028c7] text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+                className="h-11 w-11 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 shadow-md"
                 aria-label="Send message"
               >
                 {isSending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Send className="h-3.5 w-3.5" />
+                  <Send className="h-5 w-5" />
                 )}
               </button>
             </div>
@@ -951,10 +960,10 @@ export function UserChatPanel({
   // Full Screen layout (Sidebar + Thread side-by-side)
   if (isFullScreen) {
     return (
-      <div className="flex flex-1 min-h-0 rounded-2xl border border-zinc-200 dark:border-white/[0.06] overflow-hidden bg-white dark:bg-zinc-950/80 backdrop-blur-md shadow-xl h-[640px] md:h-[720px]">
+      <div className="flex flex-1 min-h-0 rounded-2xl border border-zinc-200/80 dark:border-white/10 overflow-hidden bg-white dark:bg-[#0c0c10] shadow-xl h-[640px] md:h-[720px]">
         {/* Left sidebar: hidden on mobile if thread is open */}
         <div className={cn(
-          "w-full md:w-72 shrink-0 border-r border-zinc-200 dark:border-white/[0.06] flex flex-col h-full",
+          "w-full md:w-80 shrink-0 border-r border-zinc-200/80 dark:border-white/[0.08] flex flex-col h-full",
           activeChatId ? "hidden md:flex" : "flex"
         )}>
           {renderSidebar()}
@@ -972,7 +981,7 @@ export function UserChatPanel({
 
   // Compact layout (for widget bottom right)
   return (
-    <div className="flex flex-col h-[480px] w-full bg-white dark:bg-[#0d0d12]">
+    <div className="flex flex-col h-[580px] w-full bg-white dark:bg-[#0d0d12]">
       {activeChatId ? renderThread() : renderSidebar()}
     </div>
   );

@@ -136,10 +136,13 @@ export default async function UserOrdersPage() {
         ) : (
           <div className="space-y-3">
             {allPurchases.map((purchase) => {
-              const formattedDate = new Date(purchase.date).toLocaleDateString("en-US", {
+              const formattedDate = new Date(purchase.date).toLocaleString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
               });
 
               const typeConfig = (({

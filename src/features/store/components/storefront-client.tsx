@@ -6,7 +6,7 @@ import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLe
 import Link from "next/link";
 import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
-import { cn } from "@/lib/utils";
+import { cn, getUserCountry } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
@@ -185,7 +185,7 @@ export function StorefrontClient({ categories, products }: StorefrontClientProps
     if (status === "loading" || !session?.user) return;
     const userId = (session.user as any).id as string;
     const username = (session.user as any).username || session.user.name || session.user.email || "User";
-    const country = (session.user as any).country || "N/A";
+    const country = getUserCountry(session.user);
 
     try {
       const res = await createStorefrontOrderAction(items, getTotalPrice());
@@ -947,7 +947,7 @@ Please guide me on how to complete the payment!`;
                             const orderId = res.orderId;
                             const userId = (session?.user as any)?.id as string || "N/A";
                             const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
-                            const country = (session?.user as any)?.country || "N/A";
+                            const country = getUserCountry(session?.user);
                             const db = getDb();
                             const chatId = `order-${orderId}`;
                             const chatRef = doc(db, "supportChats", chatId);

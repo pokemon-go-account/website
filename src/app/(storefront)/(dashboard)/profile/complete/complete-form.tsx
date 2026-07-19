@@ -82,7 +82,7 @@ export function CompleteProfileForm() {
   useEffect(() => {
     if (state.success && !isRedirecting) {
       setIsRedirecting(true);
-      update({ isOnboarded: true, role: "USER" }).then(() => {
+      update({ isOnboarded: true, role: "USER", country: selectedCountry }).then(() => {
         // Use absolute URL to avoid any server/proxy rewrite interception
         const base = process.env.NEXT_PUBLIC_APP_URL || "";
         window.location.replace(`${base}/`);

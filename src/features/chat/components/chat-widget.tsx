@@ -10,7 +10,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { getDb } from "@/lib/firestore";
-import { MessageCircle, MessageSquare, ShoppingBag, X } from "lucide-react";
+import { MessageCircle, MessageSquare, ShoppingBag, X, Sparkles } from "lucide-react";
 import { UserChatPanel } from "./user-chat-panel";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -192,14 +192,14 @@ export function ChatWidget() {
                 setActiveNotification(null);
               }
             }}
-            className="fixed top-6 right-6 z-[100] max-w-sm w-full bg-white/90 dark:bg-zinc-950/95 border border-zinc-200 dark:border-white/[0.08] p-4 rounded-2xl shadow-2xl flex gap-3 pointer-events-auto cursor-pointer backdrop-blur-md"
+            className="fixed top-6 right-6 z-[100] max-w-sm w-full bg-white/95 dark:bg-[#121217]/95 border border-zinc-200/80 dark:border-white/10 p-4 rounded-2xl shadow-2xl flex gap-3.5 pointer-events-auto cursor-pointer backdrop-blur-xl transition-all hover:scale-[1.01]"
           >
             <div className="shrink-0">
               <div className={cn(
-                "h-10 w-10 rounded-xl flex items-center justify-center border",
+                "h-10 w-10 rounded-xl flex items-center justify-center border shadow-xs",
                 activeNotification.type === "order"
-                  ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                  : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                  : "bg-[#6133e1]/10 text-[#6133e1] dark:text-violet-400 border-[#6133e1]/20"
               )}>
                 {activeNotification.type === "order" ? (
                   <ShoppingBag className="h-5 w-5" />
@@ -209,13 +209,16 @@ export function ChatWidget() {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-550 tracking-wider block mb-0.5">
-                New Message
-              </span>
-              <h4 className="text-xs font-extrabold text-zinc-900 dark:text-white truncate">
+              <div className="flex items-center justify-between gap-1 mb-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1">
+                  <Sparkles className="h-2.5 w-2.5 text-[#6133e1]" />
+                  New Message
+                </span>
+              </div>
+              <h4 className="text-xs font-bold text-zinc-900 dark:text-white truncate">
                 {activeNotification.title}
               </h4>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 line-clamp-2 leading-relaxed">
                 {activeNotification.message}
               </p>
             </div>
@@ -225,7 +228,7 @@ export function ChatWidget() {
                 setActiveNotification(null);
               }}
               aria-label="Close notification"
-              className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer bg-transparent border-none shrink-0"
+              className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer bg-transparent border-none shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
@@ -246,11 +249,11 @@ export function ChatWidget() {
             }
           }}
           aria-label="Open support chat"
-          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-[#6133e1] hover:bg-[#5028c7] shadow-lg shadow-violet-500/30 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-[#6133e1] hover:bg-[#5028c7] shadow-xl shadow-[#6133e1]/30 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/20"
         >
           <MessageCircle className="h-6 w-6" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-[10px] font-black text-white flex items-center justify-center border-2 border-white dark:border-black">
+            <span className="absolute -top-1.5 -right-1.5 h-5 min-w-[20px] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center border-2 border-white dark:border-[#0c0c10] shadow-sm animate-pulse">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -262,7 +265,7 @@ export function ChatWidget() {
         <div
           ref={panelRef}
           id="chat-widget-panel"
-          className="fixed bottom-6 right-6 z-50 w-[340px] sm:w-[380px] h-[560px] flex flex-col rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0d0d12] shadow-2xl shadow-black/30 overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200"
+          className="fixed bottom-6 right-6 z-50 w-[360px] sm:w-[400px] h-[580px] flex flex-col rounded-2xl border border-zinc-200/80 dark:border-white/10 bg-white dark:bg-[#0c0c10] shadow-2xl shadow-black/40 overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200"
         >
           <UserChatPanel isFullScreen={false} onClose={() => setIsOpen(false)} />
         </div>
