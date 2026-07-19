@@ -89,11 +89,32 @@ function CountdownTimer({ expiry }: { expiry: string | Date }) {
 interface StorefrontClientProps {
   categories: Category[];
   products: Product[];
+  initialCategorySlug?: string;
 }
 
-export function StorefrontClient({ categories, products }: StorefrontClientProps) {
+export function StorefrontClient({ categories, products, initialCategorySlug }: StorefrontClientProps) {
   const { items, isOpen, setIsOpen, addItem, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(() => {
+    if (initialCategorySlug) {
+      const foundCategory = categories.find((cat) => cat.slug === initialCategorySlug);
+      if (foundCategory) return foundCategory._id;
+    }
+    return null;
+  });
+
+  const handleSelectCategory = (catId: string | null) => {
+    setSelectedCategoryId(catId);
+    if (typeof window !== "undefined") {
+      if (catId) {
+        const foundCat = categories.find((c) => c._id === catId);
+        if (foundCat?.slug) {
+          window.history.pushState({}, "", `/store/${foundCat.slug}`);
+        }
+      } else {
+        window.history.pushState({}, "", "/store");
+      }
+    }
+  };
   const [mounted, setMounted] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { convert } = useCurrencyStore();
@@ -328,7 +349,7 @@ Please guide me on how to complete the payment!`;
                 return (
                   <div
                     key={cat._id}
-                    onClick={() => setSelectedCategoryId(cat._id)}
+                    onClick={() => handleSelectCategory(cat._id)}
                     className={cn(
                       "group relative rounded-lg border border-zinc-200 dark:border-white/[0.06] overflow-hidden flex flex-col justify-between h-56 transition-all duration-300 hover:-translate-y-[2px] hover:shadow-xs hover:border-zinc-300 dark:hover:border-white/[0.1] cursor-pointer",
                       cat.imageUrl ? "" : "p-6 bg-white dark:bg-[#111111]"
@@ -376,7 +397,7 @@ Please guide me on how to complete the payment!`;
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-white/[0.06] pb-6">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setSelectedCategoryId(null)}
+                  onClick={() => handleSelectCategory(null)}
                   className="h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-white/[0.04] text-zinc-655 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95 shadow-xs"
                 >
                   <ChevronLeft className="h-4.5 w-4.5" />
@@ -479,7 +500,7 @@ Please guide me on how to complete the payment!`;
                 <AlertCircle className="h-7 w-7 text-zinc-400" />
                 <p className="text-xs text-zinc-500">No storefront services available under this category at the moment.</p>
                 <button
-                  onClick={() => setSelectedCategoryId(null)}
+                  onClick={() => handleSelectCategory(null)}
                   className="h-8 px-4 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-bold transition-all active:scale-95"
                 >
                   Return to Categories

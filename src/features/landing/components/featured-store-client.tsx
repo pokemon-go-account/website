@@ -170,7 +170,7 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
                 )}
               </div>
               <Link
-                href={`/store?category=${product.categoryId?.slug || ""}&productId=${product._id}`}
+                href={product.categoryId?.slug ? `/store/${product.categoryId.slug}?productId=${product._id}` : `/store?productId=${product._id}`}
                 className="h-8 px-3 inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 rounded-md text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer"
               >
                 Buy Now
