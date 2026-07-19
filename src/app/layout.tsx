@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import { ChatWidget } from "@/features/chat/components/chat-widget";
 import { PageTransitionLoader } from "@/components/page-transition-loader";
+import { PresenceTracker } from "@/components/presence-tracker";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -114,6 +115,7 @@ export default function RootLayout({
           </main>
           <ChatWidget />
           <PageTransitionLoader />
+          <PresenceTracker />
         </SessionProvider>
         <Analytics />
       </body>

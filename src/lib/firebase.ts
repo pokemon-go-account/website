@@ -4,6 +4,7 @@ import {
   GoogleAuthProvider, 
   OAuthProvider
 } from "firebase/auth";
+import { getDatabase, Database } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,6 +13,7 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
 };
 
 const isConfigured = 
@@ -21,11 +23,15 @@ const isConfigured =
 
 let app: any;
 let auth: any = null;
+let database: Database | null = null;
 
 if (typeof window !== "undefined") {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
+    if (isConfigured) {
+      database = getDatabase(app);
+    }
   } catch (error) {
     console.error("Firebase client initialization failed:", error);
   }
@@ -36,8 +42,11 @@ googleProvider.setCustomParameters({ prompt: "select_account" });
 const appleProvider = new OAuthProvider("apple.com");
 
 export {
+  app,
   auth,
+  database,
   googleProvider,
   appleProvider,
   isConfigured
 };
+
