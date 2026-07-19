@@ -1,20 +1,29 @@
-import { getAllAdmins, getPendingAuctionListings } from "@/features/console/actions";
-import { AlertTriangle, ArrowRight, Mail, CheckCircle2 } from "lucide-react";
+import { getAllAdmins, getPendingAuctionListings, getTotalRevenueConsole } from "@/features/console/actions";
+import { AlertTriangle, ArrowRight, Mail, CheckCircle2, DollarSign, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 export const revalidate = 0;
 
 export default async function ConsolePage() {
-  const [adminsRes, listingsRes] = await Promise.all([
+  const [adminsRes, listingsRes, revenueRes] = await Promise.all([
     getAllAdmins(),
     getPendingAuctionListings(),
+    getTotalRevenueConsole(),
   ]);
 
   const admins = adminsRes.admins || [];
   const listings = listingsRes.listings || [];
+  const totalRevenue = revenueRes.totalRevenue || 0;
+  const completedOrdersCount = revenueRes.completedOrdersCount || 0;
+
   const expiredAdmins = admins.filter(
     (a: any) => !a.adminRentPaidUntil || new Date(a.adminRentPaidUntil) < new Date()
   );
+
+  const formattedRevenue = `$${totalRevenue.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -25,26 +34,32 @@ export default async function ConsolePage() {
           Overview
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Platform status, pending approvals, and admin access management.
+          Platform status, total revenue, pending approvals, and admin access management.
         </p>
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-200 dark:bg-white/[0.06] rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06]">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-px bg-zinc-200 dark:bg-white/[0.06] rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06]">
         {[
+          { label: "Total Revenue", value: formattedRevenue, href: "/console/orders", highlight: true, subtext: `${completedOrdersCount} orders` },
           { label: "Live Analytics", value: "Real-time", href: "/console/analytics" },
           { label: "Admins", value: admins.length, href: "/console/users" },
           { label: "Overdue Rent", value: expiredAdmins.length, href: "/console/rent", danger: expiredAdmins.length > 0 },
           { label: "Pending Listings", value: listings.length, href: "/console/auctions", warn: listings.length > 0 },
-        ].map(({ label, value, href, danger, warn }) => (
+        ].map(({ label, value, href, danger, warn, highlight, subtext }) => (
           <Link
             key={label}
             href={href}
-            className="bg-white dark:bg-[#111111] px-5 py-4 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors group"
+            className="bg-white dark:bg-[#111111] px-4 py-4 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors group"
           >
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium flex items-center gap-1">
+              {highlight && <TrendingUp className="h-3.5 w-3.5 text-emerald-500 inline" />}
+              {label}
+            </p>
             <p className={
-              danger && value > 0
+              highlight
+                ? "text-xl sm:text-2xl font-black text-emerald-500 mt-1 tracking-tight"
+                : danger && value > 0
                 ? "text-2xl font-semibold text-red-500 mt-1"
                 : warn && value > 0
                 ? "text-2xl font-semibold text-amber-500 mt-1"
@@ -52,6 +67,9 @@ export default async function ConsolePage() {
             }>
               {value}
             </p>
+            {subtext && (
+              <p className="text-[10px] font-semibold text-emerald-500/80 mt-0.5">{subtext}</p>
+            )}
           </Link>
         ))}
       </div>

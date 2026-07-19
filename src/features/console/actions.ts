@@ -805,3 +805,24 @@ export async function markAuctionDelivered(orderId: string) {
     return { success: false, error: error.message || "Failed to mark delivery complete." };
   }
 }
+
+/** Get total revenue calculated upon every COMPLETED order */
+export async function getTotalRevenueConsole() {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    const Order = (await import("@/models/Order")).default;
+    
+    const result = await Order.aggregate([
+      { $match: { status: "COMPLETED" } },
+      { $group: { _id: null, totalRevenue: { $sum: "$totalPrice" }, count: { $sum: 1 } } }
+    ]);
+    
+    const totalRevenue = result[0]?.totalRevenue || 0;
+    const completedOrdersCount = result[0]?.count || 0;
+
+    return { success: true, totalRevenue, completedOrdersCount };
+  } catch (error: any) {
+    return { success: false, totalRevenue: 0, completedOrdersCount: 0, error: error.message };
+  }
+}
