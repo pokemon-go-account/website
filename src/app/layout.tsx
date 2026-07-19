@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SessionProvider } from "next-auth/react";
+import { Analytics } from "@vercel/analytics/next";
 import { ChatWidget } from "@/features/chat/components/chat-widget";
 import { PageTransitionLoader } from "@/components/page-transition-loader";
 
@@ -111,8 +112,10 @@ export default function RootLayout({
           <main className="flex-1 flex flex-col">
             {children}
           </main>
+          <ChatWidget />
           <PageTransitionLoader />
         </SessionProvider>
+        <Analytics />
       </body>
     </html>
   );
