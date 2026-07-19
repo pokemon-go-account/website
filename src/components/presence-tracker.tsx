@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { database } from "@/lib/firebase";
-import { ref, onValue, set, onDisconnect, remove, increment } from "firebase/database";
+import { database, app } from "@/lib/firebase";
+import { ref, onValue, set, onDisconnect, remove, increment, getDatabase } from "firebase/database";
 
 interface GeoInfo {
   country: string;
@@ -46,7 +46,9 @@ export function PresenceTracker() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (!database || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
+    const db = database || (app ? getDatabase(app) : null);
+    if (!db) return;
 
     // Session ID (temporary per tab/window)
     let sessionId = sessionStorage.getItem("pogo_presence_sid");
@@ -55,12 +57,16 @@ export function PresenceTracker() {
       sessionStorage.setItem("pogo_presence_sid", sessionId);
     }
 
-    // Persistent Visitor ID (for unique visitor tracking across 7, 14, 30 days)
-    let visitorId = localStorage.getItem("pogo_visitor_id");
-    if (!visitorId) {
-      visitorId = `v_${Math.random().toString(36).substring(2, 12)}`;
-      localStorage.setItem("pogo_visitor_id", visitorId);
+    // Persistent Visitor ID (shared across all tabs on the same browser/device)
+    let storedId = localStorage.getItem("pogo_visitor_id");
+    if (!storedId) {
+      storedId = `v_${Math.random().toString(36).substring(2, 12)}`;
+      localStorage.setItem("pogo_visitor_id", storedId);
     }
+    const visitorId: string = storedId;
+
+    // Unique presence key per person/device (deduplicates multi-tab online presence)
+    const presenceKey = session?.user?.id ? `u_${session.user.id}` : visitorId;
 
     const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const pathKey = encodePathKey(pathname || "/");
@@ -72,16 +78,16 @@ export function PresenceTracker() {
       sessionStorage.setItem(pageViewKey, "1");
 
       // Record page views & unique visitor directly via Firebase WebSocket (0 serverless API pings)
-      const dailyTotalRef = ref(database, `analytics/dailyViews/${todayStr}`);
+      const dailyTotalRef = ref(db, `analytics/dailyViews/${todayStr}`);
       set(dailyTotalRef, increment(1)).catch(() => {});
 
-      const pageViewsRef = ref(database, `analytics/pageViews/${todayStr}/${pathKey}`);
+      const pageViewsRef = ref(db, `analytics/pageViews/${todayStr}/${pathKey}`);
       set(pageViewsRef, increment(1)).catch(() => {});
 
-      const pageTitleRef = ref(database, `analytics/pageTitles/${pathKey}`);
+      const pageTitleRef = ref(db, `analytics/pageTitles/${pathKey}`);
       set(pageTitleRef, pageTitle).catch(() => {});
 
-      const uniqueRef = ref(database, `analytics/uniqueVisitors/${todayStr}/${visitorId}`);
+      const uniqueRef = ref(db, `analytics/uniqueVisitors/${todayStr}/${visitorId}`);
       set(uniqueRef, {
         userName: session?.user?.name || session?.user?.email?.split("@")[0] || "Guest",
         lastPath: pathname,
@@ -111,13 +117,13 @@ export function PresenceTracker() {
         .catch(() => {});
     }
 
-    const userRef = ref(database, `presence/${sessionId}`);
-    const connectedRef = ref(database, ".info/connected");
+    const userRef = ref(db, `presence/${presenceKey}`);
+    const connectedRef = ref(db, ".info/connected");
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     function updatePresence(currentGeo: GeoInfo) {
-      if (!database || !sessionId) return;
-      const userName = session?.user?.name || (session?.user?.email ? session.user.email.split("@")[0] : `Guest #${sessionId.slice(-4)}`);
+      if (!db || !presenceKey) return;
+      const userName = session?.user?.name || (session?.user?.email ? session.user.email.split("@")[0] : `Guest #${visitorId.slice(-4)}`);
       
       const payload = {
         sessionId,
@@ -146,7 +152,7 @@ export function PresenceTracker() {
     });
 
     const handleBeforeUnload = () => {
-      remove(userRef).catch(() => {});
+      // Optional: keep presence if other tabs are still open
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
 

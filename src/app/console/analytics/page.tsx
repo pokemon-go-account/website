@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { database } from "@/lib/firebase";
-import { ref, onValue } from "firebase/database";
+import { database, app } from "@/lib/firebase";
+import { ref, onValue, getDatabase } from "firebase/database";
 import { decodePathKey } from "@/components/presence-tracker";
 import { 
   Users, 
@@ -48,9 +48,10 @@ export default function AnalyticsConsolePage() {
 
   // Subscribe to realtime presence
   useEffect(() => {
-    if (!database) return;
+    const db = database || (app ? getDatabase(app) : null);
+    if (!db) return;
 
-    const presenceRef = ref(database, "presence");
+    const presenceRef = ref(db, "presence");
     const unsubPresence = onValue(presenceRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
@@ -60,12 +61,24 @@ export default function AnalyticsConsolePage() {
       const now = Date.now();
       const list: VisitorPresence[] = Object.values(data);
       const activeList = list.filter((v) => v.lastSeen && now - v.lastSeen < 120000);
-      activeList.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
-      setVisitors(activeList);
+
+      // Deduplicate multi-tab visitors by userId or visitorId
+      const deduplicatedMap = new Map<string, VisitorPresence>();
+      activeList.forEach((v) => {
+        const key = v.userId || v.visitorId || v.sessionId;
+        const existing = deduplicatedMap.get(key);
+        if (!existing || (v.lastSeen || 0) > (existing.lastSeen || 0)) {
+          deduplicatedMap.set(key, v);
+        }
+      });
+
+      const deduplicatedList = Array.from(deduplicatedMap.values());
+      deduplicatedList.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+      setVisitors(deduplicatedList);
     });
 
     // Subscribe to historical analytics data (0 Vercel API pings)
-    const analyticsRef = ref(database, "analytics");
+    const analyticsRef = ref(db, "analytics");
     const unsubAnalytics = onValue(analyticsRef, (snapshot) => {
       setAnalyticsData(snapshot.val() || {});
     });

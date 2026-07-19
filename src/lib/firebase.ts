@@ -13,7 +13,9 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
+  ...(process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
+    ? { databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL }
+    : {}),
 };
 
 const isConfigured = 
@@ -21,7 +23,7 @@ const isConfigured =
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "your-api-key" &&
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY.trim() !== "";
 
-let app: any;
+let app: any = null;
 let auth: any = null;
 let database: Database | null = null;
 
@@ -29,8 +31,10 @@ if (typeof window !== "undefined") {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
-    if (isConfigured) {
-      database = getDatabase(app);
+    if (isConfigured || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+      database = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
+        ? getDatabase(app, process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL)
+        : getDatabase(app);
     }
   } catch (error) {
     console.error("Firebase client initialization failed:", error);
@@ -49,4 +53,3 @@ export {
   appleProvider,
   isConfigured
 };
-
