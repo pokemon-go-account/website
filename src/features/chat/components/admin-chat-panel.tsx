@@ -26,6 +26,7 @@ import {
   Loader2,
   Users,
   X,
+  Check,
   CheckCheck,
   ChevronLeft,
   MessageSquare,
@@ -38,7 +39,8 @@ import {
 import { cn } from "@/lib/utils";
 import { uploadChatImage, deleteChatImages, getFirebaseCustomToken } from "@/features/chat/actions";
 import { signInWithCustomToken } from "firebase/auth";
-import { auth as clientAuth } from "@/lib/firebase";
+import { auth as clientAuth, database } from "@/lib/firebase";
+import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
 
 interface ChatMeta {
   id: string; // doc ID (support-xxxx or order-xxxx)
@@ -65,6 +67,7 @@ interface Message {
   senderName: string;
   timestamp: any;
   image?: string;
+  read?: boolean;
 }
 
 function formatTime(ts: any) {
@@ -119,6 +122,11 @@ export function AdminChatPanel() {
   const [isSending, setIsSending] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [isUserOnline, setIsUserOnline] = useState(false);
+  const adminTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -473,7 +481,15 @@ export function AdminChatPanel() {
       prevMessagesRef.current = msgs;
       setMessages(msgs);
 
-      // Mark as read by admin
+      // Mark unread user messages as read (triggers blue ticks on user screen)
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.sender === "user" && !data.read) {
+          updateDoc(doc(db, "supportChats", activeChatId, "messages", docSnap.id), { read: true }).catch(() => {});
+        }
+      });
+
+      // Reset unreadByAdmin count on room document
       const chatRef = doc(db, "supportChats", activeChatId);
       updateDoc(chatRef, { unreadByAdmin: 0 }).catch(() => {});
     }, (error) => {
@@ -482,6 +498,48 @@ export function AdminChatPanel() {
 
     return unsub;
   }, [activeChatId, isAuthReady, playSound]);
+
+  // 3. Listen for User typing state and User online presence in RTDB
+  useEffect(() => {
+    if (!activeChatId) {
+      setIsUserTyping(false);
+      setIsUserOnline(false);
+      return;
+    }
+
+    const rtdb = database || (clientAuth ? getDatabase(clientAuth.app) : null);
+    if (!rtdb) return;
+
+    const userTypingRef = ref(rtdb, `chatTyping/${activeChatId}/user`);
+    const unsubTyping = onValue(userTypingRef, (snap) => {
+      const val = snap.val();
+      if (val?.isTyping && Date.now() - (val.timestamp || 0) < 3500) {
+        setIsUserTyping(true);
+      } else {
+        setIsUserTyping(false);
+      }
+    });
+
+    const presenceRef = ref(rtdb, "presence");
+    const unsubPresence = onValue(presenceRef, (snap) => {
+      const data = snap.val();
+      if (!data) {
+        setIsUserOnline(false);
+        return;
+      }
+      const now = Date.now();
+      const isOnline = Object.values(data).some((v: any) => {
+        const matchUser = selectedUserId && (v.userId === selectedUserId || v.visitorId === selectedUserId || v.presenceKey?.includes(selectedUserId));
+        return matchUser && v.lastSeen && now - v.lastSeen < 35000;
+      });
+      setIsUserOnline(isOnline);
+    });
+
+    return () => {
+      unsubTyping();
+      unsubPresence();
+    };
+  }, [activeChatId, selectedUserId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -495,6 +553,12 @@ export function AdminChatPanel() {
     if (!text || isSending || !activeChatId) return;
     setIsSending(true);
     setReplyText("");
+
+    if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+    const rtdb = database || (clientAuth ? getDatabase(clientAuth.app) : null);
+    if (rtdb && activeChatId) {
+      remove(ref(rtdb, `chatTyping/${activeChatId}/admin`)).catch(() => {});
+    }
 
     try {
       const db = getDb();
@@ -522,6 +586,30 @@ export function AdminChatPanel() {
     } finally {
       setIsSending(false);
       setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setReplyText(val);
+
+    if (!activeChatId) return;
+    const rtdb = database || (clientAuth ? getDatabase(clientAuth.app) : null);
+    if (!rtdb) return;
+
+    const adminTypingRef = ref(rtdb, `chatTyping/${activeChatId}/admin`);
+
+    if (val.trim().length > 0) {
+      set(adminTypingRef, { isTyping: true, name: adminUsername, timestamp: Date.now() }).catch(() => {});
+      onDisconnect(adminTypingRef).remove().catch(() => {});
+
+      if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+      adminTypingTimeoutRef.current = setTimeout(() => {
+        remove(adminTypingRef).catch(() => {});
+      }, 2500);
+    } else {
+      if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+      remove(adminTypingRef).catch(() => {});
     }
   };
 
@@ -908,9 +996,15 @@ export function AdminChatPanel() {
                     );
                   })()}
                 </div>
-                <p className="text-[8px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mt-0.5 leading-none">
-                  {selectedUser?.username} · {selectedUser?.email}
-                </p>
+                {isUserTyping ? (
+                  <p className="text-[10px] text-emerald-500 dark:text-emerald-400 font-extrabold animate-pulse leading-none mt-0.5">
+                    {selectedUser?.username || "User"} is typing...
+                  </p>
+                ) : (
+                  <p className="text-[8px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mt-0.5 leading-none">
+                    {selectedUser?.username} · {selectedUser?.email}
+                  </p>
+                )}
               </div>
 
               <div className="ml-auto flex items-center gap-2 shrink-0">
@@ -991,17 +1085,36 @@ export function AdminChatPanel() {
                       )}
                       {displayMsg && <p className="whitespace-pre-wrap">{displayMsg}</p>}
                     </div>
-                    <div className="flex items-center gap-1 px-1">
+                    <div className="flex items-center gap-1 px-1 select-none">
                       <span className="text-[9px] text-zinc-400">
                         {isSystem ? "System" : msg.sender === "user" ? (selectedUser?.username || "User") : "You"} · {formatMessageTime(msg.timestamp)}
                       </span>
                       {msg.sender === "admin" && !isSystem && (
-                        <CheckCheck className="h-3 w-3 text-[#6133e1] dark:text-purple-400" />
+                        <span className="inline-flex items-center ml-0.5">
+                          {msg.read ? (
+                            <span title="Read"><CheckCheck className="h-3.5 w-3.5 text-[#34B7F1] dark:text-[#53bdeb] stroke-[2.5]" /></span>
+                          ) : isUserOnline ? (
+                            <span title="Delivered"><CheckCheck className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
+                          ) : (
+                            <span title="Sent"><Check className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
+                          )}
+                        </span>
                       )}
                     </div>
                   </div>
                 );
               })}
+
+              {isUserTyping && (
+                <div className="flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl rounded-tl-sm text-xs font-semibold text-zinc-600 dark:text-zinc-300 shadow-xs w-max animate-in fade-in zoom-in-95 duration-150">
+                  <span className="text-zinc-500 font-medium">{selectedUser?.username || "User"} is typing</span>
+                  <span className="flex items-center gap-0.5 ml-0.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Reply Input */}
@@ -1075,7 +1188,7 @@ export function AdminChatPanel() {
                       id="admin-chat-reply-input"
                       type="text"
                       value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
+                      onChange={handleInputChange}
                       onKeyDown={handleKeyDown}
                       placeholder={`Reply to ${selectedUser?.username || "user"}…`}
                       disabled={isSending || isUploadingImage}

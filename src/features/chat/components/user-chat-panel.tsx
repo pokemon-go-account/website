@@ -28,11 +28,14 @@ import {
   X,
   ExternalLink,
   Image as ImageIcon,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadChatImage, getFirebaseCustomToken } from "@/features/chat/actions";
 import { signInWithCustomToken } from "firebase/auth";
-import { auth as clientAuth } from "@/lib/firebase";
+import { auth as clientAuth, database, app as clientApp } from "@/lib/firebase";
+import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
 
 interface ChatMeta {
   id: string;
@@ -59,6 +62,7 @@ interface Message {
   senderName: string;
   timestamp: any;
   image?: string;
+  read?: boolean;
 }
 
 interface UserChatPanelProps {
@@ -87,6 +91,10 @@ export function UserChatPanel({
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+
+  const [isAdminTyping, setIsAdminTyping] = useState(false);
+  const [isAdminOnline, setIsAdminOnline] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -283,7 +291,7 @@ export function UserChatPanel({
     return unsub;
   }, [userId, isAuthReady]);
 
-  // 2. Listen for messages in the active conversation
+  // 2. Listen for messages in the active conversation & mark admin messages as read
   useEffect(() => {
     if (!activeChatId || !isAuthReady) {
       setMessages([]);
@@ -309,7 +317,15 @@ export function UserChatPanel({
       prevMessagesRef.current = newMessages;
       setMessages(newMessages);
 
-      // Mark as read by user
+      // Mark unread admin messages as read (triggers blue ticks on admin screen)
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.sender === "admin" && !data.read) {
+          updateDoc(doc(db, "supportChats", activeChatId, "messages", docSnap.id), { read: true }).catch(() => {});
+        }
+      });
+
+      // Reset unreadByUser count on room document
       const chatRef = doc(db, "supportChats", activeChatId);
       updateDoc(chatRef, { unreadByUser: 0 }).catch(() => {});
     }, (error) => {
@@ -318,6 +334,48 @@ export function UserChatPanel({
 
     return unsub;
   }, [activeChatId, isAuthReady, playSound]);
+
+  // 3. Listen for Admin typing state and Admin online presence in RTDB
+  useEffect(() => {
+    if (!activeChatId) {
+      setIsAdminTyping(false);
+      setIsAdminOnline(false);
+      return;
+    }
+
+    const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
+    if (!rtdb) return;
+
+    const adminTypingRef = ref(rtdb, `chatTyping/${activeChatId}/admin`);
+    const unsubTyping = onValue(adminTypingRef, (snap) => {
+      const val = snap.val();
+      if (val?.isTyping && Date.now() - (val.timestamp || 0) < 3500) {
+        setIsAdminTyping(true);
+      } else {
+        setIsAdminTyping(false);
+      }
+    });
+
+    const presenceRef = ref(rtdb, "presence");
+    const unsubPresence = onValue(presenceRef, (snap) => {
+      const data = snap.val();
+      if (!data) {
+        setIsAdminOnline(false);
+        return;
+      }
+      const now = Date.now();
+      const isAnyAdminOnline = Object.values(data).some((v: any) => {
+        const isSuperAdmin = v.userId && (v.presenceKey?.startsWith("u_") || v.userId);
+        return isSuperAdmin && v.lastSeen && now - v.lastSeen < 35000;
+      });
+      setIsAdminOnline(isAnyAdminOnline);
+    });
+
+    return () => {
+      unsubTyping();
+      unsubPresence();
+    };
+  }, [activeChatId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -401,6 +459,12 @@ export function UserChatPanel({
     setIsSending(true);
     setInputText("");
 
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
+    if (rtdb && activeChatId) {
+      remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
+    }
+
     try {
       const db = getDb();
       const chatRef = doc(db, "supportChats", activeChatId);
@@ -427,6 +491,30 @@ export function UserChatPanel({
     } finally {
       setIsSending(false);
       setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputText(val);
+
+    if (!activeChatId) return;
+    const rtdb = database || (clientApp ? getDatabase(clientApp) : null);
+    if (!rtdb) return;
+
+    const userTypingRef = ref(rtdb, `chatTyping/${activeChatId}/user`);
+
+    if (val.trim().length > 0) {
+      set(userTypingRef, { isTyping: true, name: username, timestamp: Date.now() }).catch(() => {});
+      onDisconnect(userTypingRef).remove().catch(() => {});
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        remove(userTypingRef).catch(() => {});
+      }, 2500);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      remove(userTypingRef).catch(() => {});
     }
   };
 
@@ -635,9 +723,15 @@ export function UserChatPanel({
                 )}
                 {activeChat?.title || "Live Chat"}
               </h3>
-              <p className="text-[8px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mt-0.5 leading-none">
-                {activeChat?.type === "order" ? "Order Coordination" : "Support Ticket"}
-              </p>
+              {isAdminTyping ? (
+                <p className="text-[10px] text-emerald-500 font-extrabold animate-pulse leading-none mt-0.5">
+                  Support Team is typing...
+                </p>
+              ) : (
+                <p className="text-[8px] text-zinc-450 dark:text-zinc-500 font-bold uppercase tracking-wider mt-0.5 leading-none">
+                  {activeChat?.type === "order" ? "Order Coordination" : "Support Ticket"}
+                </p>
+              )}
             </div>
           </div>
 
@@ -713,13 +807,34 @@ export function UserChatPanel({
                   )}
                   {displayMsg && <p className="whitespace-pre-wrap">{displayMsg}</p>}
                 </div>
-                <span className="text-[9px] text-zinc-400 px-1 font-medium leading-none">
-                  {!isSystem && msg.sender === "admin" ? "Support Team · " : ""}
-                  {formatTime(msg.timestamp)}
-                </span>
+                <div className="flex items-center gap-1 text-[9px] text-zinc-400 px-1 font-medium leading-none">
+                  <span>{!isSystem && msg.sender === "admin" ? "Support Team · " : ""}{formatTime(msg.timestamp)}</span>
+                  {!isSystem && msg.sender === "user" && (
+                    <span className="inline-flex items-center select-none">
+                      {msg.read ? (
+                        <span title="Read"><CheckCheck className="h-3.5 w-3.5 text-[#34B7F1] dark:text-[#53bdeb] stroke-[2.5]" /></span>
+                      ) : isAdminOnline ? (
+                        <span title="Delivered"><CheckCheck className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
+                      ) : (
+                        <span title="Sent"><Check className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 stroke-[2]" /></span>
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
+
+          {isAdminTyping && (
+            <div className="flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl rounded-bl-sm text-xs font-semibold text-zinc-600 dark:text-zinc-300 shadow-xs w-max animate-in fade-in zoom-in-95 duration-150">
+              <span className="text-zinc-500 font-medium">Support Team is typing</span>
+              <span className="flex items-center gap-0.5 ml-0.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Input */}
@@ -754,7 +869,7 @@ export function UserChatPanel({
                 ref={inputRef}
                 type="text"
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message…"
                 disabled={isSending || isUploadingImage}
