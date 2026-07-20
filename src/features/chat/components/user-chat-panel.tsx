@@ -185,21 +185,49 @@ export function UserChatPanel({
       alert("Please upload a valid image file.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be less than 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image must be less than 10MB.");
       return;
     }
 
     setIsUploadingImage(true);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => resolve(reader.result as string);
+      // Client-side image compression to max 1200px / 75% quality JPEG
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1200;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              resolve(event.target?.result as string);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.75));
+          };
+          img.onerror = () => resolve(event.target?.result as string);
+          img.src = event.target?.result as string;
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
 
-      const base64Data = await base64Promise;
       const res = await uploadChatImage(base64Data);
       if (!res.success || !res.url) {
         alert(res.error || "Failed to upload image.");
@@ -214,7 +242,7 @@ export function UserChatPanel({
 
       await addDoc(msgsRef, {
         image: imageUrl,
-        text: inputText.trim() || undefined,
+        text: inputText.trim() || "",
         sender: "user",
         senderName: username,
         timestamp: serverTimestamp(),

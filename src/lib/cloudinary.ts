@@ -27,16 +27,16 @@ if (isConfigured) {
  */
 export async function uploadToCloudinary(fileData: string): Promise<string> {
   if (!isConfigured) {
-    console.warn("Cloudinary is not configured. Simulating asset upload.");
-    
-    // Fallback to high-quality unsplash images to make listing look stunning
+    console.warn("Cloudinary is not configured. Returning image data URL fallback.");
+    if (fileData.startsWith("data:image/")) {
+      return fileData;
+    }
     const mockImages = [
-      "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80", // Anime purple character
-      "https://images.unsplash.com/photo-1613771404724-11d595413b6b?w=800&auto=format&fit=crop&q=80", // Pikachu figure
-      "https://images.unsplash.com/photo-1608889175123-8ec330b86f84?w=800&auto=format&fit=crop&q=80", // Pokemon style card
+      "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1613771404724-11d595413b6b?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1608889175123-8ec330b86f84?w=800&auto=format&fit=crop&q=80",
     ];
-    const index = Math.floor(Math.random() * mockImages.length);
-    return mockImages[index];
+    return mockImages[Math.floor(Math.random() * mockImages.length)];
   }
 
   try {
@@ -46,8 +46,11 @@ export async function uploadToCloudinary(fileData: string): Promise<string> {
     });
     return uploadResult.secure_url;
   } catch (error) {
-    console.error("Cloudinary upload failed:", error);
-    throw new Error("Failed to upload image asset to Cloudinary.");
+    console.error("Cloudinary upload failed, falling back to data URL:", error);
+    if (fileData.startsWith("data:image/")) {
+      return fileData;
+    }
+    throw new Error("Failed to upload image asset.");
   }
 }
 
