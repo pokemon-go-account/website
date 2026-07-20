@@ -24,6 +24,7 @@ import {
   DollarSign,
   Coins,
   BarChart3,
+  TrendingUp,
   Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ const navGroups = [
     label: "Platform",
     items: [
       { href: "/console", label: "Overview", icon: LayoutDashboard },
+      { href: "/console/revenue", label: "Revenue & Analytics", icon: TrendingUp },
       { href: "/console/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/console/users", label: "Users", icon: Users },
     ],
