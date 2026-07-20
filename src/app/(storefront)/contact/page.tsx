@@ -29,12 +29,6 @@ const TelegramIcon = () => (
   </svg>
 );
 
-const RedditIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-    <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10s10-4.48 10-10c0-5.52-4.48-10-10-10zm4.5 9c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-9 0c.83 0 1.5-.67 1.5-1.5S8.33 7.5 7.5 7.5 6 8.17 6 9s.67 1.5 1.5 1.5zm4.5 4.5c-1.84 0-3.4-.98-4.22-2.42-.1-.17-.07-.38.07-.5.15-.12.37-.1.5.07.72 1.25 2.02 2.05 3.65 2.05s2.93-.8 3.65-2.05c.13-.17.35-.2.5-.07.14.12.17.33.07.5-.82 1.44-2.38 2.42-4.22 2.42z" />
-  </svg>
-);
-
 const InstagramIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
     <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
@@ -90,14 +84,6 @@ const SOCIALS = [
     icon: TelegramIcon,
     color: "text-[#24A1DE]",
     bg: "bg-[#24A1DE]/10 border-[#24A1DE]/20 hover:bg-[#24A1DE]/15",
-  },
-  {
-    name: "Reddit",
-    handle: "/u/PokemonGo-Services",
-    href: "https://www.reddit.com/user/PokemonGo-Services/",
-    icon: RedditIcon,
-    color: "text-[#FF4500]",
-    bg: "bg-[#FF4500]/10 border-[#FF4500]/20 hover:bg-[#FF4500]/15",
   },
   {
     name: "Instagram",
