@@ -58,12 +58,21 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
     const discount = hasCredit ? Math.min(totalPrice, walletBalance) : 0;
     const finalPrice = Math.max(0, totalPrice - discount);
 
-    const formattedItems = items.map((item) => ({
-      productId: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    }));
+    const hasRecovery = items.some((item) => item.type === "RECOVERY" || item.recoveryRequestId);
+    const orderType = hasRecovery ? "RECOVERY" : "STOREFRONT";
+
+    const formattedItems = items.map((item) => {
+      const isValidObjectId = typeof item.id === "string" && /^[0-9a-fA-F]{24}$/.test(item.id);
+      const recoveryObjectId = typeof item.recoveryRequestId === "string" && /^[0-9a-fA-F]{24}$/.test(item.recoveryRequestId);
+      const productId = isValidObjectId ? item.id : (recoveryObjectId ? item.recoveryRequestId : undefined);
+
+      return {
+        productId,
+        name: item.name,
+        price: item.price ?? 0,
+        quantity: item.quantity ?? 1,
+      };
+    });
 
     const isCompleted = finalPrice === 0;
 
@@ -73,13 +82,23 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
       totalPrice: finalPrice,
       walletDiscountApplied: discount,
       status: isCompleted ? "COMPLETED" : "PENDING",
-      orderType: "STOREFRONT",
+      orderType,
     });
 
     if (discount > 0) {
       await User.findByIdAndUpdate(session.user.id, {
         $inc: { walletBalance: -discount }
       });
+    }
+
+    // Mark any recovery items in cart as paid (IN_PROGRESS)
+    const RecoveryRequest = (await import("@/models/RecoveryRequest")).default;
+    for (const item of items) {
+      if (item.recoveryRequestId) {
+        await RecoveryRequest.findByIdAndUpdate(item.recoveryRequestId, {
+          status: "IN_PROGRESS",
+        });
+      }
     }
 
     return { success: true, orderId: order._id.toString(), autoCompleted: isCompleted };

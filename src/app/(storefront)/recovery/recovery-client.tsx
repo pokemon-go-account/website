@@ -8,8 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ShieldCheck, Activity, RefreshCw, KeyRound, ArrowRight, Star, HeartHandshake, Upload, X, ChevronDown, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getUserCountry } from "@/lib/utils";
+import { useCartStore } from "@/store/useCartStore";
 import { PriceDisplay } from "@/components/price-display";
+import { useSession } from "next-auth/react";
+import { getDb } from "@/lib/firestore";
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 // Custom Inline Platform SVG Icons for Visual Fidelity
 const TelegramIcon = () => (
@@ -144,17 +148,99 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle successful form submission
+  const { data: session } = useSession();
+  const { addItem: addCartItem, setIsOpen: setCartOpen } = useCartStore();
+
+  // Handle successful form submission & create chat thread
   useEffect(() => {
-    if (state.success) {
+    if (state.success && state.request) {
+      const req = state.request;
+      const chatId = `recovery-${req._id}`;
+
+      try {
+        const db = getDb();
+        const chatRef = doc(db, "supportChats", chatId);
+
+        const userId = (session?.user as any)?.id || "N/A";
+        const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+        const userEmail = session?.user?.email || "N/A";
+        const country = getUserCountry(session?.user);
+
+        const userMsgText = `🔑 NEW RECOVERY REQUEST PLACED
+----------------------------------
+Request ID: ${req._id}
+Trainer Name: ${req.trainerName || "Not Provided"}
+Account Level: ${req.accountLevel}
+Creation Method: ${req.creationMethod ? req.creationMethod.toUpperCase() : "N/A"}
+Start Date: ${req.startDate ? new Date(req.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A"}
+Contact Method: ${req.contactMethod} (${req.contactId})
+Alternate Contact: ${req.alternateContact || "None"}
+Email Access: ${req.hasEmailAccess ? "Yes ✓" : "No ✗"}
+Screenshots: ${req.screenshotUrls?.length || 1} attached
+Status: Price Pending (Awaiting Super Admin Quote)
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${userEmail}
+User ID: ${userId}
+🌍 Country: ${country}
+
+Our recovery team will review your account details and quote a price shortly!`;
+
+        setDoc(chatRef, {
+          userId,
+          username,
+          email: userEmail,
+          type: "recovery",
+          orderId: req._id,
+          title: `Recovery #${req._id.substring(0, 8).toUpperCase()}`,
+          lastMessage: `Recovery request placed. Price Pending.`,
+          lastMessageAt: serverTimestamp(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+
+        const msgsRef = collection(db, "supportChats", chatId, "messages");
+        addDoc(msgsRef, {
+          text: userMsgText,
+          sender: "user",
+          senderName: username,
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        addDoc(msgsRef, {
+          text: `System: Thank you for submitting your account recovery request! Super Admin has been notified and will review your details to quote a price in Console soon. You will receive an automated notification message here as soon as the price is set.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+      } catch (chatErr) {
+        console.error("Failed to create recovery support chat:", chatErr);
+      }
+
+      addCartItem({
+        id: `recovery_${req._id}`,
+        name: `Account Recovery (Level ${req.accountLevel})`,
+        price: null,
+        imageUrl: req.screenshotUrl || "/recovery-service.png",
+        type: "RECOVERY",
+        recoveryRequestId: req._id,
+        pricePending: true,
+      });
+
       setTimeout(() => {
         setDrawerOpen(false);
+        setCartOpen(true);
         // Reset local states
         setScreenshots([]);
         setEmailCheck("");
-      }, 2500);
+      }, 1800);
     }
-  }, [state.success]);
+  }, [state.success, state.request, session, addCartItem, setCartOpen]);
 
   const handleBuyClick = () => {
     if (!isLoggedIn) {
@@ -360,6 +446,18 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
                         {state.error}
                       </div>
                     )}
+
+                    {/* Trainer Name */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="trainerName" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Trainer Name</Label>
+                      <Input
+                        id="trainerName"
+                        name="trainerName"
+                        type="text"
+                        placeholder="Trainer name here (Can be Old Trainer name)"
+                        className="bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-white/[0.08] text-xs h-8 px-3 rounded-md"
+                      />
+                    </div>
 
                     {/* Account Level */}
                     <div className="space-y-1.5">

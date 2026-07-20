@@ -39,9 +39,10 @@ export async function submitFeedback(prevState: any, formData: FormData) {
       return { success: false, error: "Please complete your profile onboarding before submitting feedback." };
     }
 
-    // Verify user has purchased something (either a completed order or won a completed auction)
+    // Verify user has purchased something (either a completed order, won a completed auction, or completed recovery)
     const Order = (await import("@/models/Order")).default;
     const Auction = (await import("@/models/Auction")).default;
+    const RecoveryRequest = (await import("@/models/RecoveryRequest")).default;
 
     const completedOrdersCount = await Order.countDocuments({
       userId: session.user.id,
@@ -51,11 +52,15 @@ export async function submitFeedback(prevState: any, formData: FormData) {
       highestBidderId: session.user.id,
       status: "COMPLETED",
     });
+    const completedRecoveryCount = await RecoveryRequest.countDocuments({
+      userId: session.user.id,
+      status: "COMPLETED",
+    });
 
-    if (completedOrdersCount === 0 && completedAuctionsCount === 0) {
+    if (completedOrdersCount === 0 && completedAuctionsCount === 0 && completedRecoveryCount === 0) {
       return {
         success: false,
-        error: "Only Trainers who have completed a direct storefront purchase or won a live auction are eligible to leave feedback.",
+        error: "Only Trainers who have completed a purchase, won an auction, or completed a recovery service are eligible to leave feedback.",
       };
     }
 
@@ -113,14 +118,16 @@ export async function submitOrderFeedback(orderId: string, rating: number, comme
 
     await connectDB();
 
-    // Verify user has this order and it's COMPLETED (or won auction that's completed)
+    // Verify user has this order and it's COMPLETED (or won auction / completed recovery)
     const Order = (await import("@/models/Order")).default;
     const Auction = (await import("@/models/Auction")).default;
+    const RecoveryRequest = (await import("@/models/RecoveryRequest")).default;
 
     const order = await Order.findOne({ _id: orderId, userId: session.user.id });
     const auction = await Auction.findOne({ _id: orderId, highestBidderId: session.user.id, status: "COMPLETED" });
+    const recovery = await RecoveryRequest.findOne({ _id: orderId, userId: session.user.id, status: "COMPLETED" });
 
-    if (!order && !auction) {
+    if (!order && !auction && !recovery) {
       return { success: false, error: "Invalid purchase or order not found." };
     }
 

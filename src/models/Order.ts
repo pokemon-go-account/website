@@ -11,7 +11,7 @@ export interface IOrder extends Document {
   totalPrice: number;
   walletDiscountApplied?: number;
   status: "PENDING" | "COMPLETED" | "FAILED";
-  orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION";
+  orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION" | "RECOVERY";
   auctionId?: mongoose.Types.ObjectId;
   deliveryStatus?: "PENDING" | "PAYMENT_RECEIVED" | "DELIVERED";
   createdAt: Date;
@@ -39,7 +39,7 @@ const OrderSchema = new Schema<IOrder>(
     },
     orderType: {
       type: String,
-      enum: ["STOREFRONT", "BUY_NOW", "AUCTION"],
+      enum: ["STOREFRONT", "BUY_NOW", "AUCTION", "RECOVERY"],
       required: true,
     },
     auctionId: { type: Schema.Types.ObjectId, ref: "Auction" },
@@ -54,7 +54,10 @@ const OrderSchema = new Schema<IOrder>(
 
 OrderSchema.index({ userId: 1, status: 1 });
 
-const Order: Model<IOrder> =
-  mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
+if (mongoose.models.Order) {
+  delete (mongoose.models as any).Order;
+}
+
+const Order: Model<IOrder> = mongoose.model<IOrder>("Order", OrderSchema);
 
 export default Order;

@@ -5,7 +5,8 @@ import Order from "@/models/Order";
 import Auction from "@/models/Auction";
 import Listing from "@/models/Listing";
 import Feedback from "@/models/Feedback";
-import { ShoppingBag, Trophy, ArrowRight, ShieldCheck, Clock, XCircle, ExternalLink } from "lucide-react";
+import RecoveryRequest from "@/models/RecoveryRequest";
+import { ShoppingBag, Trophy, ArrowRight, ShieldCheck, Clock, XCircle, ExternalLink, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { PriceDisplay } from "@/components/price-display";
 import { OrderReviewSection } from "./order-review-section";
@@ -32,6 +33,10 @@ export default async function UserOrdersPage() {
   })
     .populate("listingId", "title stardust team shinyCount")
     .sort({ endTime: -1 })
+    .lean();
+
+  const recoveryDocs = await RecoveryRequest.find({ userId: session.user.id })
+    .sort({ createdAt: -1 })
     .lean();
 
   const reviewsDocs = await Feedback.find({ userId: session.user.id }).lean();
@@ -67,12 +72,30 @@ export default async function UserOrdersPage() {
       isPlaceholder: true,
     }));
 
-  const allPurchases = [...directOrders, ...wonAuctions].sort(
+  const recoveryOrders = recoveryDocs.map((r: any) => ({
+    id: r._id.toString(),
+    orderType: "RECOVERY" as const,
+    date: r.createdAt,
+    price: r.price !== null && r.price !== undefined && r.price > 0 ? r.price : null,
+    status: r.status,
+    priceStatus: r.priceStatus || (r.price ? "QUOTED" : "QUOTE_PENDING"),
+    items: [
+      `Account Recovery (Level ${r.accountLevel})` + (r.trainerName ? ` - Trainer: ${r.trainerName}` : ""),
+      `Creation Method: ${r.creationMethod.toUpperCase()} · Contact: ${r.contactMethod} (${r.contactId})`
+    ],
+    link: null,
+    walletDiscountApplied: 0,
+    deliveryStatus: null,
+    auctionId: null,
+    isPlaceholder: false,
+  }));
+
+  const allPurchases = [...directOrders, ...wonAuctions, ...recoveryOrders].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   const completedCount = allPurchases.filter((p) => p.status === "COMPLETED").length;
-  const pendingCount = allPurchases.filter((p) => p.status === "PENDING").length;
+  const pendingCount = allPurchases.filter((p) => p.status === "PENDING" || (p as any).priceStatus === "QUOTE_PENDING").length;
 
   return (
     <div className="min-h-screen">
@@ -149,25 +172,38 @@ export default async function UserOrdersPage() {
                 AUCTION: { label: "Auction Win", className: "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400" },
                 BUY_NOW: { label: "Buy Now", className: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" },
                 STOREFRONT: { label: "Store", className: "bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400" },
+                RECOVERY: { label: "Account Recovery", className: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400" },
               } as Record<string, { label: string; className: string }>)[purchase.orderType]) ?? { label: purchase.orderType, className: "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400" };
 
-              const statusConfig = (({
-                COMPLETED: {
-                  label: "Completed",
-                  icon: ShieldCheck,
-                  className: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400",
-                },
-                PENDING: {
-                  label: "Pending",
-                  icon: Clock,
-                  className: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
-                },
-                FAILED: {
-                  label: "Failed",
-                  icon: XCircle,
-                  className: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
-                },
-              } as Record<string, { label: string; icon: any; className: string }>)[purchase.status]) ?? { label: purchase.status, icon: Clock, className: "bg-zinc-100 dark:bg-white/[0.04] text-zinc-500" };
+              const isRecovery = purchase.orderType === "RECOVERY";
+              const isPricePending = isRecovery && (purchase.price === null || (purchase as any).priceStatus === "QUOTE_PENDING");
+
+              const statusConfig = isPricePending
+                ? { label: "Price Pending", icon: Clock, className: "bg-amber-500/10 text-amber-500 border border-amber-500/20" }
+                : isRecovery && purchase.status === "PENDING" && purchase.price !== null
+                ? { label: "Quoted - Awaiting Payment", icon: Clock, className: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" }
+                : (({
+                    COMPLETED: {
+                      label: "Completed",
+                      icon: ShieldCheck,
+                      className: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400",
+                    },
+                    PENDING: {
+                      label: "Pending",
+                      icon: Clock,
+                      className: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                    },
+                    IN_PROGRESS: {
+                      label: "In Progress",
+                      icon: Clock,
+                      className: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
+                    },
+                    FAILED: {
+                      label: "Failed",
+                      icon: XCircle,
+                      className: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
+                    },
+                  } as Record<string, { label: string; icon: any; className: string }>)[purchase.status]) ?? { label: purchase.status, icon: Clock, className: "bg-zinc-100 dark:bg-white/[0.04] text-zinc-500" };
 
               const StatusIcon = statusConfig.icon;
 
@@ -187,6 +223,7 @@ export default async function UserOrdersPage() {
                       {/* Type badge */}
                       <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md ${typeConfig.className}`}>
                         {purchase.orderType === "AUCTION" && <Trophy className="h-3 w-3 mr-1" />}
+                        {purchase.orderType === "RECOVERY" && <KeyRound className="h-3 w-3 mr-1 text-amber-500" />}
                         {typeConfig.label}
                       </span>
                       {/* Status badge */}
@@ -200,7 +237,7 @@ export default async function UserOrdersPage() {
 
                     {/* Right: Price + Cancel + Resend */}
                     <div className="flex items-center gap-2 shrink-0">
-                      {purchase.status === "PENDING" && (
+                      {purchase.status === "PENDING" && !isRecovery && (
                         <>
                           <ResendMessageButton
                             orderId={purchase.id}
@@ -225,9 +262,15 @@ export default async function UserOrdersPage() {
                       )}
                       <div className="text-right">
                         <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-none mb-0.5">Total</p>
-                        <p className="text-sm font-semibold text-zinc-900 dark:text-white">
-                          <PriceDisplay amountInUSD={purchase.price} />
-                        </p>
+                        {purchase.price !== null && purchase.price !== undefined ? (
+                          <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                            <PriceDisplay amountInUSD={purchase.price} />
+                          </p>
+                        ) : (
+                          <span className="text-xs font-bold text-amber-500">
+                            Price Pending
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -239,6 +282,24 @@ export default async function UserOrdersPage() {
                         {item}
                       </p>
                     ))}
+
+                    {isRecovery && (
+                      <div className="mt-2 p-3 rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] text-xs flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-zinc-600 dark:text-zinc-400 font-medium">
+                          {purchase.price !== null
+                            ? "✓ Super Admin has quoted the price for your recovery. You can complete your purchase in your cart."
+                            : "⏳ Your recovery request is currently under review by Super Admin. The price will be set in Console soon."}
+                        </span>
+                        {purchase.price !== null && (
+                          <Link
+                            href="/store"
+                            className="inline-flex items-center gap-1 h-7 px-3 rounded bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold transition-colors"
+                          >
+                            Open Cart & Pay →
+                          </Link>
+                        )}
+                      </div>
+                    )}
 
                     {purchase.orderType === "AUCTION" && purchase.status === "COMPLETED" && (
                       <div className="mt-2 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-450 text-xs font-semibold">

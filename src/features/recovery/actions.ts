@@ -8,6 +8,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 const RecoveryRequestSchema = z.object({
+  trainerName: z.string().optional(),
   accountLevel: z.number().min(1, "Level must be at least 1").max(100, "Level cannot exceed 100"),
   startDate: z.string().min(1, "Start Date is required"),
   creationMethod: z.string().min(1, "Account creation method is required"),
@@ -26,6 +27,7 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
       return { success: false, error: "Unauthorized. Please sign in to submit a request." };
     }
 
+    const trainerName = (formData.get("trainerName") as string) || "";
     const accountLevel = Number(formData.get("accountLevel"));
     const startDate = formData.get("startDate") as string;
     const creationMethod = formData.get("creationMethod") as string;
@@ -56,6 +58,7 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
     }
 
     const validated = RecoveryRequestSchema.safeParse({
+      trainerName,
       accountLevel,
       startDate,
       creationMethod,
@@ -81,6 +84,7 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
     // Save to Database
     const request = await RecoveryRequest.create({
       userId: session.user.id,
+      trainerName: validated.data.trainerName || undefined,
       accountLevel: validated.data.accountLevel,
       screenshotUrl: screenshotUrls[0] || "",
       screenshotUrls,
@@ -91,6 +95,8 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
       alternateContact: validated.data.alternateContact || undefined,
       hasEmailAccess: validated.data.hasEmailAccess,
       status: "PENDING",
+      price: null,
+      priceStatus: "QUOTE_PENDING",
     });
 
     revalidatePath("/console/recovery");
@@ -123,6 +129,63 @@ export async function getRecoveryRequests() {
   }
 }
 
+export async function getUserRecoveryRequests() {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, requests: [], error: "Unauthorized." };
+    }
+
+    await connectDB();
+
+    const requests = await RecoveryRequest.find({
+      userId: session.user.id,
+      status: { $in: ["PENDING", "IN_PROGRESS"] },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return { success: true, requests: JSON.parse(JSON.stringify(requests)), error: null };
+  } catch (error: any) {
+    console.error("Failed to fetch user recovery requests:", error);
+    return { success: false, requests: [], error: error.message || "Failed to fetch recovery requests." };
+  }
+}
+
+export async function updateRecoveryRequestPrice(requestId: string, price: number) {
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+      return { success: false, error: "Unauthorized. Super Admin access required." };
+    }
+
+    if (typeof price !== "number" || price < 0 || isNaN(price)) {
+      return { success: false, error: "Please enter a valid non-negative price." };
+    }
+
+    await connectDB();
+
+    const updated = await RecoveryRequest.findByIdAndUpdate(
+      requestId,
+      {
+        price,
+        priceStatus: "QUOTED",
+      },
+      { returnDocument: "after" }
+    );
+
+    if (!updated) {
+      return { success: false, error: "Recovery request not found." };
+    }
+
+    revalidatePath("/console/recovery");
+    return { success: true, error: null, request: JSON.parse(JSON.stringify(updated)) };
+  } catch (error: any) {
+    console.error("Failed to update price:", error);
+    return { success: false, error: error.message || "Failed to update recovery request price." };
+  }
+}
+
 export async function updateRecoveryRequestStatus(requestId: string, status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED") {
   try {
     const session = await auth();
@@ -147,6 +210,32 @@ export async function updateRecoveryRequestStatus(requestId: string, status: "PE
   } catch (error: any) {
     console.error("Failed to update status:", error);
     return { success: false, error: error.message || "Failed to update recovery request status." };
+  }
+}
+
+export async function markRecoveryAsPaid(requestId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized." };
+    }
+
+    await connectDB();
+
+    const request = await RecoveryRequest.findOne({ _id: requestId, userId: session.user.id });
+    if (!request) {
+      return { success: false, error: "Recovery request not found." };
+    }
+
+    request.status = "IN_PROGRESS";
+    await request.save();
+
+    revalidatePath("/orders");
+    revalidatePath("/console/recovery");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to mark recovery request as paid:", error);
+    return { success: false, error: error.message || "Failed to mark recovery request as paid." };
   }
 }
 

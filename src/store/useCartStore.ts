@@ -4,9 +4,12 @@ import { persist } from "zustand/middleware";
 export interface CartItem {
   id: string;
   name: string;
-  price: number;
+  price: number | null;
   imageUrl: string;
   quantity: number;
+  type?: "PRODUCT" | "RECOVERY";
+  recoveryRequestId?: string;
+  pricePending?: boolean;
 }
 
 interface CartState {
@@ -17,6 +20,7 @@ interface CartState {
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  syncRecoveryItems: (recoveryRequests: any[]) => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
 }
@@ -42,7 +46,7 @@ export const useCartStore = create<CartState>()(
             ),
           });
         } else {
-          console.log(`[CartStore] 🛍️ Added New Item to Cart -> "${newItem.name}" (Price: $${newItem.price})`);
+          console.log(`[CartStore] 🛍️ Added New Item to Cart -> "${newItem.name}" (Price: ${newItem.price !== null ? "$" + newItem.price : "Pending"})`);
           set({ items: [...currentItems, { ...newItem, quantity: 1 }] });
         }
       },
@@ -69,8 +73,33 @@ export const useCartStore = create<CartState>()(
         console.log("[CartStore] 🧹 Cleared All Items from Cart");
         set({ items: [] });
       },
+      syncRecoveryItems: (recoveryRequests: any[]) => {
+        const currentItems = get().items;
+        const productItems = currentItems.filter((i) => i.type !== "RECOVERY" && !i.recoveryRequestId);
+
+        const recoveryItems: CartItem[] = recoveryRequests.map((req) => {
+          const isQuoted = req.price !== null && req.price !== undefined && req.price > 0;
+          return {
+            id: `recovery_${req._id}`,
+            name: `Account Recovery (Level ${req.accountLevel})`,
+            price: isQuoted ? Number(req.price) : null,
+            imageUrl: req.screenshotUrl || "/recovery-service.png",
+            quantity: 1,
+            type: "RECOVERY",
+            recoveryRequestId: req._id,
+            pricePending: !isQuoted,
+          };
+        });
+
+        set({ items: [...productItems, ...recoveryItems] });
+      },
       getTotalPrice: () =>
-        get().items.reduce((total, item) => total + item.price * item.quantity, 0),
+        get().items.reduce((total, item) => {
+          if (item.pricePending || item.price === null || item.price === undefined) {
+            return total;
+          }
+          return total + item.price * item.quantity;
+        }, 0),
       getTotalItems: () =>
         get().items.reduce((total, item) => total + item.quantity, 0),
     }),

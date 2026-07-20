@@ -14,11 +14,12 @@ export function handleTelegramCheckout(items: CartItem[], totalPrice: number) {
   message += `I would like to purchase the following services/items:\n\n`;
 
   items.forEach((item, index) => {
-    const subtotal = item.price * item.quantity;
+    const itemPrice = item.price || 0;
+    const subtotal = itemPrice * item.quantity;
     message += `${index + 1}️⃣ *${item.name}*\n`;
     message += `   Quantity: ${item.quantity}\n`;
-    message += `   Price: $${item.price.toLocaleString()}\n`;
-    message += `   Subtotal: $${subtotal.toLocaleString()}\n\n`;
+    message += `   Price: ${item.price !== null && item.price !== undefined ? `$${item.price.toLocaleString()}` : "Price Pending"}\n`;
+    message += `   Subtotal: ${item.price !== null && item.price !== undefined ? `$${subtotal.toLocaleString()}` : "Pending"}\n\n`;
   });
 
   message += `───────────────────\n`;

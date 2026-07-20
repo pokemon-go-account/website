@@ -2,13 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateRecoveryRequestStatus, deleteRecoveryRequest } from "@/features/recovery/actions";
+import { updateRecoveryRequestStatus, deleteRecoveryRequest, updateRecoveryRequestPrice } from "@/features/recovery/actions";
 import {
   CheckCircle2, Clock, Loader2, XCircle, ChevronDown,
   ExternalLink, Calendar, Layers, ShieldCheck, Phone, MessageSquare,
-  Trash2
+  Trash2, DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getDb } from "@/lib/firestore";
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const STATUS_CONFIG = {
   PENDING:     { label: "Pending",     color: "text-amber-500",  bg: "bg-amber-500/10 border-amber-500/20",  icon: Clock },
@@ -43,8 +45,11 @@ interface Request {
   contactMethod: string;
   contactId: string;
   alternateContact?: string;
+  trainerName?: string;
   hasEmailAccess: boolean;
   status: Status;
+  price?: number | null;
+  priceStatus?: "QUOTE_PENDING" | "QUOTED";
   createdAt: string;
 }
 export function RecoveryRequestsClient({ initialRequests }: { initialRequests: Request[] }) {
@@ -53,8 +58,60 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
+  const [updatingPriceId, setUpdatingPriceId] = useState<string | null>(null);
+  const [priceSuccessId, setPriceSuccessId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [filter, setFilter] = useState<Status | "ALL">("ALL");
+
+  const handlePriceSubmit = (requestId: string) => {
+    const priceVal = priceInputs[requestId];
+    const numVal = parseFloat(priceVal);
+    if (isNaN(numVal) || numVal < 0) {
+      alert("Please enter a valid price amount.");
+      return;
+    }
+    setUpdatingPriceId(requestId);
+    startTransition(async () => {
+      const res = await updateRecoveryRequestPrice(requestId, numVal);
+      if (res.success) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r._id === requestId ? { ...r, price: numVal, priceStatus: "QUOTED" } : r
+          )
+        );
+        setPriceSuccessId(requestId);
+        setTimeout(() => setPriceSuccessId(null), 3000);
+
+        // Send automated chat notification to user
+        try {
+          const db = getDb();
+          const chatId = `recovery-${requestId}`;
+          const chatRef = doc(db, "supportChats", chatId);
+
+          await setDoc(chatRef, {
+            lastMessage: `Super Admin quoted price: $${numVal.toFixed(2)} USD`,
+            lastMessageAt: serverTimestamp(),
+            unreadByUser: 1,
+          }, { merge: true });
+
+          const msgsRef = collection(db, "supportChats", chatId, "messages");
+          await addDoc(msgsRef, {
+            text: `System: Super Admin has reviewed your account recovery request #${requestId.substring(0, 8).toUpperCase()} and set the price to $${numVal.toFixed(2)} USD. You can open your cart to complete payment now!`,
+            sender: "admin",
+            senderName: "Support Team",
+            timestamp: serverTimestamp(),
+            read: false,
+          });
+        } catch (fErr) {
+          console.error("Failed to post chat update for price quote:", fErr);
+        }
+      } else {
+        alert(res.error || "Failed to update price.");
+      }
+      setUpdatingPriceId(null);
+    });
+  };
 
   const handleStatusChange = (requestId: string, newStatus: Status) => {
     setUpdating(requestId);
@@ -64,6 +121,32 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
         setRequests((prev) =>
           prev.map((r) => (r._id === requestId ? { ...r, status: newStatus } : r))
         );
+
+        // Send automated status chat message to user
+        try {
+          const db = getDb();
+          const chatId = `recovery-${requestId}`;
+          const chatRef = doc(db, "supportChats", chatId);
+
+          const statusLabel = STATUS_CONFIG[newStatus]?.label || newStatus;
+
+          await setDoc(chatRef, {
+            lastMessage: `Status updated to ${statusLabel}`,
+            lastMessageAt: serverTimestamp(),
+            unreadByUser: 1,
+          }, { merge: true });
+
+          const msgsRef = collection(db, "supportChats", chatId, "messages");
+          await addDoc(msgsRef, {
+            text: `System: Status update for Recovery Request #${requestId.substring(0, 8).toUpperCase()}: Status is now ${statusLabel}.`,
+            sender: "admin",
+            senderName: "Support Team",
+            timestamp: serverTimestamp(),
+            read: false,
+          });
+        } catch (fErr) {
+          console.error("Failed to post chat update for status change:", fErr);
+        }
       }
       setUpdating(null);
     });
@@ -168,6 +251,16 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
+                    <span className={cn(
+                      "text-[10px] font-bold px-2 py-0.5 rounded border",
+                      req.price !== null && req.price !== undefined && req.price > 0
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                        : "bg-amber-500/10 border-amber-500/20 text-amber-500"
+                    )}>
+                      {req.price !== null && req.price !== undefined && req.price > 0
+                        ? `$${Number(req.price).toFixed(2)} USD`
+                        : "Price Pending"}
+                    </span>
                     <span className="text-xs text-zinc-450 dark:text-zinc-500 hidden sm:block">
                       {new Date(req.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </span>
@@ -186,6 +279,47 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                       className="overflow-hidden border-t border-zinc-200 dark:border-white/[0.04]"
                     >
                       <div className="p-5 space-y-5">
+                        {/* Price Management Section */}
+                        <div className="p-3 rounded-lg bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-4">
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Service Pricing</span>
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                              {req.price !== null && req.price !== undefined && req.price > 0
+                                ? `Current Price: $${Number(req.price).toFixed(2)} USD`
+                                : "No price set yet (User cart shows 'Price Pending')"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-zinc-500">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder={req.price !== null && req.price !== undefined ? req.price.toString() : "Set price e.g. 50"}
+                              value={priceInputs[req._id] !== undefined ? priceInputs[req._id] : (req.price !== null && req.price !== undefined ? req.price : "")}
+                              onChange={(e) => setPriceInputs({ ...priceInputs, [req._id]: e.target.value })}
+                              className="w-28 h-8 px-2.5 text-xs font-semibold rounded-md border border-zinc-300 dark:border-white/10 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-hidden"
+                            />
+                            <button
+                              disabled={updatingPriceId === req._id}
+                              onClick={() => handlePriceSubmit(req._id)}
+                              className="h-8 px-3.5 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
+                            >
+                              {updatingPriceId === req._id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <DollarSign className="h-3.5 w-3.5" />
+                              )}
+                              Save Price
+                            </button>
+                            {priceSuccessId === req._id && (
+                              <span className="text-xs font-semibold text-emerald-500 flex items-center gap-1">
+                                <CheckCircle2 className="h-4 w-4" /> Price Updated!
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                           {/* Screenshots */}
                           <div className="lg:col-span-1 space-y-1.5">
@@ -227,6 +361,12 @@ export function RecoveryRequestsClient({ initialRequests }: { initialRequests: R
                           <div className="space-y-3">
                             <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Account Info</p>
                             <div className="space-y-2">
+                              {req.trainerName && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">Trainer Name:</span>
+                                  <span className="text-xs text-zinc-900 dark:text-white font-semibold">{req.trainerName}</span>
+                                </div>
+                              )}
                               <div className="flex items-center gap-2">
                                 <Layers className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">Level {req.accountLevel}</span>

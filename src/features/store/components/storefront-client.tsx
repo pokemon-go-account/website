@@ -10,6 +10,7 @@ import { cn, getUserCountry } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
+import { getUserRecoveryRequests } from "@/features/recovery/actions";
 import { useSession } from "next-auth/react";
 import { getFreshBalance } from "@/features/auth/actions";
 import { getDb } from "@/lib/firestore";
@@ -130,6 +131,16 @@ export function StorefrontClient({ categories, products, initialCategorySlug }: 
     }
   }, [status, session]);
 
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.id) {
+      getUserRecoveryRequests().then((res) => {
+        if (res.success && Array.isArray(res.requests)) {
+          useCartStore.getState().syncRecoveryItems(res.requests);
+        }
+      });
+    }
+  }, [isOpen, status, session]);
+
   const walletBalance = freshBalance;
   const hasWalletCredit = walletBalance > 0;
   const walletCreditAmount = hasWalletCredit ? walletBalance : 0;
@@ -221,7 +232,7 @@ export function StorefrontClient({ categories, products, initialCategorySlug }: 
         const methodLabel = method === "Card" ? "Card, Cash App, Apple Pay" : "Others";
         
         const itemsList = items
-          .map((item) => `- ${item.name} x ${item.quantity} (${convert(item.price).formatted} each)`)
+          .map((item) => `- ${item.name} x ${item.quantity} (${convert(item.price || 0).formatted} each)`)
           .join("\n");
         const totalPrice = getTotalPrice();
         const discount = Math.min(totalPrice, walletCreditAmount);
@@ -700,6 +711,9 @@ Please guide me on how to complete the payment!`;
                     {items.map((item) => {
                       const itemProduct = products.find((p) => p._id === item.id);
                       const isLimitedItem = itemProduct?.categoryId?.slug === "accounts" || itemProduct?.categoryId?.slug === "pokemons";
+                      const isRecoveryItem = item.type === "RECOVERY" || !!item.recoveryRequestId;
+                      const isPendingPrice = item.pricePending || item.price === null || item.price === undefined;
+
                       return (
                         <div
                           key={item.id}
@@ -709,33 +723,47 @@ Please guide me on how to complete the payment!`;
                             {item.imageUrl ? (
                               <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain" />
                             ) : (
-                              <span className="text-xl">🎁</span>
+                              <span className="text-xl">{isRecoveryItem ? "🔑" : "🎁"}</span>
                             )}
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <h4 className="text-xs font-semibold text-zinc-900 dark:text-white truncate leading-snug">{item.name}</h4>
-                            <p className="text-[10px] text-zinc-500 font-semibold mt-0.5"><PriceDisplay amountInUSD={item.price} /> each</p>
+                            {isPendingPrice ? (
+                              <span className="inline-block mt-1 text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                                Price Pending
+                              </span>
+                            ) : (
+                              <p className="text-[10px] text-zinc-500 font-semibold mt-0.5">
+                                <PriceDisplay amountInUSD={item.price!} /> {isRecoveryItem ? "(Admin Quote)" : "each"}
+                              </p>
+                            )}
                           </div>
 
                           {/* Adjuster */}
-                          <div className="flex items-center gap-2 border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] rounded-md p-1">
-                            <button
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              className="h-5 w-5 rounded-md hover:bg-zinc-200 dark:hover:bg-white/5 text-zinc-550 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <span className="text-xs font-semibold text-zinc-900 dark:text-white min-w-4 text-center select-none">{item.quantity}</span>
-                            {!isLimitedItem && (
+                          {isRecoveryItem ? (
+                            <div className="px-2 py-1 bg-zinc-100 dark:bg-white/5 rounded-md border border-zinc-200 dark:border-white/[0.06] text-[10px] font-bold text-zinc-500">
+                              1x
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] rounded-md p-1">
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                 className="h-5 w-5 rounded-md hover:bg-zinc-200 dark:hover:bg-white/5 text-zinc-550 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
                               >
-                                <Plus className="h-3 w-3" />
+                                <Minus className="h-3 w-3" />
                               </button>
-                            )}
-                          </div>
+                              <span className="text-xs font-semibold text-zinc-900 dark:text-white min-w-4 text-center select-none">{item.quantity}</span>
+                              {!isLimitedItem && (
+                                <button
+                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  className="h-5 w-5 rounded-md hover:bg-zinc-200 dark:hover:bg-white/5 text-zinc-550 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          )}
 
                           {/* Remove */}
                           <button
@@ -754,6 +782,13 @@ Please guide me on how to complete the payment!`;
               {/* Drawer footer layout */}
               {items.length > 0 && (
                 <div className="border-t border-zinc-200 dark:border-white/[0.06] pt-4 mt-6 space-y-4">
+                  {items.some(i => i.pricePending || i.price === null) && (
+                    <div className="p-2.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>Items pending admin price quote are excluded from subtotal until priced by Super Admin.</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-zinc-500 font-medium">Subtotal:</span>
                     <span className="text-zinc-900 dark:text-white font-semibold"><PriceDisplay amountInUSD={getTotalPrice()} /></span>
@@ -771,20 +806,29 @@ Please guide me on how to complete the payment!`;
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      if (status === "loading") return;
-                      if (!session?.user) {
-                        window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-                      } else {
-                        setIsCheckoutOpen(true);
-                      }
-                    }}
-                    disabled={status === "loading"}
-                    className="w-full h-10 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-65"
-                  >
-                    <span>Checkout / Buy Now</span>
-                  </button>
+                  {items.every(i => i.pricePending || i.price === null) ? (
+                    <button
+                      disabled
+                      className="w-full h-10 rounded-md bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-semibold text-xs flex items-center justify-center gap-2 cursor-not-allowed opacity-75"
+                    >
+                      <span>Awaiting Admin Price Quote</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (status === "loading") return;
+                        if (!session?.user) {
+                          window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                        } else {
+                          setIsCheckoutOpen(true);
+                        }
+                      }}
+                      disabled={status === "loading"}
+                      className="w-full h-10 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-65"
+                    >
+                      <span>Checkout / Buy Now</span>
+                    </button>
+                  )}
                 </div>
               )}
             </motion.div>
@@ -1028,6 +1072,43 @@ This order has been completed automatically using your wallet balance. Admin wil
                               timestamp: serverTimestamp(),
                               read: false,
                             });
+
+                            // If cart contained a recovery order, post proof to recovery chat thread as well
+                            const recoveryItem = items.find((i) => i.recoveryRequestId || i.type === "RECOVERY");
+                            if (recoveryItem && recoveryItem.recoveryRequestId) {
+                              const recChatId = `recovery-${recoveryItem.recoveryRequestId}`;
+                              const recChatRef = doc(db, "supportChats", recChatId);
+
+                              await setDoc(recChatRef, {
+                                lastMessage: `Paid via Wallet Balance. Status: In Progress.`,
+                                lastMessageAt: serverTimestamp(),
+                                unreadByAdmin: 1,
+                              }, { merge: true });
+
+                              const recMsgsRef = collection(db, "supportChats", recChatId, "messages");
+                              await addDoc(recMsgsRef, {
+                                text: `📦 RECOVERY PAYMENT COMPLETED (Wallet Balance)
+----------------------------------
+Recovery Request ID: ${recoveryItem.recoveryRequestId}
+Amount Paid: $${getTotalPrice().toFixed(2)} USD
+Order ID: ${orderId}
+Payment Method: Wallet Credit
+
+Our recovery specialists have received your payment and are now actively processing your account recovery!`,
+                                sender: "user",
+                                senderName: username,
+                                timestamp: serverTimestamp(),
+                                read: false,
+                              });
+
+                              await addDoc(recMsgsRef, {
+                                text: `System: Payment received via Wallet! Your recovery request status is now IN_PROGRESS. Our team is actively processing your request!`,
+                                sender: "admin",
+                                senderName: "Support Team",
+                                timestamp: serverTimestamp(),
+                                read: false,
+                              });
+                            }
 
                             useCartStore.getState().clearCart();
                             window.location.href = `/chat?chatId=${chatId}`;

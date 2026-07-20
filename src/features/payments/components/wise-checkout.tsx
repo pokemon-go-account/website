@@ -222,6 +222,58 @@ Please verify my payment proof and approve my order!`;
           read: false,
         });
 
+        // If cart contained a recovery order, post proof to recovery chat thread as well
+        const cartItems = useCartStore.getState().items;
+        const recoveryItem = cartItems.find((i) => i.recoveryRequestId || i.type === "RECOVERY");
+        if (recoveryItem && recoveryItem.recoveryRequestId) {
+          const recChatId = `recovery-${recoveryItem.recoveryRequestId}`;
+          const recChatRef = doc(db, "supportChats", recChatId);
+
+          await setDoc(recChatRef, {
+            lastMessage: `Payment proof submitted (Wise). Status: In Progress.`,
+            lastMessageAt: serverTimestamp(),
+            unreadByAdmin: 1,
+          }, { merge: true });
+
+          const recMsgsRef = collection(db, "supportChats", recChatId, "messages");
+          await addDoc(recMsgsRef, {
+            text: `📦 RECOVERY PAYMENT SUBMITTED (Wise)
+----------------------------------
+Recovery Request ID: ${recoveryItem.recoveryRequestId}
+Amount Paid: ${amount.toLocaleString()} ${currency}
+Order ID: ${orderId}
+
+🔍 VERIFICATION PROOF:
+----------------------------------
+Payment Proof Screenshot: Uploaded & Stored
+
+Our recovery specialists have received your payment proof and will start processing your request!`,
+            sender: "user",
+            senderName: username,
+            timestamp: serverTimestamp(),
+            read: false,
+          });
+
+          if (data.screenshotUrl) {
+            await addDoc(recMsgsRef, {
+              image: data.screenshotUrl,
+              text: "Payment Proof Screenshot",
+              sender: "user",
+              senderName: username,
+              timestamp: serverTimestamp(),
+              read: false,
+            });
+          }
+
+          await addDoc(recMsgsRef, {
+            text: `System: Payment proof received! Your recovery request status is now IN_PROGRESS. Our team is actively processing your request!`,
+            sender: "admin",
+            senderName: "Support Team",
+            timestamp: serverTimestamp(),
+            read: false,
+          });
+        }
+
         useCartStore.getState().clearCart();
         setSubmitted(true);
         window.location.href = `/chat?chatId=${chatId}`;

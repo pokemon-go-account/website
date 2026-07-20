@@ -10,8 +10,11 @@ export interface IRecoveryRequest extends Document {
   contactMethod: string;
   contactId: string;
   alternateContact?: string;
+  trainerName?: string;
   hasEmailAccess: boolean;
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  price?: number | null;
+  priceStatus?: "QUOTE_PENDING" | "QUOTED";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,11 +30,18 @@ const RecoveryRequestSchema: Schema<IRecoveryRequest> = new Schema(
     contactMethod: { type: String, required: true },
     contactId: { type: String, required: true, trim: true },
     alternateContact: { type: String, trim: true },
+    trainerName: { type: String, trim: true },
     hasEmailAccess: { type: Boolean, required: true },
     status: {
       type: String,
       enum: ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"],
       default: "PENDING",
+    },
+    price: { type: Number, default: null },
+    priceStatus: {
+      type: String,
+      enum: ["QUOTE_PENDING", "QUOTED"],
+      default: "QUOTE_PENDING",
     },
   },
   { timestamps: true }
