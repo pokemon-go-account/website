@@ -33,42 +33,22 @@ export const useCurrencyStore = create<CurrencyState>()(
       isConverting: false,
       setCurrency: async (newCurrency) => {
         if (newCurrency === get().currency) return;
-        set({ isConverting: true });
-        
+
+        // 1. Instantly update currency state in 0ms using existing rates
+        set({ currency: newCurrency, isConverting: false });
+
         try {
-          // Import the server action dynamically to avoid SSR issues with Zustand
+          // 2. Fetch fresh MongoDB cached rates in background without blocking UI
           const { getLiveExchangeRates } = await import("@/features/store/currency-actions");
-          
-          // Fetch rates from our MongoDB-backed Server Action
           const res = await getLiveExchangeRates();
           
           if (res.success && res.rates) {
             set({
-              currency: newCurrency,
               rates: res.rates as Record<Currency, number>,
             });
-          } else {
-            throw new Error(res.error || "Failed to fetch rates from server");
           }
         } catch (error) {
-          console.error("Failed to fetch live market rates, falling back to simulated values:", error);
-          
-          // Simulated fallback rates if everything (API and DB) completely fails
-          const baseRates = {
-            USD: 1.0,
-            EUR: 0.90 + Math.random() * 0.04,
-            INR: 83.0 + Math.random() * 1.0,
-            GBP: 0.77 + Math.random() * 0.04,
-            JPY: 153.0 + Math.random() * 4.0,
-          };
-          set({
-            currency: newCurrency,
-            rates: baseRates,
-          });
-        } finally {
-          // Provide 800ms loading experience to match simulated visual loader transitions
-          await new Promise((resolve) => setTimeout(resolve, 800));
-          set({ isConverting: false });
+          console.error("Failed to refresh exchange rates in background:", error);
         }
       },
       convert: (amountInUSD) => {
