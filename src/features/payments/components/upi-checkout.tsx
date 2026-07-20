@@ -57,6 +57,7 @@ export function UpiPaymentCheckout({
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodedPayeeName}&am=${amount}&cu=INR`;
 
   const handleCopyUpi = () => {
+    console.log(`[UPI Checkout] 📋 Copy UPI ID Clicked -> ${upiId}`);
     navigator.clipboard.writeText(upiId);
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
@@ -64,6 +65,7 @@ export function UpiPaymentCheckout({
 
   const handleFileChange = useCallback((file: File | null) => {
     if (!file) return;
+    console.log(`[UPI Checkout] 🖼️ Payment Screenshot File Selected -> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
     if (!file.type.startsWith("image/")) {
       setError("Please upload a valid image file.");
       return;
@@ -99,6 +101,8 @@ export function UpiPaymentCheckout({
     e.preventDefault();
     setError(null);
 
+    console.log(`[UPI Checkout] 🚀 Submit Payment Form Triggered | OrderId: ${orderId} | Amount: ₹${amount}`);
+
     if (!screenshotFile) {
       setError("Please upload a screenshot of the payment.");
       return;
@@ -123,6 +127,8 @@ export function UpiPaymentCheckout({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed.");
+
+      console.log(`[UPI Checkout] ✅ Payment Submitted Successfully | OrderId: ${orderId} | UTR: ${generatedUtr}`);
 
       // Create support chat for order payment proof verification
       try {

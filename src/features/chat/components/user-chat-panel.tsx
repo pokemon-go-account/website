@@ -181,6 +181,8 @@ export function UserChatPanel({
     const file = e.target.files?.[0];
     if (!file || !activeChatId) return;
 
+    console.log(`[UserChat] 📷 Image Selected for Upload | File: ${file.name} | Size: ${(file.size / 1024).toFixed(1)} KB | ChatId: ${activeChatId}`);
+
     if (!file.type.startsWith("image/")) {
       alert("Please upload a valid image file.");
       return;
@@ -256,10 +258,11 @@ export function UserChatPanel({
         userTyping: false,
       });
 
+      console.log(`[UserChat] ✅ Image Sent Successfully | ChatId: ${activeChatId} | URL: ${imageUrl}`);
       setInputText("");
       playSound(sendSoundRef);
     } catch (err) {
-      console.error("Image upload error:", err);
+      console.error("[UserChat] ❌ Image upload error:", err);
       alert("Error sending image.");
     } finally {
       setIsUploadingImage(false);
@@ -461,6 +464,7 @@ export function UserChatPanel({
   const handleCreateTicket = async () => {
     if (!userId || isCreatingTicket || !isAuthReady) return;
     setIsCreatingTicket(true);
+    console.log(`[UserChat] 🎫 Create Support Ticket Clicked | User: ${username} (${userId})`);
 
     try {
       const db = getDb();
@@ -491,10 +495,11 @@ export function UserChatPanel({
         read: false,
       });
 
+      console.log(`[UserChat] ✅ Support Ticket Created Successfully | TicketId: ${ticketId}`);
       setActiveChatId(ticketId);
       setActiveTab("support");
     } catch (err: any) {
-      console.error("Failed to create support ticket:", err);
+      console.error("[UserChat] ❌ Failed to create support ticket:", err);
       alert("Error creating ticket: " + (err.message || "Please try again."));
     } finally {
       setIsCreatingTicket(false);
@@ -505,6 +510,7 @@ export function UserChatPanel({
   const handleSend = async () => {
     if (!inputText.trim() || !activeChatId || isSending || !isAuthReady) return;
     const text = inputText.trim();
+    console.log(`[UserChat] ✉️ Send Message Action Triggered | ChatId: ${activeChatId} | Text: "${text}"`);
     setInputText("");
     setIsSending(true);
 
@@ -536,10 +542,11 @@ export function UserChatPanel({
         userTyping: false,
       });
 
+      console.log(`[UserChat] ✅ Message Sent Successfully | ChatId: ${activeChatId}`);
       // Play send sound after message is written
       playSound(sendSoundRef);
     } catch (err) {
-      console.error("Failed to send message:", err);
+      console.error("[UserChat] ❌ Failed to send message:", err);
     } finally {
       setIsSending(false);
       setTimeout(() => inputRef.current?.focus(), 50);

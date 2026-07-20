@@ -778,21 +778,25 @@ Please guide me on how to complete the payment!`;
   const nextMinBid = activeBid + minIncrement;
 
   const handlePlaceBid = async (amount: number) => {
+    console.log(`[Auction] 🔨 Place Bid Button Clicked | AuctionId: ${auction._id} | Amount: $${amount} | MinRequired: $${nextMinBid}`);
     if (amount < nextMinBid) {
+      console.warn(`[Auction] ⚠️ Bid rejected: Amount $${amount} is below minimum requirement $${nextMinBid}`);
       setError(`Minimum bid requirement is $${nextMinBid}`);
       return;
     }
     setIsBidding(true);
     try {
       await placeBid(amount);
+      console.log(`[Auction] ✅ Bid placed successfully -> $${amount}`);
     } catch (err) {
-      console.error(err);
+      console.error("[Auction] ❌ Bid placement error:", err);
     } finally {
       setIsBidding(false);
     }
   };
 
   const handleViewAllClick = async () => {
+    console.log(`[Auction] 📜 "View Full Bid History" Clicked | AuctionId: ${auction._id}`);
     setIsHistoryModalOpen(true);
     setIsHistoryLoading(true);
     setError(null);

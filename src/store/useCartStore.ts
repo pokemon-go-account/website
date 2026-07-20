@@ -26,35 +26,49 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
-      setIsOpen: (isOpen) => set({ isOpen }),
+      setIsOpen: (isOpen) => {
+        console.log(`[CartStore] 🛒 Cart Drawer ${isOpen ? "Opened" : "Closed"}`);
+        set({ isOpen });
+      },
       addItem: (newItem) => {
         const currentItems = get().items;
         const existing = currentItems.find((item) => item.id === newItem.id);
 
         if (existing) {
+          console.log(`[CartStore] ➕ Incrementing Cart Item Quantity -> "${newItem.name}" (New Qty: ${existing.quantity + 1})`);
           set({
             items: currentItems.map((item) =>
               item.id === newItem.id ? { ...item, quantity: item.quantity + 1 } : item
             ),
           });
         } else {
+          console.log(`[CartStore] 🛍️ Added New Item to Cart -> "${newItem.name}" (Price: $${newItem.price})`);
           set({ items: [...currentItems, { ...newItem, quantity: 1 }] });
         }
       },
-      removeItem: (id) =>
-        set({ items: get().items.filter((item) => item.id !== id) }),
+      removeItem: (id) => {
+        const target = get().items.find((i) => i.id === id);
+        console.log(`[CartStore] 🗑️ Removed Item from Cart -> "${target?.name || id}"`);
+        set({ items: get().items.filter((item) => item.id !== id) });
+      },
       updateQuantity: (id, quantity) => {
+        const target = get().items.find((i) => i.id === id);
         if (quantity <= 0) {
+          console.log(`[CartStore] 🗑️ Quantity dropped to 0 -> Removing "${target?.name || id}"`);
           get().removeItem(id);
           return;
         }
+        console.log(`[CartStore] ✏️ Updated Quantity for "${target?.name || id}" -> ${quantity}`);
         set({
           items: get().items.map((item) =>
             item.id === id ? { ...item, quantity } : item
           ),
         });
       },
-      clearCart: () => set({ items: [] }),
+      clearCart: () => {
+        console.log("[CartStore] 🧹 Cleared All Items from Cart");
+        set({ items: [] });
+      },
       getTotalPrice: () =>
         get().items.reduce((total, item) => total + item.price * item.quantity, 0),
       getTotalItems: () =>

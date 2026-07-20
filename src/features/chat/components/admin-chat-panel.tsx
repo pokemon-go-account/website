@@ -264,6 +264,7 @@ export function AdminChatPanel() {
   const handleArchiveUser = async (targetUserId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!isAuthReady || !targetUserId) return;
+    console.log(`[AdminChat] 📦 Archive User Clicked | TargetUserId: ${targetUserId}`);
     try {
       const db = getDb();
       await setDoc(doc(db, "archivedChatUsers", targetUserId), {
@@ -271,19 +272,22 @@ export function AdminChatPanel() {
         archivedAt: serverTimestamp(),
         archivedBy: adminUsername,
       });
+      console.log(`[AdminChat] ✅ User Archived Successfully | TargetUserId: ${targetUserId}`);
     } catch (err) {
-      console.error("Failed to archive user:", err);
+      console.error("[AdminChat] ❌ Failed to archive user:", err);
     }
   };
 
   const handleUnarchiveUser = async (targetUserId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!isAuthReady || !targetUserId) return;
+    console.log(`[AdminChat] 📂 Unarchive User Clicked | TargetUserId: ${targetUserId}`);
     try {
       const db = getDb();
       await deleteDoc(doc(db, "archivedChatUsers", targetUserId));
+      console.log(`[AdminChat] ✅ User Unarchived Successfully | TargetUserId: ${targetUserId}`);
     } catch (err) {
-      console.error("Failed to unarchive user:", err);
+      console.error("[AdminChat] ❌ Failed to unarchive user:", err);
     }
   };
 
@@ -442,6 +446,7 @@ export function AdminChatPanel() {
 
   const handleClearChat = async () => {
     if (!activeChatId) return;
+    console.log(`[AdminChat] 🗑️ Clear & Close Chat Clicked | ChatId: ${activeChatId}`);
     if (!confirm("Are you sure you want to close and clear this ticket? All messages and attachments will be permanently deleted from Firestore.")) {
       return;
     }
@@ -478,9 +483,10 @@ export function AdminChatPanel() {
         read: true,
       });
 
+      console.log(`[AdminChat] ✅ Chat Cleared & Closed Successfully | ChatId: ${activeChatId}`);
       alert("Chat cleared and closed successfully.");
     } catch (err) {
-      console.error("Error clearing chat:", err);
+      console.error("[AdminChat] ❌ Error clearing chat:", err);
       alert("Failed to clear chat. Please try again.");
     } finally {
       setIsClearing(false);
@@ -490,6 +496,8 @@ export function AdminChatPanel() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeChatId) return;
+
+    console.log(`[AdminChat] 📷 Image Selected for Upload | File: ${file.name} | Size: ${(file.size / 1024).toFixed(1)} KB | ChatId: ${activeChatId}`);
 
     if (!file.type.startsWith("image/")) {
       alert("Please upload a valid image file.");
@@ -567,10 +575,11 @@ export function AdminChatPanel() {
         adminTyping: false,
       });
 
+      console.log(`[AdminChat] ✅ Image Sent Successfully | ChatId: ${activeChatId} | URL: ${imageUrl}`);
       setReplyText("");
       playSound(sendSoundRef);
     } catch (err) {
-      console.error("Admin image upload error:", err);
+      console.error("[AdminChat] ❌ Admin image upload error:", err);
       alert("Error sending image.");
     } finally {
       setIsUploadingImage(false);
@@ -640,6 +649,7 @@ export function AdminChatPanel() {
   const handleSendReply = async () => {
     if (!replyText.trim() || !activeChatId || isSending || !isAuthReady) return;
     const text = replyText.trim();
+    console.log(`[AdminChat] ✉️ Send Reply Action Triggered | ChatId: ${activeChatId} | Text: "${text}"`);
     setReplyText("");
     setIsSending(true);
 
@@ -672,9 +682,10 @@ export function AdminChatPanel() {
         adminTyping: false,
       });
 
+      console.log(`[AdminChat] ✅ Reply Sent Successfully | ChatId: ${activeChatId}`);
       playSound(sendSoundRef);
     } catch (err) {
-      console.error("Failed to send reply:", err);
+      console.error("[AdminChat] ❌ Failed to send reply:", err);
     } finally {
       setIsSending(false);
       setTimeout(() => inputRef.current?.focus(), 50);

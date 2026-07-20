@@ -185,6 +185,7 @@ export function ChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9, y: -10 }}
             onClick={() => {
+              console.log(`[ChatWidget] 🔔 Toast Notification Clicked | ChatId: ${activeNotification.chatId}`);
               if (window.innerWidth < 768) {
                 window.location.href = `/chat?chatId=${activeNotification.chatId}`;
               } else {
@@ -225,6 +226,7 @@ export function ChatWidget() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                console.log("[ChatWidget] ✖️ Dismiss Toast Notification Clicked");
                 setActiveNotification(null);
               }}
               aria-label="Close notification"
@@ -242,6 +244,7 @@ export function ChatWidget() {
           ref={buttonRef}
           id="chat-widget-toggle"
           onClick={() => {
+            console.log(`[ChatWidget] 💬 Floating Chat Toggle Button Clicked | User: ${userId} | UnreadCount: ${unreadCount}`);
             if (window.innerWidth < 768) {
               window.location.href = "/chat";
             } else {
@@ -267,7 +270,10 @@ export function ChatWidget() {
           id="chat-widget-panel"
           className="fixed bottom-6 right-6 z-50 w-[360px] sm:w-[400px] h-[580px] flex flex-col rounded-2xl border border-zinc-200/80 dark:border-white/10 bg-white dark:bg-[#0c0c10] shadow-2xl shadow-black/40 overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200"
         >
-          <UserChatPanel isFullScreen={false} onClose={() => setIsOpen(false)} />
+          <UserChatPanel isFullScreen={false} onClose={() => {
+            console.log("[ChatWidget] ❌ User Closed Chat Panel");
+            setIsOpen(false);
+          }} />
         </div>
       )}
     </>

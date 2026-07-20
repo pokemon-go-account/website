@@ -162,6 +162,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               <Link
                 key={label}
                 href={href}
+                onClick={() => console.log(`[Navigation] 🔗 Nav Link Clicked: "${label}" -> ${href}`)}
                 className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors relative group py-1"
               >
                 {label}
@@ -170,6 +171,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             ))}
             <Link
               href="/become-a-seller"
+              onClick={() => console.log('[Navigation] 💼 "Become a Seller" Button Clicked')}
               className="text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#28a745] to-green-600 text-white hover:from-green-600 hover:to-green-500 transition-all shadow-sm hover:shadow-green-600/25 active:scale-[0.97]"
             >
               Become a Seller
@@ -183,7 +185,11 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               <select
                 aria-label="Select preferred currency"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value as Currency)}
+                onChange={(e) => {
+                  const newCurr = e.target.value as Currency;
+                  console.log(`[Currency] 💱 Currency Changed -> ${newCurr}`);
+                  setCurrency(newCurr);
+                }}
                 className="h-8 pl-2.5 pr-7 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 text-xs font-semibold focus:outline-none cursor-pointer appearance-none hover:border-zinc-300 dark:hover:border-white/20 transition-colors"
               >
                 <option value="USD" className="bg-white dark:bg-[#09090b] text-foreground">USD ($)</option>
@@ -203,7 +209,10 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
             {/* Theme Toggle */}
             <button
-              onClick={toggleTheme}
+              onClick={() => {
+                console.log(`[Theme] 🌓 Theme Toggled -> ${theme === "dark" ? "light" : "dark"}`);
+                toggleTheme();
+              }}
               aria-label="Toggle light or dark theme"
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
             >

@@ -108,9 +108,11 @@ export function StorefrontClient({ categories, products, initialCategorySlug }: 
       if (catId) {
         const foundCat = categories.find((c) => c._id === catId);
         if (foundCat?.slug) {
+          console.log(`[Storefront] 📂 Category Selected -> "${foundCat.name}" (/store/${foundCat.slug})`);
           window.history.pushState({}, "", `/store/${foundCat.slug}`);
         }
       } else {
+        console.log("[Storefront] 📂 Category Cleared -> Return to All Categories (/store)");
         window.history.pushState({}, "", "/store");
       }
     }
@@ -514,7 +516,10 @@ Please guide me on how to complete the payment!`;
                     className="group relative rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] p-4 transition-all duration-250 flex flex-col justify-between hover:shadow-xs hover:border-zinc-300 dark:hover:border-white/[0.1]"
                   >
                     <div
-                      onClick={() => setSelectedProduct(product)}
+                      onClick={() => {
+                        console.log(`[Storefront] 🎁 Product Card Clicked -> "${product.name}" (ID: ${product._id}, Price: $${product.price})`);
+                        setSelectedProduct(product);
+                      }}
                       className="space-y-3 relative cursor-pointer group/card"
                     >
                       {/* Badge (Most Purchased / Popular) */}
@@ -618,14 +623,16 @@ Please guide me on how to complete the payment!`;
                         }
                         return (
                           <button
-                            onClick={() =>
+                            onClick={() => {
+                              const finalPrice = product.discountedPrice || product.price;
+                              console.log(`[Storefront] 🛒 "Add to Cart" Clicked -> "${product.name}" (ID: ${product._id}, Price: $${finalPrice})`);
                               addItem({
                                 id: product._id,
                                 name: product.name,
-                                price: product.discountedPrice || product.price,
+                                price: finalPrice,
                                 imageUrl: product.imageUrl,
-                              })
-                            }
+                              });
+                            }}
                             className="h-8 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer"
                           >
                             Add to Cart
