@@ -155,6 +155,7 @@ export function AdminChatPanel() {
   const sendSoundRef = useRef<HTMLAudioElement | null>(null);
   const receiveSoundRef = useRef<HTMLAudioElement | null>(null);
   const prevMessagesRef = useRef<Message[]>([]);
+  const prevConversationsRef = useRef<ChatMeta[]>([]);
 
   useEffect(() => {
     sendSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_X8t2FkCu.mp3");
@@ -239,15 +240,23 @@ export function AdminChatPanel() {
         return tB - tA;
       });
 
-      setConversations(list);
+      // Auto-unarchive user if a new chat message arrives from them
+      if (prevConversationsRef.current.length > 0) {
+        list.forEach((c) => {
+          const prev = prevConversationsRef.current.find((p) => p.id === c.id);
+          const uId = c.userId || c.id;
+          const prevUnread = prev ? (prev.unreadByAdmin ?? 0) : 0;
+          const currUnread = c.unreadByAdmin ?? 0;
 
-      // Auto-unarchive users if they send a new message (unreadByAdmin > 0)
-      list.forEach((conv) => {
-        const uId = conv.userId || conv.id;
-        if (conv.unreadByAdmin > 0 && archivedUserIds.includes(uId)) {
-          deleteDoc(doc(db, "archivedChatUsers", uId)).catch(() => {});
-        }
-      });
+          if (currUnread > prevUnread && archivedUserIds.includes(uId)) {
+            console.log(`[AdminChat] 📂 New message from archived user ${uId}. Auto-unarchiving user...`);
+            deleteDoc(doc(db, "archivedChatUsers", uId)).catch(() => {});
+          }
+        });
+      }
+      prevConversationsRef.current = list;
+
+      setConversations(list);
 
       // Auto-select user if query param is passed
       if (!autoSelectedRef.current && queryUserId) {
@@ -259,11 +268,11 @@ export function AdminChatPanel() {
     });
 
     return unsub;
-  }, [isAuthReady, queryUserId, archivedUserIds]);
+  }, [queryUserId, archivedUserIds]);
 
   const handleArchiveUser = async (targetUserId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!isAuthReady || !targetUserId) return;
+    if (!targetUserId) return;
     console.log(`[AdminChat] 📦 Archive User Clicked | TargetUserId: ${targetUserId}`);
     try {
       const db = getDb();
@@ -272,7 +281,18 @@ export function AdminChatPanel() {
         archivedAt: serverTimestamp(),
         archivedBy: adminUsername,
       });
-      console.log(`[AdminChat] ✅ User Archived Successfully | TargetUserId: ${targetUserId}`);
+
+      // Clear all existing unread notifications for this archived user
+      const userChats = conversations.filter(
+        (c) => (c.userId || c.id) === targetUserId && (c.unreadByAdmin ?? 0) > 0
+      );
+
+      const clearPromises = userChats.map((c) =>
+        updateDoc(doc(db, "supportChats", c.id), { unreadByAdmin: 0 })
+      );
+      await Promise.all(clearPromises);
+
+      console.log(`[AdminChat] ✅ User Archived & Unread Notifications Cleared | TargetUserId: ${targetUserId}`);
     } catch (err) {
       console.error("[AdminChat] ❌ Failed to archive user:", err);
     }
@@ -280,7 +300,7 @@ export function AdminChatPanel() {
 
   const handleUnarchiveUser = async (targetUserId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!isAuthReady || !targetUserId) return;
+    if (!targetUserId) return;
     console.log(`[AdminChat] 📂 Unarchive User Clicked | TargetUserId: ${targetUserId}`);
     try {
       const db = getDb();
