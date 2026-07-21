@@ -460,6 +460,56 @@ export async function completeOrderConsole(orderId: string) {
     order.status = "COMPLETED";
     await order.save();
 
+    // Inject a rating-request system card into the order's Firestore chat thread
+    try {
+      const { getAdminDb } = await import("@/lib/firebase-admin");
+      const adminDb = getAdminDb();
+      if (adminDb) {
+        const chatId = `order-${orderId}`;
+        const { FieldValue } = await import("firebase-admin/firestore");
+
+        // Fetch user information to populate the parent chat doc if it doesn't exist
+        const buyerUser = await User.findById(order.userId);
+        const buyerUsername = buyerUser?.username || buyerUser?.name || "User";
+        const buyerEmail = buyerUser?.email || "";
+
+        // Merge parent document to ensure it exists and matches the user's id
+        await adminDb
+          .collection("supportChats")
+          .doc(chatId)
+          .set({
+            userId: order.userId.toString(),
+            username: buyerUsername,
+            email: buyerEmail,
+            type: "order",
+            orderId: orderId,
+            title: `Order #${orderId.substring(orderId.length - 6).toUpperCase()}`,
+            lastMessage: "🎉 Order completed! Please leave a review.",
+            lastMessageAt: new Date(),
+            unreadByUser: FieldValue.increment(1),
+            createdAt: new Date(),
+          }, { merge: true });
+
+        // Write the rating-request message
+        await adminDb
+          .collection("supportChats")
+          .doc(chatId)
+          .collection("messages")
+          .add({
+            type: "rating_request",
+            text: "System: Your order has been marked as completed! 🎉 We'd love to hear about your experience.",
+            sender: "admin",
+            senderName: "Support Team",
+            timestamp: new Date(),
+            read: false,
+            orderId: orderId,
+          });
+      }
+    } catch (chatErr) {
+      // Chat notification failure must NOT block the primary order completion
+      console.warn("[completeOrderConsole] Could not write rating-request to Firestore chat:", chatErr);
+    }
+
     // Mark associated auction as COMPLETED (and populate buy-now buyer info if it was a Buy Now order)
     if (order.auctionId) {
       const Auction = (await import("@/models/Auction")).default;
@@ -817,9 +867,31 @@ export async function markAuctionDelivered(orderId: string) {
     try {
       const { getAdminDb } = await import("@/lib/firebase-admin");
       const adminDb = getAdminDb();
-      if (adminDb) {
+      if (adminDb && order) {
         const chatId = `order-${orderId}`;
         const { FieldValue } = await import("firebase-admin/firestore");
+
+        // Fetch user information to populate the parent chat doc if it doesn't exist
+        const buyerUser = await User.findById(order.userId);
+        const buyerUsername = buyerUser?.username || buyerUser?.name || "User";
+        const buyerEmail = buyerUser?.email || "";
+
+        // Merge parent document to ensure it exists and matches the user's id
+        await adminDb
+          .collection("supportChats")
+          .doc(chatId)
+          .set({
+            userId: order.userId.toString(),
+            username: buyerUsername,
+            email: buyerEmail,
+            type: "order",
+            orderId: orderId,
+            title: `Order #${orderId.substring(orderId.length - 6).toUpperCase()}`,
+            lastMessage: "🎉 Order completed! Please leave a review.",
+            lastMessageAt: new Date(),
+            unreadByUser: FieldValue.increment(1),
+            createdAt: new Date(),
+          }, { merge: true });
 
         // Write the rating-request message
         await adminDb
@@ -834,16 +906,6 @@ export async function markAuctionDelivered(orderId: string) {
             timestamp: new Date(),
             read: false,
             orderId: orderId,
-          });
-
-        // Update the parent chat metadata so the conversation list reflects it
-        await adminDb
-          .collection("supportChats")
-          .doc(chatId)
-          .update({
-            lastMessage: "🎉 Order completed! Please leave a review.",
-            lastMessageAt: new Date(),
-            unreadByUser: FieldValue.increment(1),
           });
       }
     } catch (chatErr) {

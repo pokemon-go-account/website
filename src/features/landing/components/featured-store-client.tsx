@@ -118,14 +118,23 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
                     {product.categoryId.name}
                   </span>
                 )}
-                {product.badge && (
-                  <span className={cn(
-                    "absolute top-3 right-3 z-10 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-md",
-                    product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
-                  )}>
-                    {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
-                  </span>
-                )}
+                
+                {/* Badges Container */}
+                <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+                  {product.isLimitedDeal && (
+                    <span className="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-md bg-red-600 animate-pulse">
+                      Limited Time Deal
+                    </span>
+                  )}
+                  {product.badge && (
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-md",
+                      product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                    )}>
+                      {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
+                    </span>
+                  )}
+                </div>
                 {/* Limited Time Deal Countdown */}
                 {product.isLimitedDeal && product.dealExpiry && (
                   <CountdownTimer expiry={product.dealExpiry} />
@@ -146,7 +155,7 @@ export function FeaturedStoreClient({ products }: FeaturedStoreClientProps) {
             {/* Price & Call To Action */}
             <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-200 dark:border-white/[0.06]">
               <div>
-                {product.mrpPrice && product.discountedPrice && product.mrpPrice > product.discountedPrice ? (
+                {typeof product.mrpPrice === 'number' && typeof product.discountedPrice === 'number' && product.mrpPrice > product.discountedPrice ? (
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] text-zinc-400 dark:text-zinc-550 line-through">

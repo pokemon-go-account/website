@@ -135,7 +135,7 @@ export async function approveListing(
       registrationFee: 199,
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath("/dashboard/seller");
     revalidatePath("/auctions");
 
@@ -172,7 +172,7 @@ export async function rejectListing(listingId: string, notes: string) {
     listing.adminNotes = notes.trim();
     await listing.save();
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath("/dashboard/seller");
 
     return { success: true, error: null };
@@ -197,7 +197,7 @@ export async function pauseAuction(auctionId: string) {
     await auction.save();
 
     syncAuctionToFirestore(auctionId).catch(() => {});
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath(`/auctions/${auctionId}`);
 
     return { success: true };
@@ -221,7 +221,7 @@ export async function resumeAuction(auctionId: string) {
     await auction.save();
 
     syncAuctionToFirestore(auctionId).catch(() => {});
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath(`/auctions/${auctionId}`);
 
     return { success: true };
@@ -246,7 +246,7 @@ export async function forceEndAuction(auctionId: string) {
     await auction.save();
 
     syncAuctionToFirestore(auctionId).catch(() => {});
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath(`/auctions/${auctionId}`);
 
     return { success: true };
@@ -291,7 +291,7 @@ export async function deleteAuction(auctionId: string) {
       await deleteFromCloudinary(listingImageUrls);
     }
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath("/auctions");
 
     return { success: true };
@@ -321,7 +321,7 @@ export async function reactivateAuction(auctionId: string, hours: number = 24) {
     await auction.save();
 
     syncAuctionToFirestore(auctionId).catch(() => {});
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath(`/auctions/${auctionId}`);
 
     return { success: true };
@@ -364,7 +364,7 @@ export async function rollbackAuctionBid(auctionId: string) {
     await auction.save();
 
     syncAuctionToFirestore(auctionId).catch(() => {});
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath(`/auctions/${auctionId}`);
 
     return { success: true };
@@ -482,7 +482,7 @@ export async function updateAuction(auctionId: string, fields: any) {
     await auction.save();
 
     syncAuctionToFirestore(auctionId).catch(() => {});
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath(`/auctions/${auctionId}`);
 
     return { success: true };
@@ -505,7 +505,7 @@ export async function updateEscrowStage(listingId: string, stage: any) {
     listing.escrowStage = stage;
     await listing.save();
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
 
     return { success: true };
   } catch (error: any) {
@@ -527,7 +527,7 @@ export async function saveListingCredentials(listingId: string, credentialsVault
     listing.credentialsVault = credentialsVault;
     await listing.save();
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
 
     return { success: true };
   } catch (error: any) {
@@ -549,7 +549,7 @@ export async function releaseEscrowFunds(listingId: string) {
     listing.escrowStage = "FUNDS_RELEASED";
     await listing.save();
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
 
     return { success: true };
   } catch (error: any) {
@@ -605,7 +605,7 @@ export async function triggerForfeitCascade(auctionId: string) {
 
     await auction.save();
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
     revalidatePath(`/auctions/${auctionId}`);
 
     return { success: true };
@@ -668,7 +668,7 @@ export async function manualSyncRegistration(orderId: string) {
       status: "PROCESSED",
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/console");
 
     return { success: true };
   } catch (error: any) {
@@ -747,7 +747,7 @@ export async function createCategory(name: string, slug: string, imageUrl?: stri
     await checkSuperAdminSession();
     await connectDB();
     const category = await Category.create({ name, slug: slug.toLowerCase(), imageUrl: imageUrl || '' });
-    revalidatePath('/admin/categories');
+    revalidatePath('/console/categories');
     revalidatePath('/store');
     return { success: true, category: JSON.parse(JSON.stringify(category)) };
   } catch (error: any) {
@@ -762,7 +762,7 @@ export async function updateCategory(id: string, name: string, slug: string, ima
     const updateData: Record<string, string> = { name, slug: slug.toLowerCase() };
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     const category = await Category.findByIdAndUpdate(id, updateData, { returnDocument: "after" });
-    revalidatePath('/admin/categories');
+    revalidatePath('/console/categories');
     revalidatePath('/store');
     return { success: true, category: JSON.parse(JSON.stringify(category)) };
   } catch (error: any) {
@@ -790,7 +790,7 @@ export async function deleteCategory(id: string) {
       await deleteFromCloudinary(category.imageUrl);
     }
 
-    revalidatePath('/admin/categories');
+    revalidatePath('/console/categories');
     revalidatePath('/store');
     return { success: true };
   } catch (error: any) {
@@ -844,7 +844,7 @@ export async function createProduct(data: {
     await connectDB();
     const price = data.discountedPrice;
     const product = await Product.create({ ...data, price });
-    revalidatePath('/admin/products');
+    revalidatePath('/console/products');
     revalidatePath('/store');
     revalidatePath('/');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
@@ -874,7 +874,7 @@ export async function updateProduct(
     await connectDB();
     const price = data.discountedPrice;
     const product = await Product.findByIdAndUpdate(id, { ...data, price }, { returnDocument: "after" });
-    revalidatePath('/admin/products');
+    revalidatePath('/console/products');
     revalidatePath('/store');
     revalidatePath('/');
     return { success: true, product: JSON.parse(JSON.stringify(product)) };
@@ -902,7 +902,7 @@ export async function deleteProduct(id: string) {
       }
     }
 
-    revalidatePath('/admin/products');
+    revalidatePath('/console/products');
     revalidatePath('/store');
     return { success: true };
   } catch (error: any) {
@@ -964,8 +964,8 @@ export async function updatePokemonRequestStatus(requestId: string, status: "PEN
     if (!request) {
       request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { returnDocument: "after" });
     }
-    revalidatePath('/admin/pokemon-requests');
-    revalidatePath('/admin/custom-requests');
+    revalidatePath('/console/pokemon-requests');
+    revalidatePath('/console/custom-requests');
     return { success: true, request: JSON.parse(JSON.stringify(request)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -980,8 +980,8 @@ export async function deletePokemonRequest(requestId: string) {
     if (!deletedOld) {
       await CustomRequest.findByIdAndDelete(requestId);
     }
-    revalidatePath('/admin/pokemon-requests');
-    revalidatePath('/admin/custom-requests');
+    revalidatePath('/console/pokemon-requests');
+    revalidatePath('/console/custom-requests');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -1007,7 +1007,7 @@ export async function updateCustomRequestStatus(requestId: string, status: "PEND
     await checkAdminSession();
     await connectDB();
     const request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { returnDocument: "after" });
-    revalidatePath('/admin/custom-requests');
+    revalidatePath('/console/custom-requests');
     return { success: true, request: JSON.parse(JSON.stringify(request)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -1019,7 +1019,7 @@ export async function deleteCustomRequest(requestId: string) {
     await checkSuperAdminSession();
     await connectDB();
     await CustomRequest.findByIdAndDelete(requestId);
-    revalidatePath('/admin/custom-requests');
+    revalidatePath('/console/custom-requests');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -1037,7 +1037,7 @@ export async function saveProductOrder(orderedIds: string[]) {
       },
     }));
     await Product.bulkWrite(bulkOps);
-    revalidatePath('/admin/products');
+    revalidatePath('/console/products');
     revalidatePath('/store');
     return { success: true };
   } catch (error: any) {

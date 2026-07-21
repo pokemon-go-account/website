@@ -454,6 +454,18 @@ export default function ManageProductsPage() {
 
                   {/* Badge Overlay */}
                   <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+                    {product.isLimitedDeal && (
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider text-white shadow-xs",
+                        product.dealExpiry && new Date(product.dealExpiry) < new Date()
+                          ? "bg-zinc-500 dark:bg-zinc-700"
+                          : "bg-red-500 animate-pulse"
+                      )}>
+                        {product.dealExpiry && new Date(product.dealExpiry) < new Date()
+                          ? "Deal Expired"
+                          : "Limited Deal"}
+                      </span>
+                    )}
                     {product.badge && (
                       <span className={cn(
                         "px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider text-white shadow-xs",
@@ -484,12 +496,24 @@ export default function ManageProductsPage() {
                   <p className="text-[10px] text-zinc-500 mt-1 line-clamp-2 h-7 leading-relaxed">
                     {product.description || "No description provided."}
                   </p>
+                  {product.isLimitedDeal && product.dealExpiry && (
+                    <p className={cn(
+                      "text-[9px] mt-1 font-semibold flex items-center gap-1",
+                      new Date(product.dealExpiry) < new Date() ? "text-zinc-400 line-through" : "text-red-500"
+                    )}>
+                      <span>⏱️</span>
+                      <span>
+                        {new Date(product.dealExpiry) < new Date() ? "Expired: " : "Expires: "}
+                        {new Date(product.dealExpiry).toLocaleString()}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-zinc-150 dark:border-white/[0.04] flex items-center justify-between">
                 <div>
-                  {product.mrpPrice && product.discountedPrice && product.mrpPrice > product.discountedPrice ? (
+                  {typeof product.mrpPrice === 'number' && typeof product.discountedPrice === 'number' && product.mrpPrice > product.discountedPrice ? (
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[9px] text-zinc-450 line-through">${product.mrpPrice}</span>

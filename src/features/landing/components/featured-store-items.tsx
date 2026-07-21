@@ -21,7 +21,19 @@ async function getFeaturedProducts() {
         .limit(3)
         .lean();
     }
-    return JSON.parse(JSON.stringify(products));
+    const now = new Date();
+    const processedProducts = products.map((product: any) => {
+      if (product.isLimitedDeal && product.dealExpiry && new Date(product.dealExpiry) < now) {
+        return {
+          ...product,
+          isLimitedDeal: false,
+          dealExpiry: null,
+        };
+      }
+      return product;
+    });
+
+    return JSON.parse(JSON.stringify(processedProducts));
   } catch (error) {
     console.error("Failed to load featured storefront items:", error);
     return [];

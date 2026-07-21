@@ -544,15 +544,22 @@ Please guide me on how to complete the payment!`;
                       }}
                       className="space-y-3 relative cursor-pointer group/card"
                     >
-                      {/* Badge (Most Purchased / Popular) */}
-                      {product.badge && (
-                        <div className={cn(
-                          "absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs",
-                          product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
-                        )}>
-                          {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
-                        </div>
-                      )}
+                      {/* Badges Container */}
+                      <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
+                        {product.isLimitedDeal && (
+                          <div className="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs bg-red-600 animate-pulse">
+                            Limited Time Deal
+                          </div>
+                        )}
+                        {product.badge && (
+                          <div className={cn(
+                            "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs",
+                            product.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                          )}>
+                            {product.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
+                          </div>
+                        )}
+                      </div>
 
                       {/* Image Container */}
                       <div
@@ -593,7 +600,7 @@ Please guide me on how to complete the payment!`;
                     {/* Price & Add to Cart button */}
                     <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between">
                       <div>
-                        {product.mrpPrice && product.discountedPrice && product.mrpPrice > product.discountedPrice ? (
+                        {typeof product.mrpPrice === 'number' && typeof product.discountedPrice === 'number' && product.mrpPrice > product.discountedPrice ? (
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] text-zinc-400 dark:text-zinc-500 line-through">

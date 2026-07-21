@@ -28,11 +28,24 @@ export async function getStoreProducts() {
   try {
     await connectDB();
     const products = await Product.find()
-      .select("_id name description price imageUrl categoryId sortOrder createdAt")
+      .select("_id name description price mrpPrice discountedPrice isLimitedDeal dealExpiry badge isFeatured imageUrl categoryId sortOrder createdAt")
       .populate("categoryId", "name slug")
       .sort({ sortOrder: 1, createdAt: -1 })
       .lean();
-    return { success: true, products: JSON.parse(JSON.stringify(products)) };
+
+    const now = new Date();
+    const processedProducts = products.map((product: any) => {
+      if (product.isLimitedDeal && product.dealExpiry && new Date(product.dealExpiry) < now) {
+        return {
+          ...product,
+          isLimitedDeal: false,
+          dealExpiry: null,
+        };
+      }
+      return product;
+    });
+
+    return { success: true, products: JSON.parse(JSON.stringify(processedProducts)) };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to load products." };
   }
