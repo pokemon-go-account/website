@@ -368,7 +368,8 @@ export async function getOrdersConsole(
   page: number = 1,
   limit: number = 100,
   search: string = "",
-  status: string = "ALL"
+  status: string = "ALL",
+  country: string = "ALL"
 ) {
   try {
     await checkSuperAdminSession();
@@ -380,37 +381,52 @@ export async function getOrdersConsole(
     if (status !== "ALL") {
       query.status = status;
     }
+
+    const andConditions: any[] = [];
+
+    if (country && country !== "ALL") {
+      const countryUsers = await User.find({
+        country: { $regex: new RegExp(`^${country.trim()}$`, "i") }
+      }).select("_id").lean();
+      const countryUserIds = countryUsers.map(u => u._id);
+      andConditions.push({ userId: { $in: countryUserIds } });
+    }
     
     if (search.trim()) {
       const searchRegex = new RegExp(search.trim(), "i");
       
-      // Find matching users
+      // Find matching users by name, username, email, telegram, or country
       const matchingUsers = await User.find({
         $or: [
           { name: searchRegex },
           { username: searchRegex },
           { email: searchRegex },
-          { telegramUsername: searchRegex }
+          { telegramUsername: searchRegex },
+          { country: searchRegex }
         ]
       }).select("_id").lean();
       const userIds = matchingUsers.map(u => u._id);
       
-      const conditions: any[] = [
+      const searchConditions: any[] = [
         { userId: { $in: userIds } },
         { "items.name": searchRegex }
       ];
       
       if (mongoose.Types.ObjectId.isValid(search.trim())) {
-        conditions.push({ _id: search.trim() });
+        searchConditions.push({ _id: search.trim() });
       }
       
-      query.$or = conditions;
+      andConditions.push({ $or: searchConditions });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
     const skip = (page - 1) * limit;
 
     const orders = await Order.find(query)
-      .populate("userId", "name username email telegramUsername")
+      .populate("userId", "name username email telegramUsername country")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

@@ -18,7 +18,8 @@ import {
   ArrowUpRight as ArrowIcon,
   Gavel as AuctionIcon,
   KeyRound as RecoveryIcon,
-  CreditCard as PaymentIcon
+  CreditCard as PaymentIcon,
+  MapPin as MapPinIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ export function RevenueClient() {
 
   const [rates, setRates] = useState<Record<string, number>>({ USD: 1.0 });
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
+  const [selectedCountry, setSelectedCountry] = useState<string>("ALL");
   const [chartMode, setChartMode] = useState<"revenue" | "orders">("revenue");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -93,7 +95,19 @@ export function RevenueClient() {
     return `${currSymbol}${val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  // Filtered orders list
+  // Extract list of unique available countries from orders
+  const availableCountries = useMemo(() => {
+    if (!data?.orders) return [];
+    const set = new Set<string>();
+    data.orders.forEach((ord) => {
+      if (ord.customerCountry && ord.customerCountry.trim()) {
+        set.add(ord.customerCountry.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [data?.orders]);
+
+  // Filtered orders list by search query, order type, and country
   const filteredOrders = useMemo(() => {
     if (!data?.orders) return [];
     return data.orders.filter((ord) => {
@@ -101,24 +115,113 @@ export function RevenueClient() {
         searchQuery.trim() === "" ||
         ord.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ord.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ord.customerEmail.toLowerCase().includes(searchQuery.toLowerCase());
+        ord.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (ord.customerCountry || "").toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesType = typeFilter === "ALL" || ord.orderType === typeFilter;
-      return matchesSearch && matchesType;
+      const matchesCountry =
+        selectedCountry === "ALL" ||
+        (ord.customerCountry || "").toLowerCase() === selectedCountry.toLowerCase();
+      return matchesSearch && matchesType && matchesCountry;
     });
-  }, [data?.orders, searchQuery, typeFilter]);
+  }, [data?.orders, searchQuery, typeFilter, selectedCountry]);
+
+  // Re-calculate summary metrics dynamically when country filter is applied
+  const summary = useMemo(() => {
+    if (!data?.summary) {
+      return {
+        totalRevenueUSD: 0,
+        totalOrdersCount: 0,
+        averageOrderValueUSD: 0,
+        storefrontRevenueUSD: 0,
+        buyNowRevenueUSD: 0,
+        auctionRevenueUSD: 0,
+        recoveryRevenueUSD: 0,
+      };
+    }
+
+    if (selectedCountry === "ALL") {
+      return data.summary;
+    }
+
+    let totalRevenueUSD = 0;
+    let storefrontRevenueUSD = 0;
+    let buyNowRevenueUSD = 0;
+    let auctionRevenueUSD = 0;
+    let recoveryRevenueUSD = 0;
+
+    filteredOrders.forEach((ord) => {
+      const amt = ord.totalPriceUSD || 0;
+      totalRevenueUSD += amt;
+      if (ord.orderType === "STOREFRONT") storefrontRevenueUSD += amt;
+      else if (ord.orderType === "BUY_NOW") buyNowRevenueUSD += amt;
+      else if (ord.orderType === "AUCTION") auctionRevenueUSD += amt;
+      else if (ord.orderType === "RECOVERY") recoveryRevenueUSD += amt;
+    });
+
+    const totalOrdersCount = filteredOrders.length;
+    const averageOrderValueUSD = totalOrdersCount > 0 ? totalRevenueUSD / totalOrdersCount : 0;
+
+    return {
+      totalRevenueUSD: Math.round(totalRevenueUSD * 100) / 100,
+      totalOrdersCount,
+      averageOrderValueUSD: Math.round(averageOrderValueUSD * 100) / 100,
+      storefrontRevenueUSD: Math.round(storefrontRevenueUSD * 100) / 100,
+      buyNowRevenueUSD: Math.round(buyNowRevenueUSD * 100) / 100,
+      auctionRevenueUSD: Math.round(auctionRevenueUSD * 100) / 100,
+      recoveryRevenueUSD: Math.round(recoveryRevenueUSD * 100) / 100,
+    };
+  }, [data?.summary, filteredOrders, selectedCountry]);
+
+  // Re-calculate daily stats for 14-day chart dynamically when country filter is active
+  const dailyStats = useMemo(() => {
+    if (selectedCountry === "ALL" && data?.dailyStats) {
+      return data.dailyStats;
+    }
+
+    const dailyMap = new Map<string, { count: number; revenue: number }>();
+    filteredOrders.forEach((ord) => {
+      const d = new Date(ord.createdAt);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const key = `${year}-${month}-${day}`;
+      const existing = dailyMap.get(key) || { count: 0, revenue: 0 };
+      dailyMap.set(key, { count: existing.count + 1, revenue: existing.revenue + ord.totalPriceUSD });
+    });
+
+    const stats: DailyStat[] = [];
+    const today = new Date();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const key = `${year}-${month}-${day}`;
+      const stat = dailyMap.get(key) || { count: 0, revenue: 0 };
+      const formattedDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      stats.push({
+        date: key,
+        formattedDate,
+        ordersCount: stat.count,
+        revenue: Math.round(stat.revenue * 100) / 100,
+      });
+    }
+    return stats;
+  }, [data?.dailyStats, filteredOrders, selectedCountry]);
 
   // Daily Stats maximum value for SVG chart scaling
   const maxChartValue = useMemo(() => {
-    if (!data?.dailyStats || data.dailyStats.length === 0) return 100;
+    if (!dailyStats || dailyStats.length === 0) return 100;
     if (chartMode === "revenue") {
-      const maxRev = Math.max(...data.dailyStats.map((s) => s.revenue));
+      const maxRev = Math.max(...dailyStats.map((s) => s.revenue));
       return maxRev > 0 ? maxRev : 100;
     } else {
-      const maxOrd = Math.max(...data.dailyStats.map((s) => s.ordersCount));
+      const maxOrd = Math.max(...dailyStats.map((s) => s.ordersCount));
       return maxOrd > 0 ? maxOrd : 10;
     }
-  }, [data?.dailyStats, chartMode]);
+  }, [dailyStats, chartMode]);
 
   if (loading) {
     return (
@@ -128,18 +231,6 @@ export function RevenueClient() {
       </div>
     );
   }
-
-  const summary = data?.summary || {
-    totalRevenueUSD: 0,
-    totalOrdersCount: 0,
-    averageOrderValueUSD: 0,
-    storefrontRevenueUSD: 0,
-    buyNowRevenueUSD: 0,
-    auctionRevenueUSD: 0,
-    recoveryRevenueUSD: 0,
-  };
-
-  const dailyStats = data?.dailyStats || [];
 
   return (
     <div className="space-y-8 max-w-6xl pb-20">
@@ -162,11 +253,29 @@ export function RevenueClient() {
           </div>
         </div>
 
-        {/* CONTROLS: Currency Selector & Refresh */}
+        {/* CONTROLS: Country, Currency Selector & Refresh */}
         <div className="flex items-center gap-3 z-10 flex-wrap">
+          {/* Country Filter Dropdown */}
+          <div className="flex items-center gap-2 bg-zinc-100 dark:bg-[#181820] border border-zinc-200 dark:border-white/[0.08] px-3 py-1.5 rounded-2xl shadow-xs">
+            <GlobeIcon className="h-4 w-4 text-purple-400 shrink-0" />
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Country:</span>
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="bg-transparent text-xs font-bold text-zinc-900 dark:text-white outline-none cursor-pointer pr-1"
+            >
+              <option value="ALL" className="bg-white dark:bg-[#181820] text-zinc-900 dark:text-white">🌐 All Countries</option>
+              {availableCountries.map((c) => (
+                <option key={c} value={c} className="bg-white dark:bg-[#181820] text-zinc-900 dark:text-white">
+                  📍 {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Currency Dropdown */}
           <div className="flex items-center gap-2 bg-zinc-100 dark:bg-[#181820] border border-zinc-200 dark:border-white/[0.08] px-3 py-1.5 rounded-2xl shadow-xs">
-            <GlobeIcon className="h-4 w-4 text-[#6133e1] shrink-0" />
+            <DollarIcon className="h-4 w-4 text-[#6133e1] shrink-0" />
             <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Currency:</span>
             <select
               value={selectedCurrency}
@@ -191,6 +300,22 @@ export function RevenueClient() {
           </button>
         </div>
       </div>
+
+      {/* Active Country Filter Banner */}
+      {selectedCountry !== "ALL" && (
+        <div className="flex items-center justify-between bg-purple-500/10 border border-purple-500/20 px-5 py-3 rounded-2xl text-xs font-bold text-purple-300 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <MapPinIcon className="h-4 w-4 text-purple-400 shrink-0" />
+            <span>Filtering Revenue Dashboard for Country: <strong className="text-white font-extrabold">{selectedCountry}</strong></span>
+          </div>
+          <button
+            onClick={() => setSelectedCountry("ALL")}
+            className="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-white text-[11px] font-extrabold transition-colors cursor-pointer"
+          >
+            Clear Country Filter
+          </button>
+        </div>
+      )}
 
       {/* SUMMARY STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -475,6 +600,10 @@ export function RevenueClient() {
                       <div>
                         <p className="font-bold text-zinc-900 dark:text-white leading-tight">{ord.customerName}</p>
                         <p className="text-[10px] text-zinc-400">{ord.customerEmail}</p>
+                        <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[9px] font-bold">
+                          <GlobeIcon className="h-2.5 w-2.5 shrink-0" />
+                          <span>{ord.customerCountry || "Location Unspecified"}</span>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 max-w-xs">

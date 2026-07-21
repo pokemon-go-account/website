@@ -47,6 +47,7 @@ export default function AnalyticsConsolePage() {
   const [visitors, setVisitors] = useState<VisitorPresence[]>([]);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>("7d");
+  const [selectedCountry, setSelectedCountry] = useState<string>("ALL");
   const [hoveredPage, setHoveredPage] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
@@ -111,6 +112,20 @@ export default function AnalyticsConsolePage() {
     };
   }, []);
 
+  // Dynamically extract all known countries from live visitors & telemetry history
+  const availableCountries = useMemo(() => {
+    const set = new Set<string>();
+    visitors.forEach((v) => {
+      if (v.country && v.country.trim()) set.add(v.country.trim());
+    });
+    if (analyticsData?.countryMeta) {
+      Object.values(analyticsData.countryMeta).forEach((meta: any) => {
+        if (meta?.country && meta.country.trim()) set.add(meta.country.trim());
+      });
+    }
+    return Array.from(set).sort();
+  }, [visitors, analyticsData]);
+
   // Compute date array for 7d, 14d, 30d
   const dateList = useMemo(() => {
     const days = timeRange === "7d" ? 7 : timeRange === "14d" ? 14 : 30;
@@ -124,7 +139,13 @@ export default function AnalyticsConsolePage() {
     return dates;
   }, [timeRange]);
 
-  // Aggregate Total Views, Unique Views, and Country Breakdown over selected date range
+  // Filtered live visitors based on selected country
+  const filteredVisitors = useMemo(() => {
+    if (selectedCountry === "ALL") return visitors;
+    return visitors.filter((v) => (v.country || "").toLowerCase() === selectedCountry.toLowerCase());
+  }, [visitors, selectedCountry]);
+
+  // Aggregate Total Views, Unique Views, and Country Breakdown over selected date range and country filter
   const { totalViewsPeriod, uniqueViewsPeriod, pageViewStatsPeriod, countryTrafficPeriod } = useMemo(() => {
     if (!analyticsData) {
       return { totalViewsPeriod: 0, uniqueViewsPeriod: 0, pageViewStatsPeriod: [], countryTrafficPeriod: [] };
@@ -143,19 +164,49 @@ export default function AnalyticsConsolePage() {
     const countryMap = new Map<string, { countryCode: string; country: string; flag: string; views: number; uniqueSet: Set<string> }>();
 
     dateList.forEach((dateStr) => {
-      // Daily total views
-      if (dailyViews[dateStr]) {
+      // Country views per date & total view filtering
+      if (countryViews[dateStr]) {
+        Object.entries(countryViews[dateStr]).forEach(([cCode, count]) => {
+          const numCount = Number(count) || 0;
+          const meta = countryMeta[cCode] || { country: cCode, flag: "🌐", countryCode: cCode };
+          const countryName = meta.country || cCode;
+
+          if (selectedCountry !== "ALL" && countryName.toLowerCase() !== selectedCountry.toLowerCase()) {
+            return;
+          }
+
+          totalViews += numCount;
+
+          const existing = countryMap.get(cCode);
+          if (existing) {
+            existing.views += numCount;
+          } else {
+            countryMap.set(cCode, {
+              countryCode: cCode,
+              country: countryName,
+              flag: meta.flag || "🌐",
+              views: numCount,
+              uniqueSet: new Set(),
+            });
+          }
+        });
+      } else if (selectedCountry === "ALL" && dailyViews[dateStr]) {
         totalViews += Number(dailyViews[dateStr]) || 0;
       }
 
       // Unique visitors per date
       if (uniqueVisitors[dateStr]) {
         Object.entries(uniqueVisitors[dateStr]).forEach(([vId, val]: [string, any]) => {
+          const vCountry = val?.country || (val?.countryCode ? countryMeta[val.countryCode]?.country : "") || "";
+          if (selectedCountry !== "ALL" && vCountry.toLowerCase() !== selectedCountry.toLowerCase()) {
+            return;
+          }
+
           uniqueVisitorSet.add(vId);
           if (val && val.countryCode) {
             const cCode = val.countryCode;
-            const existing = countryMap.get(cCode);
             const meta = countryMeta[cCode] || { country: val.country || cCode, flag: val.flag || "🌐", countryCode: cCode };
+            const existing = countryMap.get(cCode);
             if (existing) {
               existing.uniqueSet.add(vId);
             } else {
@@ -171,32 +222,27 @@ export default function AnalyticsConsolePage() {
         });
       }
 
-      // Country views per date
-      if (countryViews[dateStr]) {
-        Object.entries(countryViews[dateStr]).forEach(([cCode, count]) => {
-          const numCount = Number(count) || 0;
-          const meta = countryMeta[cCode] || { country: cCode, flag: "🌐", countryCode: cCode };
-          const existing = countryMap.get(cCode);
-          if (existing) {
-            existing.views += numCount;
-          } else {
-            countryMap.set(cCode, {
-              countryCode: cCode,
-              country: meta.country,
-              flag: meta.flag,
-              views: numCount,
-              uniqueSet: new Set(),
-            });
-          }
-        });
-      }
-
       // Page level views per date
       if (pageViews[dateStr]) {
         Object.entries(pageViews[dateStr]).forEach(([pKey, count]) => {
           const path = decodePathKey(pKey);
           const title = pageTitles[pKey] || path;
           const numCount = Number(count) || 0;
+
+          // If filtering by country, estimate page views for that country proportional to country share
+          if (selectedCountry !== "ALL") {
+            const matchingVisitorsOnPage = uniqueVisitors[dateStr]
+              ? Object.values(uniqueVisitors[dateStr]).filter(
+                  (v: any) =>
+                    v?.lastPath === path &&
+                    (v?.country || countryMeta[v?.countryCode]?.country || "").toLowerCase() === selectedCountry.toLowerCase()
+                ).length
+              : 0;
+
+            if (matchingVisitorsOnPage === 0 && uniqueVisitors[dateStr]) {
+              return;
+            }
+          }
 
           const existing = pageMap.get(pKey);
           if (existing) {
@@ -213,6 +259,10 @@ export default function AnalyticsConsolePage() {
 
           if (uniqueVisitors[dateStr]) {
             Object.entries(uniqueVisitors[dateStr]).forEach(([vId, val]: [string, any]) => {
+              const vCountry = val?.country || (val?.countryCode ? countryMeta[val.countryCode]?.country : "") || "";
+              if (selectedCountry !== "ALL" && vCountry.toLowerCase() !== selectedCountry.toLowerCase()) {
+                return;
+              }
               if (val?.lastPath === path) {
                 pageMap.get(pKey)?.uniqueSet.add(vId);
               }
@@ -242,12 +292,12 @@ export default function AnalyticsConsolePage() {
       pageViewStatsPeriod: pageStatsList,
       countryTrafficPeriod: countryList,
     };
-  }, [analyticsData, dateList]);
+  }, [analyticsData, dateList, selectedCountry]);
 
   // Realtime Live Page breakdown aggregation
   const livePageStats = useMemo(() => {
     const map = new Map<string, { pathname: string; pageTitle: string; count: number; users: VisitorPresence[] }>();
-    visitors.forEach((v) => {
+    filteredVisitors.forEach((v) => {
       const path = v.pathname || "/";
       const existing = map.get(path);
       if (existing) {
@@ -263,12 +313,12 @@ export default function AnalyticsConsolePage() {
       }
     });
     return Array.from(map.values()).sort((a, b) => b.count - a.count);
-  }, [visitors]);
+  }, [filteredVisitors]);
 
   // Realtime Live Country breakdown aggregation
   const liveCountryStats = useMemo(() => {
     const map = new Map<string, { country: string; flag: string; count: number; users: VisitorPresence[] }>();
-    visitors.forEach((v) => {
+    filteredVisitors.forEach((v) => {
       const country = v.country || "United States";
       const flag = v.flag || "🇺🇸";
       const existing = map.get(country);
@@ -280,7 +330,7 @@ export default function AnalyticsConsolePage() {
       }
     });
     return Array.from(map.values()).sort((a, b) => b.count - a.count);
-  }, [visitors]);
+  }, [filteredVisitors]);
 
   return (
     <div className="space-y-8 max-w-6xl pb-20">
@@ -302,46 +352,82 @@ export default function AnalyticsConsolePage() {
           </p>
         </div>
 
-        {/* REDESIGNED PREMIUM TIME RANGE SELECTOR */}
-        <div className="z-10 inline-flex items-center p-1.5 bg-black/40 border border-white/10 rounded-2xl shadow-inner backdrop-blur-md self-start md:self-auto">
-          <button
-            onClick={() => setTimeRange("7d")}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-              timeRange === "7d"
-                ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
-                : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
-            }`}
-          >
-            <Calendar className="h-3.5 w-3.5" />
-            7 Days
-          </button>
-          <button
-            onClick={() => setTimeRange("14d")}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-              timeRange === "14d"
-                ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
-                : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
-            }`}
-          >
-            <Calendar className="h-3.5 w-3.5" />
-            14 Days
-          </button>
-          <button
-            onClick={() => setTimeRange("30d")}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-              timeRange === "30d"
-                ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
-                : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
-            }`}
-          >
-            <Calendar className="h-3.5 w-3.5" />
-            30 Days
-          </button>
+        {/* TIME RANGE & COUNTRY SELECTOR CONTROLS */}
+        <div className="z-10 flex flex-wrap items-center gap-3 self-start md:self-auto">
+          {/* Country Selector Dropdown */}
+          <div className="inline-flex items-center px-3 py-2 bg-black/40 border border-white/10 rounded-2xl backdrop-blur-md gap-2 shadow-inner">
+            <Globe className="h-4 w-4 text-purple-400 shrink-0" />
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="bg-transparent text-white text-xs font-bold focus:outline-none cursor-pointer pr-2"
+            >
+              <option value="ALL" className="bg-zinc-900 text-white">🌐 All Countries</option>
+              {availableCountries.map((c) => (
+                <option key={c} value={c} className="bg-zinc-900 text-white">
+                  📍 {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Time Range Selector */}
+          <div className="inline-flex items-center p-1.5 bg-black/40 border border-white/10 rounded-2xl shadow-inner backdrop-blur-md">
+            <button
+              onClick={() => setTimeRange("7d")}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                timeRange === "7d"
+                  ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
+                  : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
+              }`}
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              7 Days
+            </button>
+            <button
+              onClick={() => setTimeRange("14d")}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                timeRange === "14d"
+                  ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
+                  : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
+              }`}
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              14 Days
+            </button>
+            <button
+              onClick={() => setTimeRange("30d")}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                timeRange === "30d"
+                  ? "bg-gradient-to-r from-[#6133e1] to-[#8b5cf6] text-white shadow-lg shadow-[#6133e1]/30 border border-white/20"
+                  : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
+              }`}
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              30 Days
+            </button>
+          </div>
         </div>
 
         {/* Ambient glow background */}
         <div className="absolute -right-10 -top-10 h-32 w-32 bg-[#6133e1]/20 rounded-full blur-3xl pointer-events-none" />
       </div>
+
+      {/* Active Country Filter Notification Banner */}
+      {selectedCountry !== "ALL" && (
+        <div className="flex items-center justify-between bg-purple-500/10 border border-purple-500/20 px-5 py-3 rounded-2xl text-xs font-bold text-purple-300 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
+            <span>Filtering Telemetry Dashboard for Country: <strong className="text-white font-extrabold">{selectedCountry}</strong></span>
+          </div>
+          <button
+            onClick={() => setSelectedCountry("ALL")}
+            className="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-white text-[11px] font-extrabold transition-colors cursor-pointer"
+          >
+            Clear Country Filter
+          </button>
+        </div>
+      )}
 
       {/* Primary Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -786,9 +872,14 @@ export default function AnalyticsConsolePage() {
                 {countryTrafficPeriod.map((c, idx) => {
                   const pct = totalViewsPeriod > 0 ? Math.round((c.views / totalViewsPeriod) * 100) : 0;
                   return (
-                    <tr key={`${c.countryCode}_${idx}`} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <tr
+                      key={`${c.countryCode}_${idx}`}
+                      onClick={() => setSelectedCountry(c.country)}
+                      className="hover:bg-purple-500/5 dark:hover:bg-purple-500/10 cursor-pointer transition-colors group"
+                      title={`Click to filter telemetry for ${c.country}`}
+                    >
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2.5 font-bold text-zinc-900 dark:text-white">
+                        <div className="flex items-center gap-2.5 font-bold text-zinc-900 dark:text-white group-hover:text-purple-400 transition-colors">
                           <span className="text-xl">{c.flag}</span>
                           <span>{c.country}</span>
                         </div>

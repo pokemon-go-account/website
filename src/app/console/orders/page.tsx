@@ -7,7 +7,7 @@ import {
   failOrderConsole,
   deleteOrderConsole
 } from "@/features/console/actions";
-import { ShoppingBag, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2 } from "lucide-react";
+import { ShoppingBag, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2, Globe, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 
@@ -19,6 +19,7 @@ interface OrderData {
     username?: string;
     email?: string;
     telegramUsername?: string;
+    country?: string;
   };
   items: Array<{
     productId?: string;
@@ -39,6 +40,7 @@ export default function OrdersConsolePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"ALL" | "PENDING" | "COMPLETED" | "FAILED">("ALL");
+  const [selectedCountry, setSelectedCountry] = useState<string>("ALL");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [alert, setAlert] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -65,7 +67,7 @@ export default function OrdersConsolePage() {
     }
     setAlert(null);
     try {
-      const res = await getOrdersConsole(pageNum, 100, debouncedSearch, activeTab);
+      const res = await getOrdersConsole(pageNum, 100, debouncedSearch, activeTab, selectedCountry);
       if (res.success && res.orders) {
         const fetchedOrders = res.orders as OrderData[];
         if (resetList) {
@@ -91,10 +93,10 @@ export default function OrdersConsolePage() {
     }
   };
 
-  // Reload when search query or tab filter changes
+  // Reload when search query, status filter, or country filter changes
   useEffect(() => {
     fetchOrders(1, true);
-  }, [debouncedSearch, activeTab]);
+  }, [debouncedSearch, activeTab, selectedCountry]);
 
   // Infinite Scroll intersection observer
   useEffect(() => {
@@ -114,7 +116,7 @@ export default function OrdersConsolePage() {
     return () => {
       observer.unobserve(target);
     };
-  }, [hasMore, loading, loadingMore, page, debouncedSearch, activeTab]);
+  }, [hasMore, loading, loadingMore, page, debouncedSearch, activeTab, selectedCountry]);
 
   const handleComplete = async (id: string) => {
     setProcessingId(id);
@@ -161,6 +163,11 @@ export default function OrdersConsolePage() {
     .filter((o) => o.status === "COMPLETED")
     .reduce((acc, o) => acc + (o.totalPrice || 0), 0);
 
+  // Extract unique countries from orders list for quick filter options
+  const availableCountries = Array.from(
+    new Set(orders.map((o) => o.userId?.country).filter((c): c is string => Boolean(c && c.trim())))
+  ).sort();
+
   return (
     <div className="max-w-6xl space-y-8">
       {/* Title */}
@@ -195,7 +202,7 @@ export default function OrdersConsolePage() {
       {/* Search and Tabs Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         {/* Pills */}
-        <div className="flex border border-zinc-200 dark:border-white/[0.06] bg-zinc-100/50 dark:bg-white/[0.02] p-1 rounded-md gap-1">
+        <div className="flex border border-zinc-200 dark:border-white/[0.06] bg-zinc-100/50 dark:bg-white/[0.02] p-1 rounded-md gap-1 flex-wrap">
           {(["ALL", "PENDING", "COMPLETED", "FAILED"] as const).map((tab) => (
             <button
               key={tab}
@@ -212,16 +219,36 @@ export default function OrdersConsolePage() {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by buyer username, product name..."
-            className="w-full h-8 pl-9 pr-4 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs placeholder:text-zinc-450 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
-          />
+        {/* Filters Right: Country Select & Search */}
+        <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto items-stretch sm:items-center">
+          {/* Country Selector Dropdown */}
+          <div className="relative flex items-center">
+            <Globe className="absolute left-2.5 h-3.5 w-3.5 text-purple-400 pointer-events-none z-10" />
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="h-8 pl-8 pr-7 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs font-medium appearance-none focus:outline-none focus:border-purple-500 transition-colors cursor-pointer"
+            >
+              <option value="ALL" className="bg-white dark:bg-zinc-900">🌐 All Countries</option>
+              {availableCountries.map((c) => (
+                <option key={c} value={c} className="bg-white dark:bg-zinc-900">
+                  📍 {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Search */}
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search buyer, product, country..."
+              className="w-full h-8 pl-9 pr-4 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-950 dark:text-white text-xs placeholder:text-zinc-450 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors"
+            />
+          </div>
         </div>
       </div>
 
@@ -268,14 +295,21 @@ export default function OrdersConsolePage() {
                       key={order._id}
                       className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors"
                     >
-                      {/* Buyer Details */}
+                      {/* Buyer Details & User Location */}
                       <td className="px-6 py-4">
-                        <div className="font-bold text-zinc-900 dark:text-white">
+                        <div className="font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
                           {order.userId?.name || "Unnamed Trainer"}
                         </div>
                         <div className="text-zinc-500 font-mono text-[10px]">
                           @{order.userId?.username || "no_username"}
                         </div>
+
+                        {/* Country / User Location Badge */}
+                        <div className="my-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[9px] font-bold">
+                          <Globe className="h-2.5 w-2.5 shrink-0" />
+                          <span>{order.userId?.country || "Location Unspecified"}</span>
+                        </div>
+
                         <div className="text-zinc-450 dark:text-zinc-500 font-mono text-[9px] select-all leading-none my-0.5">
                           Order ID: {order._id}
                         </div>

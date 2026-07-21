@@ -24,6 +24,7 @@ export interface RevenueOrderDetails {
   orderNumber: string;
   customerName: string;
   customerEmail: string;
+  customerCountry?: string;
   orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION" | "RECOVERY";
   status: string;
   totalPriceUSD: number;
@@ -43,13 +44,13 @@ export async function getRevenueAnalyticsAction() {
 
     // Fetch all completed/paid orders
     const orders = await Order.find({ status: "COMPLETED" })
-      .populate("userId", "username name email")
+      .populate("userId", "username name email country")
       .sort({ createdAt: -1 })
       .lean();
 
     // Also fetch completed recovery requests (if any not represented in Order)
     const completedRecoveries = await RecoveryRequest.find({ status: "COMPLETED" })
-      .populate("userId", "username name email")
+      .populate("userId", "username name email country")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -101,6 +102,7 @@ export async function getRevenueAnalyticsAction() {
         orderNumber: `#ORD-${ord._id.toString().substring(18, 24).toUpperCase()}`,
         customerName: userObj?.username || userObj?.name || "Customer",
         customerEmail: userObj?.email || "No email",
+        customerCountry: userObj?.country || "",
         orderType: type,
         status: ord.status,
         totalPriceUSD: amount,
@@ -138,6 +140,7 @@ export async function getRevenueAnalyticsAction() {
           orderNumber: `#REC-${rec._id.toString().substring(18, 24).toUpperCase()}`,
           customerName: userObj?.username || userObj?.name || "Customer",
           customerEmail: userObj?.email || "No email",
+          customerCountry: userObj?.country || "",
           orderType: "RECOVERY",
           status: "COMPLETED",
           totalPriceUSD: price,
