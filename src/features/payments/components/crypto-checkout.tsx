@@ -26,6 +26,7 @@ import {
 import { cn, getUserCountry } from "@/lib/utils";
 import { useCurrencyStore, CURRENCY_SYMBOLS } from "@/store/useCurrencyStore";
 import { motion, AnimatePresence } from "framer-motion";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 // Removed getLiveCryptoRates API import
 interface CryptoPaymentCheckoutProps {
   orderId: string;
@@ -339,6 +340,17 @@ Please verify my payment proof and approve my order!`;
           timestamp: serverTimestamp(),
           read: false,
         });
+
+        // Trigger Webhook Notification on Crypto payment proof submit
+        sendChatWebhookNotification({
+          ticketId: chatId,
+          ticketTitle: `Order #${orderId.substring(0, 8).toUpperCase()} (Crypto: ${selectedCoin.name})`,
+          senderName: username,
+          senderType: "user",
+          userEmail: customerEmail,
+          text: messageText,
+          hasImage: true,
+        }).catch(() => {});
 
         // If cart contained a recovery order, post proof to recovery chat thread as well
         const cartItems = useCartStore.getState().items;

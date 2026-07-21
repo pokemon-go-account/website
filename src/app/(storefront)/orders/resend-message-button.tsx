@@ -14,6 +14,7 @@ import { CryptoPaymentCheckout } from "@/features/payments/components/crypto-che
 import { WisePaymentCheckout } from "@/features/payments/components/wise-checkout";
 import { AnimatedCardIcon, AnimatedCryptoIcon, PaypalIcon, WiseIcon } from "@/components/ui/animated-payment-icons";
 import { cn } from "@/lib/utils";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 
 interface ResendMessageButtonProps {
   orderId: string;
@@ -156,6 +157,16 @@ Please guide me on how to complete the payment!`;
         timestamp: serverTimestamp(),
         read: false,
       });
+
+      // Trigger Webhook Notification on order follow-up manual payment chat creation
+      sendChatWebhookNotification({
+        ticketId: chatId,
+        ticketTitle: `Order #${localOrderId.substring(0, 8).toUpperCase()} (${methodLabel})`,
+        senderName: username,
+        senderType: "user",
+        userEmail: email,
+        text: messageText,
+      }).catch(() => {});
 
       setIsOpen(false);
       window.location.href = `/chat?chatId=${chatId}`;

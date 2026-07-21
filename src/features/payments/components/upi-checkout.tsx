@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn, getUserCountry } from "@/lib/utils";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 
 interface UpiPaymentCheckoutProps {
   orderId: string;
@@ -203,6 +204,17 @@ Please verify my payment proof and approve my order!`;
           timestamp: serverTimestamp(),
           read: false,
         });
+
+        // Trigger Webhook Notification on UPI payment proof submit
+        sendChatWebhookNotification({
+          ticketId: chatId,
+          ticketTitle: `Order #${orderId.substring(0, 8).toUpperCase()} (UPI)`,
+          senderName: username,
+          senderType: "user",
+          userEmail: customerEmail,
+          text: messageText,
+          hasImage: true,
+        }).catch(() => {});
 
         // If cart contained a recovery order, post proof to recovery chat thread as well
         const cartItems = useCartStore.getState().items;

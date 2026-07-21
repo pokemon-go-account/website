@@ -11,6 +11,7 @@ import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
 import { getUserRecoveryRequests } from "@/features/recovery/actions";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 import { useSession } from "next-auth/react";
 import { getFreshBalance } from "@/features/auth/actions";
 import { getDb } from "@/lib/firestore";
@@ -292,6 +293,16 @@ Please guide me on how to complete the payment!`;
           timestamp: serverTimestamp(),
           read: false,
         });
+
+        // Trigger Webhook Notification on storefront manual order chat creation
+        sendChatWebhookNotification({
+          ticketId: chatId,
+          ticketTitle: `Order #${orderId.substring(0, 8).toUpperCase()} (${methodLabel})`,
+          senderName: username,
+          senderType: "user",
+          userEmail: session?.user?.email ?? undefined,
+          text: messageText,
+        }).catch(() => {});
 
         // Close modal, clear cart and redirect
         setIsCheckoutOpen(false);

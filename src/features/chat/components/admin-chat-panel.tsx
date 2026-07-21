@@ -43,7 +43,7 @@ import {
   ArchiveRestore,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadChatImage, deleteChatImages, getFirebaseCustomToken } from "@/features/chat/actions";
+import { uploadChatImage, deleteChatImages, getFirebaseCustomToken, sendChatWebhookNotification } from "@/features/chat/actions";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
@@ -704,6 +704,15 @@ export function AdminChatPanel() {
 
       console.log(`[AdminChat] ✅ Reply Sent Successfully | ChatId: ${activeChatId}`);
       playSound(sendSoundRef);
+
+      // Trigger Webhook Notification on Admin reply
+      sendChatWebhookNotification({
+        ticketId: activeChatId,
+        ticketTitle: activeChat?.title || activeChatId,
+        senderName: adminUsername,
+        senderType: "admin",
+        text,
+      }).catch(() => {});
     } catch (err) {
       console.error("[AdminChat] ❌ Failed to send reply:", err);
     } finally {

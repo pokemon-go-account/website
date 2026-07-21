@@ -36,7 +36,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadChatImage, getFirebaseCustomToken } from "@/features/chat/actions";
+import { uploadChatImage, getFirebaseCustomToken, sendChatWebhookNotification } from "@/features/chat/actions";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database, app as clientApp } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
@@ -124,6 +124,7 @@ export function UserChatPanel({
   const notifSoundRef = useRef<HTMLAudioElement | null>(null);
   const prevMessagesRef = useRef<Message[]>([]);
   const prevConversationsRef = useRef<ChatMeta[]>([]);
+  const hasSetInitialChatRef = useRef<string | null>(null);
 
   useEffect(() => {
     sendSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_X8t2FkCu.mp3");
@@ -261,6 +262,17 @@ export function UserChatPanel({
       console.log(`[UserChat] ✅ Image Sent Successfully | ChatId: ${activeChatId} | URL: ${imageUrl}`);
       setInputText("");
       playSound(sendSoundRef);
+
+      // Trigger Webhook Notification on image send
+      sendChatWebhookNotification({
+        ticketId: activeChatId,
+        ticketTitle: activeChat?.title || activeChatId,
+        senderName: username,
+        senderType: "user",
+        userEmail: session?.user?.email ?? undefined,
+        text: inputText.trim() || "📷 Sent an image attachment",
+        hasImage: true,
+      }).catch(() => {});
     } catch (err) {
       console.error("[UserChat] ❌ Image upload error:", err);
       alert("Error sending image.");
@@ -311,10 +323,6 @@ export function UserChatPanel({
 
         prevConversationsRef.current = list;
         setConversations(list);
-
-        if (initialChatId && list.some((c) => c.id === initialChatId)) {
-          setActiveChatId(initialChatId);
-        }
       },
       (error) => {
         console.warn("[UserChatPanel] Firestore conversations listener warning:", error.message);
@@ -322,7 +330,27 @@ export function UserChatPanel({
     );
 
     return unsub;
-  }, [userId, isAuthReady, initialChatId, activeChatId, playSound]);
+  }, [userId, isAuthReady, playSound]);
+
+  // Handle initialChatId auto-selection ONCE without locking
+  useEffect(() => {
+    if (
+      initialChatId &&
+      initialChatId !== hasSetInitialChatRef.current &&
+      conversations.length > 0
+    ) {
+      const targetChat = conversations.find((c) => c.id === initialChatId);
+      if (targetChat) {
+        hasSetInitialChatRef.current = initialChatId;
+        setActiveChatId(initialChatId);
+        if (targetChat.type === "order" || targetChat.id.startsWith("order-")) {
+          setActiveTab("orders");
+        } else {
+          setActiveTab("support");
+        }
+      }
+    }
+  }, [initialChatId, conversations]);
 
   // 2. Listen for messages in active chat & mark read
   useEffect(() => {
@@ -498,6 +526,16 @@ export function UserChatPanel({
       console.log(`[UserChat] ✅ Support Ticket Created Successfully | TicketId: ${ticketId}`);
       setActiveChatId(ticketId);
       setActiveTab("support");
+
+      // Trigger Webhook Notification on ticket creation
+      sendChatWebhookNotification({
+        ticketId,
+        ticketTitle: `Support Ticket #${randomId}`,
+        senderName: username,
+        senderType: "user",
+        userEmail: session?.user?.email ?? undefined,
+        text: `New support ticket #${randomId} opened.`,
+      }).catch(() => {});
     } catch (err: any) {
       console.error("[UserChat] ❌ Failed to create support ticket:", err);
       alert("Error creating ticket: " + (err.message || "Please try again."));
@@ -545,6 +583,16 @@ export function UserChatPanel({
       console.log(`[UserChat] ✅ Message Sent Successfully | ChatId: ${activeChatId}`);
       // Play send sound after message is written
       playSound(sendSoundRef);
+
+      // Trigger Webhook Notification on user message
+      sendChatWebhookNotification({
+        ticketId: activeChatId,
+        ticketTitle: activeChat?.title || activeChatId,
+        senderName: username,
+        senderType: "user",
+        userEmail: session?.user?.email ?? undefined,
+        text,
+      }).catch(() => {});
     } catch (err) {
       console.error("[UserChat] ❌ Failed to send message:", err);
     } finally {
@@ -743,7 +791,10 @@ export function UserChatPanel({
             activeList.map((conv) => (
               <button
                 key={conv.id}
-                onClick={() => setActiveChatId(conv.id)}
+                onClick={() => {
+                  setActiveChatId(conv.id);
+                  hasSetInitialChatRef.current = conv.id;
+                }}
                 className={cn(
                   "w-full flex items-center justify-between p-3 rounded-xl transition-all text-left cursor-pointer border gap-2",
                   activeChatId === conv.id
@@ -804,7 +855,10 @@ export function UserChatPanel({
             {/* Back button for compact view */}
             {(!isFullScreen || isMobile) && (
               <button
-                onClick={() => setActiveChatId(null)}
+                onClick={() => {
+                  setActiveChatId(null);
+                  hasSetInitialChatRef.current = null;
+                }}
                 className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition cursor-pointer mr-0.5"
                 title="Back to threads"
               >

@@ -14,6 +14,7 @@ import { PriceDisplay } from "@/components/price-display";
 import { useSession } from "next-auth/react";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 
 // Custom Inline Platform SVG Icons for Visual Fidelity
 const TelegramIcon = () => (
@@ -218,6 +219,16 @@ Our recovery team will review your account details and quote a price shortly!`;
           timestamp: serverTimestamp(),
           read: false,
         });
+
+        // Trigger Webhook Notification on new recovery request chat creation
+        sendChatWebhookNotification({
+          ticketId: chatId,
+          ticketTitle: `Recovery #${req._id.substring(0, 8).toUpperCase()}`,
+          senderName: username,
+          senderType: "user",
+          userEmail,
+          text: userMsgText,
+        }).catch(() => {});
       } catch (chatErr) {
         console.error("Failed to create recovery support chat:", chatErr);
       }

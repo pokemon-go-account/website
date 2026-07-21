@@ -51,6 +51,7 @@ import { PayPalPaymentCheckout } from "@/features/payments/components/paypal-che
 import { CryptoPaymentCheckout } from "@/features/payments/components/crypto-checkout";
 import { WisePaymentCheckout } from "@/features/payments/components/wise-checkout";
 import { AnimatedCardIcon, AnimatedCryptoIcon, PaypalIcon, WiseIcon } from "@/components/ui/animated-payment-icons";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 
 interface LiveRoomProps {
   auction: {
@@ -645,6 +646,16 @@ Please guide me on how to complete the payment!`;
           timestamp: serverTimestamp(),
           read: false,
         });
+
+        // Trigger Webhook Notification on Auction Buy Now order chat creation
+        sendChatWebhookNotification({
+          ticketId: chatId,
+          ticketTitle: `Order #${orderId.substring(0, 8).toUpperCase()} (Auction Buy Now: ${methodLabel})`,
+          senderName: username,
+          senderType: "user",
+          userEmail: session?.user?.email ?? undefined,
+          text: messageText,
+        }).catch(() => {});
 
         // Close modal and redirect
         setIsBuyNowOpen(false);

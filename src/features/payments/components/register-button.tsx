@@ -16,6 +16,7 @@ import { PriceDisplay } from "@/components/price-display";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { AnimatedCardIcon, AnimatedCryptoIcon, PaypalIcon, WiseIcon } from "@/components/ui/animated-payment-icons";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 
 interface RegisterAuctionButtonProps {
   auctionId: string;
@@ -109,6 +110,16 @@ Please guide me on how to complete the payment!`;
           timestamp: serverTimestamp(),
           read: false,
         });
+
+        // Trigger Webhook Notification on registration deposit order chat creation
+        sendChatWebhookNotification({
+          ticketId: chatId,
+          ticketTitle: `Order #${orderId.substring(0, 8).toUpperCase()} (${methodLabel})`,
+          senderName: username,
+          senderType: "user",
+          userEmail: session?.user?.email ?? undefined,
+          text: messageText,
+        }).catch(() => {});
 
         // Close modal and redirect
         setIsOpen(false);
