@@ -231,6 +231,13 @@ export default async function UserOrdersPage() {
                         <StatusIcon className="h-3 w-3" />
                         {statusConfig.label}
                       </span>
+                      {/* Review Done badge — shown when a review already exists for this completed order */}
+                      {purchase.status === "COMPLETED" && existingReview && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                          <ShieldCheck className="h-3 w-3" />
+                          Review Done
+                        </span>
+                      )}
                       {/* Date */}
                       <span className="text-xs text-zinc-400 dark:text-zinc-500">{formattedDate}</span>
                     </div>

@@ -69,7 +69,8 @@ service cloud.firestore {
     // Live Auctions collection (Public read for real-time live room telemetry)
     match /liveAuctions/{auctionId} {
       allow read: if true;
-      allow write: if request.auth != null && isAdmin();
+      allow create, delete: if request.auth != null && isAdmin();
+      allow update: if (request.auth != null && isAdmin()) || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewers']);
     }
 
     // Default deny rule for any other collection/document

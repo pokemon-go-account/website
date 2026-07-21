@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import connectDB from "@/lib/db";
 import Auction from "@/models/Auction";
-import { expireStaleAuctions } from "@/features/auctions/actions";
 import Bid from "@/models/Bid";
 import User from "@/models/User"; // Registers model for populate
 import Listing from "@/models/Listing"; // Registers model for populate
 import Registration from "@/models/Registration"; // Registers model for registration check
 import { auth } from "@/auth";
 import { LiveRoom } from "@/features/auctions/components/live-room";
+import { cache } from "react";
 
 interface AuctionPageProps {
   params: Promise<{ id: string }>;
@@ -17,14 +17,24 @@ export const revalidate = 0; // Dynamic rendering
 
 import type { Metadata, ResolvingMetadata } from "next";
 
+// Cached helper to prevent double query by generateMetadata and AuctionPage
+const getCachedAuction = cache(async (id: string) => {
+  await connectDB();
+  // Explicitly reference models to prevent Turbopack tree-shaking
+  const _userCheck = User;
+  const _listingCheck = Listing;
+  return Auction.findById(id)
+    .populate("listingId")
+    .populate("highestBidderId", "name username")
+    .lean();
+});
+
 export async function generateMetadata(
   { params }: AuctionPageProps,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { id } = await params;
-  await connectDB();
-  
-  const auction = await Auction.findById(id).populate("listingId").lean();
+  const auction = await getCachedAuction(id);
   if (!auction || !auction.listingId) {
     return { title: "Auction Not Found" };
   }
@@ -53,9 +63,7 @@ export async function generateMetadata(
 
 export default async function AuctionPage({ params }: AuctionPageProps) {
   const { id } = await params;
-
   await connectDB();
-  await expireStaleAuctions();
 
   // Explicitly reference models to prevent Turbopack tree-shaking
   const _userCheck = User;
@@ -64,21 +72,15 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
 
   const session = await auth();
 
-  // Increment viewers count and initiate database queries in parallel
-  const auctionPromise = Auction.findByIdAndUpdate(
-    id,
-    { $inc: { viewers: 1 } },
-    { returnDocument: "after" }
-  )
-    .populate("listingId")
-    .populate("highestBidderId", "name username")
-    .lean();
+  // Retrieve populated auction document from cache
+  const auctionPromise = getCachedAuction(id);
 
   const bidsPromise = Bid.find({ auctionId: id })
     .populate("bidderId", "username")
     .sort({ createdAt: -1 })
     .limit(20)
     .lean();
+
   const registrationPromise = session?.user?.id
     ? User.findById(session.user.id).lean()
     : Promise.resolve(null);

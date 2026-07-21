@@ -167,6 +167,9 @@ const ListingSchema: Schema<IListing> = new Schema(
 );
 
 ListingSchema.index({ sellerId: 1, status: 1 });
+ListingSchema.index({ status: 1, level: 1 });
+ListingSchema.index({ status: 1, team: 1 });
+ListingSchema.index({ status: 1, region: 1 });
 
 ListingSchema.pre('save', function (this: any) {
   // Sync shiny

@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "chatTyping": {
+      "$chatId": {
+        "user": {
+          ".write": "auth != null",
+          ".read": "auth != null"
+        },
+        "admin": {
+          ".write": "auth != null && (auth.token.role == 'ADMIN' || auth.token.role == 'SUPER_ADMIN')",
+          ".read": "auth != null"
+        }
+      }
+    },
+    "presence": {
+      "$presenceId": {
+        ".write": "auth != null",
+        ".read": "auth != null"
+      }
+    }
+  }
+}

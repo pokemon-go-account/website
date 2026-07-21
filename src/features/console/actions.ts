@@ -804,13 +804,51 @@ export async function markAuctionDelivered(orderId: string) {
         deliveryStatus: "DELIVERED",
         status: "COMPLETED",
       },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     // Deduct wallet credit that was applied at checkout time (if not already deducted)
     if (order && order.walletDiscountApplied && order.walletDiscountApplied > 0 && order.orderType === "AUCTION") {
       // Check order status before update — if it was already COMPLETED this is already handled
       // We run a safe decrement; if balance goes negative it will be caught by other validations
+    }
+
+    // Inject a rating-request system card into the order's Firestore chat thread
+    try {
+      const { getAdminDb } = await import("@/lib/firebase-admin");
+      const adminDb = getAdminDb();
+      if (adminDb) {
+        const chatId = `order-${orderId}`;
+        const { FieldValue } = await import("firebase-admin/firestore");
+
+        // Write the rating-request message
+        await adminDb
+          .collection("supportChats")
+          .doc(chatId)
+          .collection("messages")
+          .add({
+            type: "rating_request",
+            text: "System: Your order has been marked as completed! 🎉 We'd love to hear about your experience.",
+            sender: "admin",
+            senderName: "Support Team",
+            timestamp: new Date(),
+            read: false,
+            orderId: orderId,
+          });
+
+        // Update the parent chat metadata so the conversation list reflects it
+        await adminDb
+          .collection("supportChats")
+          .doc(chatId)
+          .update({
+            lastMessage: "🎉 Order completed! Please leave a review.",
+            lastMessageAt: new Date(),
+            unreadByUser: FieldValue.increment(1),
+          });
+      }
+    } catch (chatErr) {
+      // Chat notification failure must NOT block the primary order completion
+      console.warn("[markAuctionDelivered] Could not write rating-request to Firestore chat:", chatErr);
     }
 
     revalidatePath("/console/auctions");

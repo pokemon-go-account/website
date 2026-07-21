@@ -53,11 +53,8 @@ const OrderSchema = new Schema<IOrder>(
 );
 
 OrderSchema.index({ userId: 1, status: 1 });
+OrderSchema.index({ status: 1, createdAt: -1 });
 
-if (mongoose.models.Order) {
-  delete (mongoose.models as any).Order;
-}
-
-const Order: Model<IOrder> = mongoose.model<IOrder>("Order", OrderSchema);
+const Order: Model<IOrder> = mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
 
 export default Order;

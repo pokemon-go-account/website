@@ -59,3 +59,47 @@ vi.mock('@/auth', () => ({
     },
   }),
 }));
+
+// Mock chat actions to suppress real Discord/Telegram webhooks during testing
+vi.mock('@/features/chat/actions', () => ({
+  sendChatWebhookNotification: vi.fn().mockResolvedValue({ success: true }),
+  uploadChatImage: vi.fn().mockResolvedValue({ success: true, url: 'https://example.com/mock.jpg' }),
+  getFirebaseCustomToken: vi.fn().mockResolvedValue({ success: true, customToken: 'mock-token' }),
+}));
+
+// Mock firebase-admin and firebase-admin/firestore to avoid real Firestore operations/chat creation during tests
+vi.mock('firebase-admin/firestore', () => ({
+  getFirestore: vi.fn().mockReturnValue({
+    collection: vi.fn().mockReturnThis(),
+    doc: vi.fn().mockReturnThis(),
+    add: vi.fn().mockResolvedValue({ id: 'mock-msg-id' }),
+    update: vi.fn().mockResolvedValue({}),
+    set: vi.fn().mockResolvedValue({}),
+  }),
+  FieldValue: {
+    increment: vi.fn((val) => val),
+    serverTimestamp: vi.fn(() => new Date()),
+  },
+}));
+
+vi.mock('@/lib/firebase-admin', () => {
+  const mockCollection = {
+    add: vi.fn().mockResolvedValue({ id: 'mock-msg-id' }),
+  };
+  const mockDoc = {
+    collection: vi.fn().mockReturnValue(mockCollection),
+    update: vi.fn().mockResolvedValue({}),
+    set: vi.fn().mockResolvedValue({}),
+  };
+  const mockDb = {
+    collection: vi.fn().mockReturnValue({
+      doc: vi.fn().mockReturnValue(mockDoc),
+    }),
+  };
+  return {
+    getAdminDb: vi.fn().mockReturnValue(mockDb),
+    verifyFirebaseIdToken: vi.fn().mockResolvedValue({ uid: 'mock-uid' }),
+  };
+});
+
+

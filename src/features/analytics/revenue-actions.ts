@@ -1,5 +1,6 @@
 "use server";
 
+import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Order from "@/models/Order";
 import User from "@/models/User";
@@ -42,31 +43,93 @@ export async function getRevenueAnalyticsAction() {
 
     await connectDB();
 
-    // Fetch all completed/paid orders with lean projection
-    const orders = await Order.find({ status: "COMPLETED" })
-      .select("_id totalPrice orderType items userId status createdAt")
-      .populate("userId", "username name email country")
-      .sort({ createdAt: -1 })
-      .lean();
+    // 1. Calculate all-time summary stats using database-level aggregates
+    const orderStats = await Order.aggregate([
+      { $match: { status: "COMPLETED" } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalPrice" },
+          count: { $sum: 1 },
+          storefront: {
+            $sum: { $cond: [{ $eq: ["$orderType", "STOREFRONT"] }, "$totalPrice", 0] }
+          },
+          buyNow: {
+            $sum: { $cond: [{ $eq: ["$orderType", "BUY_NOW"] }, "$totalPrice", 0] }
+          },
+          auction: {
+            $sum: { $cond: [{ $eq: ["$orderType", "AUCTION"] }, "$totalPrice", 0] }
+          },
+          recovery: {
+            $sum: { $cond: [{ $eq: ["$orderType", "RECOVERY"] }, "$totalPrice", 0] }
+          }
+        }
+      }
+    ]);
 
-    // Also fetch completed recovery requests with lean projection
-    const completedRecoveries = await RecoveryRequest.find({ status: "COMPLETED" })
-      .select("_id price accountLevel userId status createdAt")
-      .populate("userId", "username name email country")
-      .sort({ createdAt: -1 })
-      .lean();
+    const orderStatResult = orderStats[0] || {
+      total: 0,
+      count: 0,
+      storefront: 0,
+      buyNow: 0,
+      auction: 0,
+      recovery: 0
+    };
 
-    let totalRevenueUSD = 0;
-    let storefrontRevenueUSD = 0;
-    let buyNowRevenueUSD = 0;
-    let auctionRevenueUSD = 0;
-    let recoveryRevenueUSD = 0;
+    // Find all recovery request IDs paid via a completed order to prevent double-counting
+    const recoveryOrders = await Order.find({
+      status: "COMPLETED",
+      orderType: "RECOVERY"
+    }).select("items.productId items.recoveryRequestId").lean();
+
+    const orderRecoveryIds = new Set<string>();
+    for (const ord of recoveryOrders) {
+      for (const i of (ord.items || [])) {
+        const id = (i as any).recoveryRequestId || i.productId;
+        if (id) {
+          orderRecoveryIds.add(id.toString());
+        }
+      }
+    }
+
+    // Calculate completed recoveries revenue that was paid through channels other than standard Storefront orders
+    const independentRecoveries = await RecoveryRequest.find({
+      status: "COMPLETED",
+      price: { $gt: 0 },
+      _id: { $nin: Array.from(orderRecoveryIds).map(id => new mongoose.Types.ObjectId(id)) }
+    }).select("price");
+
+    let independentRecoveryRevenue = 0;
+    for (const rec of independentRecoveries) {
+      independentRecoveryRevenue += rec.price || 0;
+    }
+
+    const totalOrdersCount = orderStatResult.count + independentRecoveries.length;
+    const storefrontRevenueUSD = orderStatResult.storefront;
+    const buyNowRevenueUSD = orderStatResult.buyNow;
+    const auctionRevenueUSD = orderStatResult.auction;
+    const recoveryRevenueUSD = orderStatResult.recovery + independentRecoveryRevenue;
+    const totalRevenueUSD = storefrontRevenueUSD + buyNowRevenueUSD + auctionRevenueUSD + recoveryRevenueUSD;
+    const averageOrderValueUSD = totalOrdersCount > 0 ? totalRevenueUSD / totalOrdersCount : 0;
+
+    // 2. Fetch recent completed orders & recoveries for the last 14 days chart (Avoids loading all history)
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    fourteenDaysAgo.setHours(0, 0, 0, 0);
+
+    const [recentOrders, recentRecoveries] = await Promise.all([
+      Order.find({
+        status: "COMPLETED",
+        createdAt: { $gte: fourteenDaysAgo }
+      }).select("totalPrice createdAt"),
+      RecoveryRequest.find({
+        status: "COMPLETED",
+        price: { $gt: 0 },
+        createdAt: { $gte: fourteenDaysAgo }
+      }).select("price _id createdAt")
+    ]);
 
     const dailyMap = new Map<string, { count: number; revenue: number }>();
-    const orderList: RevenueOrderDetails[] = [];
-    const orderRecoveryIds = new Set<string>();
-
-    // Helper to format date key YYYY-MM-DD
     const getDateKey = (date: Date) => {
       const d = new Date(date);
       const year = d.getFullYear();
@@ -75,35 +138,70 @@ export async function getRevenueAnalyticsAction() {
       return `${year}-${month}-${day}`;
     };
 
-    // Process Orders & populate orderRecoveryIds Set in 1 pass
-    for (const ord of orders) {
-      const amount = ord.totalPrice || 0;
-      totalRevenueUSD += amount;
-
-      const type = ord.orderType || "STOREFRONT";
-      if (type === "STOREFRONT") storefrontRevenueUSD += amount;
-      else if (type === "BUY_NOW") buyNowRevenueUSD += amount;
-      else if (type === "AUCTION") auctionRevenueUSD += amount;
-      else if (type === "RECOVERY") recoveryRevenueUSD += amount;
-
+    for (const ord of recentOrders) {
       const dateKey = getDateKey(ord.createdAt);
+      const amount = ord.totalPrice || 0;
       const existing = dailyMap.get(dateKey) || { count: 0, revenue: 0 };
       dailyMap.set(dateKey, {
         count: existing.count + 1,
         revenue: existing.revenue + amount,
       });
+    }
 
-      const userObj = ord.userId as any;
-      const itemsList: RevenueOrderItem[] = (ord.items || []).map((i: any) => {
-        if (i.recoveryRequestId || i.type === "RECOVERY") {
-          orderRecoveryIds.add((i.recoveryRequestId || i.productId || "").toString());
-        }
-        return {
-          name: i.name || "Purchased Product",
-          priceUSD: i.price || 0,
-          quantity: i.quantity || 1,
-        };
+    for (const rec of recentRecoveries) {
+      if (!orderRecoveryIds.has(rec._id.toString())) {
+        const dateKey = getDateKey(rec.createdAt);
+        const price = rec.price || 0;
+        const existing = dailyMap.get(dateKey) || { count: 0, revenue: 0 };
+        dailyMap.set(dateKey, {
+          count: existing.count + 1,
+          revenue: existing.revenue + price,
+        });
+      }
+    }
+
+    const dailyStats: DailyStat[] = [];
+    const today = new Date();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = getDateKey(d);
+      const stat = dailyMap.get(key) || { count: 0, revenue: 0 };
+      const formattedDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      dailyStats.push({
+        date: key,
+        formattedDate,
+        ordersCount: stat.count,
+        revenue: Math.round(stat.revenue * 100) / 100,
       });
+    }
+
+    // 3. Fetch list of most recent completed orders & recoveries (Limited to 200 to prevent OOM)
+    const [orders, completedRecoveries] = await Promise.all([
+      Order.find({ status: "COMPLETED" })
+        .select("_id totalPrice orderType items userId status createdAt")
+        .populate("userId", "username name email country")
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .lean(),
+      RecoveryRequest.find({ status: "COMPLETED" })
+        .select("_id price accountLevel userId status createdAt")
+        .populate("userId", "username name email country")
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .lean()
+    ]);
+
+    const orderList: RevenueOrderDetails[] = [];
+
+    // Format orders for table output
+    for (const ord of orders) {
+      const userObj = ord.userId as any;
+      const itemsList: RevenueOrderItem[] = (ord.items || []).map((i: any) => ({
+        name: i.name || "Purchased Product",
+        priceUSD: i.price || 0,
+        quantity: i.quantity || 1,
+      }));
 
       orderList.push({
         id: ord._id.toString(),
@@ -111,30 +209,20 @@ export async function getRevenueAnalyticsAction() {
         customerName: userObj?.username || userObj?.name || "Customer",
         customerEmail: userObj?.email || "No email",
         customerCountry: userObj?.country || "",
-        orderType: type,
+        orderType: ord.orderType || "STOREFRONT",
         status: ord.status,
-        totalPriceUSD: amount,
+        totalPriceUSD: ord.totalPrice || 0,
         itemsCount: itemsList.length,
         items: itemsList,
         createdAt: new Date(ord.createdAt).toISOString(),
       });
     }
 
-    // Process completed recovery requests using O(1) Set lookup
+    // Format recovery requests for table output
     for (const rec of completedRecoveries) {
-      const price = rec.price || 0;
       const recIdStr = rec._id.toString();
+      const price = rec.price || 0;
       if (price > 0 && !orderRecoveryIds.has(recIdStr)) {
-        totalRevenueUSD += price;
-        recoveryRevenueUSD += price;
-
-        const dateKey = getDateKey(rec.createdAt);
-        const existing = dailyMap.get(dateKey) || { count: 0, revenue: 0 };
-        dailyMap.set(dateKey, {
-          count: existing.count + 1,
-          revenue: existing.revenue + price,
-        });
-
         const userObj = rec.userId as any;
         const itemsList: RevenueOrderItem[] = [
           {
@@ -160,25 +248,8 @@ export async function getRevenueAnalyticsAction() {
       }
     }
 
-    // Build last 14 days stats array for smooth daily orders chart
-    const dailyStats: DailyStat[] = [];
-    const today = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const key = getDateKey(d);
-      const stat = dailyMap.get(key) || { count: 0, revenue: 0 };
-      const formattedDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      dailyStats.push({
-        date: key,
-        formattedDate,
-        ordersCount: stat.count,
-        revenue: Math.round(stat.revenue * 100) / 100,
-      });
-    }
-
-    const totalOrdersCount = orderList.length;
-    const averageOrderValueUSD = totalOrdersCount > 0 ? totalRevenueUSD / totalOrdersCount : 0;
+    // Sort orderList chronologically for the table presentation
+    orderList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return {
       success: true,

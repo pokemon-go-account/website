@@ -36,24 +36,32 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
     const alternateContact = (formData.get("alternateContact") as string) || "";
     const hasEmailAccess = formData.get("hasEmailAccess") === "true";
 
-    // Read screenshots base64 array
+    // Read screenshots direct URLs or base64 fallback array
+    const screenshotUrlsJson = formData.get("screenshotUrlsJson") as string;
     const screenshotsBase64Json = formData.get("screenshotsBase64Json") as string;
-    let screenshotsBase64: string[] = [];
-    if (screenshotsBase64Json) {
+    
+    let screenshotsInput: string[] = [];
+    if (screenshotUrlsJson) {
       try {
-        screenshotsBase64 = JSON.parse(screenshotsBase64Json);
+        screenshotsInput = JSON.parse(screenshotUrlsJson);
+      } catch (err) {
+        console.error("Failed to parse screenshotUrls JSON:", err);
+      }
+    } else if (screenshotsBase64Json) {
+      try {
+        screenshotsInput = JSON.parse(screenshotsBase64Json);
       } catch (err) {
         console.error("Failed to parse screenshots JSON:", err);
       }
     }
 
     // Fallback to single screenshot for backwards compatibility
-    if (screenshotsBase64.length === 0 && formData.get("screenshotBase64")) {
+    if (screenshotsInput.length === 0 && formData.get("screenshotBase64")) {
       const single = formData.get("screenshotBase64") as string;
-      if (single) screenshotsBase64.push(single);
+      if (single) screenshotsInput.push(single);
     }
 
-    if (screenshotsBase64.length === 0) {
+    if (screenshotsInput.length === 0) {
       return { success: false, error: "At least one account screenshot image is required." };
     }
 
@@ -74,11 +82,15 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
 
     await connectDB();
 
-    // Upload all to Cloudinary in parallel
+    // Upload any fallback base64 screenshot to Cloudinary, keeping already-uploaded URLs
     const { uploadToCloudinary } = await import("@/lib/cloudinary");
-    console.log(`Uploading ${screenshotsBase64.length} recovery screenshot(s) to Cloudinary...`);
     const screenshotUrls = await Promise.all(
-      screenshotsBase64.map((base64) => uploadToCloudinary(base64))
+      screenshotsInput.map(async (item) => {
+        if (item.startsWith("data:") || !item.startsWith("http")) {
+          return uploadToCloudinary(item);
+        }
+        return item;
+      })
     );
 
     // Save to Database
@@ -99,7 +111,124 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
       priceStatus: "QUOTE_PENDING",
     });
 
+    // Create Support Chat in Firestore on the server (guaranteed bypass of client auth rules)
+    const reqIdStr = String(request._id);
+    const chatId = `recovery-${reqIdStr}`;
+    const username = (session.user as any)?.username || session.user?.name || session.user?.email || "User";
+    const userEmail = session.user?.email || "N/A";
+    const country = (session.user as any)?.country || "N/A";
+
+    const userMsgText = `🔑 NEW RECOVERY REQUEST PLACED
+----------------------------------
+Request ID: ${reqIdStr}
+Trainer Name: ${validated.data.trainerName || "Not Provided"}
+Account Level: ${validated.data.accountLevel}
+Creation Method: ${validated.data.creationMethod ? validated.data.creationMethod.toUpperCase() : "N/A"}
+Start Date: ${validated.data.startDate ? new Date(validated.data.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A"}
+Contact Method: ${validated.data.contactMethod} (${validated.data.contactId})
+Alternate Contact: ${validated.data.alternateContact || "None"}
+Email Access: ${validated.data.hasEmailAccess ? "Yes ✓" : "No ✗"}
+Screenshots: ${screenshotUrls.length} attached
+Status: Price Pending (Awaiting Super Admin Quote)
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${userEmail}
+User ID: ${session.user.id}
+🌍 Country: ${country}
+
+Our recovery team will review your account details and quote a price shortly!`;
+
+    try {
+      const { getAdminDb } = await import("@/lib/firebase-admin");
+      const adminDb = getAdminDb();
+
+      if (adminDb) {
+        await adminDb.collection("supportChats").doc(chatId).set({
+          userId: session.user.id,
+          username,
+          email: userEmail,
+          type: "recovery",
+          orderId: reqIdStr,
+          title: `Recovery #${reqIdStr.substring(0, 8).toUpperCase()}`,
+          lastMessage: `Recovery request placed. Price Pending.`,
+          lastMessageAt: new Date(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: new Date(),
+        }, { merge: true });
+
+        const msgsRef = adminDb.collection("supportChats").doc(chatId).collection("messages");
+        await msgsRef.add({
+          text: userMsgText,
+          sender: "user",
+          senderName: username,
+          timestamp: new Date(),
+          read: false,
+        });
+
+        await msgsRef.add({
+          text: `System: Thank you for submitting your account recovery request! Super Admin has been notified and will review your details to quote a price in Console soon. You will receive an automated notification message here as soon as the price is set.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: new Date(),
+          read: false,
+        });
+      } else {
+        const { getDb } = await import("@/lib/firestore");
+        const { doc, setDoc, collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+        const db = getDb();
+        const chatRef = doc(db, "supportChats", chatId);
+
+        await setDoc(chatRef, {
+          userId: session.user.id,
+          username,
+          email: userEmail,
+          type: "recovery",
+          orderId: reqIdStr,
+          title: `Recovery #${reqIdStr.substring(0, 8).toUpperCase()}`,
+          lastMessage: `Recovery request placed. Price Pending.`,
+          lastMessageAt: serverTimestamp(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+
+        const msgsRef = collection(db, "supportChats", chatId, "messages");
+        await addDoc(msgsRef, {
+          text: userMsgText,
+          sender: "user",
+          senderName: username,
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        await addDoc(msgsRef, {
+          text: `System: Thank you for submitting your account recovery request! Super Admin has been notified and will review your details to quote a price in Console soon. You will receive an automated notification message here as soon as the price is set.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+      }
+
+      // Trigger Webhook Notification
+      const { sendChatWebhookNotification } = await import("@/features/chat/actions");
+      sendChatWebhookNotification({
+        ticketId: chatId,
+        ticketTitle: `Recovery #${reqIdStr.substring(0, 8).toUpperCase()}`,
+        senderName: username,
+        senderType: "user",
+        userEmail,
+        text: userMsgText,
+      }).catch(() => {});
+    } catch (chatErr) {
+      console.error("Failed to create recovery support chat on server:", chatErr);
+    }
+
     revalidatePath("/console/recovery");
+    revalidatePath("/recovery");
     return { success: true, error: null, request: JSON.parse(JSON.stringify(request)) };
   } catch (error: any) {
     console.error("Recovery request submission failure:", error);
@@ -277,6 +406,60 @@ export async function deleteRecoveryRequest(requestId: string) {
   } catch (error: any) {
     console.error("Failed to delete recovery request:", error);
     return { success: false, error: error.message || "Failed to delete recovery request." };
+  }
+}
+
+/**
+ * Server Action: Generate a secure signed upload signature for direct Cloudinary uploads from the client.
+ * Bypasses Vercel execution duration limit by moving heavy upload payload processing directly to Cloudinary.
+ */
+export async function getCloudinaryUploadSignature() {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "Unauthorized. Please sign in." };
+    }
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    const isConfigured = 
+      !!cloudName && 
+      !!apiKey && 
+      !!apiSecret && 
+      cloudName !== "cloud_placeholder" &&
+      apiKey !== "key_placeholder" &&
+      apiSecret !== "secret_placeholder";
+
+    if (!isConfigured) {
+      return { success: true, isMock: true };
+    }
+
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const folder = "pokemon_go_auctions";
+
+    // Parameters to sign must be sorted alphabetically
+    const paramsToSign = {
+      folder,
+      timestamp,
+    };
+
+    const { v2: cloudinary } = await import("cloudinary");
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
+
+    return {
+      success: true,
+      isMock: false,
+      signature,
+      timestamp,
+      apiKey,
+      cloudName,
+      folder,
+    };
+  } catch (err: any) {
+    console.error("Failed to generate Cloudinary signature:", err);
+    return { success: false, error: "Internal signature generation failure." };
   }
 }
 

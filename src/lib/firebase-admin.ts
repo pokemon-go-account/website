@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 
 let appInitialized = false;
 
@@ -49,6 +50,13 @@ if (getApps().length === 0) {
   }
 } else if (getApps().length > 0) {
   appInitialized = true;
+}
+
+export function getAdminDb() {
+  if (appInitialized) {
+    return getAdminFirestore();
+  }
+  return null;
 }
 
 export interface FirebaseDecodedUser {

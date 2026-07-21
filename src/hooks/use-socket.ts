@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { fetchAuctionRealtime, placeAuctionBid } from "@/features/auctions/actions";
+import { placeAuctionBid } from "@/features/auctions/actions";
 import { getDb } from "@/lib/firestore";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, increment } from "firebase/firestore";
 
 export interface BidHistoryItem {
   _id: string;
@@ -16,17 +16,22 @@ export function useSocket(
   initialIsRegistered = false,
   initialStatus = "SCHEDULED",
   initialEndTime = "",
-  initialHighestBidderName: string | null = null
+  initialHighestBidderName: string | null = null,
+  initialBids: BidHistoryItem[] = [],
+  initialCurrentBid: number | null = null,
+  initialHighestBidderId: string | null = null,
+  initialViewers = 1
 ) {
   const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
-  const [currentBid, setCurrentBid] = useState<number | null>(null);
-  const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
+  const [currentBid, setCurrentBid] = useState<number | null>(initialCurrentBid);
+  const [highestBidderId, setHighestBidderId] = useState<string | null>(initialHighestBidderId);
   const [highestBidderName, setHighestBidderName] = useState<string | null>(initialHighestBidderName);
   const [isRegistered, setIsRegistered] = useState(initialIsRegistered);
   const [status, setStatus] = useState<string>(initialStatus);
   const [endTime, setEndTime] = useState<string>(initialEndTime);
-  const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([]);
+  const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>(initialBids);
+  const [viewers, setViewers] = useState<number>(initialViewers);
   const [hasPendingBuyNow, setHasPendingBuyNow] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,31 +40,16 @@ export function useSocket(
 
     let isMounted = true;
 
-    // 1. Initial single fetch to populate user registration & initial state
-    const fetchInitial = async () => {
-      const res = await fetchAuctionRealtime(auctionId);
-      if (!isMounted) return;
-
-      if (res.success && res.currentHighestBid !== undefined) {
-        setIsConnected(true);
-        setCurrentBid(res.currentHighestBid);
-        setHighestBidderId(res.highestBidderId ?? null);
-        setHighestBidderName(res.highestBidderName ?? null);
-        setIsRegistered(!!res.isRegistered);
-        setHasPendingBuyNow(!!res.hasPendingBuyNow);
-        if (res.status) setStatus(res.status);
-        if (res.endTime) setEndTime(res.endTime);
-        if (res.bids) setBidHistory(res.bids);
-      } else {
-        setError(res.error || "Failed to sync auction telemetry.");
-      }
-    };
-
-    fetchInitial();
-
-    // 2. Client-side Realtime WebSocket stream via Firestore onSnapshot (Zero Vercel Invocations)
+    // 1. Client-side Realtime WebSocket stream via Firestore onSnapshot (Zero Vercel Invocations)
     const db = getDb();
     const auctionRef = doc(db, "liveAuctions", auctionId);
+
+    setIsConnected(true);
+
+    // Increment viewer count in Firestore directly on mount (use setDoc with merge in case doc doesn't exist)
+    setDoc(auctionRef, { viewers: increment(1) }, { merge: true }).catch((err) => {
+      console.warn("[Firestore LiveRoom] Failed to increment viewers:", err.message);
+    });
 
     const unsub = onSnapshot(
       auctionRef,
@@ -73,6 +63,7 @@ export function useSocket(
         if (data.highestBidderName !== undefined) setHighestBidderName(data.highestBidderName);
         if (data.status) setStatus(data.status);
         if (data.endTime) setEndTime(data.endTime);
+        if (data.viewers !== undefined) setViewers(data.viewers);
         if (Array.isArray(data.bids)) setBidHistory(data.bids);
       },
       (err) => {
@@ -83,6 +74,10 @@ export function useSocket(
     return () => {
       isMounted = false;
       unsub();
+      // Decrement viewer count in Firestore directly on unmount (use setDoc with merge in case doc doesn't exist)
+      setDoc(auctionRef, { viewers: increment(-1) }, { merge: true }).catch((err) => {
+        console.warn("[Firestore LiveRoom] Failed to decrement viewers:", err.message);
+      });
     };
   }, [auctionId, session?.user?.id]);
 
@@ -98,7 +93,7 @@ export function useSocket(
     if (!res.success) {
       setError(res.error || "Failed to place bid.");
     } else {
-      // Optmistic UI updates for ultra-responsive feel
+      // Optimistic UI updates for ultra-responsive feel
       if (res.currentHighestBid !== undefined) {
         setCurrentBid(res.currentHighestBid);
       }
@@ -119,6 +114,7 @@ export function useSocket(
     endTime,
     setEndTime,
     bidHistory,
+    viewers,
     hasPendingBuyNow,
     error,
     placeBid,

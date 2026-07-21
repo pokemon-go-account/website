@@ -163,6 +163,7 @@ export function LiveRoom({
     endTime,
     setEndTime,
     bidHistory,
+    viewers,
     hasPendingBuyNow,
     error,
     placeBid,
@@ -171,7 +172,17 @@ export function LiveRoom({
     setCurrentBid,
     setHighestBidderId,
     setIsRegistered,
-  } = useSocket(auction._id, initialIsRegistered, auction.status, auction.endTime, auction.highestBidderName);
+  } = useSocket(
+    auction._id,
+    initialIsRegistered,
+    auction.status,
+    auction.endTime,
+    auction.highestBidderName,
+    initialBids,
+    auction.currentHighestBid,
+    auction.highestBidderId,
+    auction.viewers
+  );
 
   const [timeLeft, setTimeLeft] = useState("Loading timer...");
   const [isConcluded, setIsConcluded] = useState(false);
@@ -703,7 +714,7 @@ export function LiveRoom({
   const biddingPanelProps = {
     auctionId: auction._id,
     minIncrement,
-    viewers: auction.viewers,
+    viewers: viewers,
     timeLeft,
     activeBid,
     highestBidderId: highestBidderId || "",

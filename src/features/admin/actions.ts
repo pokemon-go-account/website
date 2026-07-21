@@ -960,9 +960,9 @@ export async function updatePokemonRequestStatus(requestId: string, status: "PEN
   try {
     await checkAdminSession();
     await connectDB();
-    let request = await PokemonRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+    let request = await PokemonRequest.findByIdAndUpdate(requestId, { status }, { returnDocument: "after" });
     if (!request) {
-      request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+      request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { returnDocument: "after" });
     }
     revalidatePath('/admin/pokemon-requests');
     revalidatePath('/admin/custom-requests');
@@ -1006,7 +1006,7 @@ export async function updateCustomRequestStatus(requestId: string, status: "PEND
   try {
     await checkAdminSession();
     await connectDB();
-    const request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { new: true });
+    const request = await CustomRequest.findByIdAndUpdate(requestId, { status }, { returnDocument: "after" });
     revalidatePath('/admin/custom-requests');
     return { success: true, request: JSON.parse(JSON.stringify(request)) };
   } catch (error: any) {

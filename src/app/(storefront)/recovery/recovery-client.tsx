@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useActionState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { submitRecoveryRequest } from "@/features/recovery/actions";
+import { submitRecoveryRequest, getCloudinaryUploadSignature } from "@/features/recovery/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,12 +169,45 @@ function compressImage(file: File, maxWidth = 1200, maxHeight = 1200, quality = 
   });
 }
 
+async function uploadImageDirectly(fileData: string): Promise<string> {
+  const sigRes = await getCloudinaryUploadSignature();
+  if (!sigRes.success) {
+    throw new Error(sigRes.error || "Failed to generate upload signature.");
+  }
+
+  if (sigRes.isMock) {
+    return fileData; // Fallback to base64
+  }
+
+  const formData = new FormData();
+  formData.append("file", fileData);
+  formData.append("api_key", sigRes.apiKey!);
+  formData.append("timestamp", String(sigRes.timestamp!));
+  formData.append("signature", sigRes.signature!);
+  formData.append("folder", sigRes.folder!);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${sigRes.cloudName}/image/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error?.message || "Cloudinary direct upload failed");
+  }
+
+  const data = await res.json();
+  return data.secure_url;
+}
+
 export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [screenshots, setScreenshots] = useState<{ id: string; base64: string; name: string }[]>([]);
   const [selectedMethod, setSelectedMethod] = useState("telegram");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [emailCheck, setEmailCheck] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,6 +216,40 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
     success: false,
     error: null,
   } as any);
+
+  const isSubmitting = isPending || isUploading;
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const uploadedUrls: string[] = [];
+      const updatedScreenshots = [...screenshots];
+      
+      for (let i = 0; i < updatedScreenshots.length; i++) {
+        const s = updatedScreenshots[i];
+        if (s.base64.startsWith("http")) {
+          uploadedUrls.push(s.base64);
+        } else {
+          const url = await uploadImageDirectly(s.base64);
+          updatedScreenshots[i] = { ...s, base64: url };
+          uploadedUrls.push(url);
+        }
+      }
+      setScreenshots(updatedScreenshots);
+
+      const formData = new FormData(e.currentTarget);
+      formData.set("screenshotUrlsJson", JSON.stringify(uploadedUrls));
+      formAction(formData);
+    } catch (err: any) {
+      console.error("Direct upload/submit failed:", err);
+      setUploadError(err.message || "Failed to upload screenshots. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -198,87 +265,11 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
   const { data: session } = useSession();
   const { addItem: addCartItem, setIsOpen: setCartOpen } = useCartStore();
 
-  // Handle successful form submission & create chat thread
+  // Handle successful form submission & cart item addition
   useEffect(() => {
     if (state.success && state.request) {
       const req = state.request;
       const reqIdStr = String(req._id || "");
-      const chatId = `recovery-${reqIdStr}`;
-
-      try {
-        const db = getDb();
-        const chatRef = doc(db, "supportChats", chatId);
-
-        const userId = (session?.user as any)?.id || "N/A";
-        const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
-        const userEmail = session?.user?.email || "N/A";
-        const country = getUserCountry(session?.user);
-
-        const userMsgText = `🔑 NEW RECOVERY REQUEST PLACED
-----------------------------------
-Request ID: ${reqIdStr}
-Trainer Name: ${req.trainerName || "Not Provided"}
-Account Level: ${req.accountLevel}
-Creation Method: ${req.creationMethod ? req.creationMethod.toUpperCase() : "N/A"}
-Start Date: ${req.startDate ? new Date(req.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A"}
-Contact Method: ${req.contactMethod} (${req.contactId})
-Alternate Contact: ${req.alternateContact || "None"}
-Email Access: ${req.hasEmailAccess ? "Yes ✓" : "No ✗"}
-Screenshots: ${req.screenshotUrls?.length || 1} attached
-Status: Price Pending (Awaiting Super Admin Quote)
-
-👤 USER DETAILS:
-----------------------------------
-Username: ${username}
-Email: ${userEmail}
-User ID: ${userId}
-🌍 Country: ${country}
-
-Our recovery team will review your account details and quote a price shortly!`;
-
-        setDoc(chatRef, {
-          userId,
-          username,
-          email: userEmail,
-          type: "recovery",
-          orderId: reqIdStr,
-          title: `Recovery #${reqIdStr.substring(0, 8).toUpperCase()}`,
-          lastMessage: `Recovery request placed. Price Pending.`,
-          lastMessageAt: serverTimestamp(),
-          unreadByAdmin: 1,
-          unreadByUser: 0,
-          createdAt: serverTimestamp(),
-        }, { merge: true });
-
-        const msgsRef = collection(db, "supportChats", chatId, "messages");
-        addDoc(msgsRef, {
-          text: userMsgText,
-          sender: "user",
-          senderName: username,
-          timestamp: serverTimestamp(),
-          read: false,
-        });
-
-        addDoc(msgsRef, {
-          text: `System: Thank you for submitting your account recovery request! Super Admin has been notified and will review your details to quote a price in Console soon. You will receive an automated notification message here as soon as the price is set.`,
-          sender: "admin",
-          senderName: "Support Team",
-          timestamp: serverTimestamp(),
-          read: false,
-        });
-
-        // Trigger Webhook Notification on new recovery request chat creation
-        sendChatWebhookNotification({
-          ticketId: chatId,
-          ticketTitle: `Recovery #${reqIdStr.substring(0, 8).toUpperCase()}`,
-          senderName: username,
-          senderType: "user",
-          userEmail,
-          text: userMsgText,
-        }).catch(() => {});
-      } catch (chatErr) {
-        console.error("Failed to create recovery support chat:", chatErr);
-      }
 
       const safeImageUrl = req.screenshotUrl && !req.screenshotUrl.startsWith("data:")
         ? req.screenshotUrl
@@ -302,7 +293,7 @@ Our recovery team will review your account details and quote a price shortly!`;
         setEmailCheck("");
       }, 1800);
     }
-  }, [state.success, state.request, session, addCartItem, setCartOpen]);
+  }, [state.success, state.request, addCartItem, setCartOpen]);
 
   const handleBuyClick = () => {
     if (!isLoggedIn) {
@@ -506,10 +497,10 @@ Our recovery team will review your account details and quote a price shortly!`;
                     </div>
                   </div>
                 ) : (
-                  <form action={formAction} className="space-y-4">
-                    {state.error && (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {(state.error || uploadError) && (
                       <div className="rounded-md bg-red-500/5 p-3 text-xs text-red-500 border border-red-500/10 leading-snug">
-                        {state.error}
+                        {state.error || uploadError}
                       </div>
                     )}
 
@@ -706,10 +697,10 @@ Our recovery team will review your account details and quote a price shortly!`;
 
                     <Button
                       type="submit"
-                      disabled={isPending || emailCheck === "" || screenshots.length === 0}
+                      disabled={isSubmitting || emailCheck === "" || screenshots.length === 0}
                       className="w-full h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isPending ? "Submitting Order..." : "Confirm & Buy Service"}
+                      {isUploading ? "Uploading screenshots..." : isPending ? "Submitting Order..." : "Confirm & Buy Service"}
                     </Button>
                   </form>
                 )}

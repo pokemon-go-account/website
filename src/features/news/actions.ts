@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import NewsArticle from "@/models/NewsArticle";
 import { ArticleData, ArticleInputData } from "./types";
+import { auth } from "@/auth";
+
 
 const SEED_ARTICLES: ArticleData[] = [
   {
@@ -406,6 +408,11 @@ export async function incrementArticleViews(articleId: string) {
 
 export async function createNewsArticle(data: ArticleInputData): Promise<{ success: boolean; error?: string; articleId?: string }> {
   try {
+    const session = await auth();
+    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role || "")) {
+      return { success: false, error: "Unauthorized. Admin privileges required." };
+    }
+
     await connectDB();
     await ensureNewsSeeded();
 
@@ -462,6 +469,11 @@ export async function createNewsArticle(data: ArticleInputData): Promise<{ succe
 
 export async function updateNewsArticle(id: string, data: Partial<ArticleInputData>): Promise<{ success: boolean; error?: string }> {
   try {
+    const session = await auth();
+    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role || "")) {
+      return { success: false, error: "Unauthorized. Admin privileges required." };
+    }
+
     await connectDB();
     await ensureNewsSeeded();
 
@@ -498,6 +510,11 @@ export async function updateNewsArticle(id: string, data: Partial<ArticleInputDa
 
 export async function deleteNewsArticle(articleId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const session = await auth();
+    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role || "")) {
+      return { success: false, error: "Unauthorized. Admin privileges required." };
+    }
+
     await connectDB();
     await ensureNewsSeeded();
 
@@ -533,6 +550,11 @@ export async function deleteNewsArticle(articleId: string): Promise<{ success: b
 
 export async function uploadNewsImageAction(base64Data: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
+    const session = await auth();
+    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role || "")) {
+      return { success: false, error: "Unauthorized. Admin privileges required." };
+    }
+
     const { uploadToCloudinary } = await import("@/lib/cloudinary");
     const url = await uploadToCloudinary(base64Data);
     return { success: true, url };

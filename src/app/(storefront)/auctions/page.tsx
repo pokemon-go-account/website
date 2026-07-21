@@ -4,7 +4,6 @@ import Image from "next/image";
 import connectDB from "@/lib/db";
 import { PriceDisplay } from "@/components/price-display";
 import Auction from "@/models/Auction";
-import { expireStaleAuctions } from "@/features/auctions/actions";
 import Listing from "@/models/Listing"; // Registers model for populate
 import Product from "@/models/Product";
 import Category from "@/models/Category";
@@ -41,7 +40,6 @@ interface AuctionsCatalogPageProps {
 export default async function AuctionsCatalogPage({ searchParams }: AuctionsCatalogPageProps) {
   const { search } = await searchParams;
   await connectDB();
-  await expireStaleAuctions();
   
   // Explicitly reference models to prevent Turbopack tree-shaking
   const _modelCheck = Listing;

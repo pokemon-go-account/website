@@ -14,6 +14,7 @@ import {
   updateDoc,
   increment,
   orderBy,
+  deleteDoc,
 } from "firebase/firestore";
 import { getDb } from "@/lib/firestore";
 import {
@@ -34,9 +35,13 @@ import {
   Inbox,
   ShieldCheck,
   MessageCircle,
+  Star,
+  CheckCircle2,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadChatImage, getFirebaseCustomToken, sendChatWebhookNotification } from "@/features/chat/actions";
+import { submitOrderFeedback } from "@/features/feedback/actions";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database, app as clientApp } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
@@ -62,11 +67,161 @@ interface ChatMeta {
 interface Message {
   id: string;
   text?: string;
+  type?: string;      // e.g. "rating_request"
+  orderId?: string;   // present when type === "rating_request"
   sender: "user" | "admin";
   senderName: string;
   timestamp: any;
   image?: string;
   read?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Inline Rating Card — rendered inside the chat thread for type:rating_request
+// ---------------------------------------------------------------------------
+function RatingCard({ orderId, onDismiss }: { orderId: string; onDismiss: () => void }) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const starLabels = ["Terrible", "Poor", "Okay", "Good", "Excellent"];
+  const activeRating = hovered || rating;
+
+  const handleSubmit = async () => {
+    if (rating === 0) { setError("Please choose a star rating."); return; }
+    if (comment.trim().length < 5) { setError("Comment must be at least 5 characters."); return; }
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const res = await submitOrderFeedback(orderId, rating, comment);
+      if (res.success) {
+        setSubmitted(true);
+      } else {
+        setError(res.error || "Failed to submit. Please try again.");
+      }
+    } catch (e: any) {
+      setError(e.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="w-full max-w-[340px] mx-auto my-1 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-5 flex flex-col items-center gap-2.5 shadow-lg animate-in fade-in zoom-in-95 duration-300">
+        <div className="h-11 w-11 rounded-full bg-emerald-500/15 flex items-center justify-center">
+          <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+        </div>
+        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 text-center">Review submitted!</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center leading-relaxed">
+          Thank you — your feedback helps us improve the experience for every trainer.
+        </p>
+        <button
+          onClick={onDismiss}
+          className="mt-1 text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline underline-offset-2 cursor-pointer transition-colors"
+        >
+          Dismiss
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-[360px] mx-auto my-1 rounded-2xl border border-zinc-200/70 dark:border-white/[0.09] bg-white dark:bg-[#161619] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* Header banner */}
+      <div className="relative px-5 pt-5 pb-4 bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 70% 30%, white 0%, transparent 60%)" }} />
+        <div className="relative flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <Trophy className="h-5 w-5 text-yellow-300" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-white/70">Order Complete</p>
+            <p className="text-sm font-extrabold leading-tight">Rate Your Experience</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-5 py-4 space-y-4">
+        {/* Stars */}
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setRating(star)}
+                onMouseEnter={() => setHovered(star)}
+                onMouseLeave={() => setHovered(0)}
+                className="cursor-pointer focus:outline-none transition-transform hover:scale-110 active:scale-125"
+              >
+                <Star
+                  className={cn(
+                    "h-8 w-8 transition-all duration-150",
+                    star <= activeRating
+                      ? "fill-yellow-400 stroke-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
+                      : "fill-transparent stroke-zinc-300 dark:stroke-zinc-600"
+                  )}
+                />
+              </button>
+            ))}
+          </div>
+          {activeRating > 0 && (
+            <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 tracking-wide">
+              {starLabels[activeRating - 1]}
+            </p>
+          )}
+        </div>
+
+        {/* Comment */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            Share your experience
+          </label>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            placeholder="Account quality, delivery speed, support team..."
+            className="w-full bg-zinc-50 dark:bg-[#0f0f13] border border-zinc-200 dark:border-white/[0.07] rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 resize-none outline-none focus:border-violet-400/60 dark:focus:border-violet-500/40 transition-colors leading-relaxed"
+          />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <p className="text-[11px] text-red-500 font-medium flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+            {error}
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-0.5">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 h-9 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 flex items-center justify-center gap-1.5"
+          >
+            {isSubmitting ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting...</>
+            ) : (
+              <><Star className="h-3.5 w-3.5 fill-yellow-300 stroke-yellow-300" /> Post Review</>
+            )}
+          </button>
+          <button
+            onClick={onDismiss}
+            className="h-9 px-3.5 rounded-xl border border-zinc-200 dark:border-white/[0.07] text-xs text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors cursor-pointer font-medium"
+          >
+            Later
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface UserChatPanelProps {
@@ -258,6 +413,13 @@ export function UserChatPanel({
         unreadByAdmin: increment(1),
         userTyping: false,
       });
+
+      // Auto-unarchive user on message send
+      if (userId) {
+        deleteDoc(doc(db, "archivedChatUsers", userId)).catch((err) => {
+          console.warn("[UserChat] Auto-unarchive deleteDoc failed:", err.message);
+        });
+      }
 
       console.log(`[UserChat] ✅ Image Sent Successfully | ChatId: ${activeChatId} | URL: ${imageUrl}`);
       setInputText("");
@@ -579,6 +741,13 @@ export function UserChatPanel({
         unreadByAdmin: increment(1),
         userTyping: false,
       });
+
+      // Auto-unarchive user on message send
+      if (userId) {
+        deleteDoc(doc(db, "archivedChatUsers", userId)).catch((err) => {
+          console.warn("[UserChat] Auto-unarchive deleteDoc failed:", err.message);
+        });
+      }
 
       console.log(`[UserChat] ✅ Message Sent Successfully | ChatId: ${activeChatId}`);
       // Play send sound after message is written
@@ -922,6 +1091,24 @@ export function UserChatPanel({
           )}
 
           {messages.map((msg) => {
+            // --- Rating Request Card ---
+            if (msg.type === "rating_request" && msg.orderId) {
+              return (
+                <div key={msg.id} className="flex flex-col items-center w-full py-1">
+                  <RatingCard
+                    orderId={msg.orderId}
+                    onDismiss={() => {
+                      // No-op — card stays in history but collapses when submitted
+                    }}
+                  />
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 font-medium">
+                    {formatTime(msg.timestamp)}
+                  </span>
+                </div>
+              );
+            }
+
+            // --- Normal message bubble ---
             const isSystem = msg.text?.startsWith("System:") ?? false;
             const displayMsg = isSystem ? msg.text?.replace("System:", "").trim() : msg.text;
             

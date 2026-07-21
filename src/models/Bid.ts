@@ -19,6 +19,7 @@ const BidSchema: Schema<IBid> = new Schema(
 // High-Concurrency Compound Index
 // Ensures we can query the highest bid for an auction instantly without an expensive collection scan.
 BidSchema.index({ auctionId: 1, amount: -1 });
+BidSchema.index({ auctionId: 1, createdAt: -1 });
 
 const Bid: Model<IBid> = mongoose.models.Bid || mongoose.model<IBid>('Bid', BidSchema);
 export default Bid;

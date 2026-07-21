@@ -48,7 +48,7 @@ export async function getLiveExchangeRates() {
           baseCurrency: "USD",
           rates: extractedRates,
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: "after" }
       );
 
       console.log("[Currency API] Successfully fetched and cached new rates to MongoDB.");
