@@ -38,6 +38,12 @@ export const useCartStore = create<CartState>()(
         const currentItems = get().items;
         const existing = currentItems.find((item) => item.id === newItem.id);
 
+        const safeImageUrl = newItem.imageUrl && !newItem.imageUrl.startsWith("data:")
+          ? newItem.imageUrl
+          : "/recovery-service.png";
+
+        const itemToAdd = { ...newItem, imageUrl: safeImageUrl };
+
         if (existing) {
           console.log(`[CartStore] ➕ Incrementing Cart Item Quantity -> "${newItem.name}" (New Qty: ${existing.quantity + 1})`);
           set({
@@ -47,7 +53,7 @@ export const useCartStore = create<CartState>()(
           });
         } else {
           console.log(`[CartStore] 🛍️ Added New Item to Cart -> "${newItem.name}" (Price: ${newItem.price !== null ? "$" + newItem.price : "Pending"})`);
-          set({ items: [...currentItems, { ...newItem, quantity: 1 }] });
+          set({ items: [...currentItems, { ...itemToAdd, quantity: 1 }] });
         }
       },
       removeItem: (id) => {
@@ -79,11 +85,15 @@ export const useCartStore = create<CartState>()(
 
         const recoveryItems: CartItem[] = recoveryRequests.map((req) => {
           const isQuoted = req.price !== null && req.price !== undefined && req.price > 0;
+          const safeImageUrl = req.screenshotUrl && !req.screenshotUrl.startsWith("data:")
+            ? req.screenshotUrl
+            : "/recovery-service.png";
+
           return {
             id: `recovery_${req._id}`,
             name: `Account Recovery (Level ${req.accountLevel})`,
             price: isQuoted ? Number(req.price) : null,
-            imageUrl: req.screenshotUrl || "/recovery-service.png",
+            imageUrl: safeImageUrl,
             quantity: 1,
             type: "RECOVERY",
             recoveryRequestId: req._id,
@@ -105,7 +115,12 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "pokemon-go-cart-storage",
-      partialize: (state) => ({ items: state.items }), // Persist only items list, not open state
+      partialize: (state) => ({
+        items: state.items.map((item) => ({
+          ...item,
+          imageUrl: item.imageUrl && !item.imageUrl.startsWith("data:") ? item.imageUrl : "/recovery-service.png",
+        })),
+      }),
     }
   )
 );

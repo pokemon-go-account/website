@@ -31,24 +31,31 @@ const CURRENCIES = [
   { code: "JPY", symbol: "¥", label: "JPY (¥)" },
 ];
 
-export function RevenueClient() {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [data, setData] = useState<{
-    summary: {
-      totalRevenueUSD: number;
-      totalOrdersCount: number;
-      averageOrderValueUSD: number;
-      storefrontRevenueUSD: number;
-      buyNowRevenueUSD: number;
-      auctionRevenueUSD: number;
-      recoveryRevenueUSD: number;
-    };
-    dailyStats: DailyStat[];
-    orders: RevenueOrderDetails[];
-  } | null>(null);
+interface RevenueData {
+  summary: {
+    totalRevenueUSD: number;
+    totalOrdersCount: number;
+    averageOrderValueUSD: number;
+    storefrontRevenueUSD: number;
+    buyNowRevenueUSD: number;
+    auctionRevenueUSD: number;
+    recoveryRevenueUSD: number;
+  };
+  dailyStats: DailyStat[];
+  orders: RevenueOrderDetails[];
+}
 
-  const [rates, setRates] = useState<Record<string, number>>({ USD: 1.0 });
+interface RevenueClientProps {
+  initialData?: RevenueData;
+  initialRates?: Record<string, number>;
+}
+
+export function RevenueClient({ initialData, initialRates }: RevenueClientProps) {
+  const [loading, setLoading] = useState(!initialData);
+  const [refreshing, setRefreshing] = useState(false);
+  const [data, setData] = useState<RevenueData | null>(initialData || null);
+
+  const [rates, setRates] = useState<Record<string, number>>(initialRates || { USD: 1.0 });
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
   const [selectedCountry, setSelectedCountry] = useState<string>("ALL");
   const [chartMode, setChartMode] = useState<"revenue" | "orders">("revenue");
@@ -80,8 +87,10 @@ export function RevenueClient() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!initialData) {
+      fetchData();
+    }
+  }, [initialData]);
 
   // Helper to convert USD value to selected currency
   const currRate = rates[selectedCurrency] || 1.0;

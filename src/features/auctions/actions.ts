@@ -10,6 +10,47 @@ import Bid from "@/models/Bid";
 import User from "@/models/User";
 import Registration from "@/models/Registration";
 import { sendChatWebhookNotification } from "@/features/chat/actions";
+import { getDb } from "@/lib/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+/**
+ * Syncs MongoDB live auction state to Firestore doc liveAuctions/${auctionId}
+ * Allows zero-Vercel-invocation WebSocket streaming for client live rooms
+ */
+export async function syncAuctionToFirestore(auctionId: string) {
+  try {
+    const db = getDb();
+    const auction = await Auction.findById(auctionId)
+      .populate("highestBidderId", "name username")
+      .lean();
+    if (!auction) return;
+
+    const bids = await Bid.find({ auctionId })
+      .populate("bidderId", "username")
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    const formattedBids = bids.map((b: any) => ({
+      _id: b._id.toString(),
+      bidderName: b.bidderId?.username || "Anonymous",
+      amount: b.amount,
+      createdAt: b.createdAt.toISOString(),
+    }));
+
+    await setDoc(doc(db, "liveAuctions", auctionId), {
+      currentHighestBid: auction.currentHighestBid,
+      highestBidderId: auction.highestBidderId ? (auction.highestBidderId as any)._id?.toString() || (auction.highestBidderId as any).toString() : null,
+      highestBidderName: (auction.highestBidderId as any)?.username || (auction.highestBidderId as any)?.name || null,
+      status: auction.status,
+      endTime: auction.endTime ? auction.endTime.toISOString() : null,
+      bids: formattedBids,
+      lastUpdated: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.error(`[Firestore LiveSync] Failed for auction ${auctionId}:`, err);
+  }
+}
 
 /**
  * Automatically transitions expired auctions to COMPLETED and starts scheduled auctions
@@ -265,6 +306,9 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       userEmail: user.email ?? undefined,
       text: `🔨 NEW BID PLACED: $${bidAmount}\nListing: ${listing.title}\nBidder: ${(user as any).username || (user as any).name || "Bidder"}`,
     }).catch(() => {});
+
+    // Sync live telemetry to Firestore for instant WebSocket streaming
+    syncAuctionToFirestore(auctionId).catch(() => {});
 
     revalidatePath(`/auctions/${auctionId}`);
 

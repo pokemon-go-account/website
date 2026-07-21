@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { fetchAuctionRealtime, placeAuctionBid } from "@/features/auctions/actions";
+import { getDb } from "@/lib/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export interface BidHistoryItem {
   _id: string;
@@ -33,9 +35,8 @@ export function useSocket(
 
     let isMounted = true;
 
-    // High frequency poll query function
-    const pollAuctionState = async () => {
-      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+    // 1. Initial single fetch to populate user registration & initial state
+    const fetchInitial = async () => {
       const res = await fetchAuctionRealtime(auctionId);
       if (!isMounted) return;
 
@@ -48,24 +49,40 @@ export function useSocket(
         setHasPendingBuyNow(!!res.hasPendingBuyNow);
         if (res.status) setStatus(res.status);
         if (res.endTime) setEndTime(res.endTime);
-        if (res.bids) {
-          setBidHistory(res.bids);
-        }
+        if (res.bids) setBidHistory(res.bids);
       } else {
-        // Soft error reporting to prevent console clutter during connection drops
         setError(res.error || "Failed to sync auction telemetry.");
       }
     };
 
-    // Initial query
-    pollAuctionState();
+    fetchInitial();
 
-    // Setup polling interval (8 seconds, only when tab is visible)
-    const interval = setInterval(pollAuctionState, 8000);
+    // 2. Client-side Realtime WebSocket stream via Firestore onSnapshot (Zero Vercel Invocations)
+    const db = getDb();
+    const auctionRef = doc(db, "liveAuctions", auctionId);
+
+    const unsub = onSnapshot(
+      auctionRef,
+      (snapshot) => {
+        if (!isMounted || !snapshot.exists()) return;
+        const data = snapshot.data();
+
+        setIsConnected(true);
+        if (data.currentHighestBid !== undefined) setCurrentBid(data.currentHighestBid);
+        if (data.highestBidderId !== undefined) setHighestBidderId(data.highestBidderId);
+        if (data.highestBidderName !== undefined) setHighestBidderName(data.highestBidderName);
+        if (data.status) setStatus(data.status);
+        if (data.endTime) setEndTime(data.endTime);
+        if (Array.isArray(data.bids)) setBidHistory(data.bids);
+      },
+      (err) => {
+        console.warn("[Firestore LiveRoom] Snapshot listener warning:", err.message);
+      }
+    );
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      unsub();
     };
   }, [auctionId, session?.user?.id]);
 

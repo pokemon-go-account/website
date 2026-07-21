@@ -7,7 +7,9 @@ import {
   placeAuctionBid,
   uploadImageAction,
   fetchAllAuctionBids,
-  createBuyNowOrderAction
+  createBuyNowOrderAction,
+  createAuctionWinnerOrderAction,
+  syncAuctionToFirestore,
 } from './actions';
 import Auction from '@/models/Auction';
 import Listing from '@/models/Listing';
@@ -359,6 +361,44 @@ describe('Auctions Actions', () => {
       const updatedAuction2 = await Auction.findById(auction._id);
       expect(updatedAuction2?.status).toBe('COMPLETED');
       expect(updatedAuction2?.buyNowBuyerId?.toString()).toBe(user._id.toString());
+    });
+  });
+
+  describe('createAuctionWinnerOrderAction', () => {
+    it('should fail if user is not authenticated', async () => {
+      vi.mocked(auth).mockResolvedValue(null as any);
+      const res = await createAuctionWinnerOrderAction(new mongoose.Types.ObjectId().toString());
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Unauthorized');
+    });
+
+    it('should create order for auction winner when user is the highest bidder', async () => {
+      const winner = await User.create({ name: 'Winner', username: 'winner1', email: 'winner@test.com' });
+      const listing = await Listing.create({
+        ...LISTING_FIXTURE,
+        status: 'APPROVED',
+        sellerId: new mongoose.Types.ObjectId(),
+      });
+      const auction = await Auction.create({
+        listingId: listing._id,
+        status: 'COMPLETED',
+        currentHighestBid: 150,
+        highestBidderId: winner._id,
+      });
+
+      vi.mocked(auth).mockResolvedValue({ user: { id: winner._id.toString() }, expires: '9999' } as any);
+
+      const res = await createAuctionWinnerOrderAction(auction._id.toString());
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.orderId).toBeDefined();
+        expect(res.winAmount).toBe(150);
+      }
+
+      const order = await Order.findOne({ userId: winner._id });
+      expect(order).toBeDefined();
+      expect(order?.totalPrice).toBe(150);
+      expect(order?.orderType).toBe('AUCTION');
     });
   });
 });

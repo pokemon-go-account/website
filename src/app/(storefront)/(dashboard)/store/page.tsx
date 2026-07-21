@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   ],
 };
 
-export const revalidate = 0; // Dynamic route
+export const revalidate = 30; // ISR cache on Vercel CDN for 30s
 
 export default async function StorefrontPage() {
   const [categoriesRes, productsRes] = await Promise.all([

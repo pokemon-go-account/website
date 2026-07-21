@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   ],
 };
 
-export const revalidate = 0; // Dynamic rendering
+export const revalidate = 30; // ISR cache on Vercel CDN for 30s
 
 interface AuctionsCatalogPageProps {
   searchParams: Promise<{ search?: string }>;
@@ -178,6 +178,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
               src={screenshots[0]} 
               alt={auc.listingId.title} 
               fill
+              unoptimized
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
@@ -368,6 +369,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                             src={prod.imageUrl}
                             alt={prod.name}
                             fill
+                            unoptimized
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                             className="object-cover"
                           />

@@ -42,14 +42,16 @@ export async function getRevenueAnalyticsAction() {
 
     await connectDB();
 
-    // Fetch all completed/paid orders
+    // Fetch all completed/paid orders with lean projection
     const orders = await Order.find({ status: "COMPLETED" })
+      .select("_id totalPrice orderType items userId status createdAt")
       .populate("userId", "username name email country")
       .sort({ createdAt: -1 })
       .lean();
 
-    // Also fetch completed recovery requests (if any not represented in Order)
+    // Also fetch completed recovery requests with lean projection
     const completedRecoveries = await RecoveryRequest.find({ status: "COMPLETED" })
+      .select("_id price accountLevel userId status createdAt")
       .populate("userId", "username name email country")
       .sort({ createdAt: -1 })
       .lean();
@@ -62,6 +64,7 @@ export async function getRevenueAnalyticsAction() {
 
     const dailyMap = new Map<string, { count: number; revenue: number }>();
     const orderList: RevenueOrderDetails[] = [];
+    const orderRecoveryIds = new Set<string>();
 
     // Helper to format date key YYYY-MM-DD
     const getDateKey = (date: Date) => {
@@ -72,7 +75,7 @@ export async function getRevenueAnalyticsAction() {
       return `${year}-${month}-${day}`;
     };
 
-    // Process Orders
+    // Process Orders & populate orderRecoveryIds Set in 1 pass
     for (const ord of orders) {
       const amount = ord.totalPrice || 0;
       totalRevenueUSD += amount;
@@ -91,11 +94,16 @@ export async function getRevenueAnalyticsAction() {
       });
 
       const userObj = ord.userId as any;
-      const itemsList: RevenueOrderItem[] = (ord.items || []).map((i: any) => ({
-        name: i.name || "Purchased Product",
-        priceUSD: i.price || 0,
-        quantity: i.quantity || 1,
-      }));
+      const itemsList: RevenueOrderItem[] = (ord.items || []).map((i: any) => {
+        if (i.recoveryRequestId || i.type === "RECOVERY") {
+          orderRecoveryIds.add((i.recoveryRequestId || i.productId || "").toString());
+        }
+        return {
+          name: i.name || "Purchased Product",
+          priceUSD: i.price || 0,
+          quantity: i.quantity || 1,
+        };
+      });
 
       orderList.push({
         id: ord._id.toString(),
@@ -112,10 +120,11 @@ export async function getRevenueAnalyticsAction() {
       });
     }
 
-    // Process completed recovery requests if priced
+    // Process completed recovery requests using O(1) Set lookup
     for (const rec of completedRecoveries) {
       const price = rec.price || 0;
-      if (price > 0 && !orders.some((o) => o.items?.some((i: any) => i.productId?.toString() === rec._id.toString()))) {
+      const recIdStr = rec._id.toString();
+      if (price > 0 && !orderRecoveryIds.has(recIdStr)) {
         totalRevenueUSD += price;
         recoveryRevenueUSD += price;
 
@@ -136,8 +145,8 @@ export async function getRevenueAnalyticsAction() {
         ];
 
         orderList.push({
-          id: rec._id.toString(),
-          orderNumber: `#REC-${rec._id.toString().substring(18, 24).toUpperCase()}`,
+          id: recIdStr,
+          orderNumber: `#REC-${recIdStr.substring(18, 24).toUpperCase()}`,
           customerName: userObj?.username || userObj?.name || "Customer",
           customerEmail: userObj?.email || "No email",
           customerCountry: userObj?.country || "",

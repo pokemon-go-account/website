@@ -14,6 +14,7 @@ import PokemonRequest from "@/models/PokemonRequest";
 import CustomRequest from "@/models/CustomRequest";
 import { revalidatePath } from "next/cache";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
+import { syncAuctionToFirestore } from "@/features/auctions/actions";
 
 /**
  * Helper to enforce strict admin validation
@@ -195,6 +196,7 @@ export async function pauseAuction(auctionId: string) {
     auction.status = "PAUSED";
     await auction.save();
 
+    syncAuctionToFirestore(auctionId).catch(() => {});
     revalidatePath("/admin");
     revalidatePath(`/auctions/${auctionId}`);
 
@@ -218,6 +220,7 @@ export async function resumeAuction(auctionId: string) {
     auction.status = "LIVE";
     await auction.save();
 
+    syncAuctionToFirestore(auctionId).catch(() => {});
     revalidatePath("/admin");
     revalidatePath(`/auctions/${auctionId}`);
 
@@ -242,6 +245,7 @@ export async function forceEndAuction(auctionId: string) {
     auction.status = "COMPLETED";
     await auction.save();
 
+    syncAuctionToFirestore(auctionId).catch(() => {});
     revalidatePath("/admin");
     revalidatePath(`/auctions/${auctionId}`);
 
@@ -316,6 +320,7 @@ export async function reactivateAuction(auctionId: string, hours: number = 24) {
     // Keep current highest bid and highest bidder so the auction resumes normally
     await auction.save();
 
+    syncAuctionToFirestore(auctionId).catch(() => {});
     revalidatePath("/admin");
     revalidatePath(`/auctions/${auctionId}`);
 
@@ -358,6 +363,7 @@ export async function rollbackAuctionBid(auctionId: string) {
 
     await auction.save();
 
+    syncAuctionToFirestore(auctionId).catch(() => {});
     revalidatePath("/admin");
     revalidatePath(`/auctions/${auctionId}`);
 
@@ -471,8 +477,11 @@ export async function updateAuction(auctionId: string, fields: any) {
         auction.currentHighestBid = fields.startingBid;
       }
     }
+    auction.status = "LIVE";
+    auction.endTime = new Date(fields.endTime || auction.endTime);
     await auction.save();
 
+    syncAuctionToFirestore(auctionId).catch(() => {});
     revalidatePath("/admin");
     revalidatePath(`/auctions/${auctionId}`);
 

@@ -123,6 +123,52 @@ const STEPS = [
   },
 ];
 
+function compressImage(file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.75): Promise<string> {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string) || "");
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve((event.target?.result as string) || "");
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL("image/jpeg", quality);
+        resolve(compressed);
+      };
+      img.onerror = () => resolve((event.target?.result as string) || "");
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
 export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [screenshots, setScreenshots] = useState<{ id: string; base64: string; name: string }[]>([]);
@@ -156,7 +202,8 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
   useEffect(() => {
     if (state.success && state.request) {
       const req = state.request;
-      const chatId = `recovery-${req._id}`;
+      const reqIdStr = String(req._id || "");
+      const chatId = `recovery-${reqIdStr}`;
 
       try {
         const db = getDb();
@@ -169,7 +216,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
         const userMsgText = `🔑 NEW RECOVERY REQUEST PLACED
 ----------------------------------
-Request ID: ${req._id}
+Request ID: ${reqIdStr}
 Trainer Name: ${req.trainerName || "Not Provided"}
 Account Level: ${req.accountLevel}
 Creation Method: ${req.creationMethod ? req.creationMethod.toUpperCase() : "N/A"}
@@ -194,8 +241,8 @@ Our recovery team will review your account details and quote a price shortly!`;
           username,
           email: userEmail,
           type: "recovery",
-          orderId: req._id,
-          title: `Recovery #${req._id.substring(0, 8).toUpperCase()}`,
+          orderId: reqIdStr,
+          title: `Recovery #${reqIdStr.substring(0, 8).toUpperCase()}`,
           lastMessage: `Recovery request placed. Price Pending.`,
           lastMessageAt: serverTimestamp(),
           unreadByAdmin: 1,
@@ -223,7 +270,7 @@ Our recovery team will review your account details and quote a price shortly!`;
         // Trigger Webhook Notification on new recovery request chat creation
         sendChatWebhookNotification({
           ticketId: chatId,
-          ticketTitle: `Recovery #${req._id.substring(0, 8).toUpperCase()}`,
+          ticketTitle: `Recovery #${reqIdStr.substring(0, 8).toUpperCase()}`,
           senderName: username,
           senderType: "user",
           userEmail,
@@ -233,13 +280,17 @@ Our recovery team will review your account details and quote a price shortly!`;
         console.error("Failed to create recovery support chat:", chatErr);
       }
 
+      const safeImageUrl = req.screenshotUrl && !req.screenshotUrl.startsWith("data:")
+        ? req.screenshotUrl
+        : "/recovery-service.png";
+
       addCartItem({
-        id: `recovery_${req._id}`,
+        id: `recovery_${reqIdStr}`,
         name: `Account Recovery (Level ${req.accountLevel})`,
         price: null,
-        imageUrl: req.screenshotUrl || "/recovery-service.png",
+        imageUrl: safeImageUrl,
         type: "RECOVERY",
-        recoveryRequestId: req._id,
+        recoveryRequestId: reqIdStr,
         pricePending: true,
       });
 
@@ -261,19 +312,23 @@ Our recovery team will review your account details and quote a price shortly!`;
     setDrawerOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setScreenshots((prev) => [
-            ...prev,
-            { id: Math.random().toString(), base64: reader.result as string, name: file.name },
-          ]);
-        };
-        reader.readAsDataURL(file);
-      });
+      const fileList = Array.from(files);
+      for (const file of fileList) {
+        try {
+          const base64 = await compressImage(file);
+          if (base64) {
+            setScreenshots((prev) => [
+              ...prev,
+              { id: Math.random().toString(), base64, name: file.name },
+            ]);
+          }
+        } catch (err) {
+          console.error("Failed to compress image screenshot:", err);
+        }
+      }
     }
   };
 
