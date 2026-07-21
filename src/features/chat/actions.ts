@@ -91,12 +91,39 @@ export async function sendChatWebhookNotification(payload: ChatWebhookPayload): 
     const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
     const telegramChatId = process.env.TELEGRAM_CHAT_ID;
     const genericWebhookUrl = process.env.CHAT_WEBHOOK_URL;
-
     const { ticketId, ticketTitle, senderName, senderType, text = "", hasImage = false, userEmail } = payload;
-    const isNewTicket = text.includes("ticket opened") || text.includes("System:");
-    const messagePreview = text.length > 280 ? text.substring(0, 280) + "..." : text || (hasImage ? "📷 Sent an image attachment" : "New message");
 
-    console.log(`[Chat Webhook] 🚀 Triggering Chat Notification | Event: ${isNewTicket ? "New Ticket" : "New Message"} | TicketId: ${ticketId} | Sender: ${senderName} (${senderType})`);
+    const isAuction = ticketId.startsWith("auction-") || text.includes("BID PLACED");
+    const isOrder = ticketId.startsWith("order-") || text.includes("NEW ORDER") || text.includes("BUY NOW");
+    const isRecovery = ticketId.startsWith("recovery-") || text.includes("RECOVERY");
+
+    // Formatting titles & color themes
+    let headerTitle = "💬 NEW CUSTOMER MESSAGE";
+    let embedColor = 0x8b5cf6; // Purple
+    let categoryBadge = "Support Chat";
+
+    if (isAuction) {
+      headerTitle = "🔨 NEW AUCTION BID PLACED";
+      embedColor = 0x10b981; // Emerald Green
+      categoryBadge = "Live Auction Bidding";
+    } else if (isOrder) {
+      headerTitle = "📦 NEW ORDER NOTIFICATION";
+      embedColor = 0x3b82f6; // Blue
+      categoryBadge = "Order Checkout";
+    } else if (isRecovery) {
+      headerTitle = "🔑 NEW RECOVERY REQUEST";
+      embedColor = 0xf59e0b; // Amber / Gold
+      categoryBadge = "Account Recovery Service";
+    } else if (text.includes("ticket opened") || text.includes("System:")) {
+      headerTitle = "🎟️ NEW SUPPORT TICKET";
+    }
+
+    // Clean up message preview (truncate if extremely long, max 1000 chars for Discord field)
+    const cleanText = text.trim();
+    const formattedMessage = cleanText.length > 900 ? cleanText.substring(0, 900) + "\n... (truncated)" : cleanText;
+    const finalContentText = formattedMessage || (hasImage ? "📷 [Sent an Image Attachment]" : "No text content");
+
+    console.log(`[Chat Webhook] 🚀 Triggering Chat Notification | Category: ${categoryBadge} | TicketId: ${ticketId} | Sender: ${senderName}`);
 
     if (!discordWebhookUrl && !telegramBotToken && !genericWebhookUrl) {
       console.log("[Chat Webhook] ℹ️ No webhook URLs configured in environment. Skipping dispatch.");
@@ -105,20 +132,26 @@ export async function sendChatWebhookNotification(payload: ChatWebhookPayload): 
 
     const promises: Promise<any>[] = [];
 
-    // 1. Discord Webhook Notification
+    // 1. DISCORD WEBHOOK NOTIFICATION (Rich Embed)
     if (discordWebhookUrl) {
       const discordPayload = {
-        username: "Chat Notification Bot",
+        username: "Pokemon GO Store Notifications",
+        avatar_url: "https://cdn-icons-png.flaticon.com/512/188/188987.png",
         embeds: [
           {
-            title: isNewTicket ? `🎟️ New Support Ticket #${ticketId}` : `💬 New Chat Message in ${ticketTitle}`,
-            description: messagePreview,
-            color: senderType === "user" ? 0x6133e1 : 0x10b981,
+            title: `${headerTitle} • #${ticketId.substring(0, 14)}`,
+            color: embedColor,
+            description: `**Channel / Title:** ${ticketTitle}\n\n\`\`\`text\n${finalContentText}\n\`\`\``,
             fields: [
-              { name: "Sender", value: `${senderName} (${senderType.toUpperCase()})`, inline: true },
-              { name: "Ticket / Chat ID", value: ticketId, inline: true },
-              ...(userEmail ? [{ name: "User Email", value: userEmail, inline: true }] : []),
+              { name: "👤 Customer", value: `\`${senderName}\``, inline: true },
+              { name: "✉️ Email", value: userEmail ? `\`${userEmail}\`` : "`N/A`", inline: true },
+              { name: "📁 Category", value: `\`${categoryBadge}\``, inline: true },
+              { name: "🆔 Thread ID", value: `\`${ticketId}\``, inline: true },
+              ...(hasImage ? [{ name: "📷 Media", value: "`Image Attached`", inline: true }] : []),
             ],
+            footer: {
+              text: "Pokemon GO Auction & Support Desk • Live Sync",
+            },
             timestamp: new Date().toISOString(),
           },
         ],
@@ -137,13 +170,27 @@ export async function sendChatWebhookNotification(payload: ChatWebhookPayload): 
       );
     }
 
-    // 2. Telegram Bot Notification
+    // 2. TELEGRAM BOT NOTIFICATION (HTML Formatted)
     if (telegramBotToken && telegramChatId) {
-      const telegramText = `<b>${isNewTicket ? "🎟️ New Support Ticket" : "💬 New Chat Message"}</b>\n\n` +
-        `<b>Channel / Ticket:</b> ${ticketTitle} (${ticketId})\n` +
-        `<b>From:</b> ${senderName} (${senderType.toUpperCase()})\n` +
-        (userEmail ? `<b>Email:</b> ${userEmail}\n` : "") +
-        `\n<b>Message:</b> ${messagePreview}`;
+      const escapeHtml = (str: string) =>
+        str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      const safeTitle = escapeHtml(ticketTitle);
+      const safeSender = escapeHtml(senderName);
+      const safeEmail = userEmail ? escapeHtml(userEmail) : "N/A";
+      const safeMessage = escapeHtml(finalContentText);
+
+      const telegramText =
+        `<b>${headerTitle}</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 <b>Customer:</b> <code>${safeSender}</code>\n` +
+        `✉️ <b>Email:</b> <code>${safeEmail}</code>\n` +
+        `📁 <b>Category:</b> <code>${categoryBadge}</code>\n` +
+        `🆔 <b>Thread ID:</b> <code>${ticketId}</code>\n` +
+        `📌 <b>Title:</b> ${safeTitle}\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `💬 <b>Message Details:</b>\n` +
+        `<pre>${safeMessage}</pre>`;
 
       const telegramUrl = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
       promises.push(
@@ -175,7 +222,7 @@ export async function sendChatWebhookNotification(payload: ChatWebhookPayload): 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            event: isNewTicket ? "chat.ticket_created" : "chat.message_created",
+            event: isOrder ? "chat.order_created" : isRecovery ? "chat.recovery_created" : "chat.support_created",
             timestamp: new Date().toISOString(),
             payload: {
               ticketId,
@@ -183,7 +230,8 @@ export async function sendChatWebhookNotification(payload: ChatWebhookPayload): 
               senderName,
               senderType,
               userEmail,
-              text: messagePreview,
+              category: categoryBadge,
+              text: finalContentText,
               hasImage,
             },
           }),

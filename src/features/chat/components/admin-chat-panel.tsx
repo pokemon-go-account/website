@@ -704,15 +704,6 @@ export function AdminChatPanel() {
 
       console.log(`[AdminChat] ✅ Reply Sent Successfully | ChatId: ${activeChatId}`);
       playSound(sendSoundRef);
-
-      // Trigger Webhook Notification on Admin reply
-      sendChatWebhookNotification({
-        ticketId: activeChatId,
-        ticketTitle: activeChat?.title || activeChatId,
-        senderName: adminUsername,
-        senderType: "admin",
-        text,
-      }).catch(() => {});
     } catch (err) {
       console.error("[AdminChat] ❌ Failed to send reply:", err);
     } finally {

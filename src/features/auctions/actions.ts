@@ -9,6 +9,7 @@ import Auction from "@/models/Auction";
 import Bid from "@/models/Bid";
 import User from "@/models/User";
 import Registration from "@/models/Registration";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 
 /**
  * Automatically transitions expired auctions to COMPLETED and starts scheduled auctions
@@ -255,6 +256,16 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       amount: bidAmount,
     });
 
+    // Trigger Webhook Notification on new auction bid
+    sendChatWebhookNotification({
+      ticketId: `auction-${auctionId}`,
+      ticketTitle: listing.title || "Live Auction",
+      senderName: (user as any).username || (user as any).name || "Bidder",
+      senderType: "user",
+      userEmail: user.email ?? undefined,
+      text: `🔨 NEW BID PLACED: $${bidAmount}\nListing: ${listing.title}\nBidder: ${(user as any).username || (user as any).name || "Bidder"}`,
+    }).catch(() => {});
+
     revalidatePath(`/auctions/${auctionId}`);
 
     return { 
@@ -428,6 +439,16 @@ export async function createBuyNowOrderAction(auctionId: string) {
       });
     }
 
+    // Trigger Webhook Notification on Buy Now order creation
+    sendChatWebhookNotification({
+      ticketId: `order-${order._id.toString()}`,
+      ticketTitle: `Buy Now Order #${order._id.toString().substring(0, 8).toUpperCase()}`,
+      senderName: (user as any)?.username || session.user.name || session.user.email || "Buyer",
+      senderType: "user",
+      userEmail: session.user.email ?? undefined,
+      text: `⚡ BUY NOW ORDER CREATED\nListing: ${listing.title}\nBuy Now Price: $${buyNowPrice}\nWallet Discount: -$${discount}\nFinal Total: $${finalPrice}`,
+    }).catch(() => {});
+
     // Mark auction as COMPLETED with buy-now buyer info only if auto-completed immediately
     if (isCompleted) {
       if (user) {
@@ -530,6 +551,16 @@ export async function createAuctionWinnerOrderAction(auctionId: string) {
         $inc: { walletBalance: -discount },
       });
     }
+
+    // Trigger Webhook Notification on auction winner order creation
+    sendChatWebhookNotification({
+      ticketId: `order-${order._id.toString()}`,
+      ticketTitle: `Auction Winner Order #${order._id.toString().substring(0, 8).toUpperCase()}`,
+      senderName: (user as any)?.username || session.user.name || session.user.email || "Winner",
+      senderType: "user",
+      userEmail: session.user.email ?? undefined,
+      text: `🏆 AUCTION WINNER ORDER CREATED\nListing: ${listing.title}\nWinning Bid: $${winAmount}\nWallet Discount: -$${discount}\nFinal Amount: $${finalPrice}`,
+    }).catch(() => {});
 
     return {
       success: true,
