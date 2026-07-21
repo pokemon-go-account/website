@@ -14,12 +14,6 @@ export default defineConfig({
     // MongoDB state conflicts: concurrent cleanup between files corrupts shared DB
     fileParallelism: false,
     maxWorkers: 1,
-    minWorkers: 1,
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
     server: {
       deps: {
         inline: ['next-auth', 'next'],
