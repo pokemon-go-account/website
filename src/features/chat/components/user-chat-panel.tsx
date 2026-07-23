@@ -263,7 +263,12 @@ export function UserChatPanel({
     session?.user?.email ||
     guestData?.username ||
     "Guest User";
-  const [activeTab, setActiveTab] = useState<"support" | "orders">("support");
+  const [activeTab, setActiveTab] = useState<"support" | "orders">(() => {
+    if (initialChatId && (initialChatId.startsWith("order-") || initialChatId.includes("order"))) {
+      return "orders";
+    }
+    return "support";
+  });
   const [conversations, setConversations] = useState<ChatMeta[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(initialChatId);
   const [activeChat, setActiveChat] = useState<ChatMeta | null>(null);
@@ -515,21 +520,25 @@ export function UserChatPanel({
     return unsub;
   }, [userId, isAuthReady, playSound]);
 
-  // Handle initialChatId auto-selection ONCE without locking
+  // Handle initialChatId auto-selection instantly
+  useEffect(() => {
+    if (initialChatId) {
+      setActiveChatId(initialChatId);
+      if (initialChatId.startsWith("order-") || initialChatId.includes("order")) {
+        setActiveTab("orders");
+      }
+    }
+  }, [initialChatId]);
+
   useEffect(() => {
     if (
       initialChatId &&
-      initialChatId !== hasSetInitialChatRef.current &&
       conversations.length > 0
     ) {
       const targetChat = conversations.find((c) => c.id === initialChatId);
       if (targetChat) {
-        hasSetInitialChatRef.current = initialChatId;
-        setActiveChatId(initialChatId);
         if (targetChat.type === "order" || targetChat.id.startsWith("order-")) {
           setActiveTab("orders");
-        } else {
-          setActiveTab("support");
         }
       }
     }

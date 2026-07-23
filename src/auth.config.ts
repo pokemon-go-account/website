@@ -102,8 +102,8 @@ export const authConfig = {
       const isProfileCompleteRoute = nextUrl.pathname.startsWith("/profile/complete");
       const isVerifyOtpRoute = nextUrl.pathname.startsWith("/verify-otp");
 
-      // Public routes — never require auth
-      const PUBLIC_PREFIXES = ["/auctions", "/store", "/contact", "/feedback", "/recovery"];
+      // Public routes — never require auth (note: /chat performs internal guest cookie checks)
+      const PUBLIC_PREFIXES = ["/auctions", "/store", "/contact", "/feedback", "/recovery", "/chat"];
       const PUBLIC_EXACT = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"];
       const isPublicRoute =
         PUBLIC_EXACT.includes(nextUrl.pathname) ||

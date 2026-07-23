@@ -10,6 +10,7 @@ import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { PriceDisplay } from "@/components/price-display";
 import { cn } from "@/lib/utils";
 import { getFreshBalance } from "@/features/auth/actions";
+import { getGuestSessionAction, GuestSessionData } from "@/features/auth/guest-actions";
 
 interface HeaderClientProps {
   user?: {
@@ -36,12 +37,21 @@ const navLinks = [
 export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
   const [mounted, setMounted] = useState(false);
   const [freshBalance, setFreshBalance] = useState<number | null>(null);
+  const [guestSession, setGuestSession] = useState<GuestSessionData | null>(null);
   const { data: session } = useSession();
   const { currency, setCurrency, isConverting } = useCurrencyStore();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && !session?.user) {
+      getGuestSessionAction().then((res) => {
+        if (res) setGuestSession(res);
+      });
+    }
+  }, [mounted, session?.user]);
 
   const [copied, setCopied] = useState(false);
 
@@ -355,6 +365,16 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
               </div>
             ) : (
               <>
+                {guestSession && (
+                  <Link
+                    href="/chat"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-2xs"
+                    title={`Guest Session: ${guestSession.socialPlatform} (${guestSession.socialId})`}
+                  >
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>My Guest Account</span>
+                  </Link>
+                )}
                 <Link
                   href="/login"
                   className="inline-flex h-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-white/10 bg-transparent px-4 text-xs font-semibold text-zinc-800 dark:text-white transition-all hover:bg-zinc-50 dark:hover:bg-white/5 active:scale-95 cursor-pointer"
@@ -495,6 +515,25 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2 px-2">
+                    {guestSession && (
+                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 space-y-1.5">
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            My Guest Account
+                          </span>
+                          <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase">{guestSession.socialPlatform}</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-mono truncate">{guestSession.socialId}</p>
+                        <Link
+                          href="/chat"
+                          onClick={toggleMenu}
+                          className="w-full h-8 mt-1 flex items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors"
+                        >
+                          View Guest Order Chat
+                        </Link>
+                      </div>
+                    )}
                     <Link
                       href="/login"
                       onClick={toggleMenu}

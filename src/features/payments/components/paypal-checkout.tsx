@@ -193,6 +193,7 @@ Please verify my payment proof and approve my order!`;
           unreadByUser: 0,
           createdAt: serverTimestamp(),
           paymentMethod: "PayPal",
+          isGuest: !session?.user,
         });
 
         const msgsRef = collection(db, "supportChats", chatId, "messages");

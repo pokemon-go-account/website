@@ -203,6 +203,7 @@ Please verify my payment proof and approve my order!`;
           unreadByUser: 0,
           createdAt: serverTimestamp(),
           paymentMethod: "Wise",
+          isGuest: !session?.user,
         });
 
         const msgsRef = collection(db, "supportChats", chatId, "messages");

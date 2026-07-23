@@ -18,8 +18,20 @@ import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth } from "@/lib/firebase";
 import { getFirebaseCustomToken } from "@/features/chat/actions";
 
+import { getGuestSessionAction, GuestSessionData } from "@/features/auth/guest-actions";
+
 export function ChatWidget() {
   const { data: session } = useSession();
+  const [guestSession, setGuestSession] = useState<GuestSessionData | null>(null);
+
+  useEffect(() => {
+    if (!session?.user) {
+      getGuestSessionAction().then((res) => {
+        if (res) setGuestSession(res);
+      });
+    }
+  }, [session]);
+
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -32,7 +44,7 @@ export function ChatWidget() {
     chatId: string;
   } | null>(null);
 
-  const userId = (session?.user as any)?.id as string | undefined;
+  const userId = ((session?.user as any)?.id as string | undefined) || guestSession?.userId;
 
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -173,7 +185,7 @@ export function ChatWidget() {
   // Conditional rendering
   const isOnConsolePage = pathname?.startsWith("/console");
   const isOnChatPage = pathname === "/chat";
-  if (!session?.user || !userId || isOnConsolePage || isOnChatPage) return null;
+  if (!userId || isOnConsolePage || isOnChatPage) return null;
 
   return (
     <>

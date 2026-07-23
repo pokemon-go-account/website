@@ -20,24 +20,33 @@ service cloud.firestore {
     // Support Chats collection
     match /supportChats/{chatId} {
       
-      // Allow read/list if user is the owner, an admin, or if it is a guest chat
-      allow read: if resource.data.isGuest == true || (
+      // Helper to check if document is an order chat or guest chat
+      function isOrderOrGuestChat() {
+        return chatId.startsWith('order-') || 
+               (resource != null && resource.data.isGuest == true) || 
+               (request.resource != null && request.resource.data.isGuest == true) ||
+               (resource != null && resource.data.type == 'order') ||
+               (request.resource != null && request.resource.data.type == 'order');
+      }
+
+      // Allow read/list if user is the owner, an admin, or if it is an order/guest chat
+      allow read: if isOrderOrGuestChat() || (
         request.auth != null && (
           isAdmin() || 
           resource.data.userId == request.auth.uid
         )
       );
       
-      // Allow create if user is logged in and sets themselves as the owner (or is an admin or guest)
-      allow create: if request.resource.data.isGuest == true || (
+      // Allow create if user is logged in (owner/admin) or creating an order/guest chat
+      allow create: if isOrderOrGuestChat() || (
         request.auth != null && (
           isAdmin() || 
           request.resource.data.userId == request.auth.uid
         )
       );
       
-      // Allow update if owner, admin, or guest chat
-      allow update: if resource.data.isGuest == true || request.resource.data.isGuest == true || (
+      // Allow update if owner, admin, or order/guest chat
+      allow update: if isOrderOrGuestChat() || (
         request.auth != null && (
           isAdmin() || 
           resource.data.userId == request.auth.uid
@@ -53,9 +62,11 @@ service cloud.firestore {
       // Messages subcollection
       match /messages/{messageId} {
         
-        // Allow read, create, and update if guest chat or user is owner/admin
+        // Allow read, create, and update if order/guest chat or user is owner/admin
         allow read, create, update: if 
-          get(/databases/$(database)/documents/supportChats/$(chatId)).data.isGuest == true || (
+          chatId.startsWith('order-') ||
+          get(/databases/$(database)/documents/supportChats/$(chatId)).data.isGuest == true ||
+          get(/databases/$(database)/documents/supportChats/$(chatId)).data.type == 'order' || (
             request.auth != null && (
               isAdmin() || 
               get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
