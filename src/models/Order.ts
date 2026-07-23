@@ -14,6 +14,10 @@ export interface IOrder extends Document {
   orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION" | "RECOVERY";
   auctionId?: mongoose.Types.ObjectId;
   deliveryStatus?: "PENDING" | "PAYMENT_RECEIVED" | "DELIVERED";
+  isGuest?: boolean;
+  guestSocialPlatform?: string;
+  guestSocialId?: string;
+  originalGuestId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,6 +52,10 @@ const OrderSchema = new Schema<IOrder>(
       enum: ["PENDING", "PAYMENT_RECEIVED", "DELIVERED"],
       default: "PENDING",
     },
+    isGuest: { type: Boolean, default: false },
+    guestSocialPlatform: { type: String, trim: true },
+    guestSocialId: { type: String, trim: true },
+    originalGuestId: { type: String, trim: true },
   },
   { timestamps: true }
 );

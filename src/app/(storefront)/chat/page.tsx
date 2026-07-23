@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { UserChatPanel } from "@/features/chat/components/user-chat-panel";
+import { getGuestSessionAction } from "@/features/auth/guest-actions";
 
 export const revalidate = 0;
 
@@ -12,8 +13,13 @@ interface ChatPageProps {
 
 export default async function ChatPage({ searchParams }: ChatPageProps) {
   const session = await auth();
+  let guestSession = null;
+
   if (!session?.user || !session.user.id) {
-    redirect("/login");
+    guestSession = await getGuestSessionAction();
+    if (!guestSession) {
+      redirect("/login");
+    }
   }
 
   const resolvedSearchParams = await searchParams;
@@ -31,7 +37,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
           </p>
         </div>
 
-        <UserChatPanel isFullScreen={true} initialChatId={chatId} />
+        <UserChatPanel isFullScreen={true} initialChatId={chatId} guestSession={guestSession} />
       </div>
     </div>
   );

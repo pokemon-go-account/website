@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateContactMessageStatus } from "@/features/contact/actions";
-import { ChevronDown, Mail, CheckCircle2, MessageSquare, Loader2, Clock } from "lucide-react";
+import { updateContactMessageStatus, deleteContactMessage } from "@/features/contact/actions";
+import { ChevronDown, Mail, CheckCircle2, MessageSquare, Loader2, Clock, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG = {
@@ -29,6 +29,7 @@ export function ContactMessagesClient({ initialMessages }: { initialMessages: Me
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Status | "ALL">("ALL");
   const [, startTransition] = useTransition();
 
@@ -42,6 +43,21 @@ export function ContactMessagesClient({ initialMessages }: { initialMessages: Me
         );
       }
       setUpdating(null);
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    if (!confirm("Are you sure you want to delete this contact message?")) return;
+    setDeletingId(id);
+    startTransition(async () => {
+      const res = await deleteContactMessage(id);
+      if (res.success) {
+        setMessages((prev) => prev.filter((m) => m._id !== id));
+        if (expanded === id) setExpanded(null);
+      } else {
+        alert(res.error || "Failed to delete message.");
+      }
+      setDeletingId(null);
     });
   };
 
@@ -154,32 +170,47 @@ export function ContactMessagesClient({ initialMessages }: { initialMessages: Me
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mr-1">Mark as:</span>
-                          {(["UNREAD", "READ", "REPLIED"] as Status[]).map((s) => {
-                            const c = STATUS_CONFIG[s];
-                            const SIcon = c.icon;
-                            const isActive = msg.status === s;
-                            return (
-                              <button
-                                key={s}
-                                disabled={isActive || updating === msg._id}
-                                onClick={() => handleStatusChange(msg._id, s)}
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed",
-                                  isActive
-                                    ? cn(c.bg, c.color)
-                                    : "border-zinc-200 dark:border-white/[0.05] text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/10 opacity-80"
-                                )}
-                              >
-                                {updating === msg._id && !isActive
-                                  ? <Loader2 className="h-3 w-3 animate-spin" />
-                                  : <SIcon className="h-3 w-3" />
-                                }
-                                {c.label}
-                              </button>
-                            );
-                          })}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mr-1">Mark as:</span>
+                            {(["UNREAD", "READ", "REPLIED"] as Status[]).map((s) => {
+                              const c = STATUS_CONFIG[s];
+                              const SIcon = c.icon;
+                              const isActive = msg.status === s;
+                              return (
+                                <button
+                                  key={s}
+                                  disabled={isActive || updating === msg._id}
+                                  onClick={() => handleStatusChange(msg._id, s)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed",
+                                    isActive
+                                      ? cn(c.bg, c.color)
+                                      : "border-zinc-200 dark:border-white/[0.05] text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/10 opacity-80"
+                                  )}
+                                >
+                                  {updating === msg._id && !isActive
+                                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                                    : <SIcon className="h-3 w-3" />
+                                  }
+                                  {c.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          
+                          <button
+                            disabled={deletingId === msg._id}
+                            onClick={() => handleDelete(msg._id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {deletingId === msg._id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                            Delete Message
+                          </button>
                         </div>
                       </div>
                     </motion.div>

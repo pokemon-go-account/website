@@ -20,20 +20,32 @@ service cloud.firestore {
     // Support Chats collection
     match /supportChats/{chatId} {
       
-      // Allow read/list if user is the owner or an admin
-      allow read: if request.auth != null && (
-        isAdmin() || 
-        resource.data.userId == request.auth.uid
+      // Allow read/list if user is the owner, an admin, or if it is a guest chat
+      allow read: if resource.data.isGuest == true || (
+        request.auth != null && (
+          isAdmin() || 
+          resource.data.userId == request.auth.uid
+        )
       );
       
-      // Allow create if user is logged in and sets themselves as the owner (or is an admin)
-      allow create: if request.auth != null && (
-        isAdmin() || 
-        request.resource.data.userId == request.auth.uid
+      // Allow create if user is logged in and sets themselves as the owner (or is an admin or guest)
+      allow create: if request.resource.data.isGuest == true || (
+        request.auth != null && (
+          isAdmin() || 
+          request.resource.data.userId == request.auth.uid
+        )
       );
       
-      // Allow update/delete if owner or admin
-      allow update, delete: if request.auth != null && (
+      // Allow update if owner, admin, or guest chat
+      allow update: if resource.data.isGuest == true || request.resource.data.isGuest == true || (
+        request.auth != null && (
+          isAdmin() || 
+          resource.data.userId == request.auth.uid
+        )
+      );
+
+      // Allow delete if owner or admin
+      allow delete: if request.auth != null && (
         isAdmin() || 
         resource.data.userId == request.auth.uid
       );
@@ -41,17 +53,14 @@ service cloud.firestore {
       // Messages subcollection
       match /messages/{messageId} {
         
-        // Allow read/list and create if user is owner of the parent chat or admin
-        allow read, create: if request.auth != null && (
-          isAdmin() || 
-          get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
-        );
-        
-        // Allow update (such as marking read = true) if admin or owner of parent chat
-        allow update: if request.auth != null && (
-          isAdmin() || 
-          get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
-        );
+        // Allow read, create, and update if guest chat or user is owner/admin
+        allow read, create, update: if 
+          get(/databases/$(database)/documents/supportChats/$(chatId)).data.isGuest == true || (
+            request.auth != null && (
+              isAdmin() || 
+              get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
+            )
+          );
 
         // Only allow admins to delete individual chat messages
         allow delete: if request.auth != null && isAdmin();

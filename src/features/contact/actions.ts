@@ -98,3 +98,19 @@ export async function updateContactMessageStatus(
     return { success: false, error: error.message || "Failed to update status." };
   }
 }
+
+export async function deleteContactMessage(messageId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+      return { success: false, error: "Unauthorized." };
+    }
+
+    await connectDB();
+    await ContactMessage.findByIdAndDelete(messageId);
+    revalidatePath("/console/contact");
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to delete message." };
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import mongoose from 'mongoose';
-import { submitContactMessage, getContactMessages, updateContactMessageStatus } from './actions';
+import { submitContactMessage, getContactMessages, updateContactMessageStatus, deleteContactMessage } from './actions';
 import ContactMessage from '@/models/ContactMessage';
 
 describe('Contact Server Actions', () => {
@@ -65,5 +65,16 @@ describe('Contact Server Actions', () => {
 
     const updatedMsg = await ContactMessage.findById(msg!._id);
     expect(updatedMsg?.status).toBe('READ');
+  });
+
+  it('should delete a contact message', async () => {
+    const msg = await ContactMessage.findOne({ email: 'submitter@example.com' });
+    expect(msg).toBeDefined();
+
+    const result = await deleteContactMessage(msg!._id.toString());
+    expect(result.success).toBe(true);
+
+    const deletedMsg = await ContactMessage.findById(msg!._id);
+    expect(deletedMsg).toBeNull();
   });
 });

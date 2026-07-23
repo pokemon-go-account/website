@@ -2,10 +2,17 @@
 
 import { auth } from "@/auth";
 
+import { getGuestSessionAction } from "@/features/auth/guest-actions";
+
 export async function uploadChatImage(base64Data: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     const session = await auth();
-    if (!session?.user) {
+    let userId = session?.user?.id;
+    if (!userId) {
+      const guestSession = await getGuestSessionAction();
+      userId = guestSession?.userId;
+    }
+    if (!userId) {
       return { success: false, error: "Unauthorized" };
     }
     const { uploadToCloudinary } = await import("@/lib/cloudinary");
@@ -43,20 +50,28 @@ export async function deleteChatImages(imageUrls: string[]): Promise<{ success: 
 }
 
 /**
- * Server Action: Generate a Firebase Custom Token for the logged-in user session
+ * Server Action: Generate a Firebase Custom Token for the logged-in user or guest session
  */
 export async function getFirebaseCustomToken(): Promise<{ success: boolean; customToken?: string; error?: string }> {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.id) {
+    let userId = session?.user?.id;
+    let userRole = (session?.user as any)?.role || "USER";
+
+    if (!userId) {
+      const guestSession = await getGuestSessionAction();
+      userId = guestSession?.userId;
+    }
+
+    if (!userId) {
       return { success: false, error: "Unauthorized" };
     }
     const { getAuth } = await import("firebase-admin/auth");
     await import("@/lib/firebase-admin");
     
     const firebaseAuth = getAuth();
-    const customToken = await firebaseAuth.createCustomToken(session.user.id, {
-      role: (session.user as any).role || "USER",
+    const customToken = await firebaseAuth.createCustomToken(userId, {
+      role: userRole,
     });
     return { success: true, customToken };
   } catch (err: any) {
@@ -82,7 +97,12 @@ export interface ChatWebhookPayload {
 export async function sendChatWebhookNotification(payload: ChatWebhookPayload): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await auth();
-    if (!session?.user) {
+    let userId = session?.user?.id;
+    if (!userId) {
+      const guestSession = await getGuestSessionAction();
+      userId = guestSession?.userId;
+    }
+    if (!userId) {
       console.warn("[Chat Webhook] ⚠️ Unauthorized webhook trigger attempt block.");
       return { success: false, error: "Unauthorized" };
     }

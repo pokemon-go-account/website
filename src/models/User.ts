@@ -25,6 +25,9 @@ export interface IUser extends Document {
   resetOtpExpires?: Date;
   forfeitCount: number;
   country?: string;
+  isGuest?: boolean;
+  guestSocialPlatform?: string;
+  guestSocialId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +58,9 @@ const UserSchema: Schema<IUser> = new Schema(
     resetOtpExpires: { type: Date, default: null },
     forfeitCount: { type: Number, default: 0 },
     country: { type: String, trim: true, default: '' },
+    isGuest: { type: Boolean, default: false },
+    guestSocialPlatform: { type: String, trim: true },
+    guestSocialId: { type: String, trim: true },
   },
   { timestamps: true }
 );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft, ChevronRight, ScanQrCode, CreditCard, Coins, DollarSign, Globe, CircleDot, Loader2, MessageSquare, HelpCircle } from "lucide-react";
+import { ShoppingBag, Plus, Minus, Trash2, X, AlertCircle, ArrowRight, ChevronLeft, ChevronRight, ScanQrCode, CreditCard, Coins, DollarSign, Globe, CircleDot, Loader2, MessageSquare, HelpCircle, UserCheck, LogIn } from "lucide-react";
 import Link from "next/link";
 import { useCartStore, CartItem } from "@/store/useCartStore";
 import { handleTelegramCheckout } from "@/utils/checkout";
@@ -10,6 +10,7 @@ import { cn, getUserCountry } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
 import { createStorefrontOrderAction, createPokemonRequestAction, createCustomRequestAction } from "@/features/store/actions";
+import { createGuestSessionAction, getGuestSessionAction, GuestSessionData } from "@/features/auth/guest-actions";
 import { getUserRecoveryRequests } from "@/features/recovery/actions";
 import { sendChatWebhookNotification } from "@/features/chat/actions";
 import { useSession } from "next-auth/react";
@@ -163,6 +164,20 @@ export function StorefrontClient({ categories, products, initialCategorySlug }: 
   const [selectedMethod, setSelectedMethod] = useState<"UPI" | "Card" | "Crypto" | "PayPal" | "Wise" | "Others" | null>(null);
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
 
+  // Guest checkout state
+  const [guestSession, setGuestSession] = useState<GuestSessionData | null>(null);
+  const [guestCheckoutStep, setGuestCheckoutStep] = useState<"AUTH_CHOICE" | "SOCIAL_FORM" | "PAYMENT">("PAYMENT");
+  const [guestSocialPlatform, setGuestSocialPlatform] = useState<string>("Discord");
+  const [guestSocialId, setGuestSocialId] = useState<string>("");
+  const [guestError, setGuestError] = useState<string | null>(null);
+  const [isCreatingGuest, setIsCreatingGuest] = useState<boolean>(false);
+
+  useEffect(() => {
+    getGuestSessionAction().then((res) => {
+      if (res) setGuestSession(res);
+    });
+  }, []);
+
   // Custom request states (Account, Stardust, XP)
   const [isCustomRequestModalOpen, setIsCustomRequestModalOpen] = useState(false);
   const [customRequestType, setCustomRequestType] = useState<"ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE">("ACCOUNT");
@@ -217,10 +232,13 @@ export function StorefrontClient({ categories, products, initialCategorySlug }: 
   };
 
   const handleManualOrderChat = async (method: "Card" | "Others") => {
-    if (status === "loading" || !session?.user) return;
-    const userId = (session.user as any).id as string;
-    const username = (session.user as any).username || session.user.name || session.user.email || "User";
-    const country = getUserCountry(session.user);
+    if (status === "loading") return;
+    const activeUserId = ((session?.user as any)?.id as string | undefined) || guestSession?.userId;
+    if (!activeUserId) return;
+
+    const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || guestSession?.username || "Guest User";
+    const userEmail = session?.user?.email || (guestSession ? `guest_${guestSession.userId.substring(0, 8)}@anonymous.local` : "N/A");
+    const country = getUserCountry(session?.user);
 
     try {
       const res = await createStorefrontOrderAction(items, getTotalPrice());
@@ -256,16 +274,16 @@ Payment Method: ${methodLabel}
 👤 USER DETAILS:
 ----------------------------------
 Username: ${username}
-Email: ${session?.user?.email || "N/A"}
-User ID: ${userId}
+Email: ${userEmail}
+User ID: ${activeUserId}
 🌍 Country: ${country}
 
 Please guide me on how to complete the payment!`;
 
         await setDoc(chatRef, {
-          userId,
+          userId: activeUserId,
           username,
-          email: session?.user?.email ?? "",
+          email: userEmail,
           type: "order",
           orderId,
           title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
@@ -275,6 +293,9 @@ Please guide me on how to complete the payment!`;
           unreadByUser: 0,
           createdAt: serverTimestamp(),
           paymentMethod: method,
+          isGuest: !session?.user && !!guestSession,
+          guestSocialPlatform: guestSession?.socialPlatform,
+          guestSocialId: guestSession?.socialId,
         });
 
         const msgsRef = collection(db, "supportChats", chatId, "messages");
@@ -835,10 +856,11 @@ Please guide me on how to complete the payment!`;
                     <button
                       onClick={() => {
                         if (status === "loading") return;
-                        if (!session?.user) {
-                          window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                        setIsCheckoutOpen(true);
+                        if (!session?.user && !guestSession) {
+                          setGuestCheckoutStep("AUTH_CHOICE");
                         } else {
-                          setIsCheckoutOpen(true);
+                          setGuestCheckoutStep("PAYMENT");
                         }
                       }}
                       disabled={status === "loading"}
@@ -1001,10 +1023,208 @@ Please guide me on how to complete the payment!`;
                   originalTotalPrice={getTotalPrice()}
                 />
               </div>
+            ) : !session?.user && guestCheckoutStep === "AUTH_CHOICE" ? (
+              <div className="space-y-6 text-left py-2">
+                <div className="space-y-1.5">
+                  <h2 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-[#6133e1] dark:text-purple-400" />
+                    Checkout Options
+                  </h2>
+                  <p className="text-xs text-zinc-550 dark:text-zinc-400">
+                    Choose how you would like to proceed with your order.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Option 1: Anonymous Buy */}
+                  <button
+                    type="button"
+                    onClick={() => setGuestCheckoutStep("SOCIAL_FORM")}
+                    className="flex flex-col justify-between p-5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/80 dark:bg-white/[0.02] hover:bg-[#6133e1]/5 dark:hover:bg-purple-500/10 hover:border-[#6133e1]/40 dark:hover:border-purple-500/40 transition-all text-left group cursor-pointer active:scale-[0.98]"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <UserCheck className="h-6 w-6" />
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          No Password Required
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-[#6133e1] dark:group-hover:text-purple-400 transition-colors">
+                          Anonymous Buy
+                        </h3>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                          Instant guest checkout. Provide an emergency social ID (Discord, Telegram, WhatsApp, etc.) for order coordination.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between text-xs font-bold text-[#6133e1] dark:text-purple-400">
+                      <span>Continue as Guest</span>
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </button>
+
+                  {/* Option 2: Login or Register */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                    }}
+                    className="flex flex-col justify-between p-5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/80 dark:bg-white/[0.02] hover:bg-blue-500/5 dark:hover:bg-blue-500/10 hover:border-blue-500/40 transition-all text-left group cursor-pointer active:scale-[0.98]"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                          <LogIn className="h-6 w-6" />
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                          Member Account
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          Login or Register
+                        </h3>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                          Sign in to use your wallet balance credit, view purchase history, and claim user rewards.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+                      <span>Go to Login</span>
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </button>
+                </div>
+              </div>
+            ) : !session?.user && guestCheckoutStep === "SOCIAL_FORM" ? (
+              <div className="space-y-6 text-left py-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+                      <UserCheck className="h-5 w-5 text-emerald-500" />
+                      Emergency Contact Details
+                    </h2>
+                    <p className="text-xs text-zinc-550 dark:text-zinc-400 mt-0.5">
+                      Please specify your preferred social platform and handle for order updates and emergency contact.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGuestCheckoutStep("AUTH_CHOICE")}
+                    className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                  >
+                    &larr; Back
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setGuestError(null);
+                    if (!guestSocialPlatform || !guestSocialId.trim()) {
+                      setGuestError("Please select a social platform and provide your ID/handle.");
+                      return;
+                    }
+                    setIsCreatingGuest(true);
+                    try {
+                      const res = await createGuestSessionAction({
+                        socialPlatform: guestSocialPlatform,
+                        socialId: guestSocialId.trim(),
+                      });
+                      if (res.success && res.guestSession) {
+                        setGuestSession(res.guestSession);
+                        setGuestCheckoutStep("PAYMENT");
+                      } else {
+                        setGuestError(res.error || "Failed to create guest session.");
+                      }
+                    } catch (err: any) {
+                      setGuestError(err.message || "Failed to create guest session.");
+                    } finally {
+                      setIsCreatingGuest(false);
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                      Select Social Platform
+                    </label>
+                    <select
+                      value={guestSocialPlatform}
+                      onChange={(e) => setGuestSocialPlatform(e.target.value)}
+                      className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                    >
+                      <option value="Discord">Discord</option>
+                      <option value="Telegram">Telegram</option>
+                      <option value="WhatsApp">WhatsApp</option>
+                      <option value="Instagram">Instagram</option>
+                      <option value="Twitter/X">Twitter / X</option>
+                      <option value="Phone/SMS">Phone / SMS</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                      Social Handle / Contact ID
+                    </label>
+                    <input
+                      type="text"
+                      value={guestSocialId}
+                      onChange={(e) => setGuestSocialId(e.target.value)}
+                      placeholder="e.g. @user_name, username#1234, or +1234567890"
+                      className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3.5 py-2.5 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  {guestError && (
+                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{guestError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isCreatingGuest}
+                    className="w-full h-10 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 shadow-md shadow-emerald-600/20"
+                  >
+                    {isCreatingGuest ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Setting Up Session...
+                      </>
+                    ) : (
+                      <>
+                        <span>Proceed to Payment Options</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
             ) : (
               <>
                 {/* Header */}
                 <div className="space-y-1.5 text-left">
+                  {!session?.user && guestSession && (
+                    <div className="flex items-center justify-between p-2.5 mb-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <UserCheck className="h-4 w-4 shrink-0" />
+                        <span>Anonymous Guest: <strong>{guestSession.socialPlatform}</strong> ({guestSession.socialId})</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setGuestCheckoutStep("SOCIAL_FORM")}
+                        className="text-[10px] underline font-bold hover:text-emerald-500 cursor-pointer"
+                      >
+                        Edit Contact
+                      </button>
+                    </div>
+                  )}
                   <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
                     <ShoppingBag className="h-5 w-5 text-zinc-900 dark:text-white" />
                     Complete Checkout
@@ -1035,8 +1255,9 @@ Please guide me on how to complete the payment!`;
                           const res = await createStorefrontOrderAction(items, getTotalPrice());
                           if (res.success && res.orderId) {
                             const orderId = res.orderId;
-                            const userId = (session?.user as any)?.id as string || "N/A";
-                            const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+                            const userId = ((session?.user as any)?.id as string | undefined) || guestSession?.userId || "N/A";
+                            const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || guestSession?.username || "Guest User";
+                            const customerEmail = session?.user?.email || (guestSession ? `guest_${guestSession.userId.substring(0, 8)}@anonymous.local` : "N/A");
                             const country = getUserCountry(session?.user);
                             const db = getDb();
                             const chatId = `order-${orderId}`;
@@ -1053,7 +1274,7 @@ Payment Method: Wallet Balance (Full Credit)
 👤 USER DETAILS:
 ----------------------------------
 Username: ${username}
-Email: ${session?.user?.email || "N/A"}
+Email: ${customerEmail}
 User ID: ${userId}
 🌍 Country: ${country}
 
@@ -1062,7 +1283,7 @@ This order has been completed automatically using your wallet balance. Admin wil
                             await setDoc(chatRef, {
                               userId,
                               username,
-                              email: session?.user?.email ?? "",
+                              email: customerEmail,
                               type: "order",
                               orderId,
                               title: `Order #${orderId.substring(0, 8).toUpperCase()}`,
@@ -1072,6 +1293,9 @@ This order has been completed automatically using your wallet balance. Admin wil
                               unreadByUser: 0,
                               createdAt: serverTimestamp(),
                               paymentMethod: "Wallet",
+                              isGuest: !session?.user && !!guestSession,
+                              guestSocialPlatform: guestSession?.socialPlatform,
+                              guestSocialId: guestSession?.socialId,
                             });
 
                             const msgsRef = collection(db, "supportChats", chatId, "messages");
@@ -1171,7 +1395,7 @@ Our recovery specialists have received your payment and are now actively process
                           setUpiCheckoutData({
                             orderId: res.orderId,
                             amount: amountInINR,
-                            email: session?.user?.email || "customer@store.com",
+                            email: session?.user?.email || (guestSession ? `guest_${guestSession.userId.substring(0, 8)}@anonymous.local` : "customer@store.com"),
                           });
                           setSelectedMethod("UPI");
                           setPaymentStage("upi");
@@ -1265,7 +1489,7 @@ Our recovery specialists have received your payment and are now actively process
                           setCryptoCheckoutData({
                             orderId: res.orderId,
                             amount: finalPriceUSD,
-                            email: session?.user?.email || "customer@store.com",
+                            email: session?.user?.email || (guestSession ? `guest_${guestSession.userId.substring(0, 8)}@anonymous.local` : "customer@store.com"),
                           });
                           setSelectedMethod("Crypto");
                           setPaymentStage("crypto");
@@ -1323,7 +1547,7 @@ Our recovery specialists have received your payment and are now actively process
                           setPaypalCheckoutData({
                             orderId: res.orderId,
                             amount: amountInEUR,
-                            email: session?.user?.email || "customer@store.com",
+                            email: session?.user?.email || (guestSession ? `guest_${guestSession.userId.substring(0, 8)}@anonymous.local` : "customer@store.com"),
                           });
                           setSelectedMethod("PayPal");
                           setPaymentStage("paypal");
@@ -1388,7 +1612,7 @@ Our recovery specialists have received your payment and are now actively process
                                 orderId: res.orderId,
                                 amount: amountInSelected,
                                 currency: selectedCurrency,
-                                email: session?.user?.email || "customer@store.com",
+                                email: session?.user?.email || (guestSession ? `guest_${guestSession.userId.substring(0, 8)}@anonymous.local` : "customer@store.com"),
                               });
                               setSelectedMethod("Wise");
                               setPaymentStage("wise");

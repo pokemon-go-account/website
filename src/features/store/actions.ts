@@ -51,20 +51,37 @@ export async function getStoreProducts() {
   }
 }
 
+import { getGuestSessionAction } from "@/features/auth/guest-actions";
+
 /**
  * Record a pending direct storefront checkout order in the database
  */
 export async function createStorefrontOrderAction(items: any[], totalPrice: number) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.id) {
-      return { success: false, error: "Unauthorized. Please sign in first." };
+    let userId = session?.user?.id;
+    let isGuest = false;
+    let guestSocialPlatform: string | undefined;
+    let guestSocialId: string | undefined;
+
+    if (!userId) {
+      const guestSession = await getGuestSessionAction();
+      if (guestSession?.userId) {
+        userId = guestSession.userId;
+        isGuest = true;
+        guestSocialPlatform = guestSession.socialPlatform;
+        guestSocialId = guestSession.socialId;
+      }
+    }
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized. Please sign in or continue as guest first." };
     }
 
     await connectDB();
 
     const User = (await import("@/models/User")).default;
-    const user = await User.findById(session.user.id);
+    const user = await User.findById(userId);
     const walletBalance = user?.walletBalance || 0;
     
     // Wallet credit is stored as a positive number (e.g., 2.5)
@@ -91,16 +108,19 @@ export async function createStorefrontOrderAction(items: any[], totalPrice: numb
     const isCompleted = finalPrice === 0;
 
     const order = await Order.create({
-      userId: session.user.id,
+      userId,
       items: formattedItems,
       totalPrice: finalPrice,
       walletDiscountApplied: discount,
       status: isCompleted ? "COMPLETED" : "PENDING",
       orderType,
+      isGuest,
+      guestSocialPlatform,
+      guestSocialId,
     });
 
     if (discount > 0) {
-      await User.findByIdAndUpdate(session.user.id, {
+      await User.findByIdAndUpdate(userId, {
         $inc: { walletBalance: -discount }
       });
     }

@@ -23,6 +23,7 @@ import { cn, getUserCountry } from "@/lib/utils";
 import { useCurrencyStore, CURRENCY_SYMBOLS } from "@/store/useCurrencyStore";
 import { motion } from "framer-motion";
 import { sendChatWebhookNotification } from "@/features/chat/actions";
+import { getGuestSessionAction } from "@/features/auth/guest-actions";
 
 interface PayPalPaymentCheckoutProps {
   orderId: string;
@@ -141,8 +142,17 @@ export function PayPalPaymentCheckout({
 
       // Create support chat for order payment proof verification
       try {
-        const userId = (session?.user as any)?.id as string || "N/A";
-        const username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+        let userId = ((session?.user as any)?.id as string | undefined);
+        let username = (session?.user as any)?.username || session?.user?.name || session?.user?.email || "User";
+
+        if (!userId) {
+          const guest = await getGuestSessionAction();
+          if (guest) {
+            userId = guest.userId;
+            username = guest.username;
+          }
+        }
+        userId = userId || "N/A";
         const country = getUserCountry(session?.user);
         const db = getDb();
         const chatId = `order-${orderId}`;

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { getGuestSessionAction, GuestSessionData, linkGuestOrdersToAccountAction } from "@/features/auth/guest-actions";
 import {
   collection,
   doc,
@@ -227,21 +228,41 @@ function RatingCard({ orderId, onDismiss }: { orderId: string; onDismiss: () => 
 interface UserChatPanelProps {
   isFullScreen?: boolean;
   initialChatId?: string | null;
+  guestSession?: GuestSessionData | null;
   onClose?: () => void;
 }
 
 export function UserChatPanel({
   isFullScreen = false,
   initialChatId = null,
+  guestSession = null,
   onClose,
 }: UserChatPanelProps) {
   const { data: session } = useSession();
-  const userId = (session?.user as any)?.id as string | undefined;
+  const [guestData, setGuestData] = useState<GuestSessionData | null>(guestSession);
+
+  useEffect(() => {
+    if (!session?.user && !guestData) {
+      getGuestSessionAction().then((res) => {
+        if (res) setGuestData(res);
+      });
+    }
+  }, [session, guestData]);
+
+  // Link guest orders if user logged in
+  useEffect(() => {
+    if (session?.user && (session.user as any).id) {
+      linkGuestOrdersToAccountAction((session.user as any).id).catch(() => {});
+    }
+  }, [session]);
+
+  const userId = ((session?.user as any)?.id as string | undefined) || guestData?.userId;
   const username =
     (session?.user as any)?.username ||
     session?.user?.name ||
     session?.user?.email ||
-    "User";
+    guestData?.username ||
+    "Guest User";
   const [activeTab, setActiveTab] = useState<"support" | "orders">("support");
   const [conversations, setConversations] = useState<ChatMeta[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(initialChatId);
