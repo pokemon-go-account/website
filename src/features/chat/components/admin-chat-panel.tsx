@@ -67,15 +67,14 @@ interface ChatMeta {
   paymentMethod?: string;
 }
 
-interface Message {
-  id: string;
-  text?: string;
-  sender: "user" | "admin";
-  senderName: string;
-  timestamp: any;
-  image?: string;
-  read?: boolean;
-}
+import { ChatMessage } from "../types";
+import {
+  ChatReplyInputBar,
+  QuotedMessageBlock,
+  ReplyActionButton,
+} from "./chat-reply-ui";
+
+type Message = ChatMessage;
 
 function formatTime(ts: any) {
   if (!ts) return "";
@@ -130,6 +129,7 @@ export function AdminChatPanel() {
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [replyText, setReplyText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -360,6 +360,11 @@ export function AdminChatPanel() {
     return unsub;
   }, [activeChatId, isAuthReady, conversations, playSound]);
 
+  // Reset reply state whenever the active chat changes
+  useEffect(() => {
+    setReplyingTo(null);
+  }, [activeChatId]);
+
   // 3. Listen for User typing state (RTDB + Firestore) & User online presence in RTDB
   useEffect(() => {
     if (!activeChatId || !isAuthReady) {
@@ -578,14 +583,24 @@ export function AdminChatPanel() {
       const msgsRef = collection(db, "supportChats", activeChatId, "messages");
       const chatRef = doc(db, "supportChats", activeChatId);
 
-      await addDoc(msgsRef, {
+      const replyToPayload = replyingTo ? {
+        messageId: replyingTo.id,
+        senderName: replyingTo.senderName || (replyingTo.sender === "user" ? "Trainer" : adminUsername),
+        textPreview: (replyingTo.text || (replyingTo.image ? "📷 Photo" : "Message")).slice(0, 100),
+      } : undefined;
+
+      const imageMsgDoc: any = {
         image: imageUrl,
         text: replyText.trim() || "",
         sender: "admin",
         senderName: adminUsername,
         timestamp: serverTimestamp(),
         read: false,
-      });
+      };
+      if (replyToPayload) imageMsgDoc.replyTo = replyToPayload;
+
+      await addDoc(msgsRef, imageMsgDoc);
+      setReplyingTo(null);
 
       await updateDoc(chatRef, {
         lastMessage: "📷 Image attached",
@@ -686,13 +701,23 @@ export function AdminChatPanel() {
       const msgsRef = collection(db, "supportChats", activeChatId, "messages");
       const chatRef = doc(db, "supportChats", activeChatId);
 
-      await addDoc(msgsRef, {
+      const replyToPayload = replyingTo ? {
+        messageId: replyingTo.id,
+        senderName: replyingTo.senderName || (replyingTo.sender === "user" ? "Trainer" : adminUsername),
+        textPreview: (replyingTo.text || (replyingTo.image ? "📷 Photo" : "Message")).slice(0, 100),
+      } : undefined;
+
+      const textMsgDoc: any = {
         text,
         sender: "admin",
         senderName: adminUsername,
         timestamp: serverTimestamp(),
         read: false,
-      });
+      };
+      if (replyToPayload) textMsgDoc.replyTo = replyToPayload;
+
+      await addDoc(msgsRef, textMsgDoc);
+      setReplyingTo(null);
 
       await updateDoc(chatRef, {
         lastMessage: text,
@@ -1347,46 +1372,54 @@ export function AdminChatPanel() {
               {messages.map((msg) => {
                 const isSystem = msg.text?.startsWith("System:") ?? false;
                 const displayMsg = isSystem ? msg.text?.replace("System:", "").trim() : msg.text;
+                const isAdmin = msg.sender === "admin";
                 
                 return (
                   <div
                     key={msg.id}
+                    id={`chat-msg-${msg.id}`}
                     className={cn(
-                      "flex flex-col gap-1 max-w-full",
+                      "flex flex-col gap-1 max-w-full group/msg relative transition-all duration-300 rounded-2xl p-0.5",
                       isSystem
                         ? "items-center"
-                        : msg.sender === "admin"
+                        : isAdmin
                         ? "items-end"
                         : "items-start"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "max-w-[88%] sm:max-w-[78%] px-4 py-2.5 text-xs leading-relaxed border select-text break-words [word-break:break-word] overflow-hidden rounded-2xl",
-                        isSystem
-                          ? "bg-zinc-100 dark:bg-[#18181c] border-zinc-200/80 dark:border-white/[0.06] text-zinc-600 dark:text-zinc-400 text-center rounded-xl font-medium max-w-[90%]"
-                          : msg.sender === "admin"
-                          ? "bg-[#6133e1] text-white border-[#6133e1] rounded-tr-xs shadow-xs font-medium"
-                          : "bg-white text-zinc-900 dark:bg-[#1c1c20] dark:text-zinc-100 border-zinc-200 dark:border-white/[0.08] rounded-tl-xs shadow-xs"
+                    <div className={cn("flex items-center gap-1.5 max-w-full", isAdmin ? "flex-row-reverse" : "flex-row")}>
+                      <div
+                        className={cn(
+                          "max-w-[88%] sm:max-w-[78%] px-4 py-2.5 text-xs leading-relaxed border select-text break-words [word-break:break-word] overflow-hidden rounded-2xl",
+                          isSystem
+                            ? "bg-zinc-100 dark:bg-[#18181c] border-zinc-200/80 dark:border-white/[0.06] text-zinc-600 dark:text-zinc-400 text-center rounded-xl font-medium max-w-[90%]"
+                            : isAdmin
+                            ? "bg-[#6133e1] text-white border-[#6133e1] rounded-tr-xs shadow-xs font-medium"
+                            : "bg-white text-zinc-900 dark:bg-[#1c1c20] dark:text-zinc-100 border-zinc-200 dark:border-white/[0.08] rounded-tl-xs shadow-xs"
+                        )}
+                      >
+                        {!isSystem && <QuotedMessageBlock replyTo={msg.replyTo} isOutgoing={isAdmin} />}
+                        {msg.image && (
+                          <div className="mb-2 rounded-xl overflow-hidden border border-zinc-200/60 dark:border-white/10 max-w-full shadow-xs">
+                            <img
+                              src={msg.image}
+                              alt={msg.text || "Attached Image"}
+                              className="max-h-48 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => window.open(msg.image, "_blank")}
+                            />
+                          </div>
+                        )}
+                        {displayMsg && <p className="whitespace-pre-wrap break-words [word-break:break-word] max-w-full overflow-hidden leading-relaxed">{displayMsg}</p>}
+                      </div>
+                      {!isSystem && activeChat?.status !== "closed" && (
+                        <ReplyActionButton onClick={() => setReplyingTo(msg)} isOutgoing={isAdmin} />
                       )}
-                    >
-                      {msg.image && (
-                        <div className="mb-2 rounded-xl overflow-hidden border border-zinc-200/60 dark:border-white/10 max-w-full shadow-xs">
-                          <img
-                            src={msg.image}
-                            alt={msg.text || "Attached Image"}
-                            className="max-h-48 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => window.open(msg.image, "_blank")}
-                          />
-                        </div>
-                      )}
-                      {displayMsg && <p className="whitespace-pre-wrap break-words [word-break:break-word] max-w-full overflow-hidden leading-relaxed">{displayMsg}</p>}
                     </div>
                     <div className="flex items-center gap-1 px-1 select-none text-[10px] text-zinc-400 font-medium">
                       <span>
                         {isSystem ? "System" : msg.sender === "user" ? (selectedUser?.username || "User") : "You"} · {formatMessageTime(msg.timestamp)}
                       </span>
-                      {msg.sender === "admin" && !isSystem && (
+                      {isAdmin && !isSystem && (
                         <span className="inline-flex items-center ml-0.5">
                           {msg.read ? (
                             <span title="Read"><CheckCheck className="h-3.5 w-3.5 text-sky-400 stroke-[2.5]" /></span>
@@ -1459,6 +1492,8 @@ export function AdminChatPanel() {
                   </div>
 
                   {/* Reply input — all admins can send */}
+                  <div>
+                  <ChatReplyInputBar replyingTo={replyingTo} onCancel={() => setReplyingTo(null)} />
                   <div className="flex items-end gap-2.5">
                     <input
                       ref={imageInputRef}
@@ -1504,6 +1539,7 @@ export function AdminChatPanel() {
                         "Reply"
                       )}
                     </button>
+                  </div>
                   </div>
                 </div>
               )}

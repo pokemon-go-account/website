@@ -122,4 +122,73 @@ describe("Feedback Actions", () => {
       expect(deleted).toBeNull();
     });
   });
+
+  describe("Purchased Item Label Resolution", () => {
+    function resolvePurchasedItemName(item: any): string | undefined {
+      if (item.orderId && typeof item.orderId === "object" && Array.isArray(item.orderId.items) && item.orderId.items.length > 0) {
+        const items = item.orderId.items;
+        if (items.length === 1) {
+          return items[0].name;
+        } else {
+          return `${items[0].name} (+${items.length - 1} more)`;
+        }
+      } else if (item.purchasedItemLabel && item.purchasedItemLabel.trim()) {
+        return item.purchasedItemLabel.trim();
+      }
+      return undefined;
+    }
+
+    it("should resolve item name from real linked orderId", async () => {
+      const user = (await User.create({
+        name: "Real Buyer",
+        username: "realbuyer",
+        email: "realbuyer@example.com",
+      })) as any;
+
+      const order = (await Order.create({
+        userId: user._id,
+        items: [{ name: "Shiny Rayquaza Account", price: 100, quantity: 1 }],
+        totalPrice: 100,
+        status: "COMPLETED",
+        orderType: "STOREFRONT",
+      })) as any;
+
+      const feedback = await Feedback.create({
+        username: "realbuyer",
+        rating: 5,
+        comment: "Amazing account!",
+        userId: user._id,
+        orderId: order._id,
+      });
+
+      const populated = await Feedback.findById(feedback._id).populate({ path: "orderId", select: "items" }).lean();
+      const resolved = resolvePurchasedItemName(populated);
+      expect(resolved).toBe("Shiny Rayquaza Account");
+    });
+
+    it("should resolve purchasedItemLabel when orderId is missing", async () => {
+      const feedback = await Feedback.create({
+        username: "seededuser",
+        rating: 5,
+        comment: "Great account recovery service!",
+        purchasedItemLabel: "Pokémon GO Account Recovery Service",
+      });
+
+      const doc = await Feedback.findById(feedback._id).lean();
+      const resolved = resolvePurchasedItemName(doc);
+      expect(resolved).toBe("Pokémon GO Account Recovery Service");
+    });
+
+    it("should return undefined when neither orderId nor purchasedItemLabel exists", async () => {
+      const feedback = await Feedback.create({
+        username: "bareuser",
+        rating: 4,
+        comment: "Good service!",
+      });
+
+      const doc = await Feedback.findById(feedback._id).lean();
+      const resolved = resolvePurchasedItemName(doc);
+      expect(resolved).toBeUndefined();
+    });
+  });
 });

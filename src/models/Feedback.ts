@@ -6,6 +6,7 @@ export interface IFeedback extends Document {
   comment: string;
   userId?: mongoose.Types.ObjectId;
   orderId?: mongoose.Types.ObjectId;
+  purchasedItemLabel?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +18,7 @@ const FeedbackSchema: Schema<IFeedback> = new Schema(
     comment: { type: String, required: true, trim: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: false },
     orderId: { type: Schema.Types.ObjectId, ref: "Order", required: false },
+    purchasedItemLabel: { type: String, required: false, trim: true },
   },
   { timestamps: true }
 );

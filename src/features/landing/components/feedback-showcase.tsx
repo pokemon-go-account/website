@@ -9,8 +9,12 @@ async function getRealFeedbacks() {
     // Register User model to ensure population ref works
     const _userCheck = User;
 
+    const Order = (await import("@/models/Order")).default;
+    const _orderCheck = Order;
+
     const docs = await Feedback.find()
       .populate("userId", "username telegramUsername name")
+      .populate({ path: "orderId", select: "items" })
       .sort({ createdAt: -1 })
       .limit(30) // fetch up to 30 reviews
       .lean();
@@ -34,11 +38,24 @@ async function getRealFeedbacks() {
         resolvedUsername = `Trainer-${idStr.substring(0, 6)}`;
       }
 
+      let purchasedItemName: string | undefined = undefined;
+      if (item.orderId && typeof item.orderId === "object" && Array.isArray((item.orderId as any).items) && (item.orderId as any).items.length > 0) {
+        const items = (item.orderId as any).items;
+        if (items.length === 1) {
+          purchasedItemName = items[0].name;
+        } else {
+          purchasedItemName = `${items[0].name} (+${items.length - 1} more)`;
+        }
+      } else if (item.purchasedItemLabel && item.purchasedItemLabel.trim()) {
+        purchasedItemName = item.purchasedItemLabel.trim();
+      }
+
       return {
         _id: item._id.toString(),
         username: resolvedUsername,
         comment: item.comment,
         rating: item.rating,
+        purchasedItemName,
         createdAt: item.createdAt.toISOString(),
       };
     });

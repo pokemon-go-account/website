@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import Feedback from "@/models/Feedback";
 import User from "@/models/User";
 import { auth } from "@/auth";
-import { Star, MessageSquareCode, Award, ShieldAlert, Sparkles, MessageCircle } from "lucide-react";
+import { Star, MessageSquareCode, Award, ShieldAlert, Sparkles, MessageCircle, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const revalidate = 0; // Dynamic rendering
@@ -41,9 +41,13 @@ export default async function FeedbackPage() {
     }
   }
 
-  // Fetch all feedbacks from newest to oldest and format usernames
+  const Order = (await import("@/models/Order")).default;
+  const _orderCheck = Order;
+
+  // Fetch all feedbacks from newest to oldest, populating userId and orderId
   const feedbacksDoc = await Feedback.find()
     .populate("userId", "username telegramUsername name")
+    .populate({ path: "orderId", select: "items" })
     .sort({ createdAt: -1 })
     .lean();
 
@@ -66,9 +70,22 @@ export default async function FeedbackPage() {
       resolvedUsername = `Trainer-${idStr.substring(0, 6)}`;
     }
 
+    let purchasedItemName: string | undefined = undefined;
+    if (item.orderId && typeof item.orderId === "object" && Array.isArray((item.orderId as any).items) && (item.orderId as any).items.length > 0) {
+      const items = (item.orderId as any).items;
+      if (items.length === 1) {
+        purchasedItemName = items[0].name;
+      } else {
+        purchasedItemName = `${items[0].name} (+${items.length - 1} more)`;
+      }
+    } else if (item.purchasedItemLabel && item.purchasedItemLabel.trim()) {
+      purchasedItemName = item.purchasedItemLabel.trim();
+    }
+
     return {
       ...item,
       username: resolvedUsername,
+      purchasedItemName,
     };
   });
 
@@ -176,6 +193,16 @@ export default async function FeedbackPage() {
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
                     "{item.comment}"
                   </p>
+
+                  {item.purchasedItemName && (
+                    <div className="pt-1.5 flex items-center gap-1.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                      <ShoppingBag className="h-3 w-3 text-purple-500 dark:text-purple-400 shrink-0" />
+                      <span className="truncate">
+                        <span className="text-zinc-400 dark:text-zinc-500">Purchased: </span>
+                        <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">{item.purchasedItemName}</strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer metadata */}

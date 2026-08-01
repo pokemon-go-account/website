@@ -2,6 +2,7 @@
 
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import { HEAR_ABOUT_US_OPTIONS } from "@/constants/auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { signIn, auth } from "@/auth";
@@ -150,6 +151,13 @@ const CompleteProfileSchema = z.object({
   preferredContactId: z.string().min(2, "Username or Profile Link must be at least 2 characters"),
   alternateContact: z.string().optional(),
   country: z.string().min(1, "Country is required"),
+  hearAboutUs: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (HEAR_ABOUT_US_OPTIONS as readonly string[]).includes(val),
+      "Invalid selection for 'Where did you hear about us?'"
+    ),
 });
 
 export async function completeUserProfile(prevState: any, formData: FormData) {
@@ -164,6 +172,7 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
     const preferredContactId = formData.get("preferredContactId") as string;
     const alternateContact = (formData.get("alternateContact") as string) || "";
     const country = (formData.get("country") as string) || "";
+    const hearAboutUs = (formData.get("hearAboutUs") as string) || "";
 
     const validated = CompleteProfileSchema.safeParse({
       name,
@@ -171,6 +180,7 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
       preferredContactId,
       alternateContact,
       country,
+      hearAboutUs,
     });
     if (!validated.success) {
       return { success: false, error: validated.error.issues[0].message };
@@ -190,6 +200,7 @@ export async function completeUserProfile(prevState: any, formData: FormData) {
       preferredContactId: formattedHandle,
       alternateContact: alternateContact.trim() || undefined,
       country: country.trim(),
+      hearAboutUs: hearAboutUs.trim() || undefined,
       role: "USER",
       isOnboarded: true,
     });

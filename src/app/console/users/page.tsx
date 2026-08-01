@@ -10,7 +10,7 @@ import {
 } from "@/features/console/actions";
 import { 
   Users, Search, ShieldCheck, ShieldX, Ban, CheckCircle, 
-  AlertTriangle, Loader2, Mail, Calendar, Wallet, Check, AlertCircle, MessageSquare, Globe 
+  AlertTriangle, Loader2, Mail, Calendar, Wallet, Check, AlertCircle, MessageSquare, Globe, Sparkles 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -28,6 +28,7 @@ interface FoundUser {
   preferredContactId?: string;
   alternateContact?: string;
   country?: string;
+  hearAboutUs?: string;
   role: string;
   isSuspended: boolean;
   walletBalance: number;
@@ -426,6 +427,12 @@ function ConsoleUsersContent() {
                       {selectedUser.country && (
                         <span className="flex items-center gap-1.5">
                           <Globe className="h-3.5 w-3.5" /> {selectedUser.country}
+                        </span>
+                      )}
+                      {selectedUser.hearAboutUs && (
+                        <span className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
+                          <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                          <span>Heard About Us: <strong className="text-zinc-800 dark:text-zinc-200 font-semibold">{selectedUser.hearAboutUs}</strong></span>
                         </span>
                       )}
                       

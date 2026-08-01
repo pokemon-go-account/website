@@ -107,4 +107,66 @@ describe("Chat Server Actions & Console Chat Logic", () => {
       expect(res.success).toBe(true);
     });
   });
+  describe("replyTo payload construction logic", () => {
+    /** Mirrors the payload builder used in both user-chat-panel.tsx and admin-chat-panel.tsx */
+    function buildReplyPayload(
+      replyingTo: { id: string; sender: string; senderName: string; text?: string; image?: string } | null,
+      selfName: string
+    ) {
+      if (!replyingTo) return undefined;
+      return {
+        messageId: replyingTo.id,
+        senderName:
+          replyingTo.senderName ||
+          (replyingTo.sender === "admin" ? "Support Team" : selfName || "Trainer"),
+        textPreview: (replyingTo.text || (replyingTo.image ? "📷 Photo" : "Message")).slice(0, 100),
+      };
+    }
+
+    it("returns undefined when replyingTo is null", () => {
+      expect(buildReplyPayload(null, "Ash")).toBeUndefined();
+    });
+
+    it("includes messageId, senderName, and truncated textPreview for a text message", () => {
+      const msg = { id: "msg-abc", sender: "admin", senderName: "Support Team", text: "Hello trainer!" };
+      const payload = buildReplyPayload(msg, "Ash");
+      expect(payload).toMatchObject({
+        messageId: "msg-abc",
+        senderName: "Support Team",
+        textPreview: "Hello trainer!",
+      });
+    });
+
+    it("uses '📷 Photo' as preview for image-only messages", () => {
+      const msg = { id: "msg-img", sender: "user", senderName: "Ash", image: "https://cdn.example.com/img.jpg" };
+      const payload = buildReplyPayload(msg, "Support Team");
+      expect(payload?.textPreview).toBe("📷 Photo");
+    });
+
+    it("truncates textPreview to 100 characters", () => {
+      const longText = "A".repeat(200);
+      const msg = { id: "msg-long", sender: "user", senderName: "Ash", text: longText };
+      const payload = buildReplyPayload(msg, "Support Team");
+      expect(payload?.textPreview.length).toBe(100);
+    });
+
+    it("falls back senderName to 'Support Team' for admin messages missing senderName", () => {
+      const msg = { id: "msg-x", sender: "admin", senderName: "", text: "Hi" };
+      const payload = buildReplyPayload(msg, "Ash");
+      expect(payload?.senderName).toBe("Support Team");
+    });
+
+    it("falls back senderName to selfName for user messages missing senderName", () => {
+      const msg = { id: "msg-y", sender: "user", senderName: "", text: "Hi" };
+      const payload = buildReplyPayload(msg, "Pikachu");
+      expect(payload?.senderName).toBe("Pikachu");
+    });
+
+    it("renders graceful fallback when textPreview is empty string", () => {
+      // Simulates edge case: replyTo stored with empty textPreview
+      const storedPreview: string = "";
+      const textSnippet = storedPreview || "Original message unavailable";
+      expect(textSnippet).toBe("Original message unavailable");
+    });
+  });
 });

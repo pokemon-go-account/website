@@ -20,6 +20,7 @@ import {
   deleteRegistrationConsole,
   getOrdersConsole,
   deleteOrderConsole,
+  updateOrderPrice,
   createRegistrationManuallyConsole,
   cancelOrderUser,
   getAllUsers,
@@ -304,6 +305,98 @@ describe("Console Actions", () => {
       // Wallet balance should be refunded by $2.50
       const updatedUser = await User.findById(user._id);
       expect(updatedUser?.walletBalance).toBe(2.5);
+    });
+
+    describe("updateOrderPrice Action", () => {
+      it("should update order price successfully and cap to 2 decimal places", async () => {
+        vi.mocked(auth).mockResolvedValue({ user: { id: SUPER_ADMIN_ID, role: "SUPER_ADMIN" }, expires: "9999" } as any);
+
+        const buyer = (await User.create(USER_FIXTURE)) as any;
+        const order = (await Order.create({
+          userId: buyer._id,
+          items: [{ name: "PokeCoins", price: 10, quantity: 2 }],
+          totalPrice: 20,
+          status: "PENDING",
+          orderType: "STOREFRONT",
+        })) as any;
+
+        const res = await updateOrderPrice(order._id.toString(), 25.998);
+        expect(res.success).toBe(true);
+
+        const updatedOrder = await Order.findById(order._id);
+        expect(updatedOrder?.totalPrice).toBe(26.00);
+      });
+
+      it("should reject non-admin caller", async () => {
+        const buyer = (await User.create(USER_FIXTURE)) as any;
+        const order = (await Order.create({
+          userId: buyer._id,
+          items: [{ name: "PokeCoins", price: 10, quantity: 1 }],
+          totalPrice: 10,
+          status: "PENDING",
+          orderType: "STOREFRONT",
+        })) as any;
+
+        vi.mocked(auth).mockResolvedValue({ user: { id: buyer._id.toString(), role: "USER" }, expires: "9999" } as any);
+
+        const res = await updateOrderPrice(order._id.toString(), 15);
+        expect(res.success).toBe(false);
+        expect(res.error).toContain("Unauthorized");
+      });
+
+      it("should reject invalid price values", async () => {
+        vi.mocked(auth).mockResolvedValue({ user: { id: SUPER_ADMIN_ID, role: "SUPER_ADMIN" }, expires: "9999" } as any);
+
+        const buyer = (await User.create(USER_FIXTURE)) as any;
+        const order = (await Order.create({
+          userId: buyer._id,
+          items: [{ name: "PokeCoins", price: 10, quantity: 1 }],
+          totalPrice: 10,
+          status: "PENDING",
+          orderType: "STOREFRONT",
+        })) as any;
+
+        // Zero
+        let res = await updateOrderPrice(order._id.toString(), 0);
+        expect(res.success).toBe(false);
+        expect(res.error).toContain("Invalid price");
+
+        // Negative
+        res = await updateOrderPrice(order._id.toString(), -5);
+        expect(res.success).toBe(false);
+        expect(res.error).toContain("Invalid price");
+
+        // NaN
+        res = await updateOrderPrice(order._id.toString(), NaN);
+        expect(res.success).toBe(false);
+        expect(res.error).toContain("Invalid price");
+      });
+
+      it("should ensure other order fields stay unchanged after price update", async () => {
+        vi.mocked(auth).mockResolvedValue({ user: { id: SUPER_ADMIN_ID, role: "SUPER_ADMIN" }, expires: "9999" } as any);
+
+        const buyer = (await User.create(USER_FIXTURE)) as any;
+        const order = (await Order.create({
+          userId: buyer._id,
+          items: [{ name: "Shiny Charizard", price: 50, quantity: 1 }],
+          totalPrice: 50,
+          status: "COMPLETED",
+          deliveryStatus: "DELIVERED",
+          orderType: "STOREFRONT",
+        })) as any;
+
+        const res = await updateOrderPrice(order._id.toString(), 45.50);
+        expect(res.success).toBe(true);
+
+        const updatedOrder = await Order.findById(order._id);
+        expect(updatedOrder?.totalPrice).toBe(45.50);
+        expect(updatedOrder?.status).toBe("COMPLETED");
+        expect(updatedOrder?.deliveryStatus).toBe("DELIVERED");
+        expect(updatedOrder?.userId.toString()).toBe(buyer._id.toString());
+        expect(updatedOrder?.items.length).toBe(1);
+        expect(updatedOrder?.items[0].name).toBe("Shiny Charizard");
+        expect(updatedOrder?.orderType).toBe("STOREFRONT");
+      });
     });
   });
 

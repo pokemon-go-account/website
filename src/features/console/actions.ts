@@ -596,6 +596,44 @@ export async function deleteOrderConsole(orderId: string) {
   }
 }
 
+/** Update total price of an order by Super Admin */
+export async function updateOrderPrice(orderId: string, newTotalPrice: number) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    if (
+      typeof newTotalPrice !== "number" ||
+      isNaN(newTotalPrice) ||
+      !isFinite(newTotalPrice) ||
+      newTotalPrice <= 0
+    ) {
+      return { success: false, error: "Invalid price amount. Must be a positive number." };
+    }
+
+    const roundedPrice = Math.round(newTotalPrice * 100) / 100;
+    if (roundedPrice <= 0) {
+      return { success: false, error: "Invalid price amount. Must be greater than 0." };
+    }
+
+    const Order = (await import("@/models/Order")).default;
+
+    const order = await Order.findById(orderId);
+    if (!order) return { success: false, error: "Order not found." };
+
+    order.totalPrice = roundedPrice;
+    await order.save();
+
+    revalidatePath("/console/orders");
+    revalidatePath("/orders");
+    revalidatePath("/feedback");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update order price." };
+  }
+}
+
+
 /** Create or update registration manually by Super Admin */
 export async function createRegistrationManuallyConsole(username: string, auctionId?: string) {
   try {
@@ -722,7 +760,7 @@ export async function getAllUsers(page: number = 1, limit: number = 100, search:
     const skip = (page - 1) * limit;
 
     const users = await User.find(query)
-      .select("name username email telegramUsername preferredContactMethod preferredContactId country role isSuspended walletBalance adminRentPaidUntil createdAt")
+      .select("name username email telegramUsername preferredContactMethod preferredContactId alternateContact country hearAboutUs role isSuspended walletBalance adminRentPaidUntil createdAt")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

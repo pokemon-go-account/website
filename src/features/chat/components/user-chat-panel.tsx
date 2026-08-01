@@ -64,17 +64,14 @@ interface ChatMeta {
   closed?: boolean;
 }
 
-interface Message {
-  id: string;
-  text?: string;
-  type?: string;      // e.g. "rating_request"
-  orderId?: string;   // present when type === "rating_request"
-  sender: "user" | "admin";
-  senderName: string;
-  timestamp: any;
-  image?: string;
-  read?: boolean;
-}
+import { ChatMessage } from "../types";
+import {
+  ChatReplyInputBar,
+  QuotedMessageBlock,
+  ReplyActionButton,
+} from "./chat-reply-ui";
+
+type Message = ChatMessage;
 
 // ---------------------------------------------------------------------------
 // Inline Rating Card — rendered inside the chat thread for type:rating_request
@@ -248,6 +245,7 @@ export function UserChatPanel({
   const [activeChat, setActiveChat] = useState<ChatMeta | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 
@@ -398,14 +396,24 @@ export function UserChatPanel({
       const msgsRef = collection(db, "supportChats", activeChatId, "messages");
       const chatRef = doc(db, "supportChats", activeChatId);
 
-      await addDoc(msgsRef, {
+      const replyToPayload = replyingTo ? {
+        messageId: replyingTo.id,
+        senderName: replyingTo.senderName || (replyingTo.sender === "admin" ? "Support Team" : username || "Trainer"),
+        textPreview: (replyingTo.text || (replyingTo.image ? "📷 Photo" : "Message")).slice(0, 100),
+      } : undefined;
+
+      const imageMsgDoc: any = {
         image: imageUrl,
         text: inputText.trim() || "",
         sender: "user",
         senderName: username,
         timestamp: serverTimestamp(),
         read: false,
-      });
+      };
+      if (replyToPayload) imageMsgDoc.replyTo = replyToPayload;
+
+      await addDoc(msgsRef, imageMsgDoc);
+      setReplyingTo(null);
 
       await updateDoc(chatRef, {
         lastMessage: "📷 Image attached",
@@ -569,6 +577,11 @@ export function UserChatPanel({
     return unsub;
   }, [activeChatId, isAuthReady, userId, conversations, playSound]);
 
+  // Reset reply state whenever the active chat changes
+  useEffect(() => {
+    setReplyingTo(null);
+  }, [activeChatId]);
+
   // 3. Listen for Admin typing state (RTDB + Firestore) & Admin online presence in RTDB
   useEffect(() => {
     if (!activeChatId || !isAuthReady) {
@@ -727,13 +740,23 @@ export function UserChatPanel({
         remove(ref(rtdb, `chatTyping/${activeChatId}/user`)).catch(() => {});
       }
 
-      await addDoc(msgsRef, {
+      const replyToPayload = replyingTo ? {
+        messageId: replyingTo.id,
+        senderName: replyingTo.senderName || (replyingTo.sender === "admin" ? "Support Team" : username || "Trainer"),
+        textPreview: (replyingTo.text || (replyingTo.image ? "📷 Photo" : "Message")).slice(0, 100),
+      } : undefined;
+
+      const textMsgDoc: any = {
         text,
         sender: "user",
         senderName: username,
         timestamp: serverTimestamp(),
         read: false,
-      });
+      };
+      if (replyToPayload) textMsgDoc.replyTo = replyToPayload;
+
+      await addDoc(msgsRef, textMsgDoc);
+      setReplyingTo(null);
 
       await updateDoc(chatRef, {
         lastMessage: text,
@@ -1111,44 +1134,52 @@ export function UserChatPanel({
             // --- Normal message bubble ---
             const isSystem = msg.text?.startsWith("System:") ?? false;
             const displayMsg = isSystem ? msg.text?.replace("System:", "").trim() : msg.text;
+            const isUser = msg.sender === "user";
             
             return (
               <div
                 key={msg.id}
+                id={`chat-msg-${msg.id}`}
                 className={cn(
-                  "flex flex-col gap-1 max-w-full",
+                  "flex flex-col gap-1 max-w-full group/msg relative transition-all duration-300 rounded-2xl p-0.5",
                   isSystem
                     ? "items-center"
-                    : msg.sender === "user"
+                    : isUser
                     ? "items-end"
                     : "items-start"
                 )}
               >
-                <div
-                  className={cn(
-                    "max-w-[88%] sm:max-w-[78%] rounded-2xl text-xs sm:text-sm leading-relaxed px-4 py-3 select-text break-words [word-break:break-word] overflow-hidden shadow-xs",
-                    isSystem
-                      ? "bg-zinc-100 dark:bg-[#18181c] text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-white/[0.06] text-center rounded-xl font-medium max-w-[90%]"
-                      : msg.sender === "user"
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-tr-xs border border-zinc-800 dark:border-white/20 font-medium"
-                      : "bg-white text-zinc-900 dark:bg-[#1e1e22] dark:text-zinc-100 border border-zinc-200 dark:border-white/[0.08] rounded-tl-xs"
+                <div className={cn("flex items-center gap-1.5 max-w-full", isUser ? "flex-row-reverse" : "flex-row")}>
+                  <div
+                    className={cn(
+                      "max-w-[88%] sm:max-w-[78%] rounded-2xl text-xs sm:text-sm leading-relaxed px-4 py-3 select-text break-words [word-break:break-word] overflow-hidden shadow-xs",
+                      isSystem
+                        ? "bg-zinc-100 dark:bg-[#18181c] text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-white/[0.06] text-center rounded-xl font-medium max-w-[90%]"
+                        : isUser
+                        ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-tr-xs border border-zinc-800 dark:border-white/20 font-medium"
+                        : "bg-white text-zinc-900 dark:bg-[#1e1e22] dark:text-zinc-100 border border-zinc-200 dark:border-white/[0.08] rounded-tl-xs"
+                    )}
+                  >
+                    {!isSystem && <QuotedMessageBlock replyTo={msg.replyTo} isOutgoing={isUser} />}
+                    {msg.image && (
+                      <div className="mb-2 rounded-xl overflow-hidden border border-zinc-200/60 dark:border-white/10 max-w-full shadow-xs">
+                        <img
+                          src={msg.image}
+                          alt={msg.text || "Attached Image"}
+                          className="max-h-56 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(msg.image, "_blank")}
+                        />
+                      </div>
+                    )}
+                    {displayMsg && <p className="whitespace-pre-wrap break-words [word-break:break-word] max-w-full overflow-hidden leading-relaxed">{displayMsg}</p>}
+                  </div>
+                  {!isSystem && activeChat?.status !== "closed" && (
+                    <ReplyActionButton onClick={() => setReplyingTo(msg)} isOutgoing={isUser} />
                   )}
-                >
-                  {msg.image && (
-                    <div className="mb-2 rounded-xl overflow-hidden border border-zinc-200/60 dark:border-white/10 max-w-full shadow-xs">
-                      <img
-                        src={msg.image}
-                        alt={msg.text || "Attached Image"}
-                        className="max-h-56 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(msg.image, "_blank")}
-                      />
-                    </div>
-                  )}
-                  {displayMsg && <p className="whitespace-pre-wrap break-words [word-break:break-word] max-w-full overflow-hidden leading-relaxed">{displayMsg}</p>}
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-zinc-400 px-1 font-medium leading-none">
                   <span>{!isSystem && msg.sender === "admin" ? "Support Team · " : ""}{formatTime(msg.timestamp)}</span>
-                  {!isSystem && msg.sender === "user" && (
+                  {!isSystem && isUser && (
                     <span className="inline-flex items-center select-none">
                       {msg.read ? (
                         <span title="Read"><CheckCheck className="h-4 w-4 text-[#34B7F1] dark:text-[#34B7F1] stroke-[2.5]" /></span>
@@ -1183,7 +1214,9 @@ export function UserChatPanel({
               🔒 This ticket has been closed
             </div>
           ) : (
-            <div className="flex items-end gap-2.5">
+            <div>
+              <ChatReplyInputBar replyingTo={replyingTo} onCancel={() => setReplyingTo(null)} />
+              <div className="flex items-end gap-2.5">
               <input
                 ref={imageInputRef}
                 type="file"
@@ -1226,6 +1259,7 @@ export function UserChatPanel({
                   <Send className="h-5 w-5" />
                 )}
               </button>
+            </div>
             </div>
           )}
         </div>

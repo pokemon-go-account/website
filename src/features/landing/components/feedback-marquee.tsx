@@ -8,6 +8,7 @@ interface FeedbackItem {
   username: string;
   comment: string;
   rating: number;
+  purchasedItemName?: string;
   createdAt: string;
 }
 
@@ -77,6 +78,13 @@ export function FeedbackMarquee({ feedbacks }: FeedbackMarqueeProps) {
         <p className="text-xs text-zinc-650 dark:text-zinc-300 leading-relaxed italic font-normal">
           "{item.comment}"
         </p>
+
+        {item.purchasedItemName && (
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium truncate pt-0.5">
+            <span className="text-zinc-400 dark:text-zinc-500">Purchased: </span>
+            <span className="font-semibold text-zinc-700 dark:text-zinc-300">{item.purchasedItemName}</span>
+          </p>
+        )}
       </div>
 
       {/* Footer metadata */}

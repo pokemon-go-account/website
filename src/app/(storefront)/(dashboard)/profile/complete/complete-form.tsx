@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState, useRef } from "react";
 import { completeUserProfile } from "@/features/auth/actions";
+import { HEAR_ABOUT_US_OPTIONS } from "@/constants/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -252,6 +253,33 @@ export function CompleteProfileForm() {
         <span className="relative z-10 px-3 bg-white dark:bg-[#111111] text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
           Optional
         </span>
+      </div>
+
+      {/* Where did you hear about us? (Optional) */}
+      <div className="space-y-2">
+        <Label htmlFor="hearAboutUs" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+          Where did you hear about us?
+        </Label>
+        <div className="relative">
+          <select
+            id="hearAboutUs"
+            name="hearAboutUs"
+            className="w-full h-8 pl-3 pr-8 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-white focus:outline-none cursor-pointer appearance-none shadow-xs"
+          >
+            <option value="">Select an option (optional)</option>
+            {HEAR_ABOUT_US_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </div>
+        </div>
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1 font-medium">
+          Let us know how you found out about our platform.
+        </p>
       </div>
 
       {/* Additional Contact (Optional) field */}

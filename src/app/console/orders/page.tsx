@@ -5,11 +5,14 @@ import {
   getOrdersConsole,
   completeOrderConsole,
   failOrderConsole,
-  deleteOrderConsole
+  deleteOrderConsole,
+  updateOrderPrice
 } from "@/features/console/actions";
-import { ShoppingBag, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2, Globe, MapPin } from "lucide-react";
+import { ShoppingBag, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2, Globe, MapPin, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface OrderData {
   _id: string;
@@ -28,6 +31,7 @@ interface OrderData {
     quantity: number;
   }>;
   totalPrice: number;
+  walletDiscountApplied?: number;
   status: "PENDING" | "COMPLETED" | "FAILED";
   orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION";
   createdAt: string;
@@ -155,6 +159,31 @@ export default function OrdersConsolePage() {
       setTotalCount(prev => prev - 1);
     } else {
       setAlert({ text: res.error || "Delete failed.", ok: false });
+    }
+    setProcessingId(null);
+  };
+
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editingPriceValue, setEditingPriceValue] = useState<string>("");
+
+  const handleUpdatePrice = async (id: string) => {
+    const parsed = parseFloat(editingPriceValue);
+    if (isNaN(parsed) || parsed <= 0) {
+      setAlert({ text: "Please enter a valid positive number for order total price.", ok: false });
+      return;
+    }
+
+    setProcessingId(id);
+    setAlert(null);
+    const res = await updateOrderPrice(id, parsed);
+    if (res.success) {
+      const rounded = Math.round(parsed * 100) / 100;
+      setAlert({ text: `Order price updated to $${rounded.toFixed(2)} successfully.`, ok: true });
+      setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, totalPrice: rounded } : o)));
+      setEditingOrderId(null);
+      setEditingPriceValue("");
+    } else {
+      setAlert({ text: res.error || "Failed to update order price.", ok: false });
     }
     setProcessingId(null);
   };
@@ -339,19 +368,97 @@ export default function OrdersConsolePage() {
 
                       {/* Price & Type */}
                       <td className="px-6 py-4">
-                        <span className="font-bold text-zinc-900 dark:text-white text-xs block">
-                          <PriceDisplay amountInUSD={order.totalPrice} />
-                        </span>
-                        <span
-                          className={cn(
-                            "inline-block px-1.5 py-0.2 rounded text-[8px] font-bold border mt-1 uppercase tracking-wider",
-                            order.orderType === "STOREFRONT"
-                              ? "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20"
-                              : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-                          )}
-                        >
-                          {order.orderType === "STOREFRONT" ? "STORE" : order.orderType}
-                        </span>
+                        {editingOrderId === order._id ? (
+                          <div className="space-y-1.5 min-w-[140px]">
+                            <div className="text-[9px] font-bold text-amber-500 uppercase tracking-wider">
+                              Final Charged Total
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-bold text-zinc-500">$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                value={editingPriceValue}
+                                onChange={(e) => setEditingPriceValue(e.target.value)}
+                                className="h-7 w-20 text-xs px-1.5 py-0.5"
+                                disabled={processingId === order._id}
+                                autoFocus
+                              />
+                              <Button
+                                type="button"
+                                size="xs"
+                                variant="default"
+                                onClick={() => handleUpdatePrice(order._id)}
+                                disabled={processingId === order._id}
+                                title="Save Price"
+                                className="h-7 w-7 p-0 shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white"
+                              >
+                                {processingId === order._id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Check className="h-3 w-3" />
+                                )}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="xs"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingOrderId(null);
+                                  setEditingPriceValue("");
+                                }}
+                                disabled={processingId === order._id}
+                                title="Cancel"
+                                className="h-7 w-7 p-0 shrink-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            {order.walletDiscountApplied && order.walletDiscountApplied > 0 ? (
+                              <div className="text-[9px] text-zinc-400 italic">
+                                Wallet discount: -${order.walletDiscountApplied.toFixed(2)} applied
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-zinc-900 dark:text-white text-xs block">
+                                <PriceDisplay amountInUSD={order.totalPrice} />
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setEditingOrderId(order._id);
+                                  setEditingPriceValue(order.totalPrice.toString());
+                                }}
+                                disabled={processingId === order._id}
+                                className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                                title="Edit Final Charged Total"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <div className="text-[9px] text-zinc-500 dark:text-zinc-400">
+                              Final Charged Total
+                            </div>
+                            {order.walletDiscountApplied && order.walletDiscountApplied > 0 ? (
+                              <div className="text-[9px] text-emerald-500 font-medium">
+                                (Wallet Discount: -${order.walletDiscountApplied.toFixed(2)})
+                              </div>
+                            ) : null}
+                            <span
+                              className={cn(
+                                "inline-block px-1.5 py-0.2 rounded text-[8px] font-bold border mt-0.5 uppercase tracking-wider",
+                                order.orderType === "STOREFRONT"
+                                  ? "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20"
+                                  : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                              )}
+                            >
+                              {order.orderType === "STOREFRONT" ? "STORE" : order.orderType}
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Date */}
