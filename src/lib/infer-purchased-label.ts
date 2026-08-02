@@ -15,6 +15,10 @@ export function inferPurchasedItemLabel(comment: string, username?: string): str
     c.includes("unbanned") ||
     c.includes("locked") ||
     c.includes("account back") ||
+    c.includes("got it back") ||
+    c.includes("got back") ||
+    c.includes("back within") ||
+    c.includes("back in") ||
     c.includes("ban appeal") ||
     c.includes("my account") ||
     c.includes("old account") ||
@@ -85,7 +89,25 @@ export function inferPurchasedItemLabel(comment: string, username?: string): str
   if (c.includes("necrozma")) return "Wormhole Shiny Bg Necrozma";
   if (c.includes("snorlax")) return "Cowboy Hat Snorlax";
   if (c.includes("pikachu")) return "Shiny Ash Hat Pikachu";
-  if (c.includes("shiny") || c.includes("shonies")) return "Shiny Rayquaza";
+  
+  if (c.includes("shiny") || c.includes("shinies") || c.includes("shonies")) {
+    const shinyPool = [
+      "Shiny Gmax Charizard",
+      "Shiny Groudon",
+      "Shiny Kyogre",
+      "Shiny Origin Dialga",
+      "Shiny Zekrom",
+      "Shiny Reshiram",
+      "Shiny Lucario Hat Pikachu",
+      "Shiny Zamazenta",
+      "Shiny Kyurem",
+      "Wormhole Shiny Bg Necrozma",
+      "Shiny Ash Hat Pikachu",
+      "Shiny Rayquaza",
+    ];
+    const seed = (username ?? comment).split("").reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    return shinyPool[seed % shinyPool.length];
+  }
 
   // --- Raids ---
   if (c.includes("raid") || c.includes("gym")) return "Legendary Raids";
@@ -117,8 +139,11 @@ export function inferPurchasedItemLabel(comment: string, username?: string): str
     "4-HOUR FAST XP SERVICE",
     "10 M  XP Grind",
     "Legendary Raids",
-    "Shiny Rayquaza",
+    "Shiny Gmax Charizard",
     "Armoured Mewtwo",
+    "Shiny Groudon",
+    "Shiny Kyogre",
+    "Shiny Origin Dialga",
     "PG Sharp Key (1  Device)",
   ];
   const seed = (username ?? comment).split("").reduce((a, ch) => a + ch.charCodeAt(0), 0);

@@ -1132,8 +1132,12 @@ export function UserChatPanel({
             }
 
             // --- Normal message bubble ---
-            const isSystem = msg.text?.startsWith("System:") ?? false;
-            const displayMsg = isSystem ? msg.text?.replace("System:", "").trim() : msg.text;
+            const isSystem =
+              msg.sender === "system" ||
+              msg.senderName === "System" ||
+              (msg.text?.startsWith("System:") ?? false) ||
+              (msg.text?.toLowerCase().includes("thank you for submitting your payment proof") ?? false);
+            const displayMsg = isSystem ? msg.text?.replace(/^System:\s*/i, "").trim() : msg.text;
             const isUser = msg.sender === "user";
             
             return (
@@ -1143,18 +1147,18 @@ export function UserChatPanel({
                 className={cn(
                   "flex flex-col gap-1 max-w-full group/msg relative transition-all duration-300 rounded-2xl p-0.5",
                   isSystem
-                    ? "items-center"
+                    ? "items-center w-full my-2 text-center"
                     : isUser
                     ? "items-end"
                     : "items-start"
                 )}
               >
-                <div className={cn("flex items-center gap-1.5 max-w-full", isUser ? "flex-row-reverse" : "flex-row")}>
+                <div className={cn("flex items-center gap-1.5 max-w-full", isSystem ? "justify-center w-full" : isUser ? "flex-row-reverse" : "flex-row")}>
                   <div
                     className={cn(
                       "max-w-[88%] sm:max-w-[78%] rounded-2xl text-xs sm:text-sm leading-relaxed px-4 py-3 select-text break-words [word-break:break-word] overflow-hidden shadow-xs",
                       isSystem
-                        ? "bg-zinc-100 dark:bg-[#18181c] text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-white/[0.06] text-center rounded-xl font-medium max-w-[90%]"
+                        ? "bg-zinc-100 dark:bg-[#18181c] text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-white/[0.06] text-center rounded-xl font-medium max-w-[90%] mx-auto"
                         : isUser
                         ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-tr-xs border border-zinc-800 dark:border-white/20 font-medium"
                         : "bg-white text-zinc-900 dark:bg-[#1e1e22] dark:text-zinc-100 border border-zinc-200 dark:border-white/[0.08] rounded-tl-xs"

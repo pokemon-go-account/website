@@ -9,7 +9,7 @@ export interface ChatMessage {
   text?: string;
   type?: string;      // e.g. "rating_request"
   orderId?: string;   // present when type === "rating_request"
-  sender: "user" | "admin";
+  sender: "user" | "admin" | "system";
   senderName: string;
   timestamp: any;
   image?: string;

@@ -39,14 +39,8 @@ async function run() {
   // Process ALL feedbacks that are missing or have an empty purchasedItemLabel
   // (regardless of whether they have an orderId — the page prefers order items
   //  when available, but the label is a fallback shown when the order can't be populated)
-  console.log("Fetching Feedback documents with missing purchasedItemLabel...");
-  const feedbacks = await Feedback.find({
-    $or: [
-      { purchasedItemLabel: { $exists: false } },
-      { purchasedItemLabel: null },
-      { purchasedItemLabel: "" },
-    ],
-  });
+  console.log("Fetching all Feedback documents to update purchasedItemLabel...");
+  const feedbacks = await Feedback.find({});
 
   console.log(`Found ${feedbacks.length} Feedback docs needing a label.`);
   let updatedCount = 0;

@@ -199,8 +199,8 @@ Please verify my payment proof and approve my order!`;
 
         await addDoc(msgsRef, {
           text: `System: Thank you for submitting your payment proof! A support representative will verify your payment screenshot shortly and confirm your order.`,
-          sender: "admin",
-          senderName: "Support Team",
+          sender: "system",
+          senderName: "System",
           timestamp: serverTimestamp(),
           read: false,
         });

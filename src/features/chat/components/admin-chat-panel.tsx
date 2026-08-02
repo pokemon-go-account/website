@@ -1370,8 +1370,12 @@ export function AdminChatPanel() {
               )}
 
               {messages.map((msg) => {
-                const isSystem = msg.text?.startsWith("System:") ?? false;
-                const displayMsg = isSystem ? msg.text?.replace("System:", "").trim() : msg.text;
+                const isSystem =
+                  msg.sender === "system" ||
+                  msg.senderName === "System" ||
+                  (msg.text?.startsWith("System:") ?? false) ||
+                  (msg.text?.toLowerCase().includes("thank you for submitting your payment proof") ?? false);
+                const displayMsg = isSystem ? msg.text?.replace(/^System:\s*/i, "").trim() : msg.text;
                 const isAdmin = msg.sender === "admin";
                 
                 return (
@@ -1381,18 +1385,18 @@ export function AdminChatPanel() {
                     className={cn(
                       "flex flex-col gap-1 max-w-full group/msg relative transition-all duration-300 rounded-2xl p-0.5",
                       isSystem
-                        ? "items-center"
+                        ? "items-center w-full my-2 text-center"
                         : isAdmin
                         ? "items-end"
                         : "items-start"
                     )}
                   >
-                    <div className={cn("flex items-center gap-1.5 max-w-full", isAdmin ? "flex-row-reverse" : "flex-row")}>
+                    <div className={cn("flex items-center gap-1.5 max-w-full", isSystem ? "justify-center w-full" : isAdmin ? "flex-row-reverse" : "flex-row")}>
                       <div
                         className={cn(
                           "max-w-[88%] sm:max-w-[78%] px-4 py-2.5 text-xs leading-relaxed border select-text break-words [word-break:break-word] overflow-hidden rounded-2xl",
                           isSystem
-                            ? "bg-zinc-100 dark:bg-[#18181c] border-zinc-200/80 dark:border-white/[0.06] text-zinc-600 dark:text-zinc-400 text-center rounded-xl font-medium max-w-[90%]"
+                            ? "bg-zinc-100 dark:bg-[#18181c] border-zinc-200/80 dark:border-white/[0.06] text-zinc-600 dark:text-zinc-400 text-center rounded-xl font-medium max-w-[90%] mx-auto"
                             : isAdmin
                             ? "bg-[#6133e1] text-white border-[#6133e1] rounded-tr-xs shadow-xs font-medium"
                             : "bg-white text-zinc-900 dark:bg-[#1c1c20] dark:text-zinc-100 border-zinc-200 dark:border-white/[0.08] rounded-tl-xs shadow-xs"
