@@ -178,7 +178,7 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
               fill
               unoptimized
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="object-contain max-h-full max-w-full p-1.5 group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>
@@ -357,11 +357,11 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                 {matchingProducts.map((prod: any) => (
                   <div
                     key={prod._id.toString()}
-                    className="flex flex-col justify-between rounded-2xl border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900/30 backdrop-blur-sm p-6 hover:shadow-lg dark:hover:shadow-primary/5 transition-all duration-300 space-y-4"
+                    className="group flex flex-col justify-between rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 backdrop-blur-sm p-5 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg dark:hover:shadow-primary/5 transition-all duration-300 space-y-4"
                   >
                     <div className="space-y-3">
-                      {/* Product Image & Category */}
-                      <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800/80 bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
+                      {/* Product Image & Badges */}
+                      <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-black/20 flex items-center justify-center p-3">
                         {prod.imageUrl ? (
                           <Image
                             src={prod.imageUrl}
@@ -369,36 +369,77 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
                             fill
                             unoptimized
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            className="object-cover"
+                            className="object-contain max-h-full max-w-full p-1.5 group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
                           <ShoppingBag className="h-8 w-8 text-zinc-400" />
                         )}
                         {prod.categoryId?.name && (
-                          <span className="absolute top-3 left-3 bg-zinc-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wider uppercase border border-white/10">
+                          <span className="absolute bottom-2.5 right-2.5 bg-zinc-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wider uppercase border border-white/10">
                             {prod.categoryId.name}
                           </span>
                         )}
+                        
+                        {/* Badges Container */}
+                        <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">
+                          {prod.isLimitedDeal && (
+                            <span className="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs bg-red-600 animate-pulse">
+                              Limited Deal
+                            </span>
+                          )}
+                          {prod.badge && (
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs",
+                              prod.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
+                            )}>
+                              {prod.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Product Title & Info */}
                       <div className="space-y-1">
-                        <h3 className="font-bold text-base text-foreground tracking-tight line-clamp-1">{prod.name}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[32px]">{prod.description || "No description provided."}</p>
+                        <h3 className="font-bold text-sm text-foreground tracking-tight line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                          {prod.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[32px]">
+                          {prod.description || "No description provided."}
+                        </p>
                       </div>
                     </div>
 
                     {/* Price and Action */}
-                    <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-border/60">
+                    <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
                       <div>
-                        <span className="text-[10px] text-muted-foreground block">Direct Purchase Price</span>
-                        <span className="text-base font-extrabold text-foreground"><PriceDisplay amountInUSD={prod.price} /></span>
+                        {typeof prod.mrpPrice === 'number' && typeof prod.discountedPrice === 'number' && prod.mrpPrice > prod.discountedPrice ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-zinc-400 line-through">
+                                <PriceDisplay amountInUSD={prod.mrpPrice} />
+                              </span>
+                              <span className="text-[9px] font-bold text-red-500 bg-red-500/10 px-1 rounded">
+                                {Math.round(((prod.mrpPrice - prod.discountedPrice) / prod.mrpPrice) * 100)}% OFF
+                              </span>
+                            </div>
+                            <span className="text-base font-extrabold text-foreground block">
+                              <PriceDisplay amountInUSD={prod.discountedPrice} />
+                            </span>
+                          </div>
+                        ) : (
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Direct Purchase Price</span>
+                            <span className="text-base font-extrabold text-foreground">
+                              <PriceDisplay amountInUSD={prod.price} />
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <Link
-                        href="/store"
-                        className="h-8 px-4 inline-flex items-center gap-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-violet-500/10"
+                        href={prod.categoryId?.slug ? `/store/${prod.categoryId.slug}?productId=${prod._id.toString()}` : `/store?productId=${prod._id.toString()}`}
+                        className="h-8 px-3.5 inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-violet-500/10"
                       >
-                        View in Store
+                        Buy Now
                       </Link>
                     </div>
                   </div>

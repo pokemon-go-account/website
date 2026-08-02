@@ -149,7 +149,7 @@ export function FeaturedAuctionsClient({ auctions }: { auctions: LiveAuction[] }
                       alt={auction.listing.title} 
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="object-contain max-h-full max-w-full p-1.5 group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>

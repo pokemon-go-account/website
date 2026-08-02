@@ -1921,7 +1921,7 @@ export function LiveRoom({
                 <div className="flex gap-3">
                   {screenshots && screenshots[0] ? (
                     <div className="w-14 h-14 rounded-xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shrink-0 bg-white dark:bg-zinc-900">
-                      <img src={screenshots[0]} alt="Account preview" className="w-full h-full object-cover" />
+                      <img src={screenshots[0]} alt="Account preview" className="w-full h-full object-contain p-1" />
                     </div>
                   ) : (
                     <div className="w-14 h-14 rounded-xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shrink-0 bg-zinc-105 dark:bg-zinc-850 flex items-center justify-center text-zinc-400">

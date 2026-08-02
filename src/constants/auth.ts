@@ -1,4 +1,5 @@
 export const HEAR_ABOUT_US_OPTIONS = [
+  "Facebook",
   "Instagram",
   "Telegram",
   "Discord",

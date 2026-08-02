@@ -82,7 +82,7 @@ export function LiveRoomGallery({ screenshots, teamColors, team }: LiveRoomGalle
                     : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
                 )}
               >
-                <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
+                <img src={url} alt="thumbnail" className="w-full h-full object-contain p-0.5" />
               </button>
             ))}
           </div>
