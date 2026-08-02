@@ -8,8 +8,8 @@ export async function uploadChatImage(base64Data: string): Promise<{ success: bo
     if (!session?.user) {
       return { success: false, error: "Unauthorized" };
     }
-    const { uploadToCloudinary } = await import("@/lib/cloudinary");
-    const url = await uploadToCloudinary(base64Data);
+    const { uploadToImages } = await import("@/lib/cloudflare-images");
+    const url = await uploadToImages(base64Data);
     return { success: true, url };
   } catch (err: any) {
     console.error("Upload chat image error:", err);
@@ -33,8 +33,8 @@ export async function deleteChatImages(imageUrls: string[]): Promise<{ success: 
       return { success: true };
     }
 
-    const { deleteFromCloudinary } = await import("@/lib/cloudinary");
-    await deleteFromCloudinary(imageUrls);
+    const { deleteFromImages } = await import("@/lib/cloudflare-images");
+    await deleteFromImages(imageUrls);
     return { success: true };
   } catch (err: any) {
     console.error("Delete chat images error:", err);

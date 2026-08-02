@@ -26,49 +26,9 @@ if (!process.env.MONGODB_URI) {
   }
 }
 
-export function inferPurchasedItemLabel(comment: string): string {
-  const c = comment.toLowerCase();
-  if (c.includes("recover") || c.includes("hacked") || c.includes("unbanned") || c.includes("locked") || c.includes("account back")) {
-    return "Pokémon GO Account Recovery Service";
-  }
-  if (c.includes("stardust")) {
-    return "Stardust Boost Pack";
-  }
-  if (c.includes("level 45") || c.includes("lvl 45") || c.includes("level 50") || c.includes("lvl 50") || c.includes("level 40")) {
-    return "Level 45+ Master Account";
-  }
-  if (c.includes("pokecoin") || c.includes("coin")) {
-    return "14,500 PokeCoins Top-Up Pack";
-  }
-  if (c.includes("charizard")) {
-    return "Shiny Charizard Account";
-  }
-  if (c.includes("mewtwo") || c.includes("armored")) {
-    return "Armored Mewtwo Account";
-  }
-  if (c.includes("rayquaza")) {
-    return "Shiny Rayquaza Account";
-  }
-  if (c.includes("kyogre") || c.includes("groudon")) {
-    return "Primal Kyogre & Groudon Pack";
-  }
-  if (c.includes("dialga") || c.includes("palkia") || c.includes("giratina") || c.includes("arceus")) {
-    return "Legendary Origin Forme Account";
-  }
-  if (c.includes("shiny") || c.includes("shonies")) {
-    return "Shiny Collector Account";
-  }
-  if (c.includes("telegram")) {
-    return "Telegram Custom Catch & Trade";
-  }
-  if (c.includes("raid") || c.includes("gym")) {
-    return "Raid Battle Pass Bundle";
-  }
-  if (c.includes("pokedex")) {
-    return "Pokedex Completion Service";
-  }
-  return "Pokémon GO Trainer Account";
-}
+import { inferPurchasedItemLabel } from "../lib/infer-purchased-label";
+
+
 
 async function run() {
   const connectDB = (await import("../lib/db")).default;
@@ -76,16 +36,23 @@ async function run() {
 
   await connectDB();
 
-  console.log("Fetching orderId-less Feedback documents...");
+  // Process ALL feedbacks that are missing or have an empty purchasedItemLabel
+  // (regardless of whether they have an orderId — the page prefers order items
+  //  when available, but the label is a fallback shown when the order can't be populated)
+  console.log("Fetching Feedback documents with missing purchasedItemLabel...");
   const feedbacks = await Feedback.find({
-    $or: [{ orderId: { $exists: false } }, { orderId: null }],
+    $or: [
+      { purchasedItemLabel: { $exists: false } },
+      { purchasedItemLabel: null },
+      { purchasedItemLabel: "" },
+    ],
   });
 
-  console.log(`Found ${feedbacks.length} Feedback docs without orderId.`);
+  console.log(`Found ${feedbacks.length} Feedback docs needing a label.`);
   let updatedCount = 0;
 
   for (const doc of feedbacks) {
-    const label = inferPurchasedItemLabel(doc.comment);
+    const label = inferPurchasedItemLabel(doc.comment, doc.username);
     doc.purchasedItemLabel = label;
     await doc.save();
     updatedCount++;

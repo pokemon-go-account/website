@@ -82,12 +82,12 @@ export async function submitRecoveryRequest(prevState: any, formData: FormData) 
 
     await connectDB();
 
-    // Upload any fallback base64 screenshot to Cloudinary, keeping already-uploaded URLs
-    const { uploadToCloudinary } = await import("@/lib/cloudinary");
+    // Upload any fallback base64 screenshot to Cloudflare Images, keeping already-uploaded URLs
+    const { uploadToImages } = await import("@/lib/cloudflare-images");
     const screenshotUrls = await Promise.all(
       screenshotsInput.map(async (item) => {
         if (item.startsWith("data:") || !item.startsWith("http")) {
-          return uploadToCloudinary(item);
+          return uploadToImages(item);
         }
         return item;
       })
@@ -391,13 +391,13 @@ export async function deleteRecoveryRequest(requestId: string) {
 
     await RecoveryRequest.findByIdAndDelete(requestId);
 
-    // Delete Cloudinary assets after DB cleanup (non-blocking)
+    // Delete Cloudflare Images assets after DB cleanup (non-blocking)
     if (screenshotUrls.length > 0) {
       try {
-        const { deleteFromCloudinary } = await import("@/lib/cloudinary");
-        await deleteFromCloudinary(screenshotUrls);
-      } catch (cloudinaryErr) {
-        console.error("Failed to delete screenshots from Cloudinary:", cloudinaryErr);
+        const { deleteFromImages } = await import("@/lib/cloudflare-images");
+        await deleteFromImages(screenshotUrls);
+      } catch (imagesErr) {
+        console.error("Failed to delete screenshots from Cloudflare Images:", imagesErr);
       }
     }
 

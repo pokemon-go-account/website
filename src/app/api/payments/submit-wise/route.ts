@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import WisePayment from "@/models/WisePayment";
-import { uploadToCloudinary } from "@/lib/cloudinary";
+import { uploadToImages } from "@/lib/cloudflare-images";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,14 +22,14 @@ export async function POST(req: NextRequest) {
       ? transactionReference.trim()
       : "N/A";
 
-    // Upload screenshot to Cloudinary
+    // Upload screenshot to Cloudflare Images
     let screenshotUrl = "";
     try {
-      screenshotUrl = await uploadToCloudinary(screenshotBase64);
+      screenshotUrl = await uploadToImages(screenshotBase64);
     } catch (uploadErr) {
-      console.error("[Cloudinary Wise Payment Upload Failed]", uploadErr);
+      console.error("[Wise Payment Upload Failed]", uploadErr);
       return NextResponse.json(
-        { error: "Failed to upload payment screenshot to Cloudinary." },
+        { error: "Failed to upload payment screenshot." },
         { status: 500 }
       );
     }

@@ -30,10 +30,11 @@ import PokemonRequest from "@/models/PokemonRequest";
 import CustomRequest from "@/models/CustomRequest";
 import { auth } from "@/auth";
 
-// Mock Cloudinary helpers
-vi.mock("@/lib/cloudinary", () => ({
-  deleteFromCloudinary: vi.fn().mockResolvedValue({ success: true }),
-  uploadToCloudinary: vi.fn().mockResolvedValue({ success: true, secure_url: "https://example.com/uploaded.jpg" }),
+// Mock Cloudflare Images helpers
+vi.mock("@/lib/cloudflare-images", () => ({
+  deleteFromImages: vi.fn().mockResolvedValue(undefined),
+  uploadToImages: vi.fn().mockResolvedValue("https://imagedelivery.net/account_hash/uploaded.jpg/public"),
+  extractImageId: vi.fn().mockReturnValue("uploaded.jpg"),
 }));
 
 const LISTING_FIXTURE = {

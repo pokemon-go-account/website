@@ -11,10 +11,11 @@ import {
 } from "@/features/chat/actions";
 import { auth } from "@/auth";
 
-// Mock Cloudinary helpers
-vi.mock("@/lib/cloudinary", () => ({
-  uploadToCloudinary: vi.fn().mockResolvedValue("https://example.com/chat.jpg"),
-  deleteFromCloudinary: vi.fn().mockResolvedValue({ success: true }),
+// Mock Cloudflare Images helpers
+vi.mock("@/lib/cloudflare-images", () => ({
+  uploadToImages: vi.fn().mockResolvedValue("https://imagedelivery.net/account_hash/chat.jpg/public"),
+  deleteFromImages: vi.fn().mockResolvedValue(undefined),
+  extractImageId: vi.fn().mockReturnValue("chat.jpg"),
 }));
 
 // Mock Firebase Admin Auth
@@ -43,11 +44,11 @@ describe("Chat Server Actions & Console Chat Logic", () => {
       expect(res.error).toBe("Unauthorized");
     });
 
-    it("should succeed and return Cloudinary image URL for authenticated users", async () => {
+    it("should succeed and return Cloudflare image URL for authenticated users", async () => {
       vi.mocked(auth).mockResolvedValue({ user: { id: "user1" }, expires: "9999" } as any);
       const res = await uploadChatImage("data:image/png;base64,bits");
       expect(res.success).toBe(true);
-      expect(res.url).toBe("https://example.com/chat.jpg");
+      expect(res.url).toBe("https://imagedelivery.net/account_hash/chat.jpg/public");
     });
   });
 

@@ -355,8 +355,8 @@ export async function uploadImageAction(base64Data: string) {
       return { success: false, error: "Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed." };
     }
 
-    const { uploadToCloudinary } = await import("@/lib/cloudinary");
-    const secureUrl = await uploadToCloudinary(base64Data);
+    const { uploadToImages } = await import("@/lib/cloudflare-images");
+    const secureUrl = await uploadToImages(base64Data);
     return { success: true, url: secureUrl, error: null };
   } catch (error: any) {
     console.error("Server image upload failed:", error);

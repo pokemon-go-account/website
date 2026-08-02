@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import CryptoPayment from "@/models/CryptoPayment";
-import { uploadToCloudinary } from "@/lib/cloudinary";
+import { uploadToImages } from "@/lib/cloudflare-images";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,14 +25,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Upload to Cloudinary (will fall back to mock sandbox if keys are unconfigured)
+    // Upload to Cloudflare Images (will fall back to data URL / mock if keys are unconfigured)
     let screenshotUrl = "";
     try {
-      screenshotUrl = await uploadToCloudinary(screenshotBase64);
+      screenshotUrl = await uploadToImages(screenshotBase64);
     } catch (uploadErr) {
-      console.error("[Cloudinary Payment Upload Failed]", uploadErr);
+      console.error("[Crypto Payment Upload Failed]", uploadErr);
       return NextResponse.json(
-        { error: "Failed to upload payment screenshot to Cloudinary." },
+        { error: "Failed to upload payment screenshot." },
         { status: 500 }
       );
     }

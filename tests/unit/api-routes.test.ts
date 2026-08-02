@@ -11,9 +11,11 @@ import Payment from "@/models/Payment";
 import PageView from "@/models/PageView";
 import { auth } from "@/auth";
 
-// Mock Cloudinary
-vi.mock("@/lib/cloudinary", () => ({
-  uploadToCloudinary: vi.fn().mockResolvedValue("https://cloudinary.com/payment_screenshot.jpg"),
+// Mock Cloudflare Images
+vi.mock("@/lib/cloudflare-images", () => ({
+  uploadToImages: vi.fn().mockResolvedValue("https://imagedelivery.net/account_hash/payment_screenshot/public"),
+  deleteFromImages: vi.fn().mockResolvedValue(undefined),
+  extractImageId: vi.fn().mockReturnValue("payment_screenshot"),
 }));
 
 const LISTING_FIXTURE = {

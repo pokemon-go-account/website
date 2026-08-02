@@ -527,11 +527,11 @@ export async function deleteNewsArticle(articleId: string): Promise<{ success: b
 
     if (article && article.coverImage) {
       try {
-        const { deleteFromCloudinary } = await import("@/lib/cloudinary");
-        await deleteFromCloudinary(article.coverImage);
-        console.log(`[deleteNewsArticle] Successfully deleted image from Cloudinary for articleId: ${cleanId}`);
+        const { deleteFromImages } = await import("@/lib/cloudflare-images");
+        await deleteFromImages(article.coverImage);
+        console.log(`[deleteNewsArticle] Successfully deleted image from Cloudflare Images for articleId: ${cleanId}`);
       } catch (imgErr) {
-        console.error("[deleteNewsArticle] Failed to delete image from Cloudinary:", imgErr);
+        console.error("[deleteNewsArticle] Failed to delete image from Cloudflare Images:", imgErr);
         // Continue with database deletion even if image deletion fails
       }
     }
@@ -555,8 +555,8 @@ export async function uploadNewsImageAction(base64Data: string): Promise<{ succe
       return { success: false, error: "Unauthorized. Admin privileges required." };
     }
 
-    const { uploadToCloudinary } = await import("@/lib/cloudinary");
-    const url = await uploadToCloudinary(base64Data);
+    const { uploadToImages } = await import("@/lib/cloudflare-images");
+    const url = await uploadToImages(base64Data);
     return { success: true, url };
   } catch (err: any) {
     console.error("[uploadNewsImageAction] Error:", err);

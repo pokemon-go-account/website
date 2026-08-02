@@ -5,6 +5,7 @@ import User from "@/models/User";
 import { auth } from "@/auth";
 import { Star, MessageSquareCode, Award, ShieldAlert, Sparkles, MessageCircle, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { inferPurchasedItemLabel } from "@/lib/infer-purchased-label";
 
 export const revalidate = 0; // Dynamic rendering
 
@@ -80,6 +81,9 @@ export default async function FeedbackPage() {
       }
     } else if (item.purchasedItemLabel && item.purchasedItemLabel.trim()) {
       purchasedItemName = item.purchasedItemLabel.trim();
+    } else {
+      // Inline fallback — ensures every review always shows a label
+      purchasedItemName = inferPurchasedItemLabel(item.comment || "", item.username);
     }
 
     return {

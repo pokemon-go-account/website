@@ -13,7 +13,7 @@ import Product from "@/models/Product";
 import PokemonRequest from "@/models/PokemonRequest";
 import CustomRequest from "@/models/CustomRequest";
 import { revalidatePath } from "next/cache";
-import { deleteFromCloudinary } from "@/lib/cloudinary";
+import { deleteFromImages } from "@/lib/cloudflare-images";
 import { syncAuctionToFirestore } from "@/features/auctions/actions";
 
 /**
@@ -286,9 +286,9 @@ export async function deleteAuction(auctionId: string) {
     await Registration.deleteMany({ auctionId: auctionId });
     await Auction.findByIdAndDelete(auctionId);
 
-    // Delete Cloudinary assets after DB cleanup (non-blocking on failure)
+    // Delete Cloudflare Images assets after DB cleanup (non-blocking on failure)
     if (listingImageUrls.length > 0) {
-      await deleteFromCloudinary(listingImageUrls);
+      await deleteFromImages(listingImageUrls);
     }
 
     revalidatePath("/console");
@@ -785,9 +785,9 @@ export async function deleteCategory(id: string) {
     const category = await Category.findById(id).lean() as any;
     await Category.findByIdAndDelete(id);
 
-    // Delete Cloudinary asset after DB record is gone
+    // Delete Cloudflare Images asset after DB record is gone
     if (category?.imageUrl) {
-      await deleteFromCloudinary(category.imageUrl);
+      await deleteFromImages(category.imageUrl);
     }
 
     revalidatePath('/console/categories');
@@ -804,8 +804,8 @@ export async function deleteCategory(id: string) {
 export async function uploadCategoryImageAction(base64Data: string) {
   try {
     await checkSuperAdminSession();
-    const { uploadToCloudinary } = await import('@/lib/cloudinary');
-    const url = await uploadToCloudinary(base64Data);
+    const { uploadToImages } = await import('@/lib/cloudflare-images');
+    const url = await uploadToImages(base64Data);
     return { success: true, url };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -892,13 +892,13 @@ export async function deleteProduct(id: string) {
     const product = await Product.findById(id).lean() as any;
     await Product.findByIdAndDelete(id);
 
-    // Delete Cloudinary assets: primary image + gallery images
+    // Delete Cloudflare Images assets: primary image + gallery images
     if (product) {
       const allImageUrls: string[] = [];
       if (product.imageUrl) allImageUrls.push(product.imageUrl);
       if (Array.isArray(product.imageUrls)) allImageUrls.push(...product.imageUrls);
       if (allImageUrls.length > 0) {
-        await deleteFromCloudinary(allImageUrls);
+        await deleteFromImages(allImageUrls);
       }
     }
 
@@ -916,8 +916,8 @@ export async function deleteProduct(id: string) {
 export async function uploadProductImageAction(base64Data: string) {
   try {
     await checkSuperAdminSession();
-    const { uploadToCloudinary } = await import('@/lib/cloudinary');
-    const url = await uploadToCloudinary(base64Data);
+    const { uploadToImages } = await import('@/lib/cloudflare-images');
+    const url = await uploadToImages(base64Data);
     return { success: true, url };
   } catch (error: any) {
     return { success: false, error: error.message };
