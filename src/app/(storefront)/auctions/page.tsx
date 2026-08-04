@@ -7,7 +7,7 @@ import Auction from "@/models/Auction";
 import Listing from "@/models/Listing"; // Registers model for populate
 import Product from "@/models/Product";
 import Category from "@/models/Category";
-import { Trophy, Clock, Play, CalendarDays, Archive, Sparkles, Flame, ShoppingBag } from "lucide-react";
+import { Trophy, Clock, Play, CalendarDays, Archive, Flame, ShoppingBag, Search, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -34,11 +34,11 @@ export const metadata: Metadata = {
 export const revalidate = 30; // ISR cache on Vercel CDN for 30s
 
 interface AuctionsCatalogPageProps {
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; tab?: string; team?: string }>;
 }
 
 export default async function AuctionsCatalogPage({ searchParams }: AuctionsCatalogPageProps) {
-  const { search } = await searchParams;
+  const { search, tab = "ALL", team = "ALL" } = await searchParams;
   await connectDB();
   
   // Explicitly reference models to prevent Turbopack tree-shaking
@@ -47,12 +47,18 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
   const _modelCheckCategory = Category;
 
   let query: any = {};
+  
+  // 1. Build Listing filter query
+  const listingQuery: any = {};
+  if (team && team !== "ALL") {
+    listingQuery.team = team.toUpperCase();
+  }
+
   if (search && search.trim()) {
     const s = search.trim();
     const numericVal = parseInt(s.replace(/\D/g, ""), 10);
     const levelMatch = !isNaN(numericVal) && numericVal > 0;
 
-    // Build $or conditions — text fields + enum fields + optional numeric level
     const orConditions: any[] = [
       { title: { $regex: s, $options: "i" } },
       { description: { $regex: s, $options: "i" } },
@@ -66,12 +72,21 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
       orConditions.push({ level: numericVal });
     }
 
-    const matchingListings = await Listing.find({ $or: orConditions }).select("_id").lean();
+    if (listingQuery.team) {
+      listingQuery.$and = [{ team: listingQuery.team }, { $or: orConditions }];
+      delete listingQuery.team;
+    } else {
+      listingQuery.$or = orConditions;
+    }
+  }
+
+  if (Object.keys(listingQuery).length > 0) {
+    const matchingListings = await Listing.find(listingQuery).select("_id").lean();
     const matchingIds = matchingListings.map((l) => l._id);
     query.listingId = { $in: matchingIds };
   }
 
-  // Fetch all auctions in chronological order of start time
+  // Fetch all auctions sorted chronologically
   const auctionDocs = await Auction.find(query)
     .populate("listingId")
     .sort({ startTime: 1 })
@@ -106,18 +121,12 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
         team: "MYSTIC" | "VALOR" | "INSTINCT" | "NONE";
         startingBid: number;
         region: string;
+        screenshots?: string[];
       };
     }
   >;
 
   // Team border coloring maps
-  const teamBorders = {
-    MYSTIC: "hover:border-blue-500/40 border-blue-200 dark:border-blue-900/30",
-    VALOR: "hover:border-red-500/40 border-red-200 dark:border-red-900/30",
-    INSTINCT: "hover:border-yellow-500/40 border-yellow-200 dark:border-yellow-900/30",
-    NONE: "hover:border-zinc-400 dark:hover:border-zinc-700/50 border-zinc-200 dark:border-zinc-800",
-  };
-
   const teamColors = {
     MYSTIC: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20",
     VALOR: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20",
@@ -130,6 +139,10 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
     const hasEnded = new Date() >= new Date(auc.endTime);
     const isLive = auc.status === "LIVE" && !hasEnded;
     const isScheduled = auc.status === "SCHEDULED" && !hasEnded;
+
+    if (tab === "LIVE") return isLive;
+    if (tab === "SCHEDULED") return isScheduled;
+    if (tab === "CONCLUDED") return false;
     return isLive || isScheduled;
   });
 
@@ -137,8 +150,14 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
     const hasEnded = new Date() >= new Date(auc.endTime);
     const isLive = auc.status === "LIVE" && !hasEnded;
     const isScheduled = auc.status === "SCHEDULED" && !hasEnded;
-    return !(isLive || isScheduled);
-  });  function renderAuctionCard(auc: any) {
+    const isConcluded = hasEnded || (!isLive && !isScheduled);
+
+    if (tab === "LIVE" || tab === "SCHEDULED") return false;
+    if (tab === "CONCLUDED") return isConcluded;
+    return isConcluded;
+  });
+
+  function renderAuctionCard(auc: any) {
     const hasEnded = new Date() >= new Date(auc.endTime);
     const isLive = auc.status === "LIVE" && !hasEnded;
     const isScheduled = auc.status === "SCHEDULED" && !hasEnded;
@@ -165,26 +184,26 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
       <div
         key={auc._id.toString()}
         className={cn(
-          "group relative flex flex-col justify-between rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] transition-all duration-200 hover:border-zinc-300 dark:hover:border-white/[0.1] shadow-xs overflow-hidden",
-          isConcluded && "opacity-75 dark:opacity-50 hover:opacity-100"
+          "group relative flex flex-col justify-between rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] transition-all duration-200 hover:border-zinc-300 dark:hover:border-white/[0.1] shadow-xs overflow-hidden h-full",
+          isConcluded && "opacity-80 dark:opacity-60 hover:opacity-100"
         )}
       >
         {/* Upper row: Screenshot image header */}
-        <div className="relative h-36 bg-zinc-50 dark:bg-black/10 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-center overflow-hidden">
+        <div className="relative h-40 sm:h-44 bg-zinc-50 dark:bg-black/10 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-center overflow-hidden">
           {hasImage ? (
             <Image 
               src={screenshots[0]} 
               alt={auc.listingId.title} 
               fill
               unoptimized
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-contain max-h-full max-w-full p-1.5 group-hover:scale-105 transition-transform duration-500"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              className="object-contain max-h-full max-w-full p-2 group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
-            <span className="text-4xl select-none group-hover:scale-102 transition-transform duration-500">⚡</span>
+            <span className="text-4xl select-none group-hover:scale-105 transition-transform duration-500">⚡</span>
           )}
           
-          <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+          <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
             {isLive && (
               <span className="inline-flex items-center gap-1 bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-red-500/20 backdrop-blur-md">
                 <Flame className="h-2.5 w-2.5 animate-pulse" />
@@ -198,36 +217,35 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
               </span>
             )}
             {isConcluded && (
-              <span className="inline-flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-550 dark:text-zinc-450 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-zinc-250 dark:border-zinc-700 backdrop-blur-md">
+              <span className="inline-flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-md text-[9px] font-semibold border border-zinc-200 dark:border-zinc-700 backdrop-blur-md">
                 <Archive className="h-2.5 w-2.5" />
                 Concluded
               </span>
             )}
           </div>
 
-          <span className={cn("absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[9px] font-semibold border backdrop-blur-md", teamColors[auc.listingId.team as keyof typeof teamColors])}>
+          <span className={cn("absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[9px] font-semibold border backdrop-blur-md z-10", teamColors[auc.listingId.team as keyof typeof teamColors])}>
             Lvl {auc.listingId.level} • {auc.listingId.team}
           </span>
         </div>
 
         {/* Content Details */}
-        <div className="p-5 flex flex-col justify-between flex-grow space-y-4">
-          <div className="space-y-3">
-            {/* Title & region */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between flex-grow space-y-4">
+          <div className="space-y-2">
             <div>
-              <h3 className="font-semibold text-sm text-zinc-900 dark:text-white tracking-tight line-clamp-1">
+              <h3 className="font-semibold text-sm text-zinc-900 dark:text-white tracking-tight line-clamp-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                 {auc.listingId.title}
               </h3>
-              <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-1">Region: {auc.listingId.region}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">Region: {auc.listingId.region}</p>
             </div>
           </div>
 
           {/* Middle row: Asset metrics */}
           {visibleMetrics.length > 0 && (
-            <div className={cn("grid gap-2 py-2.5 border-y border-zinc-200 dark:border-white/[0.06] text-center bg-zinc-50/50 dark:bg-black/10 rounded-md", gridColsClass)}>
+            <div className={cn("grid gap-2 py-2 border-y border-zinc-100 dark:border-zinc-800/60 text-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-md", gridColsClass)}>
               {visibleMetrics.map((m) => (
                 <div key={m.label} className="space-y-0.5">
-                  <div className="text-[9px] text-zinc-450 dark:text-zinc-500 uppercase font-semibold">{m.label}</div>
+                  <div className="text-[9px] text-zinc-400 uppercase font-semibold">{m.label}</div>
                   <div className={cn("text-xs font-semibold", m.colorClass)}>{m.value}</div>
                 </div>
               ))}
@@ -235,32 +253,32 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
           )}
 
           {/* Lower row: Telemetry and bidding actions */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between text-xs">
               <div className="space-y-0.5">
-                <span className="text-[10px] text-zinc-450 dark:text-zinc-500">Highest Bid</span>
-                <div className="font-semibold text-zinc-900 dark:text-white text-sm">
+                <span className="text-[10px] text-zinc-400">Highest Bid</span>
+                <div className="font-semibold text-zinc-900 dark:text-white text-sm font-mono">
                   <PriceDisplay amountInUSD={auc.currentHighestBid} />
                 </div>
               </div>
               
               <div className="text-right space-y-0.5">
-                <span className="text-[10px] text-zinc-450 dark:text-zinc-500">End Time</span>
-                <div className="font-semibold text-zinc-800 dark:text-zinc-200 text-[10px] flex items-center gap-1 justify-end">
-                  <Clock className="h-3 w-3 text-zinc-450" />
+                <span className="text-[10px] text-zinc-400">End Time</span>
+                <div className="font-semibold text-zinc-700 dark:text-zinc-300 text-[10px] flex items-center gap-1 justify-end">
+                  <Clock className="h-3 w-3 text-zinc-400" />
                   {new Date(auc.endTime).toLocaleDateString([], { month: "short", day: "numeric" })}
                 </div>
               </div>
             </div>
 
-            {/* Join Link Button */}
+            {/* Action Link */}
             <Link
               href={`/auctions/${auc._id.toString()}`}
               className={cn(
-                "w-full h-8 inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
+                "w-full h-8.5 inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer",
                 isConcluded
-                  ? "border border-zinc-300 hover:border-zinc-400 dark:border-white/[0.1] dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-zinc-900 dark:text-white shadow-xs"
-                  : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 border border-transparent"
+                  ? "border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+                  : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900"
               )}
             >
               {isLive ? (
@@ -284,160 +302,169 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
   const hasNoResults = search && activeAuctions.length === 0 && concludedAuctions.length === 0 && matchingProducts.length === 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
-      {/* Catalog Header */}
-      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-6 space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
-          Bidding Catalog Blocks
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Participate in active, live scheduled auctions for high-tier Trainer assets.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      
+      {/* 1. HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            Bidding Catalog & Live Rooms
+          </h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            Participate in live real-time auctions for high-tier verified Pokémon GO Trainer assets.
+          </p>
+        </div>
 
-      {/* Grid List & Results */}
-      {hasNoResults ? (
-        <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-center p-8 shadow-xs">
-          <div className="max-w-xs space-y-3">
-            <h3 className="text-base font-semibold text-zinc-900 dark:text-white">No matches found</h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              We couldn't find any live rooms, concluded auctions, or store products matching "{search}". Try checking your spelling or search for another keyword.
-            </p>
+        {/* Filter & Search Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Status Tabs */}
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
             <Link
-              href="/auctions"
-              className="inline-flex h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold items-center justify-center transition-all active:scale-[0.98]"
+              href={`/auctions?tab=ALL${team !== "ALL" ? `&team=${team}` : ""}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
+              className={cn(
+                "px-2.5 py-1 text-xs font-semibold rounded transition-colors text-center cursor-pointer",
+                tab === "ALL" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
             >
-              Clear Search Filter
+              All
+            </Link>
+            <Link
+              href={`/auctions?tab=LIVE${team !== "ALL" ? `&team=${team}` : ""}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
+              className={cn(
+                "px-2.5 py-1 text-xs font-semibold rounded transition-colors text-center cursor-pointer flex items-center justify-center gap-1",
+                tab === "LIVE" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+              Live
+            </Link>
+            <Link
+              href={`/auctions?tab=CONCLUDED${team !== "ALL" ? `&team=${team}` : ""}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
+              className={cn(
+                "px-2.5 py-1 text-xs font-semibold rounded transition-colors text-center cursor-pointer",
+                tab === "CONCLUDED" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              Concluded
             </Link>
           </div>
+
+          {/* Search Input Form */}
+          <form action="/auctions" method="GET" className="relative">
+            {tab !== "ALL" && <input type="hidden" name="tab" value={tab} />}
+            {team !== "ALL" && <input type="hidden" name="team" value={team} />}
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+            <input
+              type="text"
+              name="search"
+              defaultValue={search || ""}
+              placeholder="Search listing title, level..."
+              className="w-full sm:w-56 pl-8 pr-3 py-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none"
+            />
+          </form>
+        </div>
+      </div>
+
+      {/* 2. GRID LISTINGS ACROSS ALL SCREEN SIZES */}
+      {hasNoResults ? (
+        <div className="py-16 text-center rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-8 space-y-3">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">No auction matches found</h3>
+          <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+            We couldn't find any bidding blocks or storefront items matching "{search}". Try searching another keyword or clearing filters.
+          </p>
+          <Link
+            href="/auctions"
+            className="inline-flex h-8 px-3.5 rounded-md bg-zinc-900 dark:bg-white text-white dark:text-black text-xs font-semibold items-center justify-center transition-colors"
+          >
+            Clear Filters
+          </Link>
         </div>
       ) : auctions.length === 0 && matchingProducts.length === 0 ? (
-        <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111111] text-center p-8 shadow-xs">
-          <div className="max-w-xs space-y-3">
-            <h3 className="text-base font-semibold text-zinc-900 dark:text-white">No auctions scheduled</h3>
-            <p className="text-xs text-zinc-550 dark:text-zinc-400">
-              New bidding blocks are scheduled instantly upon verification approval. Check back later!
-            </p>
-          </div>
+        <div className="py-16 text-center rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-8 space-y-2">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">No active auctions scheduled</h3>
+          <p className="text-xs text-zinc-500">
+            New bidding blocks are scheduled upon admin verification approval. Check back shortly!
+          </p>
         </div>
       ) : (
-        <div className="space-y-12">
+        <div className="space-y-10">
           
-          {/* Active Auctions Section */}
-          {(activeAuctions.length > 0 || !search) && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                </span>
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Active Bidding Rooms</h2>
+          {/* Active Auctions Grid */}
+          {(activeAuctions.length > 0 || tab === "LIVE" || tab === "SCHEDULED" || tab === "ALL") && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  <h2 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
+                    Active Bidding Rooms ({activeAuctions.length})
+                  </h2>
+                </div>
               </div>
               
               {activeAuctions.length === 0 ? (
-                <div className="flex h-[150px] flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-white dark:bg-card/25 text-center p-6">
-                  <p className="text-xs text-muted-foreground">No active live or scheduled bidding rooms at the moment.</p>
+                <div className="py-12 text-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 text-xs text-zinc-400">
+                  No active live or scheduled bidding rooms at the moment.
                 </div>
               ) : (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                /* RESPONSIVE GRID FOR ALL SCREEN SIZES */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {activeAuctions.map(renderAuctionCard)}
                 </div>
               )}
             </div>
           )}
 
-          {/* Store Products Section */}
+          {/* Store Products Search Section */}
           {search && matchingProducts.length > 0 && (
-            <div className="space-y-6 pt-8 border-t border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
-                <ShoppingBag className="h-4.5 w-4.5" />
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Direct Storefront Services</h2>
+            <div className="space-y-4 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4 text-purple-500" />
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
+                  Direct Storefront Products ({matchingProducts.length})
+                </h2>
               </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {matchingProducts.map((prod: any) => (
                   <div
                     key={prod._id.toString()}
-                    className="group flex flex-col justify-between rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 backdrop-blur-sm p-5 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg dark:hover:shadow-primary/5 transition-all duration-300 space-y-4"
+                    className="group flex flex-col justify-between rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 space-y-4 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                   >
                     <div className="space-y-3">
-                      {/* Product Image & Badges */}
-                      <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-black/20 flex items-center justify-center p-3">
+                      <div className="relative aspect-video w-full rounded bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center p-2 border border-zinc-100 dark:border-zinc-900">
                         {prod.imageUrl ? (
                           <Image
                             src={prod.imageUrl}
                             alt={prod.name}
                             fill
                             unoptimized
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            className="object-contain max-h-full max-w-full p-1.5 group-hover:scale-105 transition-transform duration-500"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                            className="object-contain p-1 group-hover:scale-105 transition-transform"
                           />
                         ) : (
                           <ShoppingBag className="h-8 w-8 text-zinc-400" />
                         )}
-                        {prod.categoryId?.name && (
-                          <span className="absolute bottom-2.5 right-2.5 bg-zinc-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wider uppercase border border-white/10">
-                            {prod.categoryId.name}
-                          </span>
-                        )}
-                        
-                        {/* Badges Container */}
-                        <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">
-                          {prod.isLimitedDeal && (
-                            <span className="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs bg-red-600 animate-pulse">
-                              Limited Deal
-                            </span>
-                          )}
-                          {prod.badge && (
-                            <span className={cn(
-                              "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider text-white shadow-xs",
-                              prod.badge === "MOST_PURCHASED" ? "bg-amber-500" : "bg-purple-600"
-                            )}>
-                              {prod.badge === "MOST_PURCHASED" ? "Most Purchased" : "Popular"}
-                            </span>
-                          )}
-                        </div>
                       </div>
 
-                      {/* Product Title & Info */}
                       <div className="space-y-1">
-                        <h3 className="font-bold text-sm text-foreground tracking-tight line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                        <h3 className="font-bold text-xs text-zinc-900 dark:text-white truncate">
                           {prod.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[32px]">
-                          {prod.description || "No description provided."}
+                        <p className="text-[11px] text-zinc-400 line-clamp-2">
+                          {prod.description || "Verified direct purchase catalog product."}
                         </p>
                       </div>
                     </div>
 
-                    {/* Price and Action */}
-                    <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+                    <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-900">
                       <div>
-                        {typeof prod.mrpPrice === 'number' && typeof prod.discountedPrice === 'number' && prod.mrpPrice > prod.discountedPrice ? (
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-zinc-400 line-through">
-                                <PriceDisplay amountInUSD={prod.mrpPrice} />
-                              </span>
-                              <span className="text-[9px] font-bold text-red-500 bg-red-500/10 px-1 rounded">
-                                {Math.round(((prod.mrpPrice - prod.discountedPrice) / prod.mrpPrice) * 100)}% OFF
-                              </span>
-                            </div>
-                            <span className="text-base font-extrabold text-foreground block">
-                              <PriceDisplay amountInUSD={prod.discountedPrice} />
-                            </span>
-                          </div>
-                        ) : (
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Direct Purchase Price</span>
-                            <span className="text-base font-extrabold text-foreground">
-                              <PriceDisplay amountInUSD={prod.price} />
-                            </span>
-                          </div>
-                        )}
+                        <span className="text-[10px] text-zinc-400 block leading-none">Price</span>
+                        <span className="text-sm font-bold font-mono text-zinc-900 dark:text-white">
+                          <PriceDisplay amountInUSD={prod.price} />
+                        </span>
                       </div>
                       <Link
                         href={prod.categoryId?.slug ? `/store/${prod.categoryId.slug}?productId=${prod._id.toString()}` : `/store?productId=${prod._id.toString()}`}
-                        className="h-8 px-3.5 inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-violet-500/10"
+                        className="h-7 px-3 inline-flex items-center bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-semibold transition-colors"
                       >
                         Buy Now
                       </Link>
@@ -448,14 +475,16 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
             </div>
           )}
 
-          {/* Concluded Auctions Section */}
-          {concludedAuctions.length > 0 && (
-            <div className="space-y-6 pt-8 border-t border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Archive className="h-4.5 w-4.5" />
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Concluded Auctions</h2>
+          {/* Concluded Auctions Grid */}
+          {concludedAuctions.length > 0 && (tab === "CONCLUDED" || tab === "ALL") && (
+            <div className="space-y-4 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center gap-2 text-zinc-500">
+                <Archive className="h-4 w-4" />
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
+                  Concluded Auctions ({concludedAuctions.length})
+                </h2>
               </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {concludedAuctions.map(renderAuctionCard)}
               </div>
             </div>

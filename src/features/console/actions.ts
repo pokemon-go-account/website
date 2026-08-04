@@ -425,14 +425,16 @@ export async function getOrdersConsole(
 
     const skip = (page - 1) * limit;
 
-    const orders = await Order.find(query)
-      .populate("userId", "name username email telegramUsername country")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-      
-    const totalCount = await Order.countDocuments(query);
+    const [orders, totalCount] = await Promise.all([
+      Order.find(query)
+        .populate("userId", "name username email telegramUsername country")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Order.countDocuments(query),
+    ]);
+
     const hasMore = skip + orders.length < totalCount;
       
     return { 

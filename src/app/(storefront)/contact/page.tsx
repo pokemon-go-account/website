@@ -266,6 +266,20 @@ export default function ContactPage() {
                   </div>
                 </a>
                 <a
+                  href="https://www.facebook.com/share/g/1HPpDQt9Sj/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-[#151515] transition-colors group cursor-pointer"
+                >
+                  <div className="h-8 w-8 rounded-md bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center shrink-0 text-zinc-600 dark:text-zinc-400 group-hover:text-[#1877F2] transition-colors">
+                    <FacebookIcon />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Pokémon Go Remote Raid & Friend Code</p>
+                    <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-450 truncate">65.8K members</p>
+                  </div>
+                </a>
+                <a
                   href="https://www.facebook.com/groups/178371228350769"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -277,6 +291,20 @@ export default function ContactPage() {
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Pokemon Go Trade and Shiny</p>
                     <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-450 truncate">24.5K members</p>
+                  </div>
+                </a>
+                <a
+                  href="https://t.me/Pokemongoofficialsss"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-md border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-[#151515] transition-colors group cursor-pointer"
+                >
+                  <div className="h-8 w-8 rounded-md bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center shrink-0 text-zinc-600 dark:text-zinc-400 group-hover:text-[#24A1DE] transition-colors">
+                    <TelegramIcon />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Telegram Official Channel</p>
+                    <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-450 truncate">@Pokemongoofficialsss</p>
                   </div>
                 </a>
                 <a

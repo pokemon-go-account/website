@@ -14,7 +14,7 @@ import { auth } from "@/auth";
 export async function getStoreCategories() {
   try {
     await connectDB();
-    const categories = await Category.find().sort({ name: 1 }).lean();
+    const categories = await Category.find().sort({ displayOrder: 1, name: 1 }).lean();
     return { success: true, categories: JSON.parse(JSON.stringify(categories)) };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to load categories." };

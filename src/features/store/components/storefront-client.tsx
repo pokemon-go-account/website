@@ -22,6 +22,7 @@ import { PayPalPaymentCheckout } from "@/features/payments/components/paypal-che
 import { CryptoPaymentCheckout } from "@/features/payments/components/crypto-checkout";
 import { WisePaymentCheckout } from "@/features/payments/components/wise-checkout";
 import { AnimatedCardIcon, AnimatedCryptoIcon, PaypalIcon, WiseIcon } from "@/components/ui/animated-payment-icons";
+import { ImageZoomLightbox } from "@/components/ui/image-zoom-lightbox";
 
 interface Category {
   _id: string;
@@ -1684,131 +1685,17 @@ Our recovery specialists have received your payment and are now actively process
 
       {/* Product Image Gallery Slider Lightbox */}
       {activeGalleryProduct && (
-        <div
-          className="fixed inset-0 z-[120] flex flex-col bg-black/95 backdrop-blur-md select-none animate-in fade-in duration-200"
-          onClick={() => { setActiveGalleryProduct(null); setIsZoomed(false); }}
-        >
-          {/* Top Panel: Title, Zoom Toggle & Close Button */}
-          <div
-            className="relative h-14 w-full px-4 sm:px-6 flex items-center justify-between border-b border-white/10 bg-black/40 z-30 shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="space-y-0.5 text-left min-w-0 pr-4">
-              <h3 className="font-bold text-xs sm:text-sm text-white tracking-tight leading-snug truncate">
-                {activeGalleryProduct.name}
-              </h3>
-              <p className="text-[10px] text-zinc-400 font-semibold flex items-center gap-2">
-                <span>Image {activeImageIndex + 1} of {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) ? activeGalleryProduct.imageUrls.length : 1)}</span>
-                <span className="hidden sm:inline text-zinc-500">· Click image to toggle 2x zoom</span>
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsZoomed((prev) => !prev)}
-                className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                title={isZoomed ? "Zoom out" : "Zoom in"}
-              >
-                {isZoomed ? "Reset Zoom" : "Zoom 2x"}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setActiveGalleryProduct(null); setIsZoomed(false); }}
-                className="h-9 w-9 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
-                aria-label="Close modal"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Centered Image Container */}
-          <div
-            className={cn(
-              "relative flex-1 w-full flex items-center justify-center p-3 sm:p-6 overflow-hidden",
-              isZoomed ? "overflow-auto cursor-grab active:cursor-grabbing p-4" : ""
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Prev / Next buttons if multiple */}
-            {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
-              <>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const total = activeGalleryProduct.imageUrls?.length || 1;
-                    setActiveImageIndex((prev) => (prev - 1 + total) % total);
-                    setIsZoomed(false);
-                  }}
-                  className="fixed left-3 sm:left-6 top-1/2 -translate-y-1/2 h-11 w-11 sm:h-12 sm:w-12 rounded-full border border-white/20 bg-black/75 hover:bg-black text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-2xl z-40"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const total = activeGalleryProduct.imageUrls?.length || 1;
-                    setActiveImageIndex((prev) => (prev + 1) % total);
-                    setIsZoomed(false);
-                  }}
-                  className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 h-11 w-11 sm:h-12 sm:w-12 rounded-full border border-white/20 bg-black/75 hover:bg-black text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-2xl z-40"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              </>
-            )}
-
-            {(() => {
-              const urls = (activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0) 
-                ? activeGalleryProduct.imageUrls 
-                : [activeGalleryProduct.imageUrl];
-              const currentUrl = urls[activeImageIndex] || activeGalleryProduct.imageUrl;
-              return (
-                <img
-                  src={currentUrl}
-                  alt={activeGalleryProduct.name}
-                  onClick={() => setIsZoomed(!isZoomed)}
-                  className={cn(
-                    "select-none transition-all duration-300 origin-center max-h-[82vh] max-w-[92vw] object-contain rounded-lg shadow-2xl",
-                    isZoomed 
-                      ? "max-h-none max-w-none scale-150 sm:scale-175 cursor-zoom-out my-auto" 
-                      : "cursor-zoom-in hover:opacity-98"
-                  )}
-                />
-              );
-            })()}
-          </div>
-
-          {/* Bottom Thumbnails Strip */}
-          {((activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 1) || false) && (
-            <div
-              className="h-16 w-full border-t border-white/10 bg-black/60 px-4 flex items-center justify-center gap-2 overflow-x-auto z-30 shrink-0 scrollbar-none"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {activeGalleryProduct.imageUrls?.map((url, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => { setActiveImageIndex(idx); setIsZoomed(false); }}
-                  className={cn(
-                    "h-11 w-14 rounded-md border overflow-hidden shrink-0 transition-all cursor-pointer bg-black/40",
-                    activeImageIndex === idx
-                      ? "border-white ring-2 ring-white/50 scale-105"
-                      : "border-white/20 hover:border-white/50 opacity-60 hover:opacity-100"
-                  )}
-                >
-                  <img src={url} className="object-contain max-h-full max-w-full" alt="thumbnail" />
-                </button>
-              ))}
-            </div>
-          )}
-
-        </div>
+        <ImageZoomLightbox
+          images={
+            activeGalleryProduct.imageUrls && activeGalleryProduct.imageUrls.length > 0
+              ? activeGalleryProduct.imageUrls
+              : [activeGalleryProduct.imageUrl]
+          }
+          initialIndex={activeImageIndex}
+          isOpen={Boolean(activeGalleryProduct)}
+          onClose={() => setActiveGalleryProduct(null)}
+          title={activeGalleryProduct.name}
+        />
       )}
 
       {/* Request Pokémon Form Modal */}

@@ -256,12 +256,12 @@ export default function ConsoleNewsManagementPage() {
           </p>
         </div>
 
-        <button
-          onClick={openAddModal}
+        <Link
+          href="/console/news/create"
           className="h-9 px-4 rounded-lg bg-[#6133e1] hover:bg-[#5229c7] text-white text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95 shrink-0"
         >
           <Plus className="h-4 w-4" /> Post New Article
-        </button>
+        </Link>
       </div>
 
       {/* Metrics Banner */}
@@ -376,13 +376,13 @@ export default function ConsoleNewsManagementPage() {
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
 
-                      <button
-                        onClick={() => openEditModal(art)}
-                        className="h-8 w-8 rounded-lg border border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                      <Link
+                        href={`/console/news/create?edit=${art.articleId}`}
+                        className="h-8 w-8 rounded-lg border border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center transition-colors"
                         title="Edit Article"
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                      </button>
+                      </Link>
 
                       <button
                         onClick={() => handleDelete(art)}

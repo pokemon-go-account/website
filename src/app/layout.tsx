@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
@@ -8,9 +8,16 @@ import { ChatWidget } from "@/features/chat/components/chat-widget";
 import { PageTransitionLoader } from "@/components/page-transition-loader";
 import { PresenceTracker } from "@/components/presence-tracker";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -90,9 +97,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans dark", plusJakartaSans.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans dark", inter.variable, outfit.variable)} suppressHydrationWarning>
       <head>
         <script
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               try {

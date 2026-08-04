@@ -378,7 +378,7 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
 
             <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold pt-1">
               <ShieldCheck className="h-3.5 w-3.5 text-zinc-400" />
-              <span>Protected by Secure Appeals Vault</span>
+              <span>No Payment before the account have been recovered</span>
             </div>
           </div>
         </div>

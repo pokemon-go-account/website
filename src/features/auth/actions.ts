@@ -153,9 +153,9 @@ const CompleteProfileSchema = z.object({
   country: z.string().min(1, "Country is required"),
   hearAboutUs: z
     .string()
-    .optional()
+    .min(1, "Please select where you heard about us")
     .refine(
-      (val) => !val || (HEAR_ABOUT_US_OPTIONS as readonly string[]).includes(val),
+      (val) => (HEAR_ABOUT_US_OPTIONS as readonly string[]).includes(val),
       "Invalid selection for 'Where did you hear about us?'"
     ),
 });

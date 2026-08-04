@@ -70,6 +70,7 @@ import {
   QuotedMessageBlock,
   ReplyActionButton,
 } from "./chat-reply-ui";
+import { FormattedChatMessage } from "./formatted-chat-message";
 
 type Message = ChatMessage;
 
@@ -1175,7 +1176,7 @@ export function UserChatPanel({
                         />
                       </div>
                     )}
-                    {displayMsg && <p className="whitespace-pre-wrap break-words [word-break:break-word] max-w-full overflow-hidden leading-relaxed">{displayMsg}</p>}
+                    {displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isUser} />}
                   </div>
                   {!isSystem && activeChat?.status !== "closed" && (
                     <ReplyActionButton onClick={() => setReplyingTo(msg)} isOutgoing={isUser} />

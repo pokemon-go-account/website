@@ -2,6 +2,7 @@ import { Hero } from "@/features/landing/components/hero";
 import { Features } from "@/features/landing/components/features";
 import { FeaturedAuctions } from "@/features/landing/components/featured-auctions";
 import { FeaturedStoreItems } from "@/features/landing/components/featured-store-items";
+import { WhyTrustUsSection } from "@/features/landing/components/why-trust-us-section";
 import { FAQ } from "@/features/landing/components/faq";
 import { FeedbackShowcase } from "@/features/landing/components/feedback-showcase";
 export const revalidate = 60; // Cache page for 60 seconds (ISR)
@@ -15,6 +16,8 @@ export default function Home() {
       <FeaturedAuctions />
 
       <FeaturedStoreItems />
+
+      <WhyTrustUsSection />
 
       <FAQ />
 

@@ -4,8 +4,26 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getCategories, createCategory, updateCategory, deleteCategory, uploadCategoryImageAction } from "@/features/admin/actions";
-import { FolderTree, Plus, Pencil, Trash2, X, AlertTriangle, ImagePlus } from "lucide-react";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  reorderCategories,
+  uploadCategoryImageAction,
+} from "@/features/admin/actions";
+import {
+  FolderTree,
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  AlertTriangle,
+  ImagePlus,
+  ArrowUp,
+  ArrowDown,
+  GripVertical,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Zod Validation Schema
@@ -16,6 +34,7 @@ const categorySchema = z.object({
     .min(2, "Slug must be at least 2 characters")
     .regex(/^[a-z0-9-]+$/, "Slug must only contain lowercase letters, numbers, and hyphens"),
   imageUrl: z.string().optional(),
+  displayOrder: z.number().optional(),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -25,12 +44,14 @@ interface Category {
   name: string;
   slug: string;
   imageUrl?: string;
+  displayOrder?: number;
 }
 
 export default function ManageCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,15 +94,20 @@ export default function ManageCategoriesPage() {
     setModalMode("add");
     setSelectedCategory(null);
     setPreviewImageUrl("");
-    reset({ name: "", slug: "", imageUrl: "" });
+    reset({ name: "", slug: "", imageUrl: "", displayOrder: categories.length });
     setIsModalOpen(true);
   };
 
-  const openEditModal = (category: Category) => {
+  const openEditModal = (category: Category, index: number) => {
     setModalMode("edit");
     setSelectedCategory(category);
     setPreviewImageUrl(category.imageUrl || "");
-    reset({ name: category.name, slug: category.slug, imageUrl: category.imageUrl || "" });
+    reset({
+      name: category.name,
+      slug: category.slug,
+      imageUrl: category.imageUrl || "",
+      displayOrder: category.displayOrder ?? index,
+    });
     setIsModalOpen(true);
   };
 
@@ -101,7 +127,7 @@ export default function ManageCategoriesPage() {
         setValue("imageUrl", res.url);
         setPreviewImageUrl(res.url);
       } else {
-        setError(res.error || "Failed to upload image. Make sure Cloudinary keys are configured.");
+        setError(res.error || "Failed to upload image.");
       }
       setUploadingImage(false);
     };
@@ -119,7 +145,7 @@ export default function ManageCategoriesPage() {
     if (modalMode === "add") {
       res = await createCategory(values.name, values.slug, values.imageUrl);
     } else if (modalMode === "edit" && selectedCategory) {
-      res = await updateCategory(selectedCategory._id, values.name, values.slug, values.imageUrl);
+      res = await updateCategory(selectedCategory._id, values.name, values.slug, values.imageUrl, values.displayOrder);
     }
 
     if (res?.success) {
@@ -146,13 +172,36 @@ export default function ManageCategoriesPage() {
     }
   };
 
+  const moveCategory = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= categories.length) return;
+
+    const newCategories = [...categories];
+    const [moved] = newCategories.splice(index, 1);
+    newCategories.splice(targetIndex, 0, moved);
+
+    // Optimistic UI update
+    setCategories(newCategories);
+    setReordering(true);
+
+    const orderedIds = newCategories.map((c) => c._id);
+    const res = await reorderCategories(orderedIds);
+
+    if (!res.success) {
+      setError(res.error || "Failed to reorder categories.");
+      // Rollback on failure
+      loadData();
+    }
+    setReordering(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header section */}
       <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-5">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Manage Categories</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Create and organize storefront service directories.</p>
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Manage Categories & Display Order</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Organize storefront category priority order and service directories.</p>
         </div>
 
         <button
@@ -177,6 +226,7 @@ export default function ManageCategoriesPage() {
         <table className="min-w-full divide-y divide-zinc-200 dark:divide-white/[0.06] text-left text-xs">
           <thead className="bg-zinc-50 dark:bg-white/[0.02] text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
             <tr>
+              <th className="px-4 py-4 w-12 text-center">Order</th>
               <th className="px-6 py-4">Category</th>
               <th className="px-6 py-4">Directory Slug</th>
               <th className="px-6 py-4">Image</th>
@@ -186,20 +236,52 @@ export default function ManageCategoriesPage() {
           <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.05] text-zinc-700 dark:text-zinc-300">
             {loading ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
+                <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 italic">
                   Loading categories directory logs...
                 </td>
               </tr>
             ) : categories.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
+                <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 italic">
                   No categories defined. Click "Add Category" to get started.
                 </td>
               </tr>
             ) : (
-              categories.map((cat) => (
+              categories.map((cat, idx) => (
                 <tr key={cat._id} className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-bold text-zinc-950 dark:text-white">{cat.name}</td>
+                  {/* Order & Reorder Buttons */}
+                  <td className="px-4 py-4">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-zinc-100 dark:bg-white/[0.05] text-zinc-700 dark:text-zinc-300 text-[11px] font-mono font-bold">
+                        {idx + 1}
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <button
+                          onClick={() => moveCategory(idx, "up")}
+                          disabled={idx === 0 || reordering}
+                          className="h-4 w-5 rounded hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400 disabled:opacity-30 disabled:hover:bg-transparent flex items-center justify-center transition-colors cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => moveCategory(idx, "down")}
+                          disabled={idx === categories.length - 1 || reordering}
+                          className="h-4 w-5 rounded hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400 disabled:opacity-30 disabled:hover:bg-transparent flex items-center justify-center transition-colors cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 font-bold text-zinc-950 dark:text-white">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-600" />
+                      <span>{cat.name}</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 font-mono text-[10px] text-zinc-500">{cat.slug}</td>
                   <td className="px-6 py-4">
                     {cat.imageUrl ? (
@@ -212,7 +294,7 @@ export default function ManageCategoriesPage() {
                   </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2">
                     <button
-                      onClick={() => openEditModal(cat)}
+                      onClick={() => openEditModal(cat, idx)}
                       className="h-8 w-8 rounded-lg border border-zinc-200 hover:bg-zinc-100 dark:border-white/[0.08] dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
                       title="Edit Category"
                     >
@@ -278,6 +360,16 @@ export default function ManageCategoriesPage() {
                 {errors.slug && <p className="text-[10px] text-red-400 font-semibold">{errors.slug.message}</p>}
               </div>
 
+              <div className="space-y-1.5">
+                <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Display Order Position</label>
+                <input
+                  type="number"
+                  placeholder="0, 1, 2..."
+                  {...register("displayOrder", { valueAsNumber: true })}
+                  className="w-full h-8 px-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.08] rounded-md text-zinc-900 dark:text-white placeholder:text-zinc-405 focus:outline-none focus:border-zinc-400 dark:focus:border-white transition-colors font-mono text-[11px]"
+                />
+              </div>
+
               {/* Category Image Upload */}
               <div className="space-y-2">
                 <label className="font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Category Image</label>
@@ -303,7 +395,7 @@ export default function ManageCategoriesPage() {
                 <label className="flex h-8 rounded-md border border-dashed border-zinc-200 dark:border-white/[0.1] hover:border-zinc-400 dark:hover:border-white/[0.2] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.01] dark:hover:bg-white/[0.03] items-center justify-center gap-2 cursor-pointer transition-colors">
                   <ImagePlus className="h-3.5 w-3.5 text-zinc-400" />
                   <span className="text-[10px] font-semibold text-zinc-500">
-                    {uploadingImage ? "Uploading to Cloudinary..." : "Choose Image File"}
+                    {uploadingImage ? "Uploading to Cloudflare..." : "Choose Image File"}
                   </span>
                   <input
                     type="file"

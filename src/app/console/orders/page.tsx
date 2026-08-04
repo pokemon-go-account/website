@@ -71,7 +71,7 @@ export default function OrdersConsolePage() {
     }
     setAlert(null);
     try {
-      const res = await getOrdersConsole(pageNum, 100, debouncedSearch, activeTab, selectedCountry);
+      const res = await getOrdersConsole(pageNum, 25, debouncedSearch, activeTab, selectedCountry);
       if (res.success && res.orders) {
         const fetchedOrders = res.orders as OrderData[];
         if (resetList) {

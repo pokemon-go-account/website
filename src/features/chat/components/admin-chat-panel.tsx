@@ -47,6 +47,7 @@ import { uploadChatImage, deleteChatImages, getFirebaseCustomToken, sendChatWebh
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
+import { FormattedChatMessage } from "./formatted-chat-message";
 
 interface ChatMeta {
   id: string; // doc ID (support-xxxx or order-xxxx)
@@ -1413,7 +1414,7 @@ export function AdminChatPanel() {
                             />
                           </div>
                         )}
-                        {displayMsg && <p className="whitespace-pre-wrap break-words [word-break:break-word] max-w-full overflow-hidden leading-relaxed">{displayMsg}</p>}
+                        {displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isAdmin} />}
                       </div>
                       {!isSystem && activeChat?.status !== "closed" && (
                         <ReplyActionButton onClick={() => setReplyingTo(msg)} isOutgoing={isAdmin} />

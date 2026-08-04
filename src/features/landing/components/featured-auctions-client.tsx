@@ -29,9 +29,11 @@ function formatTimeLeft(endTime: Date): string {
 import { useState, useEffect } from "react";
 
 export function AuctionTimer({ endTime }: { endTime: Date | string }) {
+  const [mounted, setMounted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(() => formatTimeLeft(new Date(endTime)));
 
   useEffect(() => {
+    setMounted(true);
     const updateTimer = () => {
       setTimeLeft(formatTimeLeft(new Date(endTime)));
     };
@@ -40,7 +42,7 @@ export function AuctionTimer({ endTime }: { endTime: Date | string }) {
     return () => clearInterval(interval);
   }, [endTime]);
 
-  return <span>{timeLeft}</span>;
+  return <span suppressHydrationWarning>{mounted ? timeLeft : formatTimeLeft(new Date(endTime))}</span>;
 }
 
 interface LiveAuction {

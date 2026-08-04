@@ -9,6 +9,61 @@ import { auth } from "@/auth";
 
 const SEED_ARTICLES: ArticleData[] = [
   {
+    articleId: "why-you-should-trust-us",
+    title: "Why You Should Trust Us: Official Security Safeguards & Community Breakdown",
+    excerpt: "A comprehensive report on our 100% buyer protection guarantee, automated seller credential audits, and official public Facebook, Telegram & Discord communities.",
+    category: "Security",
+    author: {
+      name: "Security Operations",
+      role: "Platform Trust Lead",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    },
+    coverImage: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200&auto=format&fit=crop&q=80",
+    tags: ["Trust", "Security", "Buyer Protection", "Community Hub", "Verified Sellers"],
+    publishedAt: "2026-08-01T12:00:00.000Z",
+    readTime: "6 min read",
+    featured: true,
+    views: 3250,
+    seoTitle: "Why You Should Trust Us | Security, Buyer Protection & Community Hub",
+    seoDescription: "Learn why over 28,000 trainers trust Pokémon GO Services. Explore our 100% buyer protection guarantee and join our 110K+ member community.",
+    seoKeywords: ["Pokemon GO Security", "Buyer Protection", "Why Trust Us", "Pokemon GO Community"],
+    content: `
+# Why You Should Trust Us: Official Security & Community Report
+
+Buying a high-tier Pokémon GO account or purchasing rare shiny services requires absolute confidence. Learn how our 100% buyer protection guarantee, automated security checks, and thriving 110,000+ member community protect your investment every single time.
+
+---
+
+## 🛡️ 1. 100% Buyer Protection & Delivery Guarantee
+
+When you purchase an account or service on our platform, your transaction is covered by our full buyer guarantee.
+- Orders are processed through verified payment channels.
+- Credentials and stats are verified before handover.
+- You receive login access and inspect IVs, Stardust, Legacy moves, and inventory.
+- Complete customer support is available for every order.
+
+---
+
+## 🔒 2. Pre-Listing Audits & Credential Verification
+
+Every listed account undergoes automated checks for level accuracy, Stardust reserves, and clean email/social unlinking before appearing in live auctions.
+
+---
+
+## 🌐 3. Join Our Official Public Communities
+
+We operate openly across large public trainer groups:
+- **Facebook Group (88.2K members)**: Pokemon Go Community
+- **Facebook Group (24.5K members)**: Pokemon Go Trade and Shiny
+- **Telegram Channel**: @pokemon_go
+- **Telegram Marketplace**: @PokemonGoAccountss
+- **Telegram Support Admin**: @pokemongoservicesadmin
+- **Official Discord**: Global Trainer Lounge
+
+Visit our dedicated transparency page at [/why-trust-us](/why-trust-us) to view all verified links and support emails!
+`,
+  },
+  {
     articleId: "pokemon-go-wild-area-2026-event-guide",
     title: "Pokémon GO Wild Area 2026: Complete Strategy, Rare Spawns & Shiny Odds Guide",
     excerpt: "Everything you need to know about the upcoming Wild Area 2026 event including rare Mighty Pokémon spawns, exclusive movesets, and optimal raiding strategies.",

@@ -245,28 +245,19 @@ export function CompleteProfileForm() {
         </p>
       </div>
 
-      {/* Optional Divider */}
-      <div className="relative py-2 flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-zinc-200 dark:border-white/[0.06]" />
-        </div>
-        <span className="relative z-10 px-3 bg-white dark:bg-[#111111] text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-          Optional
-        </span>
-      </div>
-
-      {/* Where did you hear about us? (Optional) */}
+      {/* Where did you hear about us? (Mandatory) */}
       <div className="space-y-2">
         <Label htmlFor="hearAboutUs" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-          Where did you hear about us?
+          Where did you hear about us? <span className="text-red-500">*</span>
         </Label>
         <div className="relative">
           <select
             id="hearAboutUs"
             name="hearAboutUs"
+            required
             className="w-full h-8 pl-3 pr-8 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-950/40 text-xs font-semibold text-zinc-800 dark:text-white focus:outline-none cursor-pointer appearance-none shadow-xs"
           >
-            <option value="">Select an option (optional)</option>
+            <option value="">Select how you found us *</option>
             {HEAR_ABOUT_US_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
@@ -278,8 +269,18 @@ export function CompleteProfileForm() {
           </div>
         </div>
         <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal pl-1 font-medium">
-          Let us know how you found out about our platform.
+          Please select how you found out about our platform.
         </p>
+      </div>
+
+      {/* Optional Divider */}
+      <div className="relative py-2 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-zinc-200 dark:border-white/[0.06]" />
+        </div>
+        <span className="relative z-10 px-3 bg-white dark:bg-[#111111] text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+          Optional
+        </span>
       </div>
 
       {/* Additional Contact (Optional) field */}

@@ -735,7 +735,7 @@ export async function getCategories() {
   try {
     await checkAdminSession();
     await connectDB();
-    const categories = await Category.find().sort({ name: 1 }).lean();
+    const categories = await Category.find().sort({ displayOrder: 1, name: 1 }).lean();
     return { success: true, categories: JSON.parse(JSON.stringify(categories)) };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -746,7 +746,15 @@ export async function createCategory(name: string, slug: string, imageUrl?: stri
   try {
     await checkSuperAdminSession();
     await connectDB();
-    const category = await Category.create({ name, slug: slug.toLowerCase(), imageUrl: imageUrl || '' });
+    const lastCategory = await Category.findOne().sort({ displayOrder: -1 }).select("displayOrder").lean();
+    const nextOrder = (lastCategory?.displayOrder ?? 0) + 1;
+
+    const category = await Category.create({
+      name,
+      slug: slug.toLowerCase(),
+      imageUrl: imageUrl || '',
+      displayOrder: nextOrder,
+    });
     revalidatePath('/console/categories');
     revalidatePath('/store');
     return { success: true, category: JSON.parse(JSON.stringify(category)) };
@@ -755,18 +763,48 @@ export async function createCategory(name: string, slug: string, imageUrl?: stri
   }
 }
 
-export async function updateCategory(id: string, name: string, slug: string, imageUrl?: string) {
+export async function updateCategory(id: string, name: string, slug: string, imageUrl?: string, displayOrder?: number) {
   try {
     await checkSuperAdminSession();
     await connectDB();
-    const updateData: Record<string, string> = { name, slug: slug.toLowerCase() };
+    const updateData: Record<string, any> = { name, slug: slug.toLowerCase() };
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (typeof displayOrder === "number") updateData.displayOrder = displayOrder;
+
     const category = await Category.findByIdAndUpdate(id, updateData, { returnDocument: "after" });
     revalidatePath('/console/categories');
     revalidatePath('/store');
     return { success: true, category: JSON.parse(JSON.stringify(category)) };
   } catch (error: any) {
     return { success: false, error: error.message };
+  }
+}
+
+export async function reorderCategories(orderedIds: string[]) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return { success: false, error: "Invalid categories order array provided." };
+    }
+
+    const bulkOps = orderedIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { displayOrder: index } },
+      },
+    }));
+
+    await Category.bulkWrite(bulkOps);
+
+    revalidatePath('/console/categories');
+    revalidatePath('/store');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    console.error("[reorderCategories] Error:", error);
+    return { success: false, error: error.message || "Failed to reorder categories." };
   }
 }
 
