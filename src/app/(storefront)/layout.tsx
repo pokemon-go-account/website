@@ -19,7 +19,7 @@ export default function StorefrontLayout({
       {/* Trust Announcement Banner */}
       <div className="w-full bg-gradient-to-r from-purple-900/30 via-zinc-900 to-indigo-900/30 dark:from-[#130d25] dark:via-[#0c0a15] dark:to-[#130d25] border-b border-purple-500/20 text-[11px] sm:text-xs text-zinc-300 py-2 px-4 text-center font-medium">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
-          <span className="text-zinc-400">Why should you trust us ?</span>
+          <span className="text-zinc-400 font-semibold">Why Thousands of Pokémon GO Trainers Trust Us</span>
           <Link
             href="/why-trust-us"
             className="inline-flex items-center gap-1 text-white font-bold underline hover:text-purple-300 transition-colors ml-1"

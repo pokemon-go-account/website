@@ -13,7 +13,7 @@ import {
   TrendingUp,
   DollarSign,
   ShoppingBag,
-  BarChart2,
+  LineChart,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -46,6 +46,180 @@ interface RevenueClientProps {
   initialRates?: Record<string, number>;
 }
 
+function RevenueLineChart({
+  dailyStats,
+  maxChartValue,
+  chartMode,
+  convertPrice,
+  hoveredBar,
+  setHoveredBar,
+}: {
+  dailyStats: DailyStat[];
+  maxChartValue: number;
+  chartMode: "revenue" | "orders";
+  convertPrice: (val: number) => string;
+  hoveredBar: DailyStat | null;
+  setHoveredBar: (bar: DailyStat | null) => void;
+}) {
+  const width = 1000;
+  const height = 220;
+  const paddingTop = 25;
+  const paddingBottom = 40;
+  const paddingLeft = 30;
+  const paddingRight = 30;
+  const graphHeight = height - paddingTop - paddingBottom;
+  const graphWidth = width - paddingLeft - paddingRight;
+
+  const points = useMemo(() => {
+    if (!dailyStats || dailyStats.length === 0) return [];
+    const count = dailyStats.length;
+    return dailyStats.map((stat, i) => {
+      const x = count > 1 ? paddingLeft + (i / (count - 1)) * graphWidth : width / 2;
+      const val = chartMode === "revenue" ? stat.revenue : stat.ordersCount;
+      const pct = maxChartValue > 0 ? val / maxChartValue : 0;
+      const y = height - paddingBottom - pct * graphHeight;
+      return { x, y, stat, val };
+    });
+  }, [dailyStats, maxChartValue, chartMode, graphWidth, graphHeight]);
+
+  const pathD = useMemo(() => {
+    if (points.length === 0) return "";
+    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  }, [points]);
+
+  const areaD = useMemo(() => {
+    if (points.length === 0) return "";
+    const firstX = points[0].x.toFixed(1);
+    const lastX = points[points.length - 1].x.toFixed(1);
+    const bottomY = (height - paddingBottom).toFixed(1);
+    return `${pathD} L ${lastX},${bottomY} L ${firstX},${bottomY} Z`;
+  }, [pathD, points]);
+
+  const labelIndices = useMemo(() => {
+    if (points.length <= 10) return points.map((_, i) => i);
+    const step = Math.ceil(points.length / 8);
+    const indices: number[] = [];
+    for (let i = 0; i < points.length; i += step) {
+      indices.push(i);
+    }
+    if (indices[indices.length - 1] !== points.length - 1) {
+      indices.push(points.length - 1);
+    }
+    return indices;
+  }, [points]);
+
+  const activePoint = points.find((p) => p.stat.date === hoveredBar?.date);
+
+  const lineColor = chartMode === "revenue" ? "#a855f7" : "#10b981";
+  const gradientId = chartMode === "revenue" ? "revGrad" : "ordGrad";
+
+  return (
+    <div className="relative w-full pt-4 pb-2 select-none">
+      {/* Active Hover Tooltip */}
+      {activePoint && (
+        <div
+          className="absolute -top-1 bg-zinc-900 text-white text-[11px] px-3 py-1.5 rounded-md font-medium shadow-xl z-30 flex items-center gap-2 border border-zinc-700 pointer-events-none transition-all"
+          style={{
+            left: `${Math.max(10, Math.min(90, (activePoint.x / width) * 100))}%`,
+            transform: "translateX(-50%)",
+          }}
+        >
+          <span className="font-bold text-zinc-300">{activePoint.stat.formattedDate}:</span>
+          <span className="text-zinc-200">{activePoint.stat.ordersCount} orders</span>
+          <span className="text-emerald-400 font-bold">({convertPrice(activePoint.stat.revenue)})</span>
+        </div>
+      )}
+
+      <div className="w-full overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-auto min-w-[500px] overflow-visible"
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={lineColor} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={lineColor} stopOpacity={0.0} />
+            </linearGradient>
+          </defs>
+
+          {/* Horizontal Grid lines */}
+          <line x1={paddingLeft} y1={paddingTop} x2={width - paddingRight} y2={paddingTop} stroke="currentColor" className="text-zinc-200 dark:text-zinc-800/60" strokeDasharray="3 3" strokeWidth="1" />
+          <line x1={paddingLeft} y1={paddingTop + graphHeight / 2} x2={width - paddingRight} y2={paddingTop + graphHeight / 2} stroke="currentColor" className="text-zinc-200 dark:text-zinc-800/60" strokeDasharray="3 3" strokeWidth="1" />
+          <line x1={paddingLeft} y1={height - paddingBottom} x2={width - paddingRight} y2={height - paddingBottom} stroke="currentColor" className="text-zinc-200 dark:text-zinc-800" strokeWidth="1" />
+
+          {/* Area Fill */}
+          {areaD && <path d={areaD} fill={`url(#${gradientId})`} />}
+
+          {/* Main Smooth Line */}
+          {pathD && (
+            <path
+              d={pathD}
+              fill="none"
+              stroke={lineColor}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* Active Vertical Guide Line */}
+          {activePoint && (
+            <line
+              x1={activePoint.x}
+              y1={paddingTop}
+              x2={activePoint.x}
+              y2={height - paddingBottom}
+              stroke={lineColor}
+              strokeWidth="1.5"
+              strokeDasharray="4 4"
+            />
+          )}
+
+          {/* Data Point Circles */}
+          {points.map((p) => {
+            const isHovered = activePoint?.stat.date === p.stat.date;
+            const showDot = points.length <= 35 || isHovered;
+
+            return (
+              <g key={p.stat.date} className="cursor-pointer" onMouseEnter={() => setHoveredBar(p.stat)} onMouseLeave={() => setHoveredBar(null)}>
+                <circle cx={p.x} cy={p.y} r="12" fill="transparent" />
+                {showDot && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isHovered ? "6" : "3.5"}
+                    fill={isHovered ? "#ffffff" : lineColor}
+                    stroke={lineColor}
+                    strokeWidth={isHovered ? "3" : "1.5"}
+                    className="transition-all duration-150"
+                  />
+                )}
+              </g>
+            );
+          })}
+
+          {/* X-Axis Date Labels */}
+          {labelIndices.map((idx) => {
+            const p = points[idx];
+            if (!p) return null;
+            return (
+              <text
+                key={p.stat.date}
+                x={p.x}
+                y={height - 12}
+                textAnchor="middle"
+                className="text-[11px] font-medium fill-zinc-400 dark:fill-zinc-500"
+              >
+                {p.stat.formattedDate}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 export function RevenueClient({ initialData, initialRates }: RevenueClientProps) {
   const [loading, setLoading] = useState(!initialData);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,6 +228,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   const [rates, setRates] = useState<Record<string, number>>(initialRates || { USD: 1.0 });
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
   const [selectedCountry, setSelectedCountry] = useState<string>("ALL");
+  const [timeRange, setTimeRange] = useState<"1d" | "7d" | "14d" | "30d" | "90d" | "all">("14d");
   const [chartMode, setChartMode] = useState<"revenue" | "orders">("revenue");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -201,8 +376,8 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     };
   }, [summary]);
 
-  // Daily Stats for 14 days chart
-  const dailyStats = useMemo(() => {
+  // Full Daily Stats array from filter or database
+  const fullDailyStats = useMemo(() => {
     if (selectedCountry === "ALL" && data?.dailyStats) {
       return data.dailyStats;
     }
@@ -220,7 +395,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
 
     const stats: DailyStat[] = [];
     const today = new Date();
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 364; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const year = d.getFullYear();
@@ -238,6 +413,67 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     }
     return stats;
   }, [data?.dailyStats, filteredOrders, selectedCountry]);
+
+  // Active Daily or Hourly Stats based on selected timeRange
+  const dailyStats = useMemo(() => {
+    if (timeRange === "1d") {
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const hourlyMap = new Map<string, { count: number; revenue: number; label: string }>();
+
+      // Pre-fill 24 hourly buckets (from 23 hours ago up to current hour)
+      for (let i = 23; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 60 * 60 * 1000);
+        const hourNum = d.getHours();
+        const hourLabel = `${String(hourNum).padStart(2, "0")}:00`;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}_${String(hourNum).padStart(2, "0")}`;
+        hourlyMap.set(key, { count: 0, revenue: 0, label: hourLabel });
+      }
+
+      filteredOrders.forEach((ord) => {
+        const ordDate = new Date(ord.createdAt);
+        if (ordDate >= twentyFourHoursAgo) {
+          const hourNum = ordDate.getHours();
+          const key = `${ordDate.getFullYear()}-${String(ordDate.getMonth() + 1).padStart(2, "0")}-${String(ordDate.getDate()).padStart(2, "0")}_${String(hourNum).padStart(2, "0")}`;
+          const existing = hourlyMap.get(key);
+          if (existing) {
+            existing.count += 1;
+            existing.revenue += (ord.totalPriceUSD || 0);
+          }
+        }
+      });
+
+      const stats: DailyStat[] = Array.from(hourlyMap.entries()).map(([key, val]) => ({
+        date: key,
+        formattedDate: val.label,
+        ordersCount: val.count,
+        revenue: Math.round(val.revenue * 100) / 100,
+      }));
+
+      return stats;
+    }
+
+    let daysToKeep = 14;
+    if (timeRange === "7d") daysToKeep = 7;
+    else if (timeRange === "14d") daysToKeep = 14;
+    else if (timeRange === "30d") daysToKeep = 30;
+    else if (timeRange === "90d") daysToKeep = 90;
+    else if (timeRange === "all") daysToKeep = fullDailyStats.length;
+
+    return fullDailyStats.slice(-daysToKeep);
+  }, [fullDailyStats, filteredOrders, timeRange]);
+
+  const timeRangeLabel = useMemo(() => {
+    switch (timeRange) {
+      case "1d": return "24-Hour";
+      case "7d": return "7-Day";
+      case "14d": return "14-Day";
+      case "30d": return "1-Month";
+      case "90d": return "3-Month";
+      case "all": return "All-Time";
+      default: return "14-Day";
+    }
+  }, [timeRange]);
 
   const maxChartValue = useMemo(() => {
     if (!dailyStats || dailyStats.length === 0) return 100;
@@ -285,6 +521,8 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
       </div>
     );
   }
+
+  const activeOrdersCountInPeriod = dailyStats.reduce((acc, s) => acc + s.ordersCount, 0);
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-20 text-zinc-900 dark:text-zinc-100 font-sans">
@@ -402,90 +640,98 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
 
         <div className="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-2">
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-            <span>Daily Sales Pace</span>
-            <BarChart2 className="h-4 w-4 text-zinc-400" />
+            <span>{timeRange === "1d" ? "Hourly Pace" : "Daily Sales Pace"}</span>
+            <LineChart className="h-4 w-4 text-zinc-400" />
           </div>
           <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
-            {(summary.totalOrdersCount / 14).toFixed(1)} <span className="text-xs text-zinc-500 font-sans font-normal">/ day</span>
+            {timeRange === "1d"
+              ? (activeOrdersCountInPeriod / 24).toFixed(1)
+              : (activeOrdersCountInPeriod / (dailyStats.length || 1)).toFixed(1)}{" "}
+            <span className="text-xs text-zinc-500 font-sans font-normal">
+              {timeRange === "1d" ? "/ hour" : "/ day"}
+            </span>
           </p>
-          <span className="text-[11px] text-zinc-400 font-normal">14-day average</span>
+          <span className="text-[11px] text-zinc-400 font-normal">{timeRangeLabel} average</span>
         </div>
 
       </div>
 
-      {/* 3. 14-DAY PERFORMANCE CHART */}
+      {/* 3. PERFORMANCE CHART (LINE GRAPH) */}
       <div className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-5">
         
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-900 pb-3">
           <div>
             <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
-              14-Day Sales & Order Velocity
+              {timeRangeLabel} Sales & Order Velocity
             </h2>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Financial performance & order velocity line breakdown over {timeRangeLabel.toLowerCase()} timeframe.
+            </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
-            <button
-              onClick={() => setChartMode("revenue")}
-              className={cn(
-                "px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer",
-                chartMode === "revenue"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-semibold shadow-xs"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
-              )}
-            >
-              Revenue
-            </button>
-            <button
-              onClick={() => setChartMode("orders")}
-              className={cn(
-                "px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer",
-                chartMode === "orders"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-semibold shadow-xs"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
-              )}
-            >
-              Orders
-            </button>
-          </div>
-        </div>
-
-        {/* Bar Visualizer */}
-        <div className="relative pt-4 pb-2">
-          {hoveredBar && (
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[11px] px-3 py-1 rounded-md font-medium shadow-md z-20 flex items-center gap-2">
-              <span>{hoveredBar.formattedDate}:</span>
-              <span>{hoveredBar.ordersCount} orders</span>
-              <span className="text-emerald-400 font-bold">({convertPrice(hoveredBar.revenue)})</span>
-            </div>
-          )}
-
-          <div className="h-48 w-full flex items-end justify-between gap-2 px-1">
-            {dailyStats.map((stat) => {
-              const val = chartMode === "revenue" ? stat.revenue : stat.ordersCount;
-              const heightPct = maxChartValue > 0 ? Math.max(8, Math.round((val / maxChartValue) * 100)) : 8;
-
-              return (
-                <div
-                  key={stat.date}
-                  onMouseEnter={() => setHoveredBar(stat)}
-                  onMouseLeave={() => setHoveredBar(null)}
-                  className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group cursor-pointer"
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Time Range Selector */}
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+              {[
+                { key: "1d", label: "1D" },
+                { key: "7d", label: "7D" },
+                { key: "14d", label: "14D" },
+                { key: "30d", label: "1M" },
+                { key: "90d", label: "3M" },
+                { key: "all", label: "All" },
+              ].map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => setTimeRange(r.key as any)}
+                  className={cn(
+                    "px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer",
+                    timeRange === r.key
+                      ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs font-bold"
+                      : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  )}
                 >
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-900 rounded-t h-full flex items-end overflow-hidden">
-                    <div
-                      className="w-full bg-zinc-900 dark:bg-zinc-100 rounded-t transition-all group-hover:bg-[#6133e1] dark:group-hover:bg-purple-400"
-                      style={{ height: `${heightPct}%` }}
-                    />
-                  </div>
+                  {r.label}
+                </button>
+              ))}
+            </div>
 
-                  <span className="text-[10px] font-medium text-zinc-400 truncate">
-                    {stat.formattedDate}
-                  </span>
-                </div>
-              );
-            })}
+            {/* Metric Mode Toggle */}
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+              <button
+                onClick={() => setChartMode("revenue")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer",
+                  chartMode === "revenue"
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-semibold shadow-xs"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                )}
+              >
+                Revenue
+              </button>
+              <button
+                onClick={() => setChartMode("orders")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer",
+                  chartMode === "orders"
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-semibold shadow-xs"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                )}
+              >
+                Orders
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Line Chart Visualizer */}
+        <RevenueLineChart
+          dailyStats={dailyStats}
+          maxChartValue={maxChartValue}
+          chartMode={chartMode}
+          convertPrice={convertPrice}
+          hoveredBar={hoveredBar}
+          setHoveredBar={setHoveredBar}
+        />
 
       </div>
 

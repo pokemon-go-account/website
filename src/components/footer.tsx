@@ -84,6 +84,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-xs">
               {[
+                { name: "Why Trust Us", href: "/why-trust-us" },
                 { name: "Terms of Service", href: "/terms" },
                 { name: "Privacy Policy", href: "/privacy" },
                 { name: "Security Protocols", href: "/contact" },

@@ -83,10 +83,10 @@ export function WhyTrustUsSection() {
             <span>Transparency & Security First</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-            Why Should You Trust Us?
+            Why Thousands of Pokémon GO Trainers Trust Us
           </h2>
           <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
-            Whether you are bidding on live auctions, buying storefront products & stardust, or booking zero-upfront account recovery, we prioritize 100% safety and complete peace of mind.
+            Over 5+ years of trusted service, 28,000+ completed orders, 15,000+ verified customer vouches, and a 500,000+ member community across Telegram, Facebook, and Discord.
           </p>
         </div>
 
@@ -154,7 +154,7 @@ export function WhyTrustUsSection() {
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-snug">
-                Why You Should Trust Us: Storefront, Live Auctions & Recovery Protection
+                Why Thousands of Pokémon GO Trainers Trust Us
               </h3>
 
               <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed max-w-2xl font-light">

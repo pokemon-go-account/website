@@ -40,7 +40,7 @@ interface VisitorPresence {
   lastSeen: number;
 }
 
-type TimeRange = "7d" | "14d" | "30d";
+type TimeRange = "1d" | "7d" | "14d" | "30d" | "90d" | "all";
 
 export default function AnalyticsConsolePage() {
   const [visitors, setVisitors] = useState<VisitorPresence[]>([]);
@@ -127,7 +127,29 @@ export default function AnalyticsConsolePage() {
 
   // Compute date array
   const dateList = useMemo(() => {
-    const days = timeRange === "7d" ? 7 : timeRange === "14d" ? 14 : 30;
+    if (timeRange === "all" && analyticsData) {
+      const allDatesSet = new Set<string>();
+      if (analyticsData.dailyViews) Object.keys(analyticsData.dailyViews).forEach((d) => allDatesSet.add(d));
+      if (analyticsData.countryViews) Object.keys(analyticsData.countryViews).forEach((d) => allDatesSet.add(d));
+      if (analyticsData.pageViews) Object.keys(analyticsData.pageViews).forEach((d) => allDatesSet.add(d));
+      if (analyticsData.uniqueVisitors) Object.keys(analyticsData.uniqueVisitors).forEach((d) => allDatesSet.add(d));
+      const sorted = Array.from(allDatesSet).sort((a, b) => b.localeCompare(a));
+      if (sorted.length > 0) return sorted;
+    }
+
+    const days =
+      timeRange === "1d"
+        ? 1
+        : timeRange === "7d"
+        ? 7
+        : timeRange === "14d"
+        ? 14
+        : timeRange === "30d"
+        ? 30
+        : timeRange === "90d"
+        ? 90
+        : 365;
+
     const dates: string[] = [];
     const now = new Date();
     for (let i = 0; i < days; i++) {
@@ -136,7 +158,7 @@ export default function AnalyticsConsolePage() {
       dates.push(d.toISOString().split("T")[0]);
     }
     return dates;
-  }, [timeRange]);
+  }, [timeRange, analyticsData]);
 
   // Filtered live visitors
   const filteredVisitors = useMemo(() => {
@@ -362,34 +384,28 @@ export default function AnalyticsConsolePage() {
           </select>
 
           {/* Time Range Selector */}
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
-            <button
-              onClick={() => setTimeRange("7d")}
-              className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer",
-                timeRange === "7d" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
-              )}
-            >
-              7 Days
-            </button>
-            <button
-              onClick={() => setTimeRange("14d")}
-              className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer",
-                timeRange === "14d" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
-              )}
-            >
-              14 Days
-            </button>
-            <button
-              onClick={() => setTimeRange("30d")}
-              className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer",
-                timeRange === "30d" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
-              )}
-            >
-              30 Days
-            </button>
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800 flex-wrap">
+            {[
+              { key: "1d", label: "1 Day" },
+              { key: "7d", label: "7 Days" },
+              { key: "14d", label: "14 Days" },
+              { key: "30d", label: "1 Month" },
+              { key: "90d", label: "3 Months" },
+              { key: "all", label: "All Time" },
+            ].map((r) => (
+              <button
+                key={r.key}
+                onClick={() => setTimeRange(r.key as TimeRange)}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer",
+                  timeRange === r.key
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs font-bold"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

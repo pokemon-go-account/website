@@ -112,20 +112,20 @@ export async function getRevenueAnalyticsAction() {
     const totalRevenueUSD = storefrontRevenueUSD + buyNowRevenueUSD + auctionRevenueUSD + recoveryRevenueUSD;
     const averageOrderValueUSD = totalOrdersCount > 0 ? totalRevenueUSD / totalOrdersCount : 0;
 
-    // 2. Fetch recent completed orders & recoveries for the last 14 days chart (Avoids loading all history)
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    fourteenDaysAgo.setHours(0, 0, 0, 0);
+    // 2. Fetch completed orders & recoveries for daily performance history (past 365 days)
+    const maxDaysAgo = new Date();
+    maxDaysAgo.setDate(maxDaysAgo.getDate() - 365);
+    maxDaysAgo.setHours(0, 0, 0, 0);
 
     const [recentOrders, recentRecoveries] = await Promise.all([
       Order.find({
         status: "COMPLETED",
-        createdAt: { $gte: fourteenDaysAgo }
+        createdAt: { $gte: maxDaysAgo }
       }).select("totalPrice createdAt"),
       RecoveryRequest.find({
         status: "COMPLETED",
         price: { $gt: 0 },
-        createdAt: { $gte: fourteenDaysAgo }
+        createdAt: { $gte: maxDaysAgo }
       }).select("price _id createdAt")
     ]);
 
@@ -162,7 +162,7 @@ export async function getRevenueAnalyticsAction() {
 
     const dailyStats: DailyStat[] = [];
     const today = new Date();
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 364; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const key = getDateKey(d);
