@@ -103,7 +103,16 @@ export const authConfig = {
       const isVerifyOtpRoute = nextUrl.pathname.startsWith("/verify-otp");
 
       // Public routes — never require auth
-      const PUBLIC_PREFIXES = ["/auctions", "/store", "/contact", "/feedback", "/recovery"];
+      const PUBLIC_PREFIXES = [
+        "/auctions",
+        "/store",
+        "/contact",
+        "/feedback",
+        "/recovery",
+        "/why-trust-us",
+        "/news",
+        "/become-a-seller",
+      ];
       const PUBLIC_EXACT = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"];
       const isPublicRoute =
         PUBLIC_EXACT.includes(nextUrl.pathname) ||

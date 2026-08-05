@@ -75,7 +75,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
   const user = mounted
     ? ((clientUser?.role ? clientUser : propUser) || clientUser || propUser)
     : propUser;
-  
+
   // Prefer the database-queried balance from the server component to bypass stale session cookies
   const balance = mounted
     ? (freshBalance !== null ? freshBalance : (typeof propUser?.walletBalance === "number" ? propUser.walletBalance : (clientUser?.walletBalance ?? 0)))
@@ -134,11 +134,10 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        scrolled
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${scrolled
           ? "bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/[0.06] shadow-xs"
           : "bg-white dark:bg-[#09090b] border-b border-zinc-150 dark:border-white/[0.04]"
-      }`}
+        }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
@@ -260,7 +259,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                       <>
                         {/* Overlay to close */}
                         <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)} />
-                        
+
                         <motion.div
                           initial={{ opacity: 0, y: 8, scale: 0.96 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
