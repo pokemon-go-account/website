@@ -203,14 +203,23 @@ export default async function NewsArticleDetailPage({ params }: PageProps) {
         </header>
 
         {/* Article Featured Cover Image */}
-        <div className="relative h-72 sm:h-[420px] w-full rounded-2xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-white/10">
+        <div className="relative h-64 sm:h-80 md:h-[400px] w-full rounded-2xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-white/10 bg-zinc-950 flex items-center justify-center">
+          {/* Ambient Blurred Background */}
+          <Image
+            src={article.coverImage}
+            alt=""
+            fill
+            className="object-cover blur-2xl opacity-40 scale-110 pointer-events-none"
+          />
+          {/* Uncropped Foreground Image */}
           <Image
             src={article.coverImage}
             alt={article.title}
             fill
-            className="object-cover"
+            className="object-contain relative z-10 p-2 sm:p-4"
             priority
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none z-20" />
         </div>
 
         {/* Article Content */}

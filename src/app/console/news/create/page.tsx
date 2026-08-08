@@ -527,30 +527,64 @@ function NewsEditorForm() {
           
           {/* NOTION COVER HERO BANNER */}
           <div className="relative group">
-            {coverImage ? (
-              <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-zinc-900">
-                <img src={coverImage} alt="Document cover" className="h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                  <label className="h-8 px-3 rounded-lg bg-black/70 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors backdrop-blur-xs">
-                    <ImagePlus className="h-3.5 w-3.5" /> Change Cover Image
-                    <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setCoverImage("")}
-                    className="h-8 px-3 rounded-lg bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors backdrop-blur-xs"
-                  >
-                    <X className="h-3.5 w-3.5" /> Remove
-                  </button>
+            {uploadingImage ? (
+              <div className="h-64 sm:h-80 w-full bg-purple-500/10 dark:bg-purple-950/20 border-b border-purple-500/20 flex flex-col items-center justify-center text-xs text-purple-400 font-semibold gap-2 animate-pulse">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#6133e1] border-t-transparent" />
+                <span>Uploading cover image to Cloudflare R2...</span>
+              </div>
+            ) : coverImage ? (
+              <div className="relative h-64 sm:h-80 md:h-[360px] w-full overflow-hidden bg-zinc-950 border-b border-zinc-200 dark:border-white/10 flex items-center justify-center">
+                {/* Ambient Blurred Background to prevent side gaps */}
+                <img src={coverImage} alt="" className="absolute inset-0 h-full w-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none" />
+                {/* Uncropped Foreground Image */}
+                <img src={coverImage} alt="Document cover" className="relative z-10 max-h-full max-w-full object-contain mx-auto shadow-lg transition-all duration-300" />
+                <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-4 sm:p-6">
+                  <span className="text-xs font-semibold text-white/80 bg-black/60 px-3 py-1 rounded-lg backdrop-blur-md">
+                    Cover Banner Active (Full View)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <label className="h-8 px-3.5 rounded-lg bg-black/80 hover:bg-black text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors backdrop-blur-md border border-white/10 active:scale-95">
+                      <ImagePlus className="h-3.5 w-3.5" /> Change Banner
+                      <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setCoverImage("")}
+                      className="h-8 px-3 rounded-lg bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 transition-colors backdrop-blur-md active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" /> Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="px-8 pt-8 pb-2">
-                <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-purple-400 transition-colors cursor-pointer">
-                  <ImagePlus className="h-4 w-4 text-[#6133e1]" />
-                  <span>{uploadingImage ? "Uploading cover..." : "🖼️ Add Cover Banner Image"}</span>
-                  <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
-                </label>
+              <div className="px-6 sm:px-10 pt-6 pb-2 border-b border-zinc-100 dark:border-white/[0.04]">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <label className="inline-flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-[#6133e1] dark:hover:text-[#a78bfa] transition-colors cursor-pointer bg-zinc-100 dark:bg-white/5 hover:bg-purple-500/10 px-3 py-2 rounded-xl border border-zinc-200 dark:border-white/10">
+                    <ImagePlus className="h-4 w-4 text-[#6133e1] dark:text-[#a78bfa]" />
+                    <span>Upload Banner Image (Max 5MB)</span>
+                    <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
+                  </label>
+
+                  {/* Preset Banners */}
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <span className="text-zinc-400 font-medium mr-1 hidden sm:inline">Presets:</span>
+                    {[
+                      { name: "Dark Nebula", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80" },
+                      { name: "Neon Event", url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80" },
+                      { name: "Cyber Arena", url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => setCoverImage(preset.url)}
+                        className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-white/5 hover:bg-purple-500/10 text-zinc-600 dark:text-zinc-300 hover:text-[#a78bfa] border border-zinc-200 dark:border-white/10 text-[10px] font-semibold transition-all cursor-pointer"
+                      >
+                        {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
