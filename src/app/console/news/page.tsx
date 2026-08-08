@@ -144,6 +144,11 @@ export default function ConsoleNewsManagementPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size exceeds 5MB limit. Please upload an image smaller than 5MB.");
+      return;
+    }
+
     setUploadingImage(true);
     setError(null);
 

@@ -604,7 +604,7 @@ export function AdminChatPanel() {
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be less than 5MB.");
+      alert("Image size exceeds 5MB limit. Please upload an image smaller than 5MB.");
       return;
     }
 

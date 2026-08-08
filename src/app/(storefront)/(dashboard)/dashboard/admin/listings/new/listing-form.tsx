@@ -109,6 +109,10 @@ export function NewListingForm() {
       const { uploadImageAction } = await import("@/features/auctions/actions");
       
       for (const file of files) {
+        if (file.size > 5 * 1024 * 1024) {
+          setServerError(`"${file.name}" exceeds 5MB limit. Please upload an image smaller than 5MB.`);
+          continue;
+        }
         const reader = new FileReader();
         const base64Promise = new Promise<string>((resolve, reject) => {
           reader.onload = () => resolve(reader.result as string);

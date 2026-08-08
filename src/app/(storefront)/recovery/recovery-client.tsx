@@ -311,6 +311,10 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
     if (files && files.length > 0) {
       const fileList = Array.from(files);
       for (const file of fileList) {
+        if (file.size > 5 * 1024 * 1024) {
+          setUploadError(`"${file.name}" exceeds the 5MB limit. Please upload an image smaller than 5MB.`);
+          continue;
+        }
         try {
           const base64 = await compressImage(file);
           if (base64) {

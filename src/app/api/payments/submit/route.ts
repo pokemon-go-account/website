@@ -29,11 +29,11 @@ export async function POST(req: NextRequest) {
     let screenshotUrl = "";
     try {
       screenshotUrl = await uploadToImages(screenshotBase64);
-    } catch (uploadErr) {
+    } catch (uploadErr: any) {
       console.error("[Payment Upload Failed]", uploadErr);
       return NextResponse.json(
-        { error: "Failed to upload payment screenshot." },
-        { status: 500 }
+        { error: uploadErr.message || "Failed to upload payment screenshot." },
+        { status: 400 }
       );
     }
 

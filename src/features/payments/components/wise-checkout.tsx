@@ -94,7 +94,7 @@ export function WisePaymentCheckout({
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Screenshot must be less than 5MB.");
+      setError("Screenshot size exceeds 5MB limit. Please upload an image smaller than 5MB.");
       return;
     }
     setScreenshotFile(file);

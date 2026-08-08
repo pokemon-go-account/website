@@ -112,6 +112,11 @@ export default function ManageProductsPage() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (file.size > 5 * 1024 * 1024) {
+        setError(`"${file.name}" exceeds 5MB limit. Please upload an image smaller than 5MB.`);
+        setUploadingImage(false);
+        return;
+      }
       const reader = new FileReader();
 
       const uploadPromise = new Promise<string>((resolve, reject) => {

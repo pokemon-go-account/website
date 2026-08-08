@@ -176,7 +176,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
           type="button"
           disabled={!!isSocialLoading || isCredPending}
           onClick={() => handleSocialLogin("google")}
-          className="w-full h-9 px-4 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300"
+          className="w-full h-9.5 sm:h-10.5 px-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300"
         >
           {isSocialLoading === "google" ? (
             <Loader2 className="h-4 w-4 animate-spin text-zinc-600 dark:text-zinc-400" />
@@ -193,16 +193,14 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       </div>
 
       {/* Subdued Divider */}
-      <div className="relative flex items-center justify-center py-1">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
-        </div>
-        <span className="relative bg-white dark:bg-zinc-900 px-3 text-[11px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-          Or continue with email
+      <div className="relative flex items-center justify-center">
+        <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+        <span className="absolute bg-white dark:bg-zinc-900 px-3 text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+          Or continue with
         </span>
       </div>
 
-      {/* Standard Form */}
+      {/* Credentials Form */}
       <form action={credFormAction} className="space-y-4">
         {callbackUrl && <input type="hidden" name="callbackUrl" value={callbackUrl} />}
 
@@ -212,12 +210,10 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
           name="email"
           type="email"
           label="Email address"
-          autoComplete="email"
-          autoFocus
-          required
-          value={emailValue}
-          onChange={(e) => setEmailValue(e.target.value)}
           placeholder="name@example.com"
+          autoComplete="email"
+          required
+          autoFocus
           icon={<Mail className="h-4 w-4" aria-hidden="true" />}
         />
 
@@ -228,11 +224,11 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
               htmlFor="password"
               className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
             >
-              Password
+              Password <span className="text-red-500" aria-hidden="true">*</span>
             </label>
             <Link
               href="/forgot-password"
-              className="text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300 rounded"
+              className="text-[11px] sm:text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300 rounded"
             >
               Forgot password?
             </Link>
@@ -258,7 +254,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         <button
           type="submit"
           disabled={isCredPending || !!isSocialLoading}
-          className="w-full h-9 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300"
+          className="w-full h-9.5 sm:h-10.5 px-4 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300"
         >
           {isCredPending ? (
             <>

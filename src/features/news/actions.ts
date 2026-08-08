@@ -610,6 +610,10 @@ export async function uploadNewsImageAction(base64Data: string): Promise<{ succe
       return { success: false, error: "Unauthorized. Admin privileges required." };
     }
 
+    if (base64Data && base64Data.length > 7000000) {
+      return { success: false, error: "Image size exceeds 5MB limit. Please upload an image smaller than 5MB." };
+    }
+
     const { uploadToImages } = await import("@/lib/cloudflare-images");
     const url = await uploadToImages(base64Data);
     return { success: true, url };

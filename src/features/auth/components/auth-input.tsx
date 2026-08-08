@@ -57,8 +57,8 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
               error ? errorId : helperText ? helperId : undefined
             }
             className={cn(
-              "flex h-9 w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 px-3 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50",
-              icon && "pl-9",
+              "flex h-9.5 sm:h-10.5 w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-300 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50",
+              icon ? "pl-9.5 sm:pl-10 pr-3 sm:pr-3.5" : "px-3 sm:px-3.5",
               error &&
                 "border-red-500 dark:border-red-500/80 focus-visible:ring-red-500 dark:focus-visible:ring-red-500",
               className

@@ -96,6 +96,10 @@ export async function uploadToR2(fileData: string): Promise<string> {
       buffer = Buffer.from(fileData, "base64");
     }
 
+    if (buffer.length > 5 * 1024 * 1024) {
+      throw new Error("Image size exceeds 5MB limit. Please upload an image smaller than 5MB.");
+    }
+
     const fileKey = `uploads/${Date.now()}-${randomUUID()}.${extension}`;
 
     const command = new PutObjectCommand({

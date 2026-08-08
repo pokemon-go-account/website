@@ -8,6 +8,9 @@ export async function uploadChatImage(base64Data: string): Promise<{ success: bo
     if (!session?.user) {
       return { success: false, error: "Unauthorized" };
     }
+    if (base64Data && base64Data.length > 7000000) {
+      return { success: false, error: "Image size exceeds 5MB limit. Please upload an image smaller than 5MB." };
+    }
     const { uploadToImages } = await import("@/lib/cloudflare-images");
     const url = await uploadToImages(base64Data);
     return { success: true, url };

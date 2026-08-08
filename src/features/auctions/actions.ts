@@ -340,7 +340,7 @@ export async function uploadImageAction(base64Data: string) {
 
     // Check size limit: 5MB (approx. 7,000,000 characters for base64)
     if (base64Data.length > 7000000) {
-      return { success: false, error: "Image file is too large. Maximum limit is 5MB." };
+      return { success: false, error: "Image size exceeds 5MB limit. Please upload an image smaller than 5MB." };
     }
 
     // Extract and validate mime type

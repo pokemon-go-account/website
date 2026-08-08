@@ -26,6 +26,10 @@ if (isConfigured) {
  * If Cloudinary environment variables are missing, falls back to a sandbox simulation.
  */
 export async function uploadToCloudinary(fileData: string): Promise<string> {
+  if (fileData && fileData.length > 7000000) {
+    throw new Error("Image size exceeds 5MB limit. Please upload an image smaller than 5MB.");
+  }
+
   if (!isConfigured) {
     console.warn("Cloudinary is not configured. Returning image data URL fallback.");
     if (fileData.startsWith("data:image/")) {

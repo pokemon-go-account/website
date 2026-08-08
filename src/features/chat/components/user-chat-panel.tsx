@@ -387,8 +387,8 @@ export function UserChatPanel({
       alert("Please upload a valid image file.");
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Image must be less than 10MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size exceeds 5MB limit. Please upload an image smaller than 5MB.");
       return;
     }
 
