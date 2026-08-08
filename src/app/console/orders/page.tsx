@@ -367,7 +367,17 @@ export default function OrdersConsolePage() {
                                 min="0.01"
                                 value={editingPriceValue}
                                 onChange={(e) => setEditingPriceValue(e.target.value)}
-                                className="h-7 w-20 text-xs px-1.5 py-0.5"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleUpdatePrice(order._id);
+                                  } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setEditingOrderId(null);
+                                    setEditingPriceValue("");
+                                  }
+                                }}
+                                className="h-7 w-20 text-xs px-1.5 py-0.5 border-amber-500/50 focus:ring-1 focus:ring-amber-500"
                                 disabled={processingId === order._id}
                                 autoFocus
                               />

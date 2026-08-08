@@ -51,10 +51,12 @@ export async function getFirebaseCustomToken(): Promise<{ success: boolean; cust
     if (!session?.user || !session.user.id) {
       return { success: false, error: "Unauthorized" };
     }
-    const { getAuth } = await import("firebase-admin/auth");
-    await import("@/lib/firebase-admin");
+    const { getAdminAuth } = await import("@/lib/firebase-admin");
+    const firebaseAuth = getAdminAuth();
+    if (!firebaseAuth) {
+      return { success: false, error: "Firebase Admin is not configured" };
+    }
     
-    const firebaseAuth = getAuth();
     const customToken = await firebaseAuth.createCustomToken(session.user.id, {
       role: (session.user as any).role || "USER",
     });
@@ -82,7 +84,11 @@ export interface ChatWebhookPayload {
 export async function sendChatWebhookNotification(payload: ChatWebhookPayload): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await auth();
-    if (!session?.user) {
+    const isGuest = payload.senderType === "user" && (
+      (payload.userEmail?.endsWith("@visitor.local") ?? false) ||
+      (payload.senderName?.startsWith("Guest") ?? false)
+    );
+    if (!session?.user && !isGuest) {
       console.warn("[Chat Webhook] ⚠️ Unauthorized webhook trigger attempt block.");
       return { success: false, error: "Unauthorized" };
     }
@@ -291,16 +297,16 @@ export async function editChatMessage(
     const userRole = (session.user as any).role || "USER";
     const userId = session.user.id;
 
-    // Check authorization: Users can edit only user messages; Admins/SuperAdmins can edit only admin messages
+    // Check authorization: Users can edit only user messages; Admins/SuperAdmins can edit any user or admin messages
+    const isAdminUser = ["ADMIN", "SUPER_ADMIN"].includes(userRole);
     if (data?.sender === "user") {
       const chatDoc = await adminDb.collection("supportChats").doc(chatId).get();
       const chatUserId = chatDoc.data()?.userId;
-      if (chatUserId !== userId) {
+      if (chatUserId !== userId && !isAdminUser) {
         return { success: false, error: "You can only edit your own messages." };
       }
     } else if (data?.sender === "admin") {
-      const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(userRole);
-      if (!isAdmin) {
+      if (!isAdminUser) {
         return { success: false, error: "Only admins can edit support team messages." };
       }
     } else {

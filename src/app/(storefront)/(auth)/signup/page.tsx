@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { RegisterForm } from "./register-form";
+import { RegisterForm } from "../register/register-form";
 import { AuthLayout } from "@/features/auth/components/auth-layout";
 import { AuthHeader } from "@/features/auth/components/auth-header";
 
-export default function RegisterPage() {
+export default function SignUpPage() {
   return (
     <AuthLayout>
       <AuthHeader

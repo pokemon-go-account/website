@@ -58,6 +58,13 @@ export function getAdminDb() {
   return null;
 }
 
+export function getAdminAuth() {
+  if (ensureAdminApp()) {
+    return getAuth();
+  }
+  return null;
+}
+
 export interface FirebaseDecodedUser {
   uid: string;
   email?: string;

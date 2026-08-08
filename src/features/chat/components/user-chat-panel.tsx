@@ -76,6 +76,7 @@ import {
   ReplyActionButton,
 } from "./chat-reply-ui";
 import { FormattedChatMessage } from "./formatted-chat-message";
+import { InlineMessageEditor } from "./inline-message-editor";
 
 type Message = ChatMessage;
 
@@ -254,10 +255,13 @@ export function UserChatPanel({
 
   const rawUserId = (session?.user as any)?.id as string | undefined;
   const userId = rawUserId || guestId || undefined;
+  const shortGuestCode = guestId ? guestId.replace(/^guest_/, "").slice(-6).toUpperCase() : "GUEST";
   const username = rawUserId
     ? ((session?.user as any)?.username || session?.user?.name || session?.user?.email || "User")
-    : "Guest Visitor";
-  const userEmail = rawUserId ? (session?.user?.email || "user@platform.local") : "guest@visitor.local";
+    : `Guest #${shortGuestCode}`;
+  const userEmail = rawUserId
+    ? (session?.user?.email || "user@platform.local")
+    : `guest_${shortGuestCode.toLowerCase()}@visitor.local`;
 
   const [activeTab, setActiveTab] = useState<"support" | "orders">("support");
   const [conversations, setConversations] = useState<ChatMeta[]>([]);
@@ -831,7 +835,7 @@ export function UserChatPanel({
         ticketTitle: activeChat?.title || activeChatId,
         senderName: username,
         senderType: "user",
-        userEmail: session?.user?.email ?? undefined,
+        userEmail: userEmail,
         text,
       }).catch(() => {});
     } catch (err) {
@@ -1317,29 +1321,23 @@ export function UserChatPanel({
                         </div>
                       )}
                       {editingMsgId === msg.id ? (
-                        <div className="w-full space-y-2 py-1 min-w-[200px]">
-                          <textarea
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            rows={2}
-                            className="w-full bg-white dark:bg-[#121216] text-zinc-900 dark:text-zinc-100 border border-violet-400 dark:border-violet-500 rounded-xl p-2.5 text-xs sm:text-sm outline-none resize-none leading-relaxed"
-                          />
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => setEditingMsgId(null)}
-                              className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 font-medium cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={() => handleSaveEdit(msg.id)}
-                              disabled={isSavingEdit || !editingText.trim()}
-                              className="px-3 py-1 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-bold rounded-lg transition cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-xs"
-                            >
-                              {isSavingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
-                            </button>
-                          </div>
-                        </div>
+                        <InlineMessageEditor
+                          initialText={editingText}
+                          isOutgoing={isUser}
+                          onSave={async (newText) => {
+                            const res = await editChatMessage(activeChatId!, msg.id, newText);
+                            if (res.success) {
+                              setEditingMsgId(null);
+                              setEditingText("");
+                            } else {
+                              throw new Error(res.error || "Failed to edit message.");
+                            }
+                          }}
+                          onCancel={() => {
+                            setEditingMsgId(null);
+                            setEditingText("");
+                          }}
+                        />
                       ) : (
                         displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isUser} />
                       )}

@@ -2,20 +2,14 @@
   "rules": {
     "chatTyping": {
       "$chatId": {
-        "user": {
-          ".write": "true",
-          ".read": "true"
-        },
-        "admin": {
-          ".write": "auth != null && (auth.token.role == 'ADMIN' || auth.token.role == 'SUPER_ADMIN')",
-          ".read": "true"
-        }
+        ".read": "true",
+        ".write": "true"
       }
     },
     "presence": {
       "$presenceId": {
-        ".write": "true",
-        ".read": "true"
+        ".read": "true",
+        ".write": "true"
       }
     }
   }

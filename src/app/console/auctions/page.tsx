@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getPendingAuctionListings, approveListingConsole, rejectListingConsole, updateListingConsole, getConcludedAuctions, markAuctionPaymentReceived, markAuctionDelivered } from "@/features/console/actions";
-import { Gavel, CheckCircle, XCircle, AlertTriangle, Eye, Edit2, X, Sparkles, Trophy, CalendarDays, Coins, CreditCard, Package, Truck, Clock, Search, ChevronRight, User } from "lucide-react";
+import { Gavel, CheckCircle, XCircle, AlertTriangle, Eye, Edit2, X, Sparkles, Trophy, CalendarDays, Coins, CreditCard, Package, Truck, Clock, Search, ChevronRight, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Listing {
@@ -763,9 +763,16 @@ export default function ConsoleAuctionsPage() {
                   <button
                     onClick={handleSaveEdit}
                     disabled={processing === selectedListing._id}
-                    className="h-9 px-5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold cursor-pointer"
+                    className="h-9 px-5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold cursor-pointer transition flex items-center gap-2"
                   >
-                    Save Changes
+                    {processing === selectedListing._id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Changes</span>
+                    )}
                   </button>
                 </div>
               </div>

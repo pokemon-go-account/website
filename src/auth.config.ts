@@ -113,7 +113,7 @@ export const authConfig = {
         "/news",
         "/become-a-seller",
       ];
-      const PUBLIC_EXACT = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms", "/maintenance"];
+      const PUBLIC_EXACT = ["/", "/login", "/register", "/signup", "/forgot-password", "/privacy", "/terms", "/maintenance"];
       const isPublicRoute =
         PUBLIC_EXACT.includes(nextUrl.pathname) ||
         PUBLIC_PREFIXES.some((p) => nextUrl.pathname.startsWith(p)) ||

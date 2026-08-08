@@ -103,6 +103,9 @@ vi.mock('@/lib/firebase-admin', () => {
   };
   return {
     getAdminDb: vi.fn().mockReturnValue(mockDb),
+    getAdminAuth: vi.fn().mockReturnValue({
+      createCustomToken: vi.fn().mockResolvedValue("mock-firebase-custom-token"),
+    }),
     verifyFirebaseIdToken: vi.fn().mockResolvedValue({ uid: 'mock-uid' }),
   };
 });

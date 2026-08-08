@@ -23,6 +23,7 @@ export default async function StorefrontLayout({
   const isAuthPage =
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
+    pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/auth-error") ||
     pathname.startsWith("/maintenance");

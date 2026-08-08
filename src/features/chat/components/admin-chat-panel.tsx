@@ -51,6 +51,7 @@ import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
 import { FormattedChatMessage } from "./formatted-chat-message";
+import { InlineMessageEditor } from "./inline-message-editor";
 
 interface ChatMeta {
   id: string; // doc ID (support-xxxx or order-xxxx)
@@ -1500,29 +1501,23 @@ export function AdminChatPanel() {
                           </div>
                         )}
                         {editingMsgId === msg.id ? (
-                          <div className="w-full space-y-2 py-1 min-w-[200px]">
-                            <textarea
-                              value={editingText}
-                              onChange={(e) => setEditingText(e.target.value)}
-                              rows={2}
-                              className="w-full bg-white dark:bg-[#121216] text-zinc-900 dark:text-zinc-100 border border-violet-400 dark:border-violet-500 rounded-xl p-2.5 text-xs sm:text-sm outline-none resize-none leading-relaxed"
-                            />
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => setEditingMsgId(null)}
-                                className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 font-medium cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={() => handleSaveEdit(msg.id)}
-                                disabled={isSavingEdit || !editingText.trim()}
-                                className="px-3 py-1 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-bold rounded-lg transition cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-xs"
-                              >
-                                {isSavingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
-                              </button>
-                            </div>
-                          </div>
+                          <InlineMessageEditor
+                            initialText={editingText}
+                            isOutgoing={isAdmin}
+                            onSave={async (newText) => {
+                              const res = await editChatMessage(activeChatId!, msg.id, newText);
+                              if (res.success) {
+                                setEditingMsgId(null);
+                                setEditingText("");
+                              } else {
+                                throw new Error(res.error || "Failed to edit message.");
+                              }
+                            }}
+                            onCancel={() => {
+                              setEditingMsgId(null);
+                              setEditingText("");
+                            }}
+                          />
                         ) : (
                           displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isAdmin} />
                         )}
@@ -1561,7 +1556,7 @@ export function AdminChatPanel() {
                                 <span>Reply</span>
                               </button>
 
-                              {isAdmin && (
+                              {(isAdmin || isSuperAdmin) && (
                                 <button
                                   onClick={() => handleStartEdit(msg)}
                                   className="w-full px-3 py-2 flex items-center gap-2 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition text-left cursor-pointer font-medium"
