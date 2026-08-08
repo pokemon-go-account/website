@@ -87,6 +87,7 @@ export function Footer() {
                 { name: "Why Trust Us", href: "/why-trust-us" },
                 { name: "Terms of Service", href: "/terms" },
                 { name: "Privacy Policy", href: "/privacy" },
+                { name: "Return & Refund Policy", href: "/return-policy" },
                 { name: "Security Protocols", href: "/contact" },
                 { name: "FAQ", href: "/#faq" },
               ].map((link) => (
