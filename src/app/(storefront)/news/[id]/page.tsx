@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getNewsArticleById, getRelatedNewsArticles } from "@/features/news/actions";
+import { sanitizeArticleHtml } from "@/lib/legacy-content";
 import { ArticleData } from "@/features/news/types";
 import { Calendar, Clock, Eye, ChevronLeft, Tag, Share2, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
 import { ArticleActionsClient } from "./article-actions-client";
@@ -214,59 +215,10 @@ export default async function NewsArticleDetailPage({ params }: PageProps) {
 
         {/* Article Content */}
         <main className="bg-white dark:bg-[#111116] rounded-2xl p-6 sm:p-10 border border-zinc-200 dark:border-white/10 shadow-sm space-y-6">
-          <div className="prose prose-zinc dark:prose-invert max-w-none space-y-4 text-zinc-800 dark:text-zinc-200 leading-relaxed">
-            {article.content.split("\n\n").map((block, idx) => {
-              const trimmed = block.trim();
-              if (!trimmed) return null;
-
-              if (trimmed.startsWith("# ")) {
-                return (
-                  <h1 key={idx} className="text-2xl sm:text-3xl font-black mt-8 mb-4 text-zinc-900 dark:text-white border-b border-zinc-200 dark:border-white/10 pb-3">
-                    {trimmed.replace("# ", "")}
-                  </h1>
-                );
-              }
-              if (trimmed.startsWith("## ")) {
-                return (
-                  <h2 key={idx} className="text-xl sm:text-2xl font-bold mt-6 mb-3 text-[#6133e1] dark:text-[#a78bfa]">
-                    {trimmed.replace("## ", "")}
-                  </h2>
-                );
-              }
-              if (trimmed.startsWith("### ")) {
-                return (
-                  <h3 key={idx} className="text-lg font-bold mt-4 mb-2 text-zinc-900 dark:text-white">
-                    {trimmed.replace("### ", "")}
-                  </h3>
-                );
-              }
-              if (trimmed.startsWith("> ")) {
-                return (
-                  <div key={idx} className="p-4 rounded-xl bg-[#6133e1]/10 border-l-4 border-[#6133e1] text-xs sm:text-sm my-4 space-y-1">
-                    {trimmed.replace("> ", "")}
-                  </div>
-                );
-              }
-              if (trimmed.startsWith("- ") || trimmed.startsWith("1. ")) {
-                const items = trimmed.split("\n");
-                return (
-                  <ul key={idx} className="list-disc list-inside space-y-2 my-4 text-sm text-zinc-700 dark:text-zinc-300">
-                    {items.map((it, i) => (
-                      <li key={i} className="leading-relaxed">
-                        {it.replace(/^[-*]|\d+\.\s*/, "")}
-                      </li>
-                    ))}
-                  </ul>
-                );
-              }
-
-              return (
-                <p key={idx} className="text-sm sm:text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
-                  {trimmed}
-                </p>
-              );
-            })}
-          </div>
+          <div
+            className="prose prose-zinc dark:prose-invert max-w-none space-y-4 text-zinc-800 dark:text-zinc-200 leading-relaxed [&_h1]:text-2xl sm:[&_h1]:text-3xl [&_h1]:font-black [&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:text-zinc-900 dark:[&_h1]:text-white [&_h1]:border-b [&_h1]:border-zinc-200 dark:[&_h1]:border-white/10 [&_h1]:pb-3 [&_h2]:text-xl sm:[&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:text-[#6133e1] dark:[&_h2]:text-[#a78bfa] [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-zinc-900 dark:[&_h3]:text-white [&_blockquote]:p-4 [&_blockquote]:rounded-xl [&_blockquote]:bg-[#6133e1]/10 [&_blockquote]:border-l-4 [&_blockquote]:border-[#6133e1] [&_blockquote]:italic [&_blockquote]:my-4 [&_img]:rounded-xl [&_img]:shadow-md [&_img]:my-4 [&_img]:mx-auto [&_img]:max-w-full [&_table]:w-full [&_table]:border-collapse [&_table]:my-4 [&_th]:border [&_th]:border-zinc-200 dark:[&_th]:border-white/10 [&_th]:p-2.5 [&_th]:bg-zinc-100 dark:[&_th]:bg-white/5 [&_td]:border [&_td]:border-zinc-200 dark:[&_td]:border-white/10 [&_td]:p-2.5"
+            dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
+          />
 
           {/* Tags */}
           {article.tags.length > 0 && (

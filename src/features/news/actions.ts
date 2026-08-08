@@ -324,6 +324,8 @@ Looking to acquire a ready-to-compete Legend rank account? Browse our live aucti
   },
 ];
 
+import { convertLegacyContentToHtml, isLikelyHtml } from "@/lib/legacy-content";
+
 // Seed initial articles into MongoDB once if DB has no seed marker
 async function ensureNewsSeeded() {
   try {
@@ -340,6 +342,7 @@ async function ensureNewsSeeded() {
         await NewsArticle.insertMany(
           SEED_ARTICLES.map((a) => ({
             ...a,
+            content: convertLegacyContentToHtml(a.content),
             slug: a.articleId,
             publishedAt: new Date(a.publishedAt),
           }))
@@ -379,7 +382,7 @@ export async function getAllNewsArticles(category?: string, query?: string): Pro
       articleId: doc.articleId || String(doc._id),
       title: doc.title,
       excerpt: doc.excerpt,
-      content: doc.content,
+      content: isLikelyHtml(doc.content) ? doc.content : convertLegacyContentToHtml(doc.content),
       category: doc.category,
       author: doc.author,
       coverImage: doc.coverImage,
@@ -415,7 +418,7 @@ export async function getNewsArticleById(idOrSlug: string): Promise<ArticleData 
         articleId: doc.articleId || String(doc._id),
         title: doc.title,
         excerpt: doc.excerpt,
-        content: doc.content,
+        content: isLikelyHtml(doc.content) ? doc.content : convertLegacyContentToHtml(doc.content),
         category: doc.category,
         author: doc.author,
         coverImage: doc.coverImage,
@@ -603,22 +606,44 @@ export async function deleteNewsArticle(articleId: string): Promise<{ success: b
   }
 }
 
-export async function uploadNewsImageAction(base64Data: string): Promise<{ success: boolean; url?: string; error?: string }> {
+async function handleNewsImageUploadInternal(
+  base64Data: string,
+  maxMB: number = 5,
+  logTag: string = "uploadNewsImageAction"
+): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     const session = await auth();
     if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role || "")) {
       return { success: false, error: "Unauthorized. Admin privileges required." };
     }
 
-    if (base64Data && base64Data.length > 7000000) {
-      return { success: false, error: "Image size exceeds 5MB limit. Please upload an image smaller than 5MB." };
+    if (!base64Data || typeof base64Data !== "string") {
+      return { success: false, error: "Invalid image data provided." };
+    }
+
+    if (base64Data.startsWith("data:") && !base64Data.startsWith("data:image/")) {
+      return { success: false, error: "Invalid file type. Please upload a valid image file." };
+    }
+
+    // ~1.37 base64 expansion factor for binary bytes
+    const maxChars = maxMB * 1024 * 1024 * 1.38;
+    if (base64Data.length > maxChars) {
+      return { success: false, error: `Image size exceeds ${maxMB}MB limit. Please upload an image smaller than ${maxMB}MB.` };
     }
 
     const { uploadToImages } = await import("@/lib/cloudflare-images");
     const url = await uploadToImages(base64Data);
     return { success: true, url };
   } catch (err: any) {
-    console.error("[uploadNewsImageAction] Error:", err);
-    return { success: false, error: err.message || "Failed to upload cover image." };
+    console.error(`[${logTag}] Error:`, err);
+    return { success: false, error: err.message || "Failed to upload image." };
   }
+}
+
+export async function uploadNewsImageAction(base64Data: string): Promise<{ success: boolean; url?: string; error?: string }> {
+  return handleNewsImageUploadInternal(base64Data, 5, "uploadNewsImageAction");
+}
+
+export async function uploadNewsBodyImageAction(base64Data: string): Promise<{ success: boolean; url?: string; error?: string }> {
+  return handleNewsImageUploadInternal(base64Data, 8, "uploadNewsBodyImageAction");
 }

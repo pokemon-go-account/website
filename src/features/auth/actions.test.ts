@@ -169,6 +169,7 @@ describe('Auth Actions', () => {
       formData.set('preferredContactMethod', 'reddit');
       formData.set('preferredContactId', 'johndoe');
       formData.set('country', 'United States');
+      formData.set('hearAboutUs', 'Google Search');
       
       const res = await actions.completeUserProfile(null, formData);
       expect(res.success).toBe(true);

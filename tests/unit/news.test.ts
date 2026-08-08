@@ -7,6 +7,7 @@ import {
   getAllNewsArticles,
   getNewsArticleById,
   incrementArticleViews,
+  uploadNewsBodyImageAction,
 } from "@/features/news/actions";
 import NewsArticle from "@/models/NewsArticle";
 import { auth } from "@/auth";
@@ -45,12 +46,30 @@ describe("News Actions", () => {
     vi.clearAllMocks();
   });
 
-  describe("Security Gates", () => {
+  describe("Security Gates & Body Image Uploads", () => {
     it("should fail to create article if user is not admin", async () => {
       vi.mocked(auth).mockResolvedValue({ user: { id: "user1", role: "USER" }, expires: "9999" } as any);
       const res = await createNewsArticle(ARTICLE_FIXTURE);
       expect(res.success).toBe(false);
       expect(res.error).toContain("Unauthorized");
+    });
+
+    it("should fail uploadNewsBodyImageAction if unauthenticated or non-image", async () => {
+      vi.mocked(auth).mockResolvedValue(null as any);
+      const res = await uploadNewsBodyImageAction("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+      expect(res.success).toBe(false);
+
+      vi.mocked(auth).mockResolvedValue({ user: { id: "admin1", role: "ADMIN" }, expires: "9999" } as any);
+      const nonImageRes = await uploadNewsBodyImageAction("data:text/plain;base64,SGVsbG8=");
+      expect(nonImageRes.success).toBe(false);
+      expect(nonImageRes.error).toContain("Invalid file type");
+    });
+
+    it("should successfully upload body image for admin users", async () => {
+      vi.mocked(auth).mockResolvedValue({ user: { id: "admin1", role: "ADMIN" }, expires: "9999" } as any);
+      const res = await uploadNewsBodyImageAction("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+      expect(res.success).toBe(true);
+      expect(res.url).toBeDefined();
     });
   });
 

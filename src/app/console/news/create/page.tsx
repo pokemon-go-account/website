@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -9,35 +9,34 @@ import {
   updateNewsArticle,
   uploadNewsImageAction,
 } from "@/features/news/actions";
+import dynamic from "next/dynamic";
 import { ArticleInputData } from "@/features/news/types";
+
+const NotionEditor = dynamic(
+  () => import("@/components/news/NotionEditor").then((m) => m.NotionEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[380px] w-full rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#111115] p-6 flex flex-col items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 animate-pulse">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#6133e1] border-t-transparent mb-2" />
+        Loading canvas editor...
+      </div>
+    ),
+  }
+);
 import {
   ChevronLeft,
-  Newspaper,
   ImagePlus,
   X,
   AlertTriangle,
   CheckCircle2,
-  Sparkles,
+  Check,
+  RotateCcw,
   Eye,
   Send,
-  FileText,
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Quote,
-  Table as TableIcon,
-  Minus,
-  Link as LinkIcon,
-  Image as ImageIcon,
-  Columns,
   Edit3,
-  Wand2,
+  Columns,
   Settings2,
-  Clock,
-  BookOpen,
-  Layout,
-  Share2,
   SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -78,15 +77,109 @@ function NewsEditorForm() {
   // Editor View Mode: "write" | "split" | "preview"
   const [viewMode, setViewMode] = useState<"write" | "split" | "preview">("write");
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Autosave & Draft Restoration State
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [draftPrompt, setDraftPrompt] = useState<{ data: any; dateStr: string } | null>(null);
 
-  // Calculate word count & auto estimate read time
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const draftKey = `news_draft_${editId || "new"}`;
+
+  // Calculate word count & auto estimate read time (strip HTML tags)
+  const plainTextContent = content.replace(/<[^>]*>/g, " ").trim();
+  const wordCount = plainTextContent ? plainTextContent.split(/\s+/).length : 0;
   
   useEffect(() => {
     const mins = Math.max(1, Math.ceil(wordCount / 200));
     setReadTime(`${mins} min read`);
   }, [wordCount]);
+
+  // Check for local draft on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.title || parsed.content)) {
+          const dateStr = parsed.savedAt ? new Date(parsed.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "recently";
+          setDraftPrompt({ data: parsed, dateStr });
+        }
+      }
+    } catch (e) {
+      console.error("Failed to read draft from localStorage:", e);
+    }
+  }, [draftKey]);
+
+  // Debounced Autosave to localStorage
+  useEffect(() => {
+    if (!title && !content && !excerpt) return;
+
+    setSaveStatus("saving");
+    const timer = setTimeout(() => {
+      try {
+        const draftPayload = {
+          title,
+          articleId,
+          category,
+          coverImage,
+          excerpt,
+          content,
+          authorName,
+          authorRole,
+          authorAvatar,
+          readTime,
+          tagsInput,
+          featured,
+          seoTitle,
+          seoDescription,
+          seoKeywordsInput,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(draftKey, JSON.stringify(draftPayload));
+        setSaveStatus("saved");
+      } catch (e) {
+        console.error("Failed to save draft to localStorage:", e);
+        setSaveStatus("idle");
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [
+    title, articleId, category, coverImage, excerpt, content,
+    authorName, authorRole, authorAvatar, readTime, tagsInput,
+    featured, seoTitle, seoDescription, seoKeywordsInput, draftKey
+  ]);
+
+  // Global Cmd/Ctrl + Enter shortcut to publish/save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+        handleSubmitForm(fakeEvent);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [title, excerpt, content, coverImage, editId]);
+
+  const handleRestoreDraft = () => {
+    if (!draftPrompt) return;
+    const d = draftPrompt.data;
+    if (d.title) setTitle(d.title);
+    if (d.articleId) setArticleId(d.articleId);
+    if (d.category) setCategory(d.category);
+    if (d.coverImage) setCoverImage(d.coverImage);
+    if (d.excerpt) setExcerpt(d.excerpt);
+    if (d.content) setContent(d.content);
+    if (d.authorName) setAuthorName(d.authorName);
+    if (d.authorRole) setAuthorRole(d.authorRole);
+    if (d.authorAvatar) setAuthorAvatar(d.authorAvatar);
+    if (d.tagsInput) setTagsInput(d.tagsInput);
+    if (typeof d.featured === "boolean") setFeatured(d.featured);
+    if (d.seoTitle) setSeoTitle(d.seoTitle);
+    if (d.seoDescription) setSeoDescription(d.seoDescription);
+    if (d.seoKeywordsInput) setSeoKeywordsInput(d.seoKeywordsInput);
+    setDraftPrompt(null);
+  };
 
   // If editing, load article details
   useEffect(() => {
@@ -171,52 +264,22 @@ function NewsEditorForm() {
     };
   };
 
-  // Insert formatting into Notion Canvas
-  const insertFormatting = (prefix: string, suffix: string = "", placeholder: string = "Text") => {
-    const textarea = textareaRef.current;
-    if (!textarea) {
-      setContent((prev) => `${prev}\n${prefix}${placeholder}${suffix}`);
-      return;
-    }
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end) || placeholder;
-
-    const newContent = content.substring(0, start) + prefix + selectedText + suffix + content.substring(end);
-    setContent(newContent);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
-    }, 50);
-  };
-
-  // Pre-built Starter Templates
+  // Pre-built Starter Templates (HTML strings)
   const applyTemplate = (templateType: "event" | "announcement" | "guide") => {
     if (content.trim().length > 0 && !confirm("Append template to document?")) {
       return;
     }
 
+    let templateHTML = "";
     if (templateType === "event") {
-      setContent(
-        (prev) =>
-          prev +
-          `\n\n# 🌟 Event Overview & Spawn Details\n\nThe upcoming event introduces exclusive Pokémon encounters with boosted shiny odds!\n\n---\n\n## 🗡️ Recommended Raid Counters & Teams\n\n- **Primal Groudon**: Mud Shot + Precipice Blades\n- **Mega Rayquaza**: Dragon Tail + Dragon Ascent\n- **Shadow Mewtwo**: Psycho Cut + Psystrike\n\n> 💡 **Pro-Tip**: Activate Mega Evolutions that match the raid boss type to receive Bonus XL Candies!\n\n---\n\n## 🏆 Exclusive Movesets & PvP Meta Breakdown\n\n- **Legacy Move 1**: Impact breakdown...\n- **Legacy Move 2**: Impact breakdown...\n`
-      );
+      templateHTML = `<h1>🌟 Event Overview & Spawn Details</h1><p>The upcoming event introduces exclusive Pokémon encounters with boosted shiny odds!</p><hr /><h2>🗡️ Recommended Raid Counters & Teams</h2><ul><li><strong>Primal Groudon</strong>: Mud Shot + Precipice Blades</li><li><strong>Mega Rayquaza</strong>: Dragon Tail + Dragon Ascent</li><li><strong>Shadow Mewtwo</strong>: Psycho Cut + Psystrike</li></ul>> 💡 <strong>Pro-Tip</strong>: Activate Mega Evolutions that match the raid boss type to receive Bonus XL Candies!<hr /><h2>🏆 Exclusive Movesets & PvP Meta Breakdown</h2>`;
     } else if (templateType === "announcement") {
-      setContent(
-        (prev) =>
-          prev +
-          `\n\n# 🚀 Platform Update & Release Notes\n\nWe are excited to unveil new platform enhancements engineered for high performance!\n\n---\n\n## ⚡ Key Improvements\n\n1. **Sub-Millisecond Live Updates**: Instant bidding response.\n2. **Enhanced Credential Handover**: Automated verification checks.\n3. **24/7 Priority Support**: Instant ticket resolution.\n\n---\n\n## 🛡️ Buyer Safeguards & Guarantees\n\n- **100% Buyer Protection** on every purchase.\n- **Instant Account Handover** with full email unlinking.\n`
-      );
+      templateHTML = `<h1>🚀 Platform Update & Release Notes</h1><p>We are excited to unveil new platform enhancements engineered for high performance!</p><hr /><h2>⚡ Key Improvements</h2><ol><li><strong>Sub-Millisecond Live Updates</strong>: Instant bidding response.</li><li><strong>Enhanced Credential Handover</strong>: Automated verification checks.</li><li><strong>24/7 Priority Support</strong>: Instant ticket resolution.</li></ol><hr /><h2>🛡️ Buyer Safeguards & Guarantees</h2><ul><li><strong>100% Buyer Protection</strong> on every purchase.</li><li><strong>Instant Account Handover</strong> with full email unlinking.</li></ul>`;
     } else if (templateType === "guide") {
-      setContent(
-        (prev) =>
-          prev +
-          `\n\n# 📘 How to Maximize Account Valuation\n\nKey account metrics that determine auction value:\n\n---\n\n## 📊 Account Metrics Checklist\n\n| Metric | Benchmark | Importance |\n| :--- | :--- | :--- |\n| **Stardust Reserve** | 5M+ Stardust | High |\n| **Level 50 Shadow Hundos** | 3+ Shadow Hundos | Ultra High |\n| **Shiny Mythicals** | Shiny Mew / Jirachi | Extremely High |\n`
-      );
+      templateHTML = `<h1>📘 How to Maximize Account Valuation</h1><p>Key account metrics that determine auction value:</p><hr /><h2>📊 Account Metrics Checklist</h2><p>Inspect Stardust reserves (5M+), Level 50 Shadow Hundos (3+), and Shiny Mythicals (Mew/Jirachi).</p>`;
     }
+
+    setContent((prev) => prev + templateHTML);
   };
 
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -266,6 +329,10 @@ function NewsEditorForm() {
     }
 
     if (res?.success) {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (e) {}
+
       setSuccessMsg(
         editId
           ? `Article updated successfully!`
@@ -316,13 +383,31 @@ function NewsEditorForm() {
           </span>
         </div>
 
-        {/* Right: Metrics, View Modes, Settings & Publish */}
+        {/* Right: Metrics, Autosave Status, View Modes, Settings & Publish */}
         <div className="flex items-center gap-2.5">
-          {/* Word Count indicator */}
+          {/* Word Count & Autosave indicator */}
           <div className="hidden lg:flex items-center gap-2 text-[11px] text-zinc-400 font-medium px-2">
             <span>{wordCount} words</span>
             <span>•</span>
             <span>{readTime}</span>
+            {saveStatus === "saving" && (
+              <>
+                <span>•</span>
+                <span className="text-amber-400 flex items-center gap-1 font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping mr-0.5" />
+                  Saving...
+                </span>
+              </>
+            )}
+            {saveStatus === "saved" && (
+              <>
+                <span>•</span>
+                <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+                  <Check className="h-3 w-3" />
+                  Saved
+                </span>
+              </>
+            )}
           </div>
 
           {/* View Mode Switcher */}
@@ -395,6 +480,32 @@ function NewsEditorForm() {
       </header>
 
       {/* ALERTS */}
+      {draftPrompt && (
+        <div className="mb-4 rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 text-xs text-purple-300 flex items-center justify-between gap-3 max-w-7xl mx-auto w-full backdrop-blur-xs">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="h-4 w-4 text-[#a78bfa] shrink-0" />
+            <span>
+              An unsaved local draft from <strong>{draftPrompt.dateStr}</strong> was found for this document.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleRestoreDraft}
+              className="px-3 py-1 rounded-lg bg-[#6133e1] hover:bg-[#5229c7] text-white font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              Restore Draft
+            </button>
+            <button
+              type="button"
+              onClick={() => setDraftPrompt(null)}
+              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium transition-all cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
       {error && (
         <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-650 dark:text-red-400 flex items-start gap-2.5 max-w-5xl mx-auto w-full">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -444,129 +555,32 @@ function NewsEditorForm() {
             )}
           </div>
 
-          {/* NOTION STICKY FORMATTING TOOLBAR */}
-          <div className="sticky top-[57px] z-30 bg-white/95 dark:bg-[#111115]/95 backdrop-blur-sm border-b border-zinc-100 dark:border-white/[0.06] px-6 sm:px-10 py-2.5 flex flex-wrap items-center justify-between gap-2">
-            
-            {/* Formatting Buttons */}
-            <div className="flex flex-wrap items-center gap-1">
-              <button
-                type="button"
-                onClick={() => insertFormatting("**", "**", "Bold Text")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Bold"
-              >
-                <Bold className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("*", "*", "Italic Text")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Italic"
-              >
-                <Italic className="h-4 w-4" />
-              </button>
-              
-              <div className="h-4 w-px bg-zinc-200 dark:bg-white/10 mx-1" />
-
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n# ", "\n", "Title")}
-                className="px-2 py-1 rounded text-xs font-extrabold hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Heading 1"
-              >
-                H1
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n## ", "\n", "Section")}
-                className="px-2 py-1 rounded text-xs font-bold hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Heading 2"
-              >
-                H2
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n### ", "\n", "Sub-section")}
-                className="px-2 py-1 rounded text-xs font-semibold hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Heading 3"
-              >
-                H3
-              </button>
-
-              <div className="h-4 w-px bg-zinc-200 dark:bg-white/10 mx-1" />
-
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n- ", "\n- Item 2\n", "Bullet List Item")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Bullet List"
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n1. ", "\n2. Item 2\n", "Numbered List Item")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Numbered List"
-              >
-                <ListOrdered className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n> 💡 **Callout**: ", "\n", "Notice text...")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Quote Callout"
-              >
-                <Quote className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("\n| Header | Value |\n| :--- | :--- |\n| ", " | Val |\n", "Item")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Table"
-              >
-                <TableIcon className="h-4 w-4" />
-              </button>
-
-              <div className="h-4 w-px bg-zinc-200 dark:bg-white/10 mx-1" />
-
-              <button
-                type="button"
-                onClick={() => insertFormatting("[", "](https://example.com)", "Link Title")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Link"
-              >
-                <LinkIcon className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting("![", "](https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=1200)", "Image Alt")}
-                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Embed Image"
-              >
-                <ImageIcon className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Notion Template Badges */}
+          {/* NOTION STICKY TEMPLATE TOOLBAR */}
+          <div className="sticky top-[57px] z-30 bg-white/95 dark:bg-[#111115]/95 backdrop-blur-sm border-b border-zinc-100 dark:border-white/[0.06] px-6 sm:px-10 py-2.5 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[10px]">
-              <span className="font-bold text-[#6133e1] uppercase mr-1">Templates:</span>
+              <span className="font-bold text-[#6133e1] dark:text-[#a78bfa] uppercase mr-1">Quick Templates:</span>
               <button
                 type="button"
                 onClick={() => applyTemplate("event")}
-                className="px-2 py-0.5 rounded bg-purple-500/10 hover:bg-purple-500/20 text-[#a78bfa] border border-purple-500/20 font-bold transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-[#a78bfa] border border-purple-500/20 font-bold transition-all cursor-pointer"
               >
                 + Game Event
               </button>
               <button
                 type="button"
                 onClick={() => applyTemplate("announcement")}
-                className="px-2 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 font-bold transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 font-bold transition-all cursor-pointer"
               >
                 + Update
               </button>
+              <button
+                type="button"
+                onClick={() => applyTemplate("guide")}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 font-bold transition-all cursor-pointer"
+              >
+                + Strategy Guide
+              </button>
             </div>
-
           </div>
 
           {/* NOTION CANVAS BODY */}
@@ -596,37 +610,19 @@ function NewsEditorForm() {
 
             {/* EDITOR VIEW MODES */}
             {viewMode === "write" && (
-              <textarea
-                ref={textareaRef}
-                required
-                rows={18}
-                placeholder="Start typing your article body here... Use the toolbar above or type Markdown headers directly."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="w-full flex-1 bg-transparent text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 focus:outline-none font-mono text-sm leading-relaxed min-h-[400px] resize-y"
-              />
+              <NotionEditor initialContent={content} onChange={setContent} />
             )}
 
             {viewMode === "split" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-                <textarea
-                  ref={textareaRef}
-                  required
-                  rows={18}
-                  placeholder="Start typing your article body here..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full bg-transparent text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 focus:outline-none font-mono text-xs leading-relaxed min-h-[400px] p-4 rounded-xl border border-zinc-200 dark:border-white/10"
-                />
+                <NotionEditor initialContent={content} onChange={setContent} />
 
                 <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#14131b] overflow-y-auto max-h-[500px] space-y-3 text-xs leading-relaxed">
-                  <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Live Preview:</p>
-                  {content.split("\n\n").map((block, idx) => {
-                    if (block.startsWith("# ")) return <h1 key={idx} className="text-lg font-extrabold text-white">{block.replace("# ", "")}</h1>;
-                    if (block.startsWith("## ")) return <h2 key={idx} className="text-base font-bold text-purple-300">{block.replace("## ", "")}</h2>;
-                    if (block.startsWith("> ")) return <div key={idx} className="p-2.5 rounded bg-purple-500/10 border-l-2 border-purple-500 italic text-purple-200">{block.replace("> ", "")}</div>;
-                    return <p key={idx} className="text-zinc-300">{block}</p>;
-                  })}
+                  <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Live HTML Render Preview:</p>
+                  <div
+                    className="prose prose-zinc dark:prose-invert max-w-none text-xs leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                  />
                 </div>
               </div>
             )}
@@ -644,11 +640,10 @@ function NewsEditorForm() {
                     <img src={coverImage} alt="Preview" className="h-full w-full object-cover" />
                   </div>
                 )}
-                <div className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed space-y-4 pt-4 border-t border-zinc-200 dark:border-white/[0.06]">
-                  {content.split("\n\n").map((block, idx) => (
-                    <p key={idx}>{block}</p>
-                  ))}
-                </div>
+                <div
+                  className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed space-y-4 pt-4 border-t border-zinc-200 dark:border-white/[0.06]"
+                  dangerouslySetInnerHTML={{ __html: content }}
+                />
               </div>
             )}
 
