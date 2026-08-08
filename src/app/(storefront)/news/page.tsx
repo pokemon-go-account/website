@@ -160,11 +160,11 @@ export default async function NewsPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black tracking-tight">All Articles & Updates</h2>
             <span className="text-xs font-semibold text-zinc-500">
-              Showing {articles.length} publications
+              Showing {articles.length} publication{articles.length === 1 ? "" : "s"}
             </span>
           </div>
 
-          <NewsClientFilter articles={regularArticles} />
+          <NewsClientFilter articles={articles} />
         </section>
 
         {/* Newsletter & SEO Trust Section */}

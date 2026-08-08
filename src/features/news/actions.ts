@@ -414,6 +414,12 @@ export async function getNewsArticleById(idOrSlug: string): Promise<ArticleData 
     }).lean();
 
     if (doc) {
+      // Fire-and-forget DB view count increment in MongoDB
+      NewsArticle.updateOne(
+        { _id: doc._id },
+        { $inc: { views: 1 } }
+      ).catch((e) => console.error("[getNewsArticleById] Failed to increment views:", e));
+
       return {
         articleId: doc.articleId || String(doc._id),
         title: doc.title,
@@ -458,7 +464,10 @@ export async function getRelatedNewsArticles(
 export async function incrementArticleViews(articleId: string) {
   try {
     await connectDB();
-    await NewsArticle.updateOne({ articleId }, { $inc: { views: 1 } });
+    await NewsArticle.updateOne(
+      { $or: [{ articleId }, { slug: articleId }] },
+      { $inc: { views: 1 } }
+    );
   } catch (err) {
     // Ignore view increment errors silently
   }
