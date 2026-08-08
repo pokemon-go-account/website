@@ -9,7 +9,6 @@ service cloud.firestore {
     }
 
     // Helper: Checks if the user is an admin or super admin.
-    // Checks custom claims (e.g. role == "ADMIN" or role == "SUPER_ADMIN" inside custom Firebase token)
     function isAdmin() {
       return request.auth != null && (
         request.auth.token.role == 'ADMIN' || 
@@ -17,41 +16,36 @@ service cloud.firestore {
       );
     }
 
+    // Helper: Checks if userId belongs to a guest user (starts with 'guest_')
+    function isGuestChat(userId) {
+      return userId is string && userId.matches('^guest_.*');
+    }
+
     // Support Chats collection
     match /supportChats/{chatId} {
       
-      // Allow read/list if user is the owner or an admin
-      allow read: if request.auth != null && (
-        isAdmin() || 
-        resource.data.userId == request.auth.uid
-      );
+      // Allow read/list if user is owner, admin, or guest chat
+      allow read: if (request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid)) ||
+                     isGuestChat(resource.data.userId);
       
-      // Allow create if user is logged in and sets themselves as the owner (or is an admin)
-      allow create: if request.auth != null && (
-        isAdmin() || 
-        request.resource.data.userId == request.auth.uid
-      );
+      // Allow create if user is owner, admin, or guest chat
+      allow create: if (request.auth != null && (isAdmin() || request.resource.data.userId == request.auth.uid)) ||
+                      isGuestChat(request.resource.data.userId);
       
-      // Allow update/delete if owner or admin
-      allow update, delete: if request.auth != null && (
-        isAdmin() || 
-        resource.data.userId == request.auth.uid
-      );
+      // Allow update/delete if owner, admin, or guest chat
+      allow update, delete: if (request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid)) ||
+                               isGuestChat(resource.data.userId);
       
       // Messages subcollection
       match /messages/{messageId} {
         
-        // Allow read/list and create if user is owner of the parent chat or admin
-        allow read, create: if request.auth != null && (
-          isAdmin() || 
-          get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
-        );
+        // Allow read/list and create if owner of parent chat, admin, or guest parent chat
+        allow read, create: if (request.auth != null && (isAdmin() || get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid)) ||
+                               isGuestChat(get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId);
         
-        // Allow update (such as marking read = true) if admin or owner of parent chat
-        allow update: if request.auth != null && (
-          isAdmin() || 
-          get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid
-        );
+        // Allow update (such as marking read = true) if admin, owner, or guest parent chat
+        allow update: if (request.auth != null && (isAdmin() || get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid)) ||
+                         isGuestChat(get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId);
 
         // Only allow admins to delete individual chat messages
         allow delete: if request.auth != null && isAdmin();
@@ -60,10 +54,8 @@ service cloud.firestore {
 
     // Archived Chat Users collection (Admins and owners for auto-unarchive)
     match /archivedChatUsers/{userId} {
-      allow read, write: if request.auth != null && (
-        isAdmin() || 
-        request.auth.uid == userId
-      );
+      allow read, write: if (request.auth != null && (isAdmin() || request.auth.uid == userId)) ||
+                            isGuestChat(userId);
     }
     
     // Live Auctions collection (Public read for real-time live room telemetry)

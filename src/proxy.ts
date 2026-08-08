@@ -6,10 +6,13 @@ import { authConfig } from "./auth.config";
 const { auth: nextAuthMiddleware } = NextAuth(authConfig);
 
 export default async function middleware(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+
   // If it's a Next.js Server Action request, bypass the NextAuth middleware
   // to prevent it from altering headers or cookies which Next.js Router relies on.
   if (request.headers.has("next-action")) {
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   return (nextAuthMiddleware as any)(request);

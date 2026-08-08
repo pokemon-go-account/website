@@ -2,35 +2,30 @@ import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 
-let appInitialized = false;
+function ensureAdminApp() {
+  if (getApps().length > 0) return true;
 
-// 1. Check for single service account JSON environment variable
-let serviceAccount: any = null;
-const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  let serviceAccount: any = null;
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-if (rawServiceAccount) {
-  try {
-    const trimmed = rawServiceAccount.trim();
-    if (trimmed.startsWith("{")) {
-      serviceAccount = JSON.parse(trimmed);
-    } else {
-      // Decode base64
-      const decoded = Buffer.from(trimmed, "base64").toString("utf-8");
-      serviceAccount = JSON.parse(decoded);
+  if (rawServiceAccount) {
+    try {
+      const trimmed = rawServiceAccount.trim();
+      if (trimmed.startsWith("{")) {
+        serviceAccount = JSON.parse(trimmed);
+      } else {
+        const decoded = Buffer.from(trimmed, "base64").toString("utf-8");
+        serviceAccount = JSON.parse(decoded);
+      }
+    } catch (err) {
+      console.error("Failed to parse Firebase service account JSON string:", err);
     }
-  } catch (err) {
-    console.error("Failed to parse Firebase service account JSON string:", err);
   }
-}
 
-// 2. Initialize using parsed service account or individual variables
-if (getApps().length === 0) {
   try {
     if (serviceAccount) {
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
-      appInitialized = true;
+      initializeApp({ credential: cert(serviceAccount) });
+      return true;
     } else if (
       process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
       process.env.FIREBASE_CLIENT_EMAIL &&
@@ -43,17 +38,21 @@ if (getApps().length === 0) {
           privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n").replace(/^"(.*)"$/, "$1"),
         }),
       });
-      appInitialized = true;
+      return true;
+    } else if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+      initializeApp({
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      });
+      return true;
     }
   } catch (error) {
     console.error("Firebase Admin initialization error:", error);
   }
-} else if (getApps().length > 0) {
-  appInitialized = true;
+  return getApps().length > 0;
 }
 
 export function getAdminDb() {
-  if (appInitialized) {
+  if (ensureAdminApp()) {
     return getAdminFirestore();
   }
   return null;
@@ -72,7 +71,7 @@ export interface FirebaseDecodedUser {
  */
 export async function verifyFirebaseIdToken(token: string): Promise<FirebaseDecodedUser> {
   // If service account is configured, verify signature using Firebase Admin SDK
-  if (appInitialized) {
+  if (ensureAdminApp()) {
     try {
       const decoded = await getAuth().verifyIdToken(token);
       return {

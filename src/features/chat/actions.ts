@@ -250,3 +250,122 @@ export async function sendChatWebhookNotification(payload: ChatWebhookPayload): 
     return { success: false, error: err.message || "Failed to send webhook notification" };
   }
 }
+
+/**
+ * Server Action: Edit a message in a Firestore support chat
+ * Allowed for message author or Admin/SuperAdmin.
+ */
+export async function editChatMessage(
+  chatId: string,
+  messageId: string,
+  newText: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return { success: false, error: "Unauthorized" };
+    }
+    const cleanText = newText.trim();
+    if (!cleanText) {
+      return { success: false, error: "Message content cannot be empty." };
+    }
+
+    const { getAdminDb } = await import("@/lib/firebase-admin");
+    const adminDb = getAdminDb();
+    if (!adminDb) {
+      return { success: false, error: "Database unavailable." };
+    }
+
+    const msgRef = adminDb
+      .collection("supportChats")
+      .doc(chatId)
+      .collection("messages")
+      .doc(messageId);
+
+    const msgDoc = await msgRef.get();
+    if (!msgDoc.exists) {
+      return { success: false, error: "Message not found." };
+    }
+
+    const data = msgDoc.data();
+    const userRole = (session.user as any).role || "USER";
+    const userId = session.user.id;
+
+    // Check authorization: Users can edit only user messages; Admins/SuperAdmins can edit only admin messages
+    if (data?.sender === "user") {
+      const chatDoc = await adminDb.collection("supportChats").doc(chatId).get();
+      const chatUserId = chatDoc.data()?.userId;
+      if (chatUserId !== userId) {
+        return { success: false, error: "You can only edit your own messages." };
+      }
+    } else if (data?.sender === "admin") {
+      const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(userRole);
+      if (!isAdmin) {
+        return { success: false, error: "Only admins can edit support team messages." };
+      }
+    } else {
+      return { success: false, error: "System messages cannot be edited." };
+    }
+
+    await msgRef.update({
+      text: cleanText,
+      edited: true,
+      editedAt: new Date(),
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("[editChatMessage] Error:", err);
+    return { success: false, error: err.message || "Failed to edit message" };
+  }
+}
+
+/**
+ * Server Action: Delete a message from a Firestore support chat
+ * Strictly restricted to SUPER_ADMIN role ONLY.
+ */
+export async function deleteChatMessage(
+  chatId: string,
+  messageId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth();
+    const userRole = (session?.user as any)?.role || "";
+    if (!session?.user || userRole !== "SUPER_ADMIN") {
+      return { success: false, error: "Unauthorized: Super Admin access required to delete messages." };
+    }
+
+    const { getAdminDb } = await import("@/lib/firebase-admin");
+    const adminDb = getAdminDb();
+    if (!adminDb) {
+      return { success: false, error: "Database unavailable." };
+    }
+
+    const msgRef = adminDb
+      .collection("supportChats")
+      .doc(chatId)
+      .collection("messages")
+      .doc(messageId);
+
+    const msgDoc = await msgRef.get();
+    if (!msgDoc.exists) {
+      return { success: true }; // Already deleted
+    }
+
+    const data = msgDoc.data();
+    if (data?.image) {
+      try {
+        const { deleteFromImages } = await import("@/lib/cloudflare-images");
+        await deleteFromImages([data.image]);
+      } catch (imgErr) {
+        console.warn("[deleteChatMessage] Could not delete image attachment:", imgErr);
+      }
+    }
+
+    await msgRef.delete();
+    return { success: true };
+  } catch (err: any) {
+    console.error("[deleteChatMessage] Error:", err);
+    return { success: false, error: err.message || "Failed to delete message" };
+  }
+}

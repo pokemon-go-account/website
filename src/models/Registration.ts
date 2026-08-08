@@ -5,6 +5,7 @@ export interface IRegistration extends Document {
   auctionId?: mongoose.Types.ObjectId | null;
   razorpayOrderId: string;
   status: "PENDING" | "PAID" | "FAILED";
+  addedToRevenue?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,10 @@ const RegistrationSchema: Schema<IRegistration> = new Schema(
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING",
       required: true,
+    },
+    addedToRevenue: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

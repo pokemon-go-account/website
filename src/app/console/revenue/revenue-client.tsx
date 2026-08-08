@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { getRevenueAnalyticsAction, DailyStat, RevenueOrderDetails } from "@/features/analytics/revenue-actions";
 import { getLiveExchangeRates } from "@/features/store/currency-actions";
 import {
@@ -36,6 +36,7 @@ interface RevenueData {
     buyNowRevenueUSD: number;
     auctionRevenueUSD: number;
     recoveryRevenueUSD: number;
+    registrationRevenueUSD: number;
   };
   dailyStats: DailyStat[];
   orders: RevenueOrderDetails[];
@@ -61,6 +62,8 @@ function RevenueLineChart({
   hoveredBar: DailyStat | null;
   setHoveredBar: (bar: DailyStat | null) => void;
 }) {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
   const width = 1000;
   const height = 220;
   const paddingTop = 25;
@@ -112,13 +115,33 @@ function RevenueLineChart({
 
   const lineColor = chartMode === "revenue" ? "#a855f7" : "#10b981";
   const gradientId = chartMode === "revenue" ? "revGrad" : "ordGrad";
+  const colWidth = points.length > 1 ? graphWidth / (points.length - 1) : graphWidth;
+
+  // Pointer/Touch tracking across the SVG for smooth mobile dragging & tapping
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!points.length || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const touchX = e.clientX - rect.left;
+    const svgX = (touchX / rect.width) * width;
+
+    let closest = points[0];
+    let minDistance = Math.abs(svgX - points[0].x);
+    for (let i = 1; i < points.length; i++) {
+      const dist = Math.abs(svgX - points[i].x);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closest = points[i];
+      }
+    }
+    setHoveredBar(closest.stat);
+  };
 
   return (
-    <div className="relative w-full pt-4 pb-2 select-none">
-      {/* Active Hover Tooltip */}
+    <div className="relative w-full pt-2 pb-1 select-none">
+      {/* Floating Hover Tooltip (Desktop) */}
       {activePoint && (
         <div
-          className="absolute -top-1 bg-zinc-900 text-white text-[11px] px-3 py-1.5 rounded-md font-medium shadow-xl z-30 flex items-center gap-2 border border-zinc-700 pointer-events-none transition-all"
+          className="hidden sm:flex absolute -top-1 bg-zinc-900 text-white text-[11px] px-3 py-1.5 rounded-md font-medium shadow-xl z-30 items-center gap-2 border border-zinc-700 pointer-events-none transition-all"
           style={{
             left: `${Math.max(10, Math.min(90, (activePoint.x / width) * 100))}%`,
             transform: "translateX(-50%)",
@@ -130,10 +153,13 @@ function RevenueLineChart({
         </div>
       )}
 
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto touch-pan-x">
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-auto min-w-[500px] overflow-visible"
+          className="w-full h-auto min-w-[320px] sm:min-w-[500px] overflow-visible touch-none"
+          onPointerMove={handlePointerMove}
+          onPointerDown={handlePointerMove}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -170,24 +196,36 @@ function RevenueLineChart({
               x2={activePoint.x}
               y2={height - paddingBottom}
               stroke={lineColor}
-              strokeWidth="1.5"
+              strokeWidth="2"
               strokeDasharray="4 4"
             />
           )}
 
-          {/* Data Point Circles */}
+          {/* Data Point Column Hit Targets & Circles */}
           {points.map((p) => {
             const isHovered = activePoint?.stat.date === p.stat.date;
             const showDot = points.length <= 35 || isHovered;
 
             return (
-              <g key={p.stat.date} className="cursor-pointer" onMouseEnter={() => setHoveredBar(p.stat)} onMouseLeave={() => setHoveredBar(null)}>
-                <circle cx={p.x} cy={p.y} r="12" fill="transparent" />
+              <g
+                key={p.stat.date}
+                className="cursor-pointer"
+                onClick={() => setHoveredBar(isHovered ? null : p.stat)}
+                onMouseEnter={() => setHoveredBar(p.stat)}
+              >
+                {/* Full Height Column Touch Hit Rectangle */}
+                <rect
+                  x={p.x - colWidth / 2}
+                  y={paddingTop}
+                  width={colWidth}
+                  height={graphHeight + paddingBottom}
+                  fill="transparent"
+                />
                 {showDot && (
                   <circle
                     cx={p.x}
                     cy={p.y}
-                    r={isHovered ? "6" : "3.5"}
+                    r={isHovered ? "7" : "3.5"}
                     fill={isHovered ? "#ffffff" : lineColor}
                     stroke={lineColor}
                     strokeWidth={isHovered ? "3" : "1.5"}
@@ -215,6 +253,26 @@ function RevenueLineChart({
             );
           })}
         </svg>
+      </div>
+
+      {/* Active Point Mobile/Desktop Indicator Banner */}
+      <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-900">
+        {activePoint ? (
+          <div className="flex items-center justify-between bg-purple-500/10 dark:bg-purple-500/15 border border-purple-500/30 px-3.5 py-2 rounded-xl text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-purple-600 dark:text-purple-400 font-mono">{activePoint.stat.formattedDate}</span>
+              <span className="text-zinc-400">•</span>
+              <span className="text-zinc-700 dark:text-zinc-300 font-semibold">{activePoint.stat.ordersCount} orders</span>
+            </div>
+            <div className="font-mono font-black text-sm text-purple-600 dark:text-purple-400">
+              {convertPrice(activePoint.stat.revenue)}
+            </div>
+          </div>
+        ) : (
+          <div className="text-[11px] text-zinc-400 italic text-center py-1">
+            Tap or drag across graph points to view details
+          </div>
+        )}
       </div>
     </div>
   );
@@ -262,7 +320,9 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   };
 
   useEffect(() => {
-    if (!initialData) {
+    if (initialData) {
+      setData(initialData);
+    } else {
       fetchData();
     }
   }, [initialData]);
@@ -329,6 +389,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
         buyNowRevenueUSD: 0,
         auctionRevenueUSD: 0,
         recoveryRevenueUSD: 0,
+        registrationRevenueUSD: 0,
       };
     }
 
@@ -341,6 +402,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     let buyNowRevenueUSD = 0;
     let auctionRevenueUSD = 0;
     let recoveryRevenueUSD = 0;
+    let registrationRevenueUSD = 0;
 
     filteredOrders.forEach((ord) => {
       const amt = ord.totalPriceUSD || 0;
@@ -349,6 +411,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
       else if (ord.orderType === "BUY_NOW") buyNowRevenueUSD += amt;
       else if (ord.orderType === "AUCTION") auctionRevenueUSD += amt;
       else if (ord.orderType === "RECOVERY") recoveryRevenueUSD += amt;
+      else if (ord.orderType === "REGISTRATION") registrationRevenueUSD += amt;
     });
 
     const totalOrdersCount = filteredOrders.length;
@@ -362,6 +425,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
       buyNowRevenueUSD: Math.round(buyNowRevenueUSD * 100) / 100,
       auctionRevenueUSD: Math.round(auctionRevenueUSD * 100) / 100,
       recoveryRevenueUSD: Math.round(recoveryRevenueUSD * 100) / 100,
+      registrationRevenueUSD: Math.round(registrationRevenueUSD * 100) / 100,
     };
   }, [data?.summary, filteredOrders, selectedCountry]);
 
@@ -373,6 +437,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
       auctions: Math.round(((summary.auctionRevenueUSD || 0) / total) * 100),
       buyNow: Math.round(((summary.buyNowRevenueUSD || 0) / total) * 100),
       recovery: Math.round(((summary.recoveryRevenueUSD || 0) / total) * 100),
+      registration: Math.round(((summary.registrationRevenueUSD || 0) / total) * 100),
     };
   }, [summary]);
 
@@ -525,12 +590,12 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   const activeOrdersCountInPeriod = dailyStats.reduce((acc, s) => acc + s.ordersCount, 0);
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-20 text-zinc-900 dark:text-zinc-100 font-sans">
+    <div className="space-y-6 sm:space-y-8 max-w-6xl mx-auto pb-20 text-zinc-900 dark:text-zinc-100 font-sans">
       
       {/* 1. PROFESSIONAL HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
             Revenue Analytics & Reporting
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -539,13 +604,13 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
         </div>
 
         {/* CONTROLS */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           
           {/* Country Filter */}
           <select
             value={selectedCountry}
             onChange={(e) => { setSelectedCountry(e.target.value); setCurrentPage(1); }}
-            className="h-8 px-3 rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer"
+            className="h-9 sm:h-8 px-3 rounded-xl sm:rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer w-full"
           >
             <option value="ALL">All Countries</option>
             {availableCountries.map((c) => (
@@ -557,7 +622,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
           <select
             value={selectedCurrency}
             onChange={(e) => setSelectedCurrency(e.target.value)}
-            className="h-8 px-3 rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer"
+            className="h-9 sm:h-8 px-3 rounded-xl sm:rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer w-full"
           >
             {CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>{c.label}</option>
@@ -567,18 +632,18 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
           {/* Export CSV */}
           <button
             onClick={exportToCSV}
-            className="h-8 px-3 rounded-md border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-9 sm:h-8 px-3 rounded-xl sm:rounded-md border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer w-full sm:w-auto"
             title="Export CSV Report"
           >
             <DownloadIcon className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Export CSV</span>
+            <span>Export CSV</span>
           </button>
 
           {/* Refresh Action */}
           <button
             onClick={fetchData}
             disabled={refreshing}
-            className="h-8 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+            className="h-9 sm:h-8 px-3 rounded-xl sm:rounded-md bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
           >
             <RefreshIcon className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
             <span>Refresh</span>
@@ -603,61 +668,61 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
       )}
 
       {/* 2. EXECUTIVE FINANCIAL KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         
-        <div className="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-2">
+        <div className="p-3.5 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-1.5 sm:space-y-2 shadow-xs">
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
             <span>Gross Revenue</span>
-            <DollarSign className="h-4 w-4 text-zinc-400" />
+            <DollarSign className="h-4 w-4 text-purple-500" />
           </div>
-          <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
+          <p className="text-lg sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
             {convertPrice(summary.totalRevenueUSD)}
           </p>
-          <span className="text-[11px] text-zinc-400 font-normal">Total processed sales</span>
+          <span className="text-[10px] sm:text-[11px] text-zinc-400 font-normal">Total processed sales</span>
         </div>
 
-        <div className="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-2">
+        <div className="p-3.5 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-1.5 sm:space-y-2 shadow-xs">
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
             <span>Orders Completed</span>
-            <ShoppingBag className="h-4 w-4 text-zinc-400" />
+            <ShoppingBag className="h-4 w-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
+          <p className="text-lg sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
             {summary.totalOrdersCount}
           </p>
-          <span className="text-[11px] text-zinc-400 font-normal">Storefront & live auctions</span>
+          <span className="text-[10px] sm:text-[11px] text-zinc-400 font-normal">Orders & entry fees</span>
         </div>
 
-        <div className="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-2">
+        <div className="p-3.5 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-1.5 sm:space-y-2 shadow-xs">
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-            <span>Average Order Value</span>
-            <TrendingUp className="h-4 w-4 text-zinc-400" />
+            <span>Avg Order Value</span>
+            <TrendingUp className="h-4 w-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
+          <p className="text-lg sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
             {convertPrice(summary.averageOrderValueUSD)}
           </p>
-          <span className="text-[11px] text-zinc-400 font-normal">Average customer spend</span>
+          <span className="text-[10px] sm:text-[11px] text-zinc-400 font-normal">Average customer spend</span>
         </div>
 
-        <div className="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-2">
+        <div className="p-3.5 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-1.5 sm:space-y-2 shadow-xs">
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-            <span>{timeRange === "1d" ? "Hourly Pace" : "Daily Sales Pace"}</span>
-            <LineChart className="h-4 w-4 text-zinc-400" />
+            <span>{timeRange === "1d" ? "Hourly Pace" : "Daily Pace"}</span>
+            <LineChart className="h-4 w-4 text-blue-500" />
           </div>
-          <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
+          <p className="text-lg sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
             {timeRange === "1d"
               ? (activeOrdersCountInPeriod / 24).toFixed(1)
               : (activeOrdersCountInPeriod / (dailyStats.length || 1)).toFixed(1)}{" "}
             <span className="text-xs text-zinc-500 font-sans font-normal">
-              {timeRange === "1d" ? "/ hour" : "/ day"}
+              {timeRange === "1d" ? "/ hr" : "/ day"}
             </span>
           </p>
-          <span className="text-[11px] text-zinc-400 font-normal">{timeRangeLabel} average</span>
+          <span className="text-[10px] sm:text-[11px] text-zinc-400 font-normal">{timeRangeLabel} average</span>
         </div>
 
       </div>
 
       {/* 3. PERFORMANCE CHART (LINE GRAPH) */}
-      <div className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-5">
+      <div className="p-4 sm:p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-4 sm:space-y-5 shadow-xs">
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-900 pb-3">
           <div>
@@ -671,7 +736,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Time Range Selector */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-x-auto max-w-full">
               {[
                 { key: "1d", label: "1D" },
                 { key: "7d", label: "7D" },
@@ -684,7 +749,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
                   key={r.key}
                   onClick={() => setTimeRange(r.key as any)}
                   className={cn(
-                    "px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer",
+                    "px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold rounded transition-colors cursor-pointer shrink-0",
                     timeRange === r.key
                       ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs font-bold"
                       : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -696,7 +761,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
             </div>
 
             {/* Metric Mode Toggle */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
               <button
                 onClick={() => setChartMode("revenue")}
                 className={cn(
@@ -736,15 +801,15 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
       </div>
 
       {/* 4. REVENUE CONTRIBUTION BY CHANNEL */}
-      <div className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-4">
+      <div className="p-4 sm:p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-4 shadow-xs">
         <h2 className="text-sm font-bold text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-900 pb-3">
           Channel Revenue Contribution
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-md border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1.5">
-            <span className="text-xs font-medium text-zinc-500">Storefront Catalog</span>
-            <p className="text-lg font-bold font-mono text-zinc-900 dark:text-white">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+          <div className="p-3 sm:p-4 rounded-xl border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1 sm:space-y-1.5">
+            <span className="text-[11px] sm:text-xs font-medium text-zinc-500">Storefront</span>
+            <p className="text-base sm:text-lg font-bold font-mono text-zinc-900 dark:text-white">
               {convertPrice(summary.storefrontRevenueUSD)}
             </p>
             <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
@@ -753,9 +818,9 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
             <span className="text-[10px] text-zinc-400 font-medium">{channelPercents.storefront}% of revenue</span>
           </div>
 
-          <div className="p-4 rounded-md border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1.5">
-            <span className="text-xs font-medium text-zinc-500">Live Auctions</span>
-            <p className="text-lg font-bold font-mono text-zinc-900 dark:text-white">
+          <div className="p-3 sm:p-4 rounded-xl border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1 sm:space-y-1.5">
+            <span className="text-[11px] sm:text-xs font-medium text-zinc-500">Auctions</span>
+            <p className="text-base sm:text-lg font-bold font-mono text-zinc-900 dark:text-white">
               {convertPrice(summary.auctionRevenueUSD)}
             </p>
             <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
@@ -764,9 +829,9 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
             <span className="text-[10px] text-zinc-400 font-medium">{channelPercents.auctions}% of revenue</span>
           </div>
 
-          <div className="p-4 rounded-md border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1.5">
-            <span className="text-xs font-medium text-zinc-500">Buy Now Accounts</span>
-            <p className="text-lg font-bold font-mono text-zinc-900 dark:text-white">
+          <div className="p-3 sm:p-4 rounded-xl border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1 sm:space-y-1.5">
+            <span className="text-[11px] sm:text-xs font-medium text-zinc-500">Buy Now</span>
+            <p className="text-base sm:text-lg font-bold font-mono text-zinc-900 dark:text-white">
               {convertPrice(summary.buyNowRevenueUSD)}
             </p>
             <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
@@ -775,9 +840,9 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
             <span className="text-[10px] text-zinc-400 font-medium">{channelPercents.buyNow}% of revenue</span>
           </div>
 
-          <div className="p-4 rounded-md border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1.5">
-            <span className="text-xs font-medium text-zinc-500">Account Recovery</span>
-            <p className="text-lg font-bold font-mono text-zinc-900 dark:text-white">
+          <div className="p-3 sm:p-4 rounded-xl border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1 sm:space-y-1.5">
+            <span className="text-[11px] sm:text-xs font-medium text-zinc-500">Recovery</span>
+            <p className="text-base sm:text-lg font-bold font-mono text-zinc-900 dark:text-white">
               {convertPrice(summary.recoveryRevenueUSD)}
             </p>
             <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
@@ -785,11 +850,22 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
             </div>
             <span className="text-[10px] text-zinc-400 font-medium">{channelPercents.recovery}% of revenue</span>
           </div>
+
+          <div className="p-3 sm:p-4 rounded-xl border border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 space-y-1 sm:space-y-1.5 col-span-2 sm:col-span-1">
+            <span className="text-[11px] sm:text-xs font-medium text-zinc-500">Registrations</span>
+            <p className="text-base sm:text-lg font-bold font-mono text-zinc-900 dark:text-white">
+              {convertPrice(summary.registrationRevenueUSD || 0)}
+            </p>
+            <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-purple-500 h-full" style={{ width: `${channelPercents.registration}%` }} />
+            </div>
+            <span className="text-[10px] text-zinc-400 font-medium">{channelPercents.registration}% of revenue</span>
+          </div>
         </div>
       </div>
 
       {/* 5. TRANSACTION LEDGER WITH PAGINATION */}
-      <div className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-4">
+      <div className="p-4 sm:p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-4 shadow-xs">
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-900 pb-3">
           <div>
@@ -798,28 +874,29 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
             </h2>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
+          <div className="grid grid-cols-1 sm:flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-auto">
               <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                 placeholder="Search order ID or customer..."
-                className="pl-8 pr-3 py-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none"
+                className="w-full sm:w-48 pl-8 pr-3 py-1.5 sm:py-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-md text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none"
               />
             </div>
 
             <select
               value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
-              className="h-7 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs text-zinc-800 dark:text-zinc-200 font-medium outline-none cursor-pointer"
+              className="w-full sm:w-auto h-9 sm:h-7 px-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-md text-xs text-zinc-800 dark:text-zinc-200 font-medium outline-none cursor-pointer"
             >
               <option value="ALL">All Types</option>
               <option value="STOREFRONT">Storefront</option>
               <option value="BUY_NOW">Buy Now</option>
               <option value="AUCTION">Auction</option>
               <option value="RECOVERY">Recovery</option>
+              <option value="REGISTRATION">Registration Fees</option>
             </select>
           </div>
         </div>
@@ -830,7 +907,69 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
+
+            {/* Mobile Native Transaction Cards (Visible on mobile screens < md) */}
+            <div className="block md:hidden space-y-3">
+              {paginatedOrders.map((ord) => {
+                const isReg = ord.orderType === "REGISTRATION";
+                const isAuc = ord.orderType === "AUCTION";
+                const isBuy = ord.orderType === "BUY_NOW";
+                const isRec = ord.orderType === "RECOVERY";
+
+                return (
+                  <div
+                    key={ord.id}
+                    className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xs space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-bold text-xs text-purple-600 dark:text-purple-400">
+                        {ord.orderNumber}
+                      </span>
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-md font-mono text-[10px] font-bold uppercase tracking-wider border",
+                          isReg && "bg-purple-500/10 text-purple-500 border-purple-500/20",
+                          isAuc && "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                          isBuy && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+                          isRec && "bg-blue-500/10 text-blue-500 border-blue-500/20",
+                          !isReg && !isAuc && !isBuy && !isRec && "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
+                        )}
+                      >
+                        {ord.orderType}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-0.5">
+                      <div>
+                        <p className="font-bold text-zinc-900 dark:text-white">{ord.customerName}</p>
+                        <p className="text-[10px] text-zinc-400">{ord.customerEmail}</p>
+                      </div>
+                      <div className="text-right font-mono font-black text-sm text-zinc-900 dark:text-white">
+                        {convertPrice(ord.totalPriceUSD)}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-900">
+                      <div className="truncate max-w-[180px]">
+                        {ord.items && ord.items.length > 0
+                          ? ord.items.map((i) => i.name).join(", ")
+                          : "Storefront Product"}
+                      </div>
+                      <div className="font-mono text-[10px] shrink-0">
+                        {new Date(ord.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Full Data Table (Visible on screens >= md) */}
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
               <table className="w-full text-left text-xs">
                 <thead className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 font-medium text-[11px]">
                   <tr>

@@ -6,9 +6,10 @@ import {
   verifyRegistrationConsole,
   failRegistrationConsole,
   deleteRegistrationConsole,
-  createRegistrationManuallyConsole
+  createRegistrationManuallyConsole,
+  toggleRegistrationRevenueConsole
 } from "@/features/console/actions";
-import { CreditCard, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2 } from "lucide-react";
+import { CreditCard, Check, X, Trash2, Search, CheckCircle, AlertTriangle, MessageSquare, Loader2, PlusCircle, MinusCircle, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 
@@ -31,6 +32,7 @@ interface RegistrationData {
   };
   razorpayOrderId: string;
   status: "PENDING" | "PAID" | "FAILED";
+  addedToRevenue?: boolean;
   createdAt: string;
 }
 
@@ -147,19 +149,38 @@ export default function RegistrationsConsolePage() {
     setProcessingId(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to permanently delete this registration document?")) return;
+  const handleToggleRevenue = async (id: string, currentVal: boolean) => {
+    const targetVal = !currentVal;
     setProcessingId(id);
     setAlert(null);
-    const res = await deleteRegistrationConsole(id);
-    if (res.success) {
-      setAlert({ text: "Registration deleted successfully.", ok: true });
-      setRegistrations(prev => prev.filter(r => r._id !== id));
-      setTotalCount(prev => prev - 1);
-    } else {
-      setAlert({ text: res.error || "Delete failed.", ok: false });
+    try {
+      const res = await toggleRegistrationRevenueConsole(id, targetVal);
+      if (res.success) {
+        setAlert({
+          text: targetVal
+            ? "Registration deposit added to Revenue successfully!"
+            : "Registration deposit removed from Revenue successfully.",
+          ok: true,
+        });
+        setRegistrations((prev) =>
+          prev.map((r) =>
+            r._id === id
+              ? {
+                  ...r,
+                  addedToRevenue: targetVal,
+                  status: res.status || (targetVal ? "PAID" : r.status),
+                }
+              : r
+          )
+        );
+      } else {
+        setAlert({ text: res.error || "Failed to update revenue status.", ok: false });
+      }
+    } catch (err: any) {
+      setAlert({ text: err.message || "Failed to update revenue status.", ok: false });
+    } finally {
+      setProcessingId(null);
     }
-    setProcessingId(null);
   };
 
   const handleManualRegisterSubmit = async (e: React.FormEvent) => {
@@ -178,12 +199,47 @@ export default function RegistrationsConsolePage() {
     setFormPending(false);
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this registration document?")) return;
+    setProcessingId(id);
+    setAlert(null);
+    const res = await deleteRegistrationConsole(id);
+    if (res.success) {
+      setAlert({ text: "Registration deleted successfully.", ok: true });
+      setRegistrations(prev => prev.filter(r => r._id !== id));
+      setTotalCount(prev => prev - 1);
+    } else {
+      setAlert({ text: res.error || "Delete failed.", ok: false });
+    }
+    setProcessingId(null);
+  };
+
+  const paidCount = registrations.filter((r) => r.addedToRevenue).length;
+  const totalRegistrationRevenue = paidCount * 2.50;
+
   return (
     <div className="max-w-6xl space-y-8">
       {/* Title */}
-      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Bidder Registrations</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Manage and manually override bidder live entry deposits ($2.50).</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-5 gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Bidder Registrations</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Manage and manually override bidder live entry deposits ($2.50).</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="bg-purple-500/10 border border-purple-500/20 px-4 py-2 rounded-2xl shrink-0">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-purple-500 dark:text-purple-400">Total Registration Revenue</p>
+            <p className="text-xl font-black text-purple-600 dark:text-purple-400">
+              ${totalRegistrationRevenue.toFixed(2)}
+            </p>
+          </div>
+          <a
+            href="/console/revenue"
+            className="h-9 px-3.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-xs no-underline"
+          >
+            <span>Revenue Analytics</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -371,12 +427,42 @@ export default function RegistrationsConsolePage() {
                       {/* Action buttons */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {Boolean(reg.addedToRevenue) ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleRevenue(reg._id, true);
+                              }}
+                              disabled={processingId === reg._id}
+                              className="h-7 px-2.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex items-center justify-center gap-1.5 text-xs font-bold cursor-pointer transition-colors disabled:opacity-50 shadow-xs"
+                              title="Click to remove from Revenue"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 text-purple-500" />
+                              <span>Added ($2.50)</span>
+                              <MinusCircle className="h-3 w-3 opacity-60 ml-0.5" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleRevenue(reg._id, false);
+                              }}
+                              disabled={processingId === reg._id}
+                              className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 hover:bg-purple-500/10 hover:border-purple-500/30 hover:text-purple-600 dark:hover:text-purple-400 text-zinc-650 dark:text-zinc-300 flex items-center justify-center gap-1.5 text-xs font-bold cursor-pointer transition-colors disabled:opacity-50 shadow-xs"
+                              title="Click to include this registration in Revenue"
+                            >
+                              <PlusCircle className="h-3.5 w-3.5 text-purple-500" />
+                              <span>Add to Revenue</span>
+                            </button>
+                          )}
                           {reg.status !== "PAID" && (
                             <button
                               onClick={() => handleVerify(reg._id)}
                               disabled={processingId === reg._id}
                               className="h-7 w-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
-                              title="Mark Paid / Verify"
+                              title="Mark Paid / Verify Deposit"
                             >
                               <Check className="h-3.5 w-3.5" />
                             </button>

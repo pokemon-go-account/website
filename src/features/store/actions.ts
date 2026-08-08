@@ -170,7 +170,116 @@ export async function createPokemonRequestAction(data: {
       status: "PENDING",
     });
 
-    return { success: true, requestId: request._id.toString() };
+    const reqIdStr = request._id.toString();
+    const chatId = `request-${reqIdStr}`;
+    const userEmail = session.user.email || "No Email";
+
+    const userMsgText = `📋 CUSTOM POKÉMON REQUEST SUBMITTED
+----------------------------------
+📌 Request Title / Item: ${data.pokemonName.trim()}
+📁 Category: Pokémon Sourcing
+📱 Social Contact: ${data.socialPlatform.trim()} (${data.socialId.trim()})
+
+💬 Details & Specifications:
+${data.description.trim()}
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${userEmail}
+User ID: ${session.user.id}`;
+
+    try {
+      const { getAdminDb } = await import("@/lib/firebase-admin");
+      const adminDb = getAdminDb();
+
+      if (adminDb) {
+        await adminDb.collection("supportChats").doc(chatId).set({
+          userId: session.user.id,
+          username,
+          email: userEmail,
+          type: "custom-request",
+          orderId: reqIdStr,
+          title: `Request #${reqIdStr.substring(0, 8).toUpperCase()}: ${data.pokemonName.trim()}`,
+          lastMessage: `Custom request submitted: ${data.pokemonName.trim()}`,
+          lastMessageAt: new Date(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: new Date(),
+        }, { merge: true });
+
+        const msgsRef = adminDb.collection("supportChats").doc(chatId).collection("messages");
+        await msgsRef.add({
+          text: userMsgText,
+          sender: "user",
+          senderName: username,
+          timestamp: new Date(),
+          read: false,
+        });
+
+        await msgsRef.add({
+          text: `System: Thank you for submitting your custom Pokémon request! Our support agents have been notified and will respond here soon.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: new Date(),
+          read: false,
+        });
+      } else {
+        const { getDb } = await import("@/lib/firestore");
+        const { doc, setDoc, collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+        const db = getDb();
+        const chatRef = doc(db, "supportChats", chatId);
+
+        await setDoc(chatRef, {
+          userId: session.user.id,
+          username,
+          email: userEmail,
+          type: "custom-request",
+          orderId: reqIdStr,
+          title: `Request #${reqIdStr.substring(0, 8).toUpperCase()}: ${data.pokemonName.trim()}`,
+          lastMessage: `Custom request submitted: ${data.pokemonName.trim()}`,
+          lastMessageAt: serverTimestamp(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+
+        const msgsRef = collection(db, "supportChats", chatId, "messages");
+        await addDoc(msgsRef, {
+          text: userMsgText,
+          sender: "user",
+          senderName: username,
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        await addDoc(msgsRef, {
+          text: `System: Thank you for submitting your custom Pokémon request! Our support agents have been notified and will respond here soon.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+      }
+    } catch (chatErr) {
+      console.error("Failed to initialize Firestore support ticket for request:", chatErr);
+    }
+
+    try {
+      const { sendChatWebhookNotification } = await import("@/features/chat/actions");
+      await sendChatWebhookNotification({
+        ticketId: chatId,
+        ticketTitle: `Custom Pokémon Request: ${data.pokemonName.trim()}`,
+        senderName: username,
+        senderType: "user",
+        userEmail,
+        text: `NEW CUSTOM POKÉMON REQUEST\nTitle: ${data.pokemonName.trim()}\nContact: ${data.socialPlatform} (${data.socialId})\nDetails: ${data.description.trim()}`,
+      });
+    } catch (whErr) {
+      console.error("Webhook notification error for request:", whErr);
+    }
+
+    return { success: true, requestId: reqIdStr, ticketId: chatId };
   } catch (error: any) {
     console.error("Failed to create Pokemon request:", error);
     return { success: false, error: error.message || "Failed to submit request." };
@@ -178,7 +287,7 @@ export async function createPokemonRequestAction(data: {
 }
 
 /**
- * Record a new custom service request (Account, Stardust, XP)
+ * Record a new custom service request (Account, Stardust, XP, Raid)
  */
 export async function createCustomRequestAction(data: {
   requestType: "ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE";
@@ -213,7 +322,124 @@ export async function createCustomRequestAction(data: {
       status: "PENDING",
     });
 
-    return { success: true, requestId: request._id.toString() };
+    const reqIdStr = request._id.toString();
+    const chatId = `request-${reqIdStr}`;
+    const userEmail = session.user.email || "No Email";
+
+    const typeLabels: Record<string, string> = {
+      ACCOUNT: "Custom Account",
+      STARDUST: "Custom Stardust",
+      XP: "Custom XP",
+      RAIDSERVICE: "Custom Raid Service",
+    };
+    const catLabel = typeLabels[data.requestType] || data.requestType;
+
+    const userMsgText = `📋 CUSTOM SERVICE REQUEST SUBMITTED (${catLabel})
+----------------------------------
+📌 Request Title / Item: ${data.title.trim()}
+📁 Category: ${catLabel}
+📱 Social Contact: ${data.socialPlatform.trim()} (${data.socialId.trim()})
+
+💬 Details & Specifications:
+${data.description.trim()}
+
+👤 USER DETAILS:
+----------------------------------
+Username: ${username}
+Email: ${userEmail}
+User ID: ${session.user.id}`;
+
+    try {
+      const { getAdminDb } = await import("@/lib/firebase-admin");
+      const adminDb = getAdminDb();
+
+      if (adminDb) {
+        await adminDb.collection("supportChats").doc(chatId).set({
+          userId: session.user.id,
+          username,
+          email: userEmail,
+          type: "custom-request",
+          orderId: reqIdStr,
+          title: `Request #${reqIdStr.substring(0, 8).toUpperCase()}: ${data.title.trim()}`,
+          lastMessage: `Custom request submitted: ${data.title.trim()}`,
+          lastMessageAt: new Date(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: new Date(),
+        }, { merge: true });
+
+        const msgsRef = adminDb.collection("supportChats").doc(chatId).collection("messages");
+        await msgsRef.add({
+          text: userMsgText,
+          sender: "user",
+          senderName: username,
+          timestamp: new Date(),
+          read: false,
+        });
+
+        await msgsRef.add({
+          text: `System: Thank you for submitting your custom request! Our support agents have been notified and will respond here soon.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: new Date(),
+          read: false,
+        });
+      } else {
+        const { getDb } = await import("@/lib/firestore");
+        const { doc, setDoc, collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+        const db = getDb();
+        const chatRef = doc(db, "supportChats", chatId);
+
+        await setDoc(chatRef, {
+          userId: session.user.id,
+          username,
+          email: userEmail,
+          type: "custom-request",
+          orderId: reqIdStr,
+          title: `Request #${reqIdStr.substring(0, 8).toUpperCase()}: ${data.title.trim()}`,
+          lastMessage: `Custom request submitted: ${data.title.trim()}`,
+          lastMessageAt: serverTimestamp(),
+          unreadByAdmin: 1,
+          unreadByUser: 0,
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+
+        const msgsRef = collection(db, "supportChats", chatId, "messages");
+        await addDoc(msgsRef, {
+          text: userMsgText,
+          sender: "user",
+          senderName: username,
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+
+        await addDoc(msgsRef, {
+          text: `System: Thank you for submitting your custom request! Our support agents have been notified and will respond here soon.`,
+          sender: "admin",
+          senderName: "Support Team",
+          timestamp: serverTimestamp(),
+          read: false,
+        });
+      }
+    } catch (chatErr) {
+      console.error("Failed to initialize Firestore support ticket for custom request:", chatErr);
+    }
+
+    try {
+      const { sendChatWebhookNotification } = await import("@/features/chat/actions");
+      await sendChatWebhookNotification({
+        ticketId: chatId,
+        ticketTitle: `Custom Request (${catLabel}): ${data.title.trim()}`,
+        senderName: username,
+        senderType: "user",
+        userEmail,
+        text: `NEW CUSTOM SERVICE REQUEST (${catLabel})\nTitle: ${data.title.trim()}\nContact: ${data.socialPlatform} (${data.socialId})\nDetails: ${data.description.trim()}`,
+      });
+    } catch (whErr) {
+      console.error("Webhook notification error for custom request:", whErr);
+    }
+
+    return { success: true, requestId: reqIdStr, ticketId: chatId };
   } catch (error: any) {
     console.error("Failed to create custom request:", error);
     return { success: false, error: error.message || "Failed to submit request." };

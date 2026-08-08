@@ -83,8 +83,13 @@ vi.mock('firebase-admin/firestore', () => ({
 }));
 
 vi.mock('@/lib/firebase-admin', () => {
+  const mockQuery = {
+    limit: vi.fn().mockReturnThis(),
+    get: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
+  };
   const mockCollection = {
     add: vi.fn().mockResolvedValue({ id: 'mock-msg-id' }),
+    where: vi.fn().mockReturnValue(mockQuery),
   };
   const mockDoc = {
     collection: vi.fn().mockReturnValue(mockCollection),

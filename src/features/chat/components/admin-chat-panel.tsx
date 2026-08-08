@@ -41,9 +41,12 @@ import {
   Sparkles,
   Archive,
   ArchiveRestore,
+  MoreVertical,
+  Pencil,
+  CornerUpLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadChatImage, deleteChatImages, getFirebaseCustomToken, sendChatWebhookNotification } from "@/features/chat/actions";
+import { uploadChatImage, deleteChatImages, sendChatWebhookNotification, editChatMessage, deleteChatMessage, getFirebaseCustomToken } from "@/features/chat/actions";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
@@ -59,7 +62,7 @@ interface ChatMeta {
   createdAt?: any;
   unreadByAdmin: number;
   unreadByUser: number;
-  type?: "support" | "order";
+  type?: "support" | "order" | "custom-request" | "recovery" | (string & {});
   title?: string;
   status?: string;
   closed?: boolean;
@@ -135,6 +138,13 @@ export function AdminChatPanel() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
+  // Edit & Delete Message States
+  const [openMenuMsgId, setOpenMenuMsgId] = useState<string | null>(null);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isDeletingMsg, setIsDeletingMsg] = useState(false);
+
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [isUserOnline, setIsUserOnline] = useState(false);
   const adminTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -143,8 +153,17 @@ export function AdminChatPanel() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-
   const autoSelectedRef = useRef(false);
+
+  const isNearBottomRef = useRef<boolean>(true);
+  const prevChatIdRef = useRef<string | null>(null);
+
+  const handleChatScroll = useCallback(() => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    isNearBottomRef.current = distanceFromBottom <= 120;
+  }, []);
 
   // Admin session for Get Assigned feature
   const { data: session } = useSession();
@@ -185,7 +204,6 @@ export function AdminChatPanel() {
       if (res.success && res.customToken) {
         signInWithCustomToken(clientAuth, res.customToken)
           .then(() => {
-            console.log("Firebase Auth signed in as Admin successfully.");
             setIsAuthReady(true);
           })
           .catch((err) => {
@@ -440,12 +458,23 @@ export function AdminChatPanel() {
     };
   }, [activeChatId, isAuthReady, selectedUserId]);
 
-  // Auto scroll to bottom
+  // Auto scroll to bottom (smart check: scroll only if near bottom or admin sent last message or chat changed)
   useEffect(() => {
-    if (chatContainerRef.current) {
+    if (!chatContainerRef.current) return;
+
+    const isChatChanged = activeChatId !== prevChatIdRef.current;
+    if (isChatChanged) {
+      prevChatIdRef.current = activeChatId;
+      isNearBottomRef.current = true;
+    }
+
+    const lastMsg = messages[messages.length - 1];
+    const isAdminSentLastMsg = lastMsg?.sender === "admin";
+
+    if (isChatChanged || isAdminSentLastMsg || isNearBottomRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [messages, isUserTyping]);
+  }, [messages, isUserTyping, activeChatId]);
 
   const handleAssign = async () => {
     if (!activeChatId) return;
@@ -467,6 +496,50 @@ export function AdminChatPanel() {
       });
     } catch (err) {
       console.error("Failed to assign admin:", err);
+    }
+  };
+
+  // Handle Editing Message
+  const handleStartEdit = (msg: Message) => {
+    setEditingMsgId(msg.id);
+    setEditingText(msg.text || "");
+    setOpenMenuMsgId(null);
+  };
+
+  const handleSaveEdit = async (msgId: string) => {
+    if (!activeChatId || !editingText.trim() || isSavingEdit) return;
+    setIsSavingEdit(true);
+    try {
+      const res = await editChatMessage(activeChatId, msgId, editingText.trim());
+      if (res.success) {
+        setEditingMsgId(null);
+        setEditingText("");
+      } else {
+        alert(res.error || "Failed to edit message.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to edit message.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  // Handle Deleting Message (Super Admin Only)
+  const handleDeleteMsg = async (msgId: string) => {
+    if (!activeChatId || isDeletingMsg) return;
+    if (!confirm("Are you sure you want to delete this message? This action cannot be undone.")) return;
+    setIsDeletingMsg(true);
+    try {
+      const res = await deleteChatMessage(activeChatId, msgId);
+      if (res.success) {
+        setOpenMenuMsgId(null);
+      } else {
+        alert(res.error || "Failed to delete message.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to delete message.");
+    } finally {
+      setIsDeletingMsg(false);
     }
   };
 
@@ -931,10 +1004,22 @@ export function AdminChatPanel() {
   });
   
   const userSupportChats = selectedUserChats.filter(
-    (c) => c.type === "support" || c.id.startsWith("support-")
+    (c) =>
+      c.type === "support" ||
+      c.type === "custom-request" ||
+      c.id.startsWith("support-") ||
+      c.id.startsWith("request-") ||
+      (!c.type?.startsWith("order") &&
+        !c.type?.startsWith("recovery") &&
+        !c.id.startsWith("order-") &&
+        !c.id.startsWith("recovery-"))
   );
   const userOrderChats = selectedUserChats.filter(
-    (c) => c.type === "order" || c.id.startsWith("order-")
+    (c) =>
+      c.type === "order" ||
+      c.type === "recovery" ||
+      c.id.startsWith("order-") ||
+      c.id.startsWith("recovery-")
   );
 
   const activeCategoryList = activeCategoryTab === "support" ? userSupportChats : userOrderChats;
@@ -1362,8 +1447,8 @@ export function AdminChatPanel() {
               </div>
             </div>
 
-            {/* Messages */}
-            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-50/30 dark:bg-[#0d0d12] min-h-[220px]">
+            {/* Scrollable message thread */}
+            <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-50/30 dark:bg-[#0d0d12] min-h-[220px]">
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
                   <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">No messages yet in this thread.</p>
@@ -1414,16 +1499,97 @@ export function AdminChatPanel() {
                             />
                           </div>
                         )}
-                        {displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isAdmin} />}
+                        {editingMsgId === msg.id ? (
+                          <div className="w-full space-y-2 py-1 min-w-[200px]">
+                            <textarea
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              rows={2}
+                              className="w-full bg-white dark:bg-[#121216] text-zinc-900 dark:text-zinc-100 border border-violet-400 dark:border-violet-500 rounded-xl p-2.5 text-xs sm:text-sm outline-none resize-none leading-relaxed"
+                            />
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setEditingMsgId(null)}
+                                className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 font-medium cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => handleSaveEdit(msg.id)}
+                                disabled={isSavingEdit || !editingText.trim()}
+                                className="px-3 py-1 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-bold rounded-lg transition cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-xs"
+                              >
+                                {isSavingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isAdmin} />
+                        )}
                       </div>
+
                       {!isSystem && activeChat?.status !== "closed" && (
-                        <ReplyActionButton onClick={() => setReplyingTo(msg)} isOutgoing={isAdmin} />
+                        <div className="relative flex items-center shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuMsgId(openMenuMsgId === msg.id ? null : msg.id);
+                            }}
+                            className="p-1 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/10 transition cursor-pointer"
+                            title="Message options"
+                          >
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </button>
+
+                          {openMenuMsgId === msg.id && (
+                            <div
+                              className={cn(
+                                "absolute z-30 bottom-full mb-1.5 w-36 py-1 rounded-xl bg-white dark:bg-[#1a1a22] border border-zinc-200/80 dark:border-white/10 shadow-xl text-xs animate-in fade-in zoom-in-95 duration-150 overflow-hidden",
+                                isAdmin ? "right-0" : "left-0"
+                              )}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={() => {
+                                  setReplyingTo(msg);
+                                  setOpenMenuMsgId(null);
+                                }}
+                                className="w-full px-3 py-2 flex items-center gap-2 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition text-left cursor-pointer font-medium"
+                              >
+                                <CornerUpLeft className="h-3.5 w-3.5 text-blue-500" />
+                                <span>Reply</span>
+                              </button>
+
+                              {isAdmin && (
+                                <button
+                                  onClick={() => handleStartEdit(msg)}
+                                  className="w-full px-3 py-2 flex items-center gap-2 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition text-left cursor-pointer font-medium"
+                                >
+                                  <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                                  <span>Edit</span>
+                                </button>
+                              )}
+
+                              {isSuperAdmin && (
+                                <button
+                                  onClick={() => handleDeleteMsg(msg.id)}
+                                  className="w-full px-3 py-2 flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition text-left cursor-pointer font-medium border-t border-zinc-100 dark:border-white/[0.06]"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                  <span>Delete</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center gap-1 px-1 select-none text-[10px] text-zinc-400 font-medium">
                       <span>
                         {isSystem ? "System" : msg.sender === "user" ? (selectedUser?.username || "User") : "You"} · {formatMessageTime(msg.timestamp)}
                       </span>
+                      {msg.edited && <span className="italic text-zinc-400 dark:text-zinc-500">(edited)</span>}
                       {isAdmin && !isSystem && (
                         <span className="inline-flex items-center ml-0.5">
                           {msg.read ? (

@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import Order from "@/models/Order";
 import User from "@/models/User";
 import RecoveryRequest from "@/models/RecoveryRequest";
+import Registration from "@/models/Registration";
 import { auth } from "@/auth";
 
 export interface DailyStat {
@@ -26,7 +27,7 @@ export interface RevenueOrderDetails {
   customerName: string;
   customerEmail: string;
   customerCountry?: string;
-  orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION" | "RECOVERY";
+  orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION" | "RECOVERY" | "REGISTRATION";
   status: string;
   totalPriceUSD: number;
   itemsCount: number;
@@ -104,12 +105,18 @@ export async function getRevenueAnalyticsAction() {
       independentRecoveryRevenue += rec.price || 0;
     }
 
-    const totalOrdersCount = orderStatResult.count + independentRecoveries.length;
+    // Calculate total bidder registration deposit fees ($2.50 per registration explicitly added to revenue)
+    const paidRegistrationsAll = await Registration.find({ addedToRevenue: true })
+      .populate("userId", "username email name country")
+      .lean();
+    const registrationRevenueUSD = paidRegistrationsAll.length * 2.50;
+
+    const totalOrdersCount = orderStatResult.count + independentRecoveries.length + paidRegistrationsAll.length;
     const storefrontRevenueUSD = orderStatResult.storefront;
     const buyNowRevenueUSD = orderStatResult.buyNow;
     const auctionRevenueUSD = orderStatResult.auction;
     const recoveryRevenueUSD = orderStatResult.recovery + independentRecoveryRevenue;
-    const totalRevenueUSD = storefrontRevenueUSD + buyNowRevenueUSD + auctionRevenueUSD + recoveryRevenueUSD;
+    const totalRevenueUSD = storefrontRevenueUSD + buyNowRevenueUSD + auctionRevenueUSD + recoveryRevenueUSD + registrationRevenueUSD;
     const averageOrderValueUSD = totalOrdersCount > 0 ? totalRevenueUSD / totalOrdersCount : 0;
 
     // 2. Fetch completed orders & recoveries for daily performance history (past 365 days)
@@ -156,6 +163,17 @@ export async function getRevenueAnalyticsAction() {
         dailyMap.set(dateKey, {
           count: existing.count + 1,
           revenue: existing.revenue + price,
+        });
+      }
+    }
+
+    for (const reg of paidRegistrationsAll) {
+      if (reg.createdAt) {
+        const dateKey = getDateKey(new Date(reg.createdAt));
+        const existing = dailyMap.get(dateKey) || { count: 0, revenue: 0 };
+        dailyMap.set(dateKey, {
+          count: existing.count + 1,
+          revenue: existing.revenue + 2.50,
         });
       }
     }
@@ -248,6 +266,31 @@ export async function getRevenueAnalyticsAction() {
       }
     }
 
+    // Format paid bidder registrations for table output
+    for (const reg of paidRegistrationsAll) {
+      const regIdStr = (reg._id as any).toString();
+      const userObj = reg.userId as any;
+      orderList.push({
+        id: regIdStr,
+        orderNumber: `#REG-${regIdStr.substring(18, 24).toUpperCase()}`,
+        customerName: userObj?.username || userObj?.name || "Bidder",
+        customerEmail: userObj?.email || "No email",
+        customerCountry: userObj?.country || "",
+        orderType: "REGISTRATION",
+        status: "COMPLETED",
+        totalPriceUSD: 2.50,
+        itemsCount: 1,
+        items: [
+          {
+            name: "Bidder Registration Entry Deposit",
+            priceUSD: 2.50,
+            quantity: 1,
+          },
+        ],
+        createdAt: reg.createdAt ? new Date(reg.createdAt).toISOString() : new Date().toISOString(),
+      });
+    }
+
     // Sort orderList chronologically for the table presentation
     orderList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -262,6 +305,7 @@ export async function getRevenueAnalyticsAction() {
           buyNowRevenueUSD: Math.round(buyNowRevenueUSD * 100) / 100,
           auctionRevenueUSD: Math.round(auctionRevenueUSD * 100) / 100,
           recoveryRevenueUSD: Math.round(recoveryRevenueUSD * 100) / 100,
+          registrationRevenueUSD: Math.round(registrationRevenueUSD * 100) / 100,
         },
         dailyStats,
         orders: orderList,

@@ -15,4 +15,6 @@ export interface ChatMessage {
   image?: string;
   read?: boolean;
   replyTo?: ReplyToPayload;
+  edited?: boolean;
+  editedAt?: any;
 }

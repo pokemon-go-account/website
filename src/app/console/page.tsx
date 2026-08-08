@@ -1,20 +1,22 @@
-import { getAllAdmins, getPendingAuctionListings, getTotalRevenueConsole } from "@/features/console/actions";
-import { AlertTriangle, ArrowRight, Mail, CheckCircle2, DollarSign, TrendingUp } from "lucide-react";
+import { getAllAdmins, getPendingAuctionListings, getTotalRevenueConsole, getMaintenanceConfig } from "@/features/console/actions";
+import { AlertTriangle, ArrowRight, Mail, CheckCircle2, DollarSign, TrendingUp, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
 export const revalidate = 0;
 
 export default async function ConsolePage() {
-  const [adminsRes, listingsRes, revenueRes] = await Promise.all([
+  const [adminsRes, listingsRes, revenueRes, maintenanceRes] = await Promise.all([
     getAllAdmins(),
     getPendingAuctionListings(),
     getTotalRevenueConsole(),
+    getMaintenanceConfig(),
   ]);
 
   const admins = adminsRes.admins || [];
   const listings = listingsRes.listings || [];
   const totalRevenue = revenueRes.totalRevenue || 0;
   const completedOrdersCount = revenueRes.completedOrdersCount || 0;
+  const isMaintenanceMode = Boolean(maintenanceRes.maintenanceMode);
 
   const expiredAdmins = admins.filter(
     (a: any) => !a.adminRentPaidUntil || new Date(a.adminRentPaidUntil) < new Date()
@@ -37,6 +39,37 @@ export default async function ConsolePage() {
           Platform status, total revenue, pending approvals, and admin access management.
         </p>
       </div>
+
+      {/* Maintenance Mode Banner Indicator */}
+      {isMaintenanceMode ? (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs">
+          <div className="flex items-center gap-2.5">
+            <ShieldAlert className="h-4 w-4 shrink-0" />
+            <span>
+              <strong>Maintenance Mode is currently ACTIVE:</strong> Public storefront visitors are being redirected to the maintenance page.
+            </span>
+          </div>
+          <Link
+            href="/console/settings"
+            className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg transition-colors text-[11px] shrink-0"
+          >
+            Manage Settings
+          </Link>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between p-3 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Site Status: <strong>Live Public Traffic</strong></span>
+          </div>
+          <Link
+            href="/console/settings"
+            className="text-purple-600 dark:text-purple-400 hover:underline font-semibold text-[11px]"
+          >
+            Configure Maintenance Mode →
+          </Link>
+        </div>
+      )}
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-px bg-zinc-200 dark:bg-white/[0.06] rounded-lg overflow-hidden border border-zinc-200 dark:border-white/[0.06]">

@@ -186,13 +186,7 @@ export default function OrdersConsolePage() {
       setAlert({ text: res.error || "Failed to update order price.", ok: false });
     }
     setProcessingId(null);
-  };
-
-  const completedRevenue = orders
-    .filter((o) => o.status === "COMPLETED")
-    .reduce((acc, o) => acc + (o.totalPrice || 0), 0);
-
-  // Extract unique countries from orders list for quick filter options
+  };  // Extract unique countries from orders list for quick filter options
   const availableCountries = Array.from(
     new Set(orders.map((o) => o.userId?.country).filter((c): c is string => Boolean(c && c.trim())))
   ).sort();
@@ -200,17 +194,9 @@ export default function OrdersConsolePage() {
   return (
     <div className="max-w-6xl space-y-8">
       {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200 dark:border-white/[0.06] pb-5 gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Orders Manager</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Approve and track direct storefront checkouts and Buy Now transactions.</p>
-        </div>
-        <div className="bg-emerald-500/10 border border-emerald-500/20 px-4.5 py-2.5 rounded-2xl shrink-0">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-500">Total Completed Revenue</p>
-          <p className="text-2xl font-black text-emerald-400">
-            ${completedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
-        </div>
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] pb-5">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">Orders Manager</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Approve and track direct storefront checkouts and Buy Now transactions.</p>
       </div>
 
       {/* Alerts */}

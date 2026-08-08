@@ -7,6 +7,7 @@ export const revalidate = 0;
 interface ChatPageProps {
   searchParams: Promise<{
     chatId?: string;
+    ticketId?: string;
   }>;
 }
 
@@ -17,7 +18,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
   }
 
   const resolvedSearchParams = await searchParams;
-  const chatId = resolvedSearchParams.chatId || null;
+  const chatId = resolvedSearchParams.chatId || resolvedSearchParams.ticketId || null;
 
   return (
     <div className="min-h-screen bg-zinc-50/50 dark:bg-black/10">

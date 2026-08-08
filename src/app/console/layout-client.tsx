@@ -26,6 +26,7 @@ import {
   BarChart3,
   TrendingUp,
   Newspaper,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ const navGroups = [
     items: [
       { href: "/console", label: "Overview", icon: LayoutDashboard },
       { href: "/console/revenue", label: "Revenue & Analytics", icon: TrendingUp },
+      { href: "/console/settings", label: "Maintenance & Settings", icon: ShieldAlert },
       { href: "/console/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/console/users", label: "Users", icon: Users },
     ],

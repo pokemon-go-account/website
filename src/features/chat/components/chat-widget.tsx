@@ -32,7 +32,22 @@ export function ChatWidget() {
     chatId: string;
   } | null>(null);
 
-  const userId = (session?.user as any)?.id as string | undefined;
+  const [guestId, setGuestId] = useState<string | null>(null);
+
+  // Initialize persistent guest ID for unauthenticated visitors
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      let storedId = localStorage.getItem("pogo_guest_chat_id");
+      if (!storedId) {
+        storedId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+        localStorage.setItem("pogo_guest_chat_id", storedId);
+      }
+      setGuestId(storedId);
+    }
+  }, []);
+
+  const rawUserId = (session?.user as any)?.id as string | undefined;
+  const userId = rawUserId || guestId || undefined;
 
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -40,6 +55,7 @@ export function ChatWidget() {
   const prevConvsRef = useRef<any[]>([]);
   const isFirstRender = useRef(true);
   const notifSoundRef = useRef<HTMLAudioElement | null>(null);
+  const notifiedKeysRef = useRef<Set<string>>(new Set());
 
   // Initialize notification sound
   useEffect(() => {
@@ -50,14 +66,57 @@ export function ChatWidget() {
     }
   }, []);
 
-  // Sign in to Firebase Auth using NextAuth session ID
+  // Proactive 1-minute automated support engagement toast (ONLY for UNLOGGED-IN guest visitors, ONCE per person)
   useEffect(() => {
-    if (!clientAuth || !userId) {
+    if (typeof window === "undefined") return;
+
+    // DO NOT send message to logged-in users (ONLY unauthenticated guests)
+    if (session?.user) return;
+
+    const nudgeShown = localStorage.getItem("pogo_chat_nudge_shown");
+    if (nudgeShown === "true") return;
+
+    const timer = setTimeout(() => {
+      localStorage.setItem("pogo_chat_nudge_shown", "true");
+
+      setActiveNotification({
+        id: `proactive-nudge-${Date.now()}`,
+        title: "24/7 Live Support 👋",
+        message: "Need any help? We are here for you 24/7 — feel free to chat with us anytime!",
+        type: "support",
+        chatId: "proactive-nudge",
+      });
+
+      try {
+        if (notifSoundRef.current) {
+          notifSoundRef.current.currentTime = 0;
+          notifSoundRef.current.play().catch(() => {});
+        }
+      } catch { /* silent */ }
+    }, 60000); // 60 seconds (1 minute)
+
+    return () => clearTimeout(timer);
+  }, [session?.user]);
+
+  // Mark nudge shown if user opens chat widget manually
+  useEffect(() => {
+    if (isOpen && typeof window !== "undefined") {
+      localStorage.setItem("pogo_chat_nudge_shown", "true");
+    }
+  }, [isOpen]);
+
+  // Sign in to Firebase Auth using NextAuth session ID for logged in users
+  useEffect(() => {
+    if (!rawUserId) {
+      setIsAuthReady(true);
+      return;
+    }
+    if (!clientAuth) {
       setIsAuthReady(false);
       return;
     }
 
-    if (clientAuth.currentUser?.uid === userId) {
+    if (clientAuth.currentUser?.uid === rawUserId) {
       setIsAuthReady(true);
       return;
     }
@@ -66,7 +125,6 @@ export function ChatWidget() {
       if (res.success && res.customToken) {
         signInWithCustomToken(clientAuth, res.customToken)
           .then(() => {
-            console.log("Firebase Auth signed in with custom token successfully.");
             setIsAuthReady(true);
           })
           .catch((err) => {
@@ -79,11 +137,11 @@ export function ChatWidget() {
     }).catch(() => {
       setIsAuthReady(false);
     });
-  }, [userId]);
+  }, [rawUserId]);
 
   // Listen for all unread messages belonging to this user
   useEffect(() => {
-    if (!userId || !isAuthReady) return;
+    if (!userId) return;
     const db = getDb();
     const chatsRef = collection(db, "supportChats");
     const q = query(chatsRef, where("userId", "==", userId));
@@ -104,6 +162,37 @@ export function ChatWidget() {
       if (isFirstRender.current) {
         prevConvsRef.current = convs;
         isFirstRender.current = false;
+        
+        // Mark all initial unread conversations so subsequent snapshots will not re-trigger them
+        convs.forEach((c) => {
+          if ((c.unreadByUser ?? 0) > 0) {
+            const k = c.lastMessageAt?.toMillis ? c.lastMessageAt.toMillis() : (c.lastMessage || "init");
+            notifiedKeysRef.current.add(`${c.id}-${k}`);
+          }
+        });
+
+        // Trigger notification banner on initial page load / reload if unread messages exist (ONCE ONLY)
+        if (sum > 0) {
+          const unreadConv = convs.find((c) => (c.unreadByUser ?? 0) > 0) || convs[0];
+          if (unreadConv) {
+            const lastMsgKey = unreadConv.lastMessageAt?.toMillis ? unreadConv.lastMessageAt.toMillis() : (unreadConv.lastMessage || "init");
+            const notifKey = `${unreadConv.id}-${lastMsgKey}`;
+            
+            setActiveNotification({
+              id: notifKey,
+              title: unreadConv.title || (unreadConv.type === "order" ? "Order Update" : "Support Chat"),
+              message: `${sum} unread message${sum > 1 ? "s" : ""}: ${unreadConv.lastMessage || "New message received"}`,
+              type: unreadConv.type || (unreadConv.id.startsWith("order-") ? "order" : "support"),
+              chatId: unreadConv.id,
+            });
+            try {
+              if (notifSoundRef.current) {
+                notifSoundRef.current.currentTime = 0;
+                notifSoundRef.current.play().catch(() => {});
+              }
+            } catch { /* silent */ }
+          }
+        }
         return;
       }
 
@@ -113,8 +202,12 @@ export function ChatWidget() {
         const prevUnread = prevConv ? (prevConv.unreadByUser ?? 0) : 0;
 
         if (currentUnread > prevUnread) {
+          const lastMsgKey = conv.lastMessageAt?.toMillis ? conv.lastMessageAt.toMillis() : (conv.lastMessage || "new");
+          const notifKey = `${conv.id}-${lastMsgKey}`;
           const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-          if (!isOpen || isMobile) {
+
+          if ((!isOpen || isMobile) && !notifiedKeysRef.current.has(notifKey)) {
+            notifiedKeysRef.current.add(notifKey);
             // Play notification sound
             try {
               if (notifSoundRef.current) {
@@ -125,7 +218,7 @@ export function ChatWidget() {
 
             // Trigger visual Toast notification
             setActiveNotification({
-              id: Math.random().toString(),
+              id: notifKey,
               title: conv.title || (conv.type === "order" ? "Order Update" : "Support Chat"),
               message: conv.lastMessage || "New message received",
               type: conv.type || (conv.id.startsWith("order-") ? "order" : "support"),
@@ -142,12 +235,12 @@ export function ChatWidget() {
     return unsub;
   }, [userId, isOpen]);
 
-  // Auto-close notification toast after 6 seconds
+  // Auto-close notification toast after exactly 5 seconds if not dismissed by user
   useEffect(() => {
     if (!activeNotification) return;
     const timer = setTimeout(() => {
       setActiveNotification(null);
-    }, 6000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [activeNotification]);
 
@@ -173,7 +266,7 @@ export function ChatWidget() {
   // Conditional rendering
   const isOnConsolePage = pathname?.startsWith("/console");
   const isOnChatPage = pathname === "/chat";
-  if (!session?.user || !userId || isOnConsolePage || isOnChatPage) return null;
+  if (!userId || isOnConsolePage || (isOnChatPage && rawUserId)) return null;
 
   return (
     <>
@@ -193,7 +286,7 @@ export function ChatWidget() {
                 setActiveNotification(null);
               }
             }}
-            className="fixed top-6 right-6 z-[100] max-w-sm w-full bg-white/95 dark:bg-[#121217]/95 border border-zinc-200/80 dark:border-white/10 p-4 rounded-2xl shadow-2xl flex gap-3.5 pointer-events-auto cursor-pointer backdrop-blur-xl transition-all hover:scale-[1.01]"
+            className="fixed top-4 left-4 right-4 sm:top-6 sm:right-6 sm:left-auto z-[100] sm:max-w-sm w-auto bg-white/95 dark:bg-[#121217]/95 border border-zinc-200/80 dark:border-white/10 p-4 rounded-2xl shadow-2xl flex gap-3.5 pointer-events-auto cursor-pointer backdrop-blur-xl transition-all hover:scale-[1.01]"
           >
             <div className="shrink-0">
               <div className={cn(

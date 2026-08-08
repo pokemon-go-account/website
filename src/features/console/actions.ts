@@ -297,9 +297,14 @@ export async function getRegistrationsConsole(
     const totalCount = await Registration.countDocuments(query);
     const hasMore = skip + registrations.length < totalCount;
       
+    const formattedRegistrations = registrations.map((r: any) => ({
+      ...r,
+      addedToRevenue: Boolean(r.addedToRevenue),
+    }));
+
     return { 
       success: true, 
-      registrations: JSON.parse(JSON.stringify(registrations)),
+      registrations: JSON.parse(JSON.stringify(formattedRegistrations)),
       hasMore,
       totalCount
     };
@@ -325,6 +330,7 @@ export async function verifyRegistrationConsole(registrationId: string) {
       });
     }
     revalidatePath("/console/registrations");
+    revalidatePath("/console/revenue");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to verify registration." };
@@ -341,6 +347,7 @@ export async function failRegistrationConsole(registrationId: string) {
     
     await Registration.findByIdAndUpdate(registrationId, { status: "FAILED" });
     revalidatePath("/console/registrations");
+    revalidatePath("/console/revenue");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to fail registration." };
@@ -357,9 +364,52 @@ export async function deleteRegistrationConsole(registrationId: string) {
     
     await Registration.findByIdAndDelete(registrationId);
     revalidatePath("/console/registrations");
+    revalidatePath("/console/revenue");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to delete registration." };
+  }
+}
+
+/** Toggle whether a bidder registration deposit is included in Revenue */
+export async function toggleRegistrationRevenueConsole(registrationId: string, addToRevenue: boolean) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    
+    const Registration = (await import("@/models/Registration")).default;
+    const User = (await import("@/models/User")).default;
+    
+    const reg = await Registration.findById(registrationId);
+    if (!reg) {
+      return { success: false, error: "Registration record not found." };
+    }
+
+    const shouldAdd = Boolean(addToRevenue);
+    reg.addedToRevenue = shouldAdd;
+
+    if (shouldAdd && reg.status !== "PAID") {
+      reg.status = "PAID";
+      if (reg.userId) {
+        await User.findByIdAndUpdate(reg.userId, {
+          hasPaidVerificationDeposit: true,
+          $set: { walletBalance: 2.5 }
+        });
+      }
+    }
+
+    await reg.save();
+
+    revalidatePath("/console/registrations");
+    revalidatePath("/console/revenue");
+    return {
+      success: true,
+      addedToRevenue: reg.addedToRevenue,
+      status: reg.status,
+    };
+  } catch (error: any) {
+    console.error("Error in toggleRegistrationRevenueConsole:", error);
+    return { success: false, error: error.message || "Failed to update registration revenue status." };
   }
 }
 
@@ -492,20 +542,30 @@ export async function completeOrderConsole(orderId: string) {
             createdAt: new Date(),
           }, { merge: true });
 
-        // Write the rating-request message
-        await adminDb
+        // Write the rating-request message only if one doesn't already exist
+        const existingRating = await adminDb
           .collection("supportChats")
           .doc(chatId)
           .collection("messages")
-          .add({
-            type: "rating_request",
-            text: "System: Your order has been marked as completed! 🎉 We'd love to hear about your experience.",
-            sender: "admin",
-            senderName: "Support Team",
-            timestamp: new Date(),
-            read: false,
-            orderId: orderId,
-          });
+          .where("type", "==", "rating_request")
+          .limit(1)
+          .get();
+
+        if (existingRating.empty) {
+          await adminDb
+            .collection("supportChats")
+            .doc(chatId)
+            .collection("messages")
+            .add({
+              type: "rating_request",
+              text: "System: Your order has been marked as completed! 🎉 We'd love to hear about your experience.",
+              sender: "admin",
+              senderName: "Support Team",
+              timestamp: new Date(),
+              read: false,
+              orderId: orderId,
+            });
+        }
       }
     } catch (chatErr) {
       // Chat notification failure must NOT block the primary order completion
@@ -680,6 +740,7 @@ export async function createRegistrationManuallyConsole(username: string, auctio
     await user.save();
 
     revalidatePath("/console/registrations");
+    revalidatePath("/console/revenue");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to manually register bidder:", error);
@@ -933,20 +994,30 @@ export async function markAuctionDelivered(orderId: string) {
             createdAt: new Date(),
           }, { merge: true });
 
-        // Write the rating-request message
-        await adminDb
+        // Write the rating-request message only if one doesn't already exist
+        const existingRating = await adminDb
           .collection("supportChats")
           .doc(chatId)
           .collection("messages")
-          .add({
-            type: "rating_request",
-            text: "System: Your order has been marked as completed! 🎉 We'd love to hear about your experience.",
-            sender: "admin",
-            senderName: "Support Team",
-            timestamp: new Date(),
-            read: false,
-            orderId: orderId,
-          });
+          .where("type", "==", "rating_request")
+          .limit(1)
+          .get();
+
+        if (existingRating.empty) {
+          await adminDb
+            .collection("supportChats")
+            .doc(chatId)
+            .collection("messages")
+            .add({
+              type: "rating_request",
+              text: "System: Your order has been marked as completed! 🎉 We'd love to hear about your experience.",
+              sender: "admin",
+              senderName: "Support Team",
+              timestamp: new Date(),
+              read: false,
+              orderId: orderId,
+            });
+        }
       }
     } catch (chatErr) {
       // Chat notification failure must NOT block the primary order completion
@@ -962,23 +1033,94 @@ export async function markAuctionDelivered(orderId: string) {
   }
 }
 
-/** Get total revenue calculated upon every COMPLETED order */
+/** Get total revenue calculated upon every COMPLETED order and registrations added to revenue */
 export async function getTotalRevenueConsole() {
   try {
     await checkSuperAdminSession();
     await connectDB();
     const Order = (await import("@/models/Order")).default;
+    const Registration = (await import("@/models/Registration")).default;
     
-    const result = await Order.aggregate([
-      { $match: { status: "COMPLETED" } },
-      { $group: { _id: null, totalRevenue: { $sum: "$totalPrice" }, count: { $sum: 1 } } }
+    const [orderResult, registrationCount] = await Promise.all([
+      Order.aggregate([
+        { $match: { status: "COMPLETED" } },
+        { $group: { _id: null, totalRevenue: { $sum: "$totalPrice" }, count: { $sum: 1 } } }
+      ]),
+      Registration.countDocuments({ addedToRevenue: true })
     ]);
     
-    const totalRevenue = result[0]?.totalRevenue || 0;
-    const completedOrdersCount = result[0]?.count || 0;
+    const orderRevenue = orderResult[0]?.totalRevenue || 0;
+    const orderCount = orderResult[0]?.count || 0;
+    const registrationRevenue = registrationCount * 2.50;
+
+    const totalRevenue = Math.round((orderRevenue + registrationRevenue) * 100) / 100;
+    const completedOrdersCount = orderCount + registrationCount;
 
     return { success: true, totalRevenue, completedOrdersCount };
   } catch (error: any) {
     return { success: false, totalRevenue: 0, completedOrdersCount: 0, error: error.message };
   }
 }
+
+/** Fetch System Maintenance Mode Configuration */
+export async function getMaintenanceConfig() {
+  try {
+    await connectDB();
+    const SystemConfig = (await import("@/models/SystemConfig")).default;
+    let config = await SystemConfig.findOne({ key: "global" }).lean();
+    if (!config) {
+      config = await SystemConfig.create({
+        key: "global",
+        maintenanceMode: false,
+        contactEmail: "support@pokemongo.com",
+      });
+    }
+    return {
+      success: true,
+      maintenanceMode: Boolean(config.maintenanceMode),
+      contactEmail: config.contactEmail || "support@pokemongo.com",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      maintenanceMode: false,
+      contactEmail: "support@pokemongo.com",
+      error: error.message,
+    };
+  }
+}
+
+/** Update System Maintenance Mode Configuration (Requires Admin/SuperAdmin) */
+export async function updateMaintenanceConfig(data: {
+  maintenanceMode: boolean;
+  contactEmail?: string;
+}) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+    const SystemConfig = (await import("@/models/SystemConfig")).default;
+    const updateData: Record<string, any> = {
+      maintenanceMode: data.maintenanceMode,
+    };
+    if (data.contactEmail && data.contactEmail.trim().length > 0) {
+      updateData.contactEmail = data.contactEmail.trim();
+    }
+
+    const config = await SystemConfig.findOneAndUpdate(
+      { key: "global" },
+      { $set: updateData },
+      { returnDocument: "after", upsert: true }
+    ).lean();
+
+    revalidatePath("/", "layout");
+
+    return {
+      success: true,
+      maintenanceMode: Boolean(config.maintenanceMode),
+      contactEmail: config.contactEmail,
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update maintenance configuration." };
+  }
+}
+

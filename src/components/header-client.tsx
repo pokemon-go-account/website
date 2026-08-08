@@ -62,6 +62,29 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
     }
   }, [mounted, sessionUser?.id]);
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!mounted || !sessionUser?.id) return;
+    let unsub: (() => void) | undefined;
+    import("@/lib/firestore").then(({ getDb }) => {
+      import("firebase/firestore").then(({ collection, query, where, onSnapshot }) => {
+        const db = getDb();
+        const q = query(collection(db, "supportChats"), where("userId", "==", sessionUser.id));
+        unsub = onSnapshot(q, (snap) => {
+          let sum = 0;
+          snap.docs.forEach((d) => {
+            sum += (d.data().unreadByUser ?? 0);
+          });
+          setUnreadCount(sum);
+        }, () => {});
+      });
+    });
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [mounted, sessionUser?.id]);
+
   const clientUser = sessionUser ? {
     name: sessionUser.name,
     username: (sessionUser as any).username,
@@ -81,13 +104,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
     ? (freshBalance !== null ? freshBalance : (typeof propUser?.walletBalance === "number" ? propUser.walletBalance : (clientUser?.walletBalance ?? 0)))
     : (propUser?.walletBalance ?? 0);
 
-  useEffect(() => {
-    if (mounted) {
-      console.log("[HeaderClient Debug] propUser:", propUser);
-      console.log("[HeaderClient Debug] clientUser:", clientUser);
-      console.log("[HeaderClient Debug] resolved user:", user);
-    }
-  }, [propUser, clientUser, user, mounted]);
+
 
   const handleSignOut = async () => {
     if (signOutAction) {
@@ -318,13 +335,18 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                             >
                               My Account
                             </Link>
-                            <Link
-                              href="/chat"
-                              onClick={() => setIsUserMenuOpen(false)}
-                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs hover:bg-zinc-50 dark:hover:bg-white/5 font-semibold text-zinc-650 dark:text-zinc-300 transition-colors"
-                            >
-                              Live Chat
-                            </Link>
+                             <Link
+                               href="/chat"
+                               onClick={() => setIsUserMenuOpen(false)}
+                               className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-xs hover:bg-zinc-50 dark:hover:bg-white/5 font-semibold text-zinc-650 dark:text-zinc-300 transition-colors"
+                             >
+                               <span>Live Chat</span>
+                               {unreadCount > 0 && (
+                                 <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
+                                   {unreadCount > 99 ? "99+" : unreadCount}
+                                 </span>
+                               )}
+                             </Link>
                             <Link
                               href="/orders"
                               onClick={() => setIsUserMenuOpen(false)}
@@ -478,9 +500,14 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
                     <Link href="/profile" onClick={toggleMenu} className="block text-xs font-semibold text-zinc-650 dark:text-zinc-400 py-1">
                       My Account ({user.role?.replace("_", " ")})
                     </Link>
-                    <Link href="/chat" onClick={toggleMenu} className="block text-xs font-semibold text-zinc-650 dark:text-zinc-400 py-1">
-                      Live Chat
-                    </Link>
+                     <Link href="/chat" onClick={toggleMenu} className="flex items-center justify-between text-xs font-semibold text-zinc-650 dark:text-zinc-400 py-1">
+                       <span>Live Chat</span>
+                       {unreadCount > 0 && (
+                         <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
+                           {unreadCount > 99 ? "99+" : unreadCount}
+                         </span>
+                       )}
+                     </Link>
                     <Link href="/orders" onClick={toggleMenu} className="block text-xs font-semibold text-zinc-650 dark:text-zinc-400 py-1">
                       My Orders
                     </Link>

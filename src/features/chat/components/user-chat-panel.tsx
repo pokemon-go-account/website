@@ -28,6 +28,7 @@ import {
   Maximize2,
   X,
   ExternalLink,
+  ArrowRight,
   Image as ImageIcon,
   Check,
   CheckCheck,
@@ -38,9 +39,13 @@ import {
   Star,
   CheckCircle2,
   Trophy,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  CornerUpLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadChatImage, getFirebaseCustomToken, sendChatWebhookNotification } from "@/features/chat/actions";
+import { uploadChatImage, getFirebaseCustomToken, sendChatWebhookNotification, editChatMessage, deleteChatMessage } from "@/features/chat/actions";
 import { submitOrderFeedback } from "@/features/feedback/actions";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database, app as clientApp } from "@/lib/firebase";
@@ -51,7 +56,7 @@ interface ChatMeta {
   userId: string;
   username: string;
   email: string;
-  type: "support" | "order";
+  type: "support" | "order" | "custom-request" | "recovery" | (string & {});
   ticketId?: string;
   orderId?: string;
   title: string;
@@ -234,12 +239,26 @@ export function UserChatPanel({
   onClose,
 }: UserChatPanelProps) {
   const { data: session } = useSession();
-  const userId = (session?.user as any)?.id as string | undefined;
-  const username =
-    (session?.user as any)?.username ||
-    session?.user?.name ||
-    session?.user?.email ||
-    "User";
+  const [guestId, setGuestId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !session?.user) {
+      let storedId = localStorage.getItem("pogo_guest_chat_id");
+      if (!storedId) {
+        storedId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+        localStorage.setItem("pogo_guest_chat_id", storedId);
+      }
+      setGuestId(storedId);
+    }
+  }, [session?.user]);
+
+  const rawUserId = (session?.user as any)?.id as string | undefined;
+  const userId = rawUserId || guestId || undefined;
+  const username = rawUserId
+    ? ((session?.user as any)?.username || session?.user?.name || session?.user?.email || "User")
+    : "Guest Visitor";
+  const userEmail = rawUserId ? (session?.user?.email || "user@platform.local") : "guest@visitor.local";
+
   const [activeTab, setActiveTab] = useState<"support" | "orders">("support");
   const [conversations, setConversations] = useState<ChatMeta[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(initialChatId);
@@ -248,6 +267,15 @@ export function UserChatPanel({
   const [inputText, setInputText] = useState("");
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isSending, setIsSending] = useState(false);
+
+  // Edit & Delete Message States
+  const [openMenuMsgId, setOpenMenuMsgId] = useState<string | null>(null);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isDeletingMsg, setIsDeletingMsg] = useState(false);
+
+  const isSuperAdmin = (session?.user as any)?.role === "SUPER_ADMIN";
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 
   const [isAdminTyping, setIsAdminTyping] = useState(false);
@@ -280,6 +308,16 @@ export function UserChatPanel({
   const prevConversationsRef = useRef<ChatMeta[]>([]);
   const hasSetInitialChatRef = useRef<string | null>(null);
 
+  const isNearBottomRef = useRef<boolean>(true);
+  const prevChatIdRef = useRef<string | null>(null);
+
+  const handleChatScroll = useCallback(() => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    isNearBottomRef.current = distanceFromBottom <= 120;
+  }, []);
+
   useEffect(() => {
     sendSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_X8t2FkCu.mp3");
     receiveSoundRef.current = new Audio("/audio/custom-whatsapp-chat-animation_qyWzqrX9.mp3");
@@ -293,13 +331,17 @@ export function UserChatPanel({
 
   // 0. Client-side custom token sign-in to Firestore rules
   useEffect(() => {
-    if (!clientAuth || !userId) {
+    if (!rawUserId) {
+      setIsAuthReady(true);
+      return;
+    }
+    if (!clientAuth) {
       setIsAuthReady(false);
       return;
     }
 
     // Skip if already signed in as the correct user
-    if (clientAuth.currentUser?.uid === userId) {
+    if (clientAuth.currentUser?.uid === rawUserId) {
       setIsAuthReady(true);
       return;
     }
@@ -308,7 +350,6 @@ export function UserChatPanel({
       if (res.success && res.customToken) {
         signInWithCustomToken(clientAuth, res.customToken)
           .then(() => {
-            console.log("Firebase Auth signed in with custom token successfully.");
             setIsAuthReady(true);
           })
           .catch((err) => {
@@ -321,7 +362,7 @@ export function UserChatPanel({
     }).catch(() => {
       setIsAuthReady(false);
     });
-  }, [userId]);
+  }, [rawUserId]);
 
   const playSound = useCallback((ref: React.RefObject<HTMLAudioElement | null>) => {
     try {
@@ -507,18 +548,14 @@ export function UserChatPanel({
   useEffect(() => {
     if (
       initialChatId &&
-      initialChatId !== hasSetInitialChatRef.current &&
-      conversations.length > 0
+      initialChatId !== hasSetInitialChatRef.current
     ) {
-      const targetChat = conversations.find((c) => c.id === initialChatId);
-      if (targetChat) {
-        hasSetInitialChatRef.current = initialChatId;
-        setActiveChatId(initialChatId);
-        if (targetChat.type === "order" || targetChat.id.startsWith("order-")) {
-          setActiveTab("orders");
-        } else {
-          setActiveTab("support");
-        }
+      hasSetInitialChatRef.current = initialChatId;
+      setActiveChatId(initialChatId);
+      if (initialChatId.startsWith("order-") || initialChatId.startsWith("recovery-")) {
+        setActiveTab("orders");
+      } else {
+        setActiveTab("support");
       }
     }
   }, [initialChatId, conversations]);
@@ -657,12 +694,23 @@ export function UserChatPanel({
     };
   }, [activeChatId, isAuthReady]);
 
-  // Auto scroll to bottom when messages change
+  // Auto scroll to bottom when messages change (smart check: scroll only if near bottom or user sent last message or chat changed)
   useEffect(() => {
-    if (chatContainerRef.current) {
+    if (!chatContainerRef.current) return;
+
+    const isChatChanged = activeChatId !== prevChatIdRef.current;
+    if (isChatChanged) {
+      prevChatIdRef.current = activeChatId;
+      isNearBottomRef.current = true;
+    }
+
+    const lastMsg = messages[messages.length - 1];
+    const isUserSentLastMsg = lastMsg?.sender === "user";
+
+    if (isChatChanged || isUserSentLastMsg || isNearBottomRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [messages, isAdminTyping]);
+  }, [messages, isAdminTyping, activeChatId]);
 
   // Handle creating a new general support ticket
   const handleCreateTicket = async () => {
@@ -679,7 +727,7 @@ export function UserChatPanel({
       await setDoc(chatRef, {
         userId,
         username,
-        email: session?.user?.email ?? "",
+        email: userEmail,
         type: "support",
         ticketId,
         title: `Support Ticket #${randomId}`,
@@ -709,7 +757,7 @@ export function UserChatPanel({
         ticketTitle: `Support Ticket #${randomId}`,
         senderName: username,
         senderType: "user",
-        userEmail: session?.user?.email ?? undefined,
+        userEmail: userEmail,
         text: `New support ticket #${randomId} opened.`,
       }).catch(() => {});
     } catch (err: any) {
@@ -794,6 +842,50 @@ export function UserChatPanel({
     }
   };
 
+  // Handle Editing Message
+  const handleStartEdit = (msg: Message) => {
+    setEditingMsgId(msg.id);
+    setEditingText(msg.text || "");
+    setOpenMenuMsgId(null);
+  };
+
+  const handleSaveEdit = async (msgId: string) => {
+    if (!activeChatId || !editingText.trim() || isSavingEdit) return;
+    setIsSavingEdit(true);
+    try {
+      const res = await editChatMessage(activeChatId, msgId, editingText.trim());
+      if (res.success) {
+        setEditingMsgId(null);
+        setEditingText("");
+      } else {
+        alert(res.error || "Failed to edit message.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to edit message.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  // Handle Deleting Message (Super Admin Only)
+  const handleDeleteMsg = async (msgId: string) => {
+    if (!activeChatId || isDeletingMsg) return;
+    if (!confirm("Are you sure you want to delete this message? This action cannot be undone.")) return;
+    setIsDeletingMsg(true);
+    try {
+      const res = await deleteChatMessage(activeChatId, msgId);
+      if (res.success) {
+        setOpenMenuMsgId(null);
+      } else {
+        alert(res.error || "Failed to delete message.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to delete message.");
+    } finally {
+      setIsDeletingMsg(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setInputText(val);
@@ -848,10 +940,22 @@ export function UserChatPanel({
 
   // Filter lists by tab
   const supportChats = conversations.filter(
-    (c) => c.type === "support" || c.id.startsWith("support-")
+    (c) =>
+      c.type === "support" ||
+      c.type === "custom-request" ||
+      c.id.startsWith("support-") ||
+      c.id.startsWith("request-") ||
+      (!c.type?.startsWith("order") &&
+        !c.type?.startsWith("recovery") &&
+        !c.id.startsWith("order-") &&
+        !c.id.startsWith("recovery-"))
   );
   const orderChats = conversations.filter(
-    (c) => c.type === "order" || c.id.startsWith("order-")
+    (c) =>
+      c.type === "order" ||
+      c.type === "recovery" ||
+      c.id.startsWith("order-") ||
+      c.id.startsWith("recovery-")
   );
 
   const activeList = activeTab === "support" ? supportChats : orderChats;
@@ -904,20 +1008,20 @@ export function UserChatPanel({
 
         {/* Navigation Tabs (Tactile Segmented Control) */}
         <div className="p-3 bg-white dark:bg-[#0d0d12] border-b border-zinc-200/80 dark:border-white/[0.08] shrink-0">
-          <div className="p-1 rounded-xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200/60 dark:border-white/[0.06] flex gap-1">
+          <div className="p-1 rounded-xl bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200/80 dark:border-white/10 flex gap-1 shadow-inner">
             <button
               onClick={() => setActiveTab("support")}
               className={cn(
-                "flex-1 py-1.5 px-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer relative",
+                "flex-1 py-2 px-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer relative select-none",
                 activeTab === "support"
-                  ? "bg-white dark:bg-[#181820] text-zinc-900 dark:text-white shadow-xs font-bold"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-[#1f1f28] text-zinc-900 dark:text-white shadow-md font-bold border border-zinc-200/80 dark:border-white/15"
+                  : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/5"
               )}
             >
-              <MessageSquare className="h-3.5 w-3.5 text-[#6133e1]" />
+              <MessageSquare className="h-4 w-4 text-[#6133e1] dark:text-violet-400" />
               <span>Support</span>
               {supportUnread > 0 && (
-                <span className="ml-0.5 min-w-[18px] h-4 px-1 rounded-full bg-[#6133e1] text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="ml-1 min-w-[20px] h-4 px-1.5 rounded-full bg-[#6133e1] text-white text-[10px] font-extrabold flex items-center justify-center shadow-xs">
                   {supportUnread > 99 ? "99+" : supportUnread}
                 </span>
               )}
@@ -925,16 +1029,16 @@ export function UserChatPanel({
             <button
               onClick={() => setActiveTab("orders")}
               className={cn(
-                "flex-1 py-1.5 px-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer relative",
+                "flex-1 py-2 px-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer relative select-none",
                 activeTab === "orders"
-                  ? "bg-white dark:bg-[#181820] text-zinc-900 dark:text-white shadow-xs font-bold"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-[#1f1f28] text-zinc-900 dark:text-white shadow-md font-bold border border-zinc-200/80 dark:border-white/15"
+                  : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/5"
               )}
             >
-              <ShoppingBag className="h-3.5 w-3.5 text-blue-500" />
+              <ShoppingBag className="h-4 w-4 text-blue-500 dark:text-blue-400" />
               <span>Orders</span>
               {ordersUnread > 0 && (
-                <span className="ml-0.5 min-w-[18px] h-4 px-1 rounded-full bg-[#6133e1] text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="ml-1 min-w-[20px] h-4 px-1.5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold flex items-center justify-center shadow-xs">
                   {ordersUnread > 99 ? "99+" : ordersUnread}
                 </span>
               )}
@@ -948,7 +1052,7 @@ export function UserChatPanel({
             <button
               onClick={handleCreateTicket}
               disabled={isCreatingTicket}
-              className="w-full h-8 flex items-center justify-center gap-1.5 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-semibold rounded-xl transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-xs"
+              className="w-full h-8 flex items-center justify-center gap-1.5 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-bold rounded-xl transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-xs"
             >
               {isCreatingTicket ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -958,27 +1062,41 @@ export function UserChatPanel({
               <span>New Support Ticket</span>
             </button>
           ) : (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center font-normal py-0.5">
-              Order payment & coordination threads
-            </p>
+            <a
+              href="/orders"
+              className="w-full h-8 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all active:scale-[0.98] cursor-pointer shadow-xs text-white no-underline"
+            >
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span>View All My Orders</span>
+              <ExternalLink className="h-3 w-3 opacity-80" />
+            </a>
           )}
         </div>
 
         {/* Chats List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {activeList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="h-12 w-12 rounded-2xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200/60 dark:border-white/[0.06] flex items-center justify-center text-zinc-400 mb-3">
-                <Inbox className="h-6 w-6" />
+            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+              <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center mb-3 shadow-xs">
+                {activeTab === "support" ? <Inbox className="h-6 w-6" /> : <ShoppingBag className="h-6 w-6" />}
               </div>
-              <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                No conversation threads yet
+              <p className="text-xs font-bold text-zinc-900 dark:text-white">
+                {activeTab === "support" ? "No support tickets yet" : "No active order chats found"}
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-[220px] leading-relaxed">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-[220px] leading-relaxed font-normal">
                 {activeTab === "support"
                   ? "Click above to open a direct support ticket with our team."
-                  : "Order chats appear here automatically upon checkout."}
+                  : "Order chats appear here automatically when you complete a checkout."}
               </p>
+              {activeTab === "orders" && (
+                <a
+                  href="/orders"
+                  className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs no-underline"
+                >
+                  <span>Go to Orders Page</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+              )}
             </div>
           ) : (
             activeList.map((conv) => (
@@ -1058,7 +1176,7 @@ export function UserChatPanel({
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="text-xs font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5 truncate">
                 {activeChat?.type === "order" ? (
                   <ShoppingBag className="h-4 w-4 text-blue-500 shrink-0" />
@@ -1077,6 +1195,17 @@ export function UserChatPanel({
                 </p>
               )}
             </div>
+
+            {activeChat?.type === "order" && (
+              <a
+                href="/orders"
+                className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 text-xs font-bold border border-blue-500/20 transition cursor-pointer shrink-0 no-underline"
+                title="Open My Orders Page"
+              >
+                <span>My Orders</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
           </div>
 
           {/* Action buttons (Expand / Close) */}
@@ -1105,7 +1234,7 @@ export function UserChatPanel({
         </div>
 
         {/* Scrollable Messages */}
-        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[220px]">
+        <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[220px]">
           {messages.length === 0 && (
             <div className="flex items-center justify-center h-full">
               <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">
@@ -1114,23 +1243,34 @@ export function UserChatPanel({
             </div>
           )}
 
-          {messages.map((msg) => {
-            // --- Rating Request Card ---
-            if (msg.type === "rating_request" && msg.orderId) {
-              return (
-                <div key={msg.id} className="flex flex-col items-center w-full py-1">
-                  <RatingCard
-                    orderId={msg.orderId}
-                    onDismiss={() => {
-                      // No-op — card stays in history but collapses when submitted
-                    }}
-                  />
-                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 font-medium">
-                    {formatTime(msg.timestamp)}
-                  </span>
-                </div>
-              );
-            }
+          {(() => {
+            const latestRatingMsgIdByOrderId = new Map<string, string>();
+            messages.forEach((m) => {
+              if (m.type === "rating_request" && m.orderId) {
+                latestRatingMsgIdByOrderId.set(m.orderId, m.id);
+              }
+            });
+
+            return messages.map((msg) => {
+              // --- Rating Request Card ---
+              if (msg.type === "rating_request" && msg.orderId) {
+                if (latestRatingMsgIdByOrderId.get(msg.orderId) !== msg.id) {
+                  return null;
+                }
+                return (
+                  <div key={msg.id} className="flex flex-col items-center w-full py-1">
+                    <RatingCard
+                      orderId={msg.orderId}
+                      onDismiss={() => {
+                        // No-op — card stays in history but collapses when submitted
+                      }}
+                    />
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 font-medium">
+                      {formatTime(msg.timestamp)}
+                    </span>
+                  </div>
+                );
+              }
 
             // --- Normal message bubble ---
             const isSystem =
@@ -1165,25 +1305,96 @@ export function UserChatPanel({
                         : "bg-white text-zinc-900 dark:bg-[#1e1e22] dark:text-zinc-100 border border-zinc-200 dark:border-white/[0.08] rounded-tl-xs"
                     )}
                   >
-                    {!isSystem && <QuotedMessageBlock replyTo={msg.replyTo} isOutgoing={isUser} />}
-                    {msg.image && (
-                      <div className="mb-2 rounded-xl overflow-hidden border border-zinc-200/60 dark:border-white/10 max-w-full shadow-xs">
-                        <img
-                          src={msg.image}
-                          alt={msg.text || "Attached Image"}
-                          className="max-h-56 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => window.open(msg.image, "_blank")}
-                        />
+                      {!isSystem && <QuotedMessageBlock replyTo={msg.replyTo} isOutgoing={isUser} />}
+                      {msg.image && (
+                        <div className="mb-2 rounded-xl overflow-hidden border border-zinc-200/60 dark:border-white/10 max-w-full shadow-xs">
+                          <img
+                            src={msg.image}
+                            alt={msg.text || "Attached Image"}
+                            className="max-h-56 object-contain w-auto cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(msg.image, "_blank")}
+                          />
+                        </div>
+                      )}
+                      {editingMsgId === msg.id ? (
+                        <div className="w-full space-y-2 py-1 min-w-[200px]">
+                          <textarea
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            rows={2}
+                            className="w-full bg-white dark:bg-[#121216] text-zinc-900 dark:text-zinc-100 border border-violet-400 dark:border-violet-500 rounded-xl p-2.5 text-xs sm:text-sm outline-none resize-none leading-relaxed"
+                          />
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setEditingMsgId(null)}
+                              className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 font-medium cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleSaveEdit(msg.id)}
+                              disabled={isSavingEdit || !editingText.trim()}
+                              className="px-3 py-1 bg-[#6133e1] hover:bg-[#5028c7] text-white text-xs font-bold rounded-lg transition cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-xs"
+                            >
+                              {isSavingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isUser} />
+                      )}
+                    </div>
+
+                    {!isSystem && activeChat?.status !== "closed" && (
+                      <div className="relative flex items-center shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuMsgId(openMenuMsgId === msg.id ? null : msg.id);
+                          }}
+                          className="p-1 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/10 transition cursor-pointer"
+                          title="Message options"
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </button>
+
+                        {openMenuMsgId === msg.id && (
+                          <div
+                            className={cn(
+                              "absolute z-30 bottom-full mb-1.5 w-36 py-1 rounded-xl bg-white dark:bg-[#1a1a22] border border-zinc-200/80 dark:border-white/10 shadow-xl text-xs animate-in fade-in zoom-in-95 duration-150 overflow-hidden",
+                              isUser ? "right-0" : "left-0"
+                            )}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => {
+                                setReplyingTo(msg);
+                                setOpenMenuMsgId(null);
+                              }}
+                              className="w-full px-3 py-2 flex items-center gap-2 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition text-left cursor-pointer font-medium"
+                            >
+                              <CornerUpLeft className="h-3.5 w-3.5 text-blue-500" />
+                              <span>Reply</span>
+                            </button>
+
+                            {isUser && (
+                              <button
+                                onClick={() => handleStartEdit(msg)}
+                                className="w-full px-3 py-2 flex items-center gap-2 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition text-left cursor-pointer font-medium"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                                <span>Edit</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
-                    {displayMsg && <FormattedChatMessage text={displayMsg} isOutgoing={isUser} />}
                   </div>
-                  {!isSystem && activeChat?.status !== "closed" && (
-                    <ReplyActionButton onClick={() => setReplyingTo(msg)} isOutgoing={isUser} />
-                  )}
-                </div>
-                <div className="flex items-center gap-1 text-[10px] text-zinc-400 px-1 font-medium leading-none">
-                  <span>{!isSystem && msg.sender === "admin" ? "Support Team · " : ""}{formatTime(msg.timestamp)}</span>
+                  <div className="flex items-center gap-1 text-[10px] text-zinc-400 px-1 font-medium leading-none">
+                    <span>{!isSystem && msg.sender === "admin" ? "Support Team · " : ""}{formatTime(msg.timestamp)}</span>
+                    {msg.edited && <span className="italic text-zinc-400 dark:text-zinc-500">(edited)</span>}
                   {!isSystem && isUser && (
                     <span className="inline-flex items-center select-none">
                       {msg.read ? (
@@ -1198,7 +1409,8 @@ export function UserChatPanel({
                 </div>
               </div>
             );
-          })}
+            });
+          })()}
 
           {isAdminTyping && (
             <div className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#1e1e22] border border-zinc-200 dark:border-white/[0.08] rounded-2xl rounded-tl-xs text-xs font-medium text-zinc-600 dark:text-zinc-300 shadow-xs w-max animate-in fade-in zoom-in-95 duration-150">

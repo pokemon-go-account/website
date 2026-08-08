@@ -2,15 +2,55 @@ import Link from "next/link";
 import { HeaderClient } from "@/components/header-client";
 import { Footer } from "@/components/footer";
 import { ChatWidget } from "@/features/chat/components/chat-widget";
-import { ShieldCheck, ArrowRight } from "lucide-react";
+import { ShieldCheck, ArrowRight, ShieldAlert } from "lucide-react";
+import { getMaintenanceConfig } from "@/features/console/actions";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
-export default function StorefrontLayout({
+export default async function StorefrontLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [maintenanceConfig, session, headerList] = await Promise.all([
+    getMaintenanceConfig(),
+    auth(),
+    headers(),
+  ]);
+
+  const pathname = headerList.get("x-pathname") || "";
+  const isAuthPage =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/auth-error") ||
+    pathname.startsWith("/maintenance");
+
+  const isMaintenanceMode = Boolean(maintenanceConfig.maintenanceMode);
+  const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
+
+  // If maintenance mode is ACTIVE and user is NOT an admin (and not visiting an auth route), redirect to /maintenance
+  if (isMaintenanceMode && !isAdmin && !isAuthPage) {
+    redirect("/maintenance");
+  }
+
   return (
     <>
+      {/* Admin Notice Banner when Maintenance Mode is Active */}
+      {isMaintenanceMode && isAdmin && (
+        <div className="w-full bg-amber-500 text-black text-xs py-2 px-4 text-center font-bold flex items-center justify-center gap-2 z-50 sticky top-0">
+          <ShieldAlert className="h-4 w-4 shrink-0" />
+          <span>⚠️ Maintenance Mode is currently ACTIVE for visitors. You are viewing as an Admin.</span>
+          <Link
+            href="/console/settings"
+            className="underline hover:no-underline font-extrabold ml-1"
+          >
+            Console Settings →
+          </Link>
+        </div>
+      )}
+
       {/* Elegant Beta Announcement Banner */}
       <div className="w-full bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 py-1.5 px-4 text-center font-medium tracking-wide">
         🚀 We are currently in Beta. Welcome to the future of Pokémon GO services!
@@ -40,4 +80,5 @@ export default function StorefrontLayout({
     </>
   );
 }
+
 

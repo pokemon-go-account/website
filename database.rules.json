@@ -3,19 +3,19 @@
     "chatTyping": {
       "$chatId": {
         "user": {
-          ".write": "auth != null",
-          ".read": "auth != null"
+          ".write": "true",
+          ".read": "true"
         },
         "admin": {
           ".write": "auth != null && (auth.token.role == 'ADMIN' || auth.token.role == 'SUPER_ADMIN')",
-          ".read": "auth != null"
+          ".read": "true"
         }
       }
     },
     "presence": {
       "$presenceId": {
-        ".write": "auth != null",
-        ".read": "auth != null"
+        ".write": "true",
+        ".read": "true"
       }
     }
   }

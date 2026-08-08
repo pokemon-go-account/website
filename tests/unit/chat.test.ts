@@ -170,4 +170,48 @@ describe("Chat Server Actions & Console Chat Logic", () => {
       expect(textSnippet).toBe("Original message unavailable");
     });
   });
+
+  describe("Custom Request & Chat Ticket Categorization Logic", () => {
+    it("should include custom-request tickets and request- prefix in supportChats list", () => {
+      const conversations = [
+        { id: "support-100", type: "support" },
+        { id: "request-67a6d958", type: "custom-request" },
+        { id: "order-999", type: "order" },
+        { id: "recovery-888", type: "recovery" },
+      ];
+
+      const supportChats = conversations.filter(
+        (c) =>
+          c.type === "support" ||
+          c.type === "custom-request" ||
+          c.id.startsWith("support-") ||
+          c.id.startsWith("request-") ||
+          (!c.type?.startsWith("order") &&
+            !c.type?.startsWith("recovery") &&
+            !c.id.startsWith("order-") &&
+            !c.id.startsWith("recovery-"))
+      );
+
+      const orderChats = conversations.filter(
+        (c) =>
+          c.type === "order" ||
+          c.type === "recovery" ||
+          c.id.startsWith("order-") ||
+          c.id.startsWith("recovery-")
+      );
+
+      expect(supportChats.map((c) => c.id)).toEqual(["support-100", "request-67a6d958"]);
+      expect(orderChats.map((c) => c.id)).toEqual(["order-999", "recovery-888"]);
+    });
+
+    it("should resolve both chatId and ticketId query params correctly", () => {
+      function resolveChatId(params: { chatId?: string; ticketId?: string }) {
+        return params.chatId || params.ticketId || null;
+      }
+
+      expect(resolveChatId({ chatId: "request-123" })).toBe("request-123");
+      expect(resolveChatId({ ticketId: "request-456" })).toBe("request-456");
+      expect(resolveChatId({})).toBeNull();
+    });
+  });
 });

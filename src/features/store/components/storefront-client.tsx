@@ -170,6 +170,7 @@ export function StorefrontClient({ categories, products, initialCategorySlug }: 
   const [customRequesting, setCustomRequesting] = useState(false);
   const [customRequestError, setCustomRequestError] = useState<string | null>(null);
   const [customRequestSuccess, setCustomRequestSuccess] = useState(false);
+  const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
 
@@ -681,6 +682,95 @@ Please guide me on how to complete the payment!`;
                 ))}
               </div>
             )}
+
+            {/* Custom Request Eye-Catching Callout Banner for Request-Supported Categories */}
+            {(() => {
+              const currentSlug = selectedCategoryObj?.slug?.toLowerCase() || "";
+              const isPokemonCat = currentSlug === "pokemons";
+              const isAccountCat = currentSlug === "accounts";
+              const isStardustCat = currentSlug === "stardust";
+              const isXpCat = currentSlug === "xp";
+              const isRaidCat = ["raidservice", "raid-services", "raids", "raid", "raidservices"].includes(currentSlug);
+
+              if (!isPokemonCat && !isAccountCat && !isStardustCat && !isXpCat && !isRaidCat) {
+                return null;
+              }
+
+              let bannerTitle = "Cannot find the Pokémon you are looking for?";
+              let bannerSubtext = "Request it here and get fast sourcing & fulfillment from our verified team!";
+              let requestActionType: "ACCOUNT" | "STARDUST" | "XP" | "RAIDSERVICE" = "ACCOUNT";
+              let buttonLabel = "★ Request a Pokémon";
+
+              if (isAccountCat) {
+                bannerTitle = "Cannot find the exact account specs you are looking for?";
+                bannerSubtext = "Request a custom Pokémon GO account with your target level, shiny list & IVs!";
+                requestActionType = "ACCOUNT";
+                buttonLabel = "★ Request Custom Account";
+              } else if (isStardustCat) {
+                bannerTitle = "Need a custom Stardust amount or custom package?";
+                bannerSubtext = "Request your desired Stardust amount here and get an instant custom quote!";
+                requestActionType = "STARDUST";
+                buttonLabel = "★ Request Custom Stardust";
+              } else if (isXpCat) {
+                bannerTitle = "Looking for a custom XP level boost or service?";
+                bannerSubtext = "Request your target XP level or custom power-up package here!";
+                requestActionType = "XP";
+                buttonLabel = "★ Request Custom XP";
+              } else if (isRaidCat) {
+                bannerTitle = "Need custom Raid Boss catches or assistance?";
+                bannerSubtext = "Request specific Legendary or Mega Raid carries and get immediate fulfillment!";
+                requestActionType = "RAIDSERVICE";
+                buttonLabel = "★ Request Raid Service";
+              }
+
+              const handleOpenRequest = () => {
+                if (!session?.user) {
+                  window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                  return;
+                }
+                setCreatedTicketId(null);
+                if (isPokemonCat) {
+                  setIsRequestModalOpen(true);
+                } else {
+                  setCustomRequestType(requestActionType);
+                  setIsCustomRequestModalOpen(true);
+                }
+              };
+
+              return (
+                <div className="mt-10 relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-r from-red-950/20 via-zinc-900/60 to-zinc-950/80 p-5 sm:p-6 shadow-md transition-all">
+                  {/* Decorative Red Line Bar on Left */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-red-500 via-rose-500 to-red-600 rounded-l-xl" />
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pl-2">
+                    <div className="space-y-1.5 max-w-xl">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold tracking-wide uppercase">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                        <span>Fast Custom Sourcing</span>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
+                        {bannerTitle}
+                      </h3>
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        {bannerSubtext}
+                      </p>
+                    </div>
+
+                    {/* Action Button & Red Line Accent */}
+                    <div className="flex items-center gap-3 shrink-0 pt-2 sm:pt-0">
+                      <div className="hidden md:block h-8 w-[2px] bg-gradient-to-b from-red-500 to-rose-600 rounded-full opacity-80" />
+                      <button
+                        onClick={handleOpenRequest}
+                        className="w-full sm:w-auto h-10 px-5 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs tracking-tight shadow-md hover:shadow-red-600/25 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <span>{buttonLabel}</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -1727,9 +1817,9 @@ Our recovery specialists have received your payment and are now actively process
                   ✓
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-semibold">Request Submitted!</h4>
+                  <h4 className="text-xs font-semibold">Request & Support Ticket Created!</h4>
                   <p className="text-[10.5px] text-zinc-500 dark:text-zinc-450 max-w-xs mx-auto leading-relaxed">
-                    We have successfully logged your Pokémon request. Our sourcing team will contact you shortly via the social link provided.
+                    Your custom request details have been recorded and a support ticket has been created automatically. Our team will review your message and reach out shortly.
                   </p>
                 </div>
                 <button
@@ -1737,7 +1827,7 @@ Our recovery specialists have received your payment and are now actively process
                     setIsRequestModalOpen(false);
                     setRequestSuccess(false);
                   }}
-                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold cursor-pointer"
+                  className="h-8 px-5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold cursor-pointer transition-all"
                 >
                   Close Window
                 </button>
@@ -1763,6 +1853,11 @@ Our recovery specialists have received your payment and are now actively process
                   });
 
                   if (res.success) {
+                    const ticketId = res.ticketId || (res.requestId ? `request-${res.requestId}` : "");
+                    if (ticketId) {
+                      window.location.href = `/chat?ticketId=${encodeURIComponent(ticketId)}`;
+                      return;
+                    }
                     setRequestSuccess(true);
                   } else {
                     setRequestError(res.error || "Failed to submit request.");
@@ -1883,9 +1978,9 @@ Our recovery specialists have received your payment and are now actively process
                   ✓
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-semibold">Request Submitted!</h4>
+                  <h4 className="text-xs font-semibold">Request & Support Ticket Created!</h4>
                   <p className="text-[10.5px] text-zinc-500 dark:text-zinc-450 max-w-xs mx-auto leading-relaxed">
-                    We have successfully logged your custom request. Our trading team will contact you shortly via the social handle provided.
+                    Your custom request details have been recorded and a support ticket has been created automatically. Our team will review your message and reach out shortly.
                   </p>
                 </div>
                 <button
@@ -1893,7 +1988,7 @@ Our recovery specialists have received your payment and are now actively process
                     setIsCustomRequestModalOpen(false);
                     setCustomRequestSuccess(false);
                   }}
-                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold cursor-pointer"
+                  className="h-8 px-5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold cursor-pointer transition-all"
                 >
                   Close Window
                 </button>
@@ -1920,6 +2015,11 @@ Our recovery specialists have received your payment and are now actively process
                   });
 
                   if (res.success) {
+                    const ticketId = res.ticketId || (res.requestId ? `request-${res.requestId}` : "");
+                    if (ticketId) {
+                      window.location.href = `/chat?ticketId=${encodeURIComponent(ticketId)}`;
+                      return;
+                    }
                     setCustomRequestSuccess(true);
                   } else {
                     setCustomRequestError(res.error || "Failed to submit request.");

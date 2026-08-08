@@ -28,6 +28,8 @@ import {
   markAuctionPaymentReceived,
   markAuctionDelivered,
   getTotalRevenueConsole,
+  getMaintenanceConfig,
+  updateMaintenanceConfig,
 } from "@/features/console/actions";
 import User from "@/models/User";
 import AdminRent from "@/models/AdminRent";
@@ -439,6 +441,35 @@ describe("Console Actions", () => {
       expect(revRes.success).toBe(true);
       expect(revRes.totalRevenue).toBe(250); // 100 + 150
       expect(revRes.completedOrdersCount).toBe(2);
+    });
+  });
+
+  describe("Maintenance Mode System Settings", () => {
+    it("should fetch default maintenance config and update maintenance mode", async () => {
+      vi.mocked(auth).mockResolvedValue({ user: { id: SUPER_ADMIN_ID, role: "SUPER_ADMIN" }, expires: "9999" } as any);
+
+      // Default config
+      const initialRes = await getMaintenanceConfig();
+      expect(initialRes.success).toBe(true);
+      expect(initialRes.maintenanceMode).toBe(false);
+
+      // Enable maintenance mode
+      const updateRes = await updateMaintenanceConfig({
+        maintenanceMode: true,
+        contactEmail: "support@pokemongo.com",
+      });
+      expect(updateRes.success).toBe(true);
+      expect(updateRes.maintenanceMode).toBe(true);
+      expect(updateRes.contactEmail).toBe("support@pokemongo.com");
+
+      // Verify DB persistence
+      const updatedConfig = await getMaintenanceConfig();
+      expect(updatedConfig.maintenanceMode).toBe(true);
+
+      // Disable maintenance mode
+      const disableRes = await updateMaintenanceConfig({ maintenanceMode: false });
+      expect(disableRes.success).toBe(true);
+      expect(disableRes.maintenanceMode).toBe(false);
     });
   });
 });
