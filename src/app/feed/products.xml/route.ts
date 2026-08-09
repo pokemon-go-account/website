@@ -18,11 +18,36 @@ function escapeXml(str: string): string {
 
 export async function GET(request: NextRequest) {
   const secret = process.env.PRODUCT_FEED_SECRET;
-  const { searchParams } = new URL(request.url);
-  const providedKey = searchParams.get("key");
 
-  if (secret && providedKey !== secret) {
-    return new NextResponse("Forbidden: Invalid secret key", { status: 403 });
+  if (secret) {
+    // Method 1: ?key= query parameter (direct browser / curl access)
+    const { searchParams } = new URL(request.url);
+    const queryKey = searchParams.get("key");
+
+    // Method 2: HTTP Basic Auth — Google Merchant Center sends credentials this way.
+    // The Authorization header is: "Basic base64(username:password)"
+    // We use the PASSWORD as the secret (username is ignored).
+    let basicAuthKey: string | null = null;
+    const authHeader = request.headers.get("authorization") ?? "";
+    if (authHeader.startsWith("Basic ")) {
+      try {
+        const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf-8");
+        basicAuthKey = decoded.split(":").slice(1).join(":"); // everything after first ':'
+      } catch {
+        // malformed header — leave basicAuthKey as null
+      }
+    }
+
+    const isAuthenticated = queryKey === secret || basicAuthKey === secret;
+    if (!isAuthenticated) {
+      return new NextResponse("Forbidden: Invalid secret key", {
+        status: 403,
+        headers: {
+          // Prompt browsers to show a Basic Auth dialog if they hit this directly
+          "WWW-Authenticate": 'Basic realm="Product Feed"',
+        },
+      });
+    }
   }
 
   const baseUrl =
