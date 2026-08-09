@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { getFreshBalance } from "@/features/auth/actions";
+import { getBuyNowPrice, isBuyNowAvailable } from "@/lib/pricing";
 import {
   AlertCircle,
   Clock,
@@ -509,10 +510,10 @@ export function LiveRoom({
   }, [endTime, status]);
 
   const activeBid = currentBid !== null ? currentBid : auction.currentHighestBid;
-  const buyNowPrice = auction.listingId.startingBid * 4;
+  const buyNowPrice = getBuyNowPrice(auction.listingId.startingBid);
   const buyNowPriceDiscount = hasWalletCredit ? Math.min(buyNowPrice, walletCreditAmount) : 0;
   const finalBuyNowPrice = Math.max(0, buyNowPrice - buyNowPriceDiscount);
-  const isBuyNowDisabled = isConcluded || activeBid >= 0.8 * buyNowPrice;
+  const isBuyNowDisabled = isConcluded || !isBuyNowAvailable(activeBid, buyNowPrice);
   const prevBidRef = useRef<number>(activeBid);
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 

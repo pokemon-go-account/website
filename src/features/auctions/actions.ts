@@ -12,6 +12,7 @@ import Registration from "@/models/Registration";
 import { sendChatWebhookNotification } from "@/features/chat/actions";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getBuyNowPrice, isBuyNowAvailable } from "@/lib/pricing";
 
 /**
  * Syncs MongoDB live auction state to Firestore doc liveAuctions/${auctionId}
@@ -411,9 +412,9 @@ export async function createBuyNowOrderAction(auctionId: string) {
       return { success: false, error: "Listing details not found." };
     }
 
-    const buyNowPrice = listing.startingBid * 4;
+    const buyNowPrice = getBuyNowPrice(listing.startingBid);
 
-    if (auction.currentHighestBid >= 0.8 * buyNowPrice) {
+    if (!isBuyNowAvailable(auction.currentHighestBid, buyNowPrice)) {
       return { success: false, error: "Buy Now is disabled because the current bid has reached 80% or more of the Buy Now price." };
     }
 
