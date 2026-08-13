@@ -2,14 +2,23 @@
   "rules": {
     "chatTyping": {
       "$chatId": {
-        ".read": "true",
-        ".write": "true"
+        "user": {
+          ".read": true,
+          ".write": true,
+          ".validate": "newData.hasChildren(['isTyping', 'timestamp']) && newData.child('isTyping').isBoolean() && newData.child('timestamp').isNumber()"
+        },
+        "admin": {
+          ".read": true,
+          ".write": true,
+          ".validate": "newData.hasChildren(['isTyping', 'timestamp']) && newData.child('isTyping').isBoolean() && newData.child('timestamp').isNumber()"
+        }
       }
     },
     "presence": {
       "$presenceId": {
-        ".read": "true",
-        ".write": "true"
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['userId', 'lastSeen']) && newData.child('userId').isString() && newData.child('lastSeen').isNumber() && newData.child('userId').val().length < 128"
       }
     }
   }

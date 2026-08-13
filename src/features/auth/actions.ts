@@ -295,6 +295,7 @@ export async function requestPasswordResetOtp(email: string) {
 
     user.resetOtp = otp;
     user.resetOtpExpires = expires;
+    user.resetOtpAttempts = 0;
     await user.save();
 
     // Log to terminal console for local sandbox dev environment
@@ -393,8 +394,31 @@ export async function verifyPasswordResetOtp(email: string, otp: string) {
     await connectDB();
 
     const user = await User.findOne({ email: email.trim().toLowerCase() });
-    if (!user || user.resetOtp !== otp.trim() || !user.resetOtpExpires || new Date() > user.resetOtpExpires) {
+    if (!user) {
       return { success: false, error: "Invalid or expired OTP." };
+    }
+
+    // Check if max attempts reached (5 attempts limit)
+    if ((user.resetOtpAttempts || 0) >= 5) {
+      user.resetOtp = undefined;
+      user.resetOtpExpires = undefined;
+      user.resetOtpAttempts = 0;
+      await user.save();
+      return { success: false, error: "Maximum verification attempts exceeded. Please request a new OTP code." };
+    }
+
+    if (!user.resetOtp || user.resetOtp !== otp.trim() || !user.resetOtpExpires || new Date() > user.resetOtpExpires) {
+      user.resetOtpAttempts = (user.resetOtpAttempts || 0) + 1;
+      if (user.resetOtpAttempts >= 5) {
+        user.resetOtp = undefined;
+        user.resetOtpExpires = undefined;
+        user.resetOtpAttempts = 0;
+        await user.save();
+        return { success: false, error: "Maximum verification attempts exceeded. Please request a new OTP code." };
+      }
+      await user.save();
+      const remaining = 5 - user.resetOtpAttempts;
+      return { success: false, error: `Invalid or expired OTP code. ${remaining} attempts remaining.` };
     }
 
     return { success: true };
@@ -420,7 +444,21 @@ export async function resetPasswordWithOtp(email: string, otp: string, newPasswo
     await connectDB();
 
     const user = await User.findOne({ email: email.trim().toLowerCase() });
-    if (!user || user.resetOtp !== otp.trim() || !user.resetOtpExpires || new Date() > user.resetOtpExpires) {
+    if (!user) {
+      return { success: false, error: "Session expired or invalid OTP verification." };
+    }
+
+    if ((user.resetOtpAttempts || 0) >= 5) {
+      user.resetOtp = undefined;
+      user.resetOtpExpires = undefined;
+      user.resetOtpAttempts = 0;
+      await user.save();
+      return { success: false, error: "Maximum verification attempts exceeded. Please request a new OTP code." };
+    }
+
+    if (!user.resetOtp || user.resetOtp !== otp.trim() || !user.resetOtpExpires || new Date() > user.resetOtpExpires) {
+      user.resetOtpAttempts = (user.resetOtpAttempts || 0) + 1;
+      await user.save();
       return { success: false, error: "Session expired or invalid OTP verification." };
     }
 
@@ -431,6 +469,7 @@ export async function resetPasswordWithOtp(email: string, otp: string, newPasswo
     user.passwordHash = passwordHash;
     user.resetOtp = undefined;
     user.resetOtpExpires = undefined;
+    user.resetOtpAttempts = 0;
     await user.save();
 
     return { success: true };

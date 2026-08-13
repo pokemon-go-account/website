@@ -32,9 +32,12 @@ service cloud.firestore {
       allow create: if (request.auth != null && (isAdmin() || request.resource.data.userId == request.auth.uid)) ||
                       isGuestChat(request.resource.data.userId);
       
-      // Allow update/delete if owner, admin, or guest chat
-      allow update, delete: if (request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid)) ||
-                               isGuestChat(resource.data.userId);
+      // Allow update if owner, admin, or guest chat
+      allow update: if (request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid)) ||
+                       isGuestChat(resource.data.userId);
+      
+      // Only admins or authenticated room owners can delete support chat rooms (guests cannot delete rooms)
+      allow delete: if request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid);
       
       // Messages subcollection
       match /messages/{messageId} {

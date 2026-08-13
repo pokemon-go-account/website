@@ -23,6 +23,7 @@ export interface IUser extends Document {
   adminRentPaidUntil?: Date; // Only relevant for ADMIN role
   resetOtp?: string;
   resetOtpExpires?: Date;
+  resetOtpAttempts: number;
   forfeitCount: number;
   country?: string;
   hearAboutUs?: string;
@@ -54,6 +55,7 @@ const UserSchema: Schema<IUser> = new Schema(
     adminRentPaidUntil: { type: Date, default: null },
     resetOtp: { type: String, default: null },
     resetOtpExpires: { type: Date, default: null },
+    resetOtpAttempts: { type: Number, default: 0 },
     forfeitCount: { type: Number, default: 0 },
     country: { type: String, trim: true, default: '' },
     hearAboutUs: { type: String, trim: true, default: '' },
