@@ -1,5 +1,3 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { UserChatPanel } from "@/features/chat/components/user-chat-panel";
 
 export const revalidate = 0;
@@ -12,11 +10,6 @@ interface ChatPageProps {
 }
 
 export default async function ChatPage({ searchParams }: ChatPageProps) {
-  const session = await auth();
-  if (!session?.user || !session.user.id) {
-    redirect("/login");
-  }
-
   const resolvedSearchParams = await searchParams;
   const chatId = resolvedSearchParams.chatId || resolvedSearchParams.ticketId || null;
 

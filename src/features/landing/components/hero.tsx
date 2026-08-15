@@ -15,13 +15,14 @@ const trustBadges = [
 ];
 
 const QUICK_TAGS = [
-  { label: "⚡ Buy Accounts", query: "buy pokemon go accounts" },
-  { label: "⭐ Level 80", query: "level 80 pokemon go account" },
-  { label: "✨ Shiny Pokemon", query: "shiny" },
+  { label: "⚡ Accounts", query: "account" },
+  { label: "🪙 PokéCoins", query: "coin" },
+  { label: "⚡ XP Boost", query: "xp" },
+  { label: "✨ Stardust", query: "stardust" },
+  { label: "⭐ Level 80", query: "80" },
+  { label: "✨ Shiny", query: "shiny" },
   { label: "🔮 Mewtwo", query: "mewtwo" },
   { label: "🔥 Charizard", query: "charizard" },
-  { label: "🐉 Dragonite", query: "dragonite" },
-  { label: "🪙 Buy Stardust", query: "stardust" },
   { label: "🐉 Raids", query: "raid" },
 ];
 
@@ -190,16 +191,16 @@ export function Hero() {
               className="flex flex-wrap gap-3 mt-6"
             >
               <Link
-                href="/auctions"
-                className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
-              >
-                BROWSE AUCTIONS
-              </Link>
-              <Link
                 href="/store"
-                className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-white/[0.04] bg-transparent text-zinc-850 dark:text-white font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center gap-1.5 h-9 px-5 rounded-md bg-[#6133e1] hover:bg-[#5028c7] text-white font-bold text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer"
               >
                 BROWSE SERVICES
+              </Link>
+              <Link
+                href="/auctions"
+                className="inline-flex items-center gap-1.5 h-9 px-5 rounded-md border border-zinc-200 dark:border-white/[0.1] hover:bg-zinc-100 dark:hover:bg-white/[0.06] bg-transparent text-zinc-900 dark:text-white font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
+              >
+                BROWSE AUCTIONS
               </Link>
             </motion.div>
           </motion.div>

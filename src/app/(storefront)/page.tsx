@@ -13,9 +13,9 @@ export default function Home() {
       <Hero />
       <Features />
       
-      <FeaturedAuctions />
-
       <FeaturedStoreItems />
+
+      <FeaturedAuctions />
 
       <WhyTrustUsSection />
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, LogOut, Shield, Sun, Moon, Loader2, Copy, Check } from "lucide-react";
+import { Menu, X, LogOut, Shield, Sun, Moon, Loader2, Copy, Check, Search } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useSession, signOut as clientSignOut } from "next-auth/react";
 import { useCurrencyStore, Currency } from "@/store/useCurrencyStore";
@@ -34,10 +35,22 @@ const navLinks = [
 ];
 
 export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProps) {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [freshBalance, setFreshBalance] = useState<number | null>(null);
+  const [headerSearch, setHeaderSearch] = useState("");
   const { data: session } = useSession();
   const { currency, setCurrency, isConverting } = useCurrencyStore();
+
+  const handleHeaderSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = headerSearch.trim();
+    if (!trimmed) {
+      router.push("/auctions");
+    } else {
+      router.push(`/auctions?search=${encodeURIComponent(trimmed)}`);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -196,6 +209,19 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
+            {/* Quick Search Bar */}
+            <form onSubmit={handleHeaderSearchSubmit} className="relative hidden xl:flex items-center">
+              <Search className="absolute left-2.5 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                placeholder="Quick search..."
+                aria-label="Quick search input"
+                className="h-8 w-36 focus:w-48 transition-all pl-8 pr-2.5 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-800 dark:text-zinc-200 text-xs font-medium placeholder:text-zinc-400 focus:outline-none focus:border-zinc-300 dark:focus:border-white/20"
+              />
+            </form>
+
             {/* Currency Selector */}
             <div className="relative inline-flex items-center">
               <select
@@ -446,6 +472,19 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
             className="lg:hidden border-t border-zinc-200 dark:border-white/[0.06] bg-white/98 dark:bg-[#09090b]/98 backdrop-blur-xl overflow-hidden"
           >
             <div className="space-y-0.5 px-4 py-3">
+              {/* Mobile Quick Search Bar */}
+              <form onSubmit={(e) => { toggleMenu(); handleHeaderSearchSubmit(e); }} className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={headerSearch}
+                  onChange={(e) => setHeaderSearch(e.target.value)}
+                  placeholder="Quick search accounts, shiny, level..."
+                  aria-label="Mobile quick search input"
+                  className="w-full h-9 pl-9 pr-3 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04] text-zinc-800 dark:text-zinc-200 text-xs font-medium placeholder:text-zinc-400 focus:outline-none"
+                />
+              </form>
+
               {navLinks.map(({ href, label }) => (
                 <Link
                   key={label}

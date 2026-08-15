@@ -95,9 +95,12 @@ describe("NextAuth Configuration & Routing Filters", () => {
 
     it("should permit unauthenticated visitors on public routes", () => {
       const authorized = authConfig.callbacks.authorized;
-      const req = { nextUrl: mockNextUrl("/auctions"), headers: new Map() };
+      let req = { nextUrl: mockNextUrl("/auctions"), headers: new Map() };
+      let res = authorized({ auth: null, request: req as any } as any);
+      expect(res).toBe(true);
 
-      const res = authorized({ auth: null, request: req as any } as any);
+      req = { nextUrl: mockNextUrl("/chat"), headers: new Map() };
+      res = authorized({ auth: null, request: req as any } as any);
       expect(res).toBe(true);
     });
 

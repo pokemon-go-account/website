@@ -55,28 +55,54 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
   }
 
   if (search && search.trim()) {
-    const s = search.trim();
-    const numericVal = parseInt(s.replace(/\D/g, ""), 10);
-    const levelMatch = !isNaN(numericVal) && numericVal > 0;
+    const rawSearch = search.trim();
+    const tokens = rawSearch
+      .toLowerCase()
+      .split(/\s+/)
+      .map((t) => t.replace(/[^a-z0-9]/g, ""))
+      .filter(Boolean);
 
-    const orConditions: any[] = [
-      { title: { $regex: s, $options: "i" } },
-      { description: { $regex: s, $options: "i" } },
-      { region: { $regex: s, $options: "i" } },
-      { team: { $regex: s, $options: "i" } },
-      { accountType: { $regex: s, $options: "i" } },
-      { accountStatus: { $regex: s, $options: "i" } },
-      { topPokemon: { $regex: s, $options: "i" } },
+    const stopWords = new Set(["buy", "pokemon", "go", "for", "sale", "the", "a", "an", "in", "of", "with"]);
+    const filteredTokens = tokens.filter((t) => !stopWords.has(t));
+    const terms = filteredTokens.length > 0 ? filteredTokens : (tokens.length > 0 ? tokens : [rawSearch]);
+
+    const termConditions = terms.map((term) => {
+      const numVal = parseInt(term, 10);
+      const isNum = !isNaN(numVal) && numVal > 0;
+
+      const termOrs: any[] = [
+        { title: { $regex: term, $options: "i" } },
+        { description: { $regex: term, $options: "i" } },
+        { region: { $regex: term, $options: "i" } },
+        { team: { $regex: term, $options: "i" } },
+        { accountType: { $regex: term, $options: "i" } },
+        { accountStatus: { $regex: term, $options: "i" } },
+        { topPokemon: { $regex: term, $options: "i" } },
+      ];
+      if (isNum) {
+        termOrs.push({ level: numVal });
+      }
+      return { $or: termOrs };
+    });
+
+    const rawOrs: any[] = [
+      { title: { $regex: rawSearch, $options: "i" } },
+      { description: { $regex: rawSearch, $options: "i" } },
+      { topPokemon: { $regex: rawSearch, $options: "i" } },
     ];
-    if (levelMatch) {
-      orConditions.push({ level: numericVal });
-    }
+
+    const searchBranch = {
+      $or: [
+        { $and: termConditions },
+        ...rawOrs,
+      ],
+    };
 
     if (listingQuery.team) {
-      listingQuery.$and = [{ team: listingQuery.team }, { $or: orConditions }];
+      listingQuery.$and = [{ team: listingQuery.team }, searchBranch];
       delete listingQuery.team;
     } else {
-      listingQuery.$or = orConditions;
+      Object.assign(listingQuery, searchBranch);
     }
   }
 
@@ -95,10 +121,29 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
   // Fetch matching storefront products if search is active
   let matchingProducts: any[] = [];
   if (search && search.trim()) {
+    const rawSearch = search.trim();
+    const tokens = rawSearch
+      .toLowerCase()
+      .split(/\s+/)
+      .map((t) => t.replace(/[^a-z0-9]/g, ""))
+      .filter(Boolean);
+
+    const stopWords = new Set(["buy", "pokemon", "go", "for", "sale", "the", "a", "an", "in", "of", "with"]);
+    const filteredTokens = tokens.filter((t) => !stopWords.has(t));
+    const terms = filteredTokens.length > 0 ? filteredTokens : (tokens.length > 0 ? tokens : [rawSearch]);
+
+    const productTermConditions = terms.map((term) => ({
+      $or: [
+        { name: { $regex: term, $options: "i" } },
+        { description: { $regex: term, $options: "i" } },
+      ],
+    }));
+
     matchingProducts = await Product.find({
       $or: [
-        { name: { $regex: search.trim(), $options: "i" } },
-        { description: { $regex: search.trim(), $options: "i" } },
+        { $and: productTermConditions },
+        { name: { $regex: rawSearch, $options: "i" } },
+        { description: { $regex: rawSearch, $options: "i" } },
       ],
     })
       .populate("categoryId", "name slug")

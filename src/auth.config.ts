@@ -112,6 +112,7 @@ export const authConfig = {
         "/why-trust-us",
         "/news",
         "/become-a-seller",
+        "/chat",
       ];
       const PUBLIC_EXACT = ["/", "/login", "/register", "/signup", "/forgot-password", "/privacy", "/terms", "/maintenance"];
       const isPublicRoute =

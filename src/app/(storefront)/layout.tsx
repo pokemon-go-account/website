@@ -52,11 +52,6 @@ export default async function StorefrontLayout({
         </div>
       )}
 
-      {/* Elegant Beta Announcement Banner */}
-      <div className="w-full bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 py-1.5 px-4 text-center font-medium tracking-wide">
-        🚀 We are currently in Beta. Welcome to the future of Pokémon GO services!
-      </div>
-
       {/* Trust Announcement Banner */}
       <div className="w-full bg-gradient-to-r from-purple-900/30 via-zinc-900 to-indigo-900/30 dark:from-[#130d25] dark:via-[#0c0a15] dark:to-[#130d25] border-b border-purple-500/20 text-[11px] sm:text-xs text-zinc-300 py-2 px-4 text-center font-medium">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
