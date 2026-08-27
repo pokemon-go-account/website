@@ -7,6 +7,7 @@ import User from "@/models/User";
 import RecoveryRequest from "@/models/RecoveryRequest";
 import Registration from "@/models/Registration";
 import Category from "@/models/Category";
+import Product from "@/models/Product";
 import { auth } from "@/auth";
 
 export interface DailyStat {
