@@ -93,17 +93,21 @@ export async function getRevenueAnalyticsAction() {
     for (const ord of recoveryOrders) {
       for (const i of (ord.items || [])) {
         const id = (i as any).recoveryRequestId || i.productId;
-        if (id) {
+        if (id && mongoose.Types.ObjectId.isValid(id.toString())) {
           orderRecoveryIds.add(id.toString());
         }
       }
     }
 
+    const validRecoveryObjectIds = Array.from(orderRecoveryIds)
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      .map((id) => new mongoose.Types.ObjectId(id));
+
     // Calculate completed recoveries revenue that was paid through channels other than standard Storefront orders
     const independentRecoveries = await RecoveryRequest.find({
       status: "COMPLETED",
       price: { $gt: 0 },
-      _id: { $nin: Array.from(orderRecoveryIds).map(id => new mongoose.Types.ObjectId(id)) }
+      _id: { $nin: validRecoveryObjectIds }
     }).select("price");
 
     let independentRecoveryRevenue = 0;
@@ -185,8 +189,9 @@ export async function getRevenueAnalyticsAction() {
     }
 
     const dailyStats: DailyStat[] = [];
-    const startDate = new Date("2026-07-15T00:00:00Z");
+    const targetStart = new Date("2026-07-15T00:00:00Z");
     const today = new Date();
+    const startDate = today < targetStart ? new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7) : targetStart;
     const curr = new Date(startDate);
 
     while (curr <= today) {
