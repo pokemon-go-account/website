@@ -13,6 +13,7 @@ export interface IProduct extends Document {
   categoryId: mongoose.Types.ObjectId;
   imageUrl: string;
   imageUrls?: string[];
+  tags?: string[];
   sortOrder?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -32,12 +33,14 @@ const ProductSchema: Schema<IProduct> = new Schema(
     categoryId: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     imageUrl: { type: String, required: true },
     imageUrls: { type: [String], default: [] },
+    tags: { type: [String], default: [] },
     sortOrder: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
 ProductSchema.index({ categoryId: 1 });
+ProductSchema.index({ tags: 1 });
 
 const Product: Model<IProduct> =
   mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);

@@ -879,6 +879,7 @@ export async function createProduct(data: {
   categoryId: string;
   imageUrl: string;
   imageUrls?: string[];
+  tags?: string[];
 }) {
   try {
     await checkSuperAdminSession();
@@ -908,6 +909,7 @@ export async function updateProduct(
     categoryId: string;
     imageUrl: string;
     imageUrls?: string[];
+    tags?: string[];
   }
 ) {
   try {

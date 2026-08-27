@@ -155,17 +155,17 @@ export function LiveRoomBiddingCard({
             /* Registration Deposit Required Banner */
             <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-4 text-center space-y-3">
               <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
-                <ShieldCheck className="h-4 w-4" /> Bidding Registration Deposit Required
+                <ShieldCheck className="h-4 w-4" /> Bidding Registration Fee Required (₹199)
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                A standard refundable deposit is required to participate in live bidding and prevent bot spam.
+                A ₹199 refundable deposit is required for new accounts to prevent bot spam. <strong className="text-amber-600 dark:text-amber-300">Free (₹0) for all existing customers with 1 or more completed storefront orders!</strong>
               </p>
               <button
                 type="button"
                 onClick={onRegisterClick}
                 className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs uppercase tracking-wider transition cursor-pointer shadow-md flex items-center justify-center gap-2"
               >
-                Register & Unlock Bidding <ArrowRight className="h-4 w-4" />
+                Pay Deposit (₹199) & Unlock Bidding <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           )

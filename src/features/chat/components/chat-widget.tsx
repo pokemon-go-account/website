@@ -266,7 +266,7 @@ export function ChatWidget() {
   // Conditional rendering
   const isOnConsolePage = pathname?.startsWith("/console");
   const isOnChatPage = pathname === "/chat";
-  if (!userId || isOnConsolePage || (isOnChatPage && rawUserId)) return null;
+  if (!userId || isOnConsolePage || isOnChatPage) return null;
 
   return (
     <>

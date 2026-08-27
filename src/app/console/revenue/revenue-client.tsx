@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { getRevenueAnalyticsAction, DailyStat, RevenueOrderDetails } from "@/features/analytics/revenue-actions";
 import { getLiveExchangeRates } from "@/features/store/currency-actions";
+import { OrderInvestmentModal } from "@/components/console/order-investment-modal";
+import { OrderContextMenu, ContextMenuPosition } from "@/components/console/order-context-menu";
 import {
   Search as SearchIcon,
   Filter as FilterIcon,
@@ -30,6 +32,8 @@ const CURRENCIES = [
 interface RevenueData {
   summary: {
     totalRevenueUSD: number;
+    totalInvestmentUSD?: number;
+    netProfitUSD?: number;
     totalOrdersCount: number;
     averageOrderValueUSD: number;
     storefrontRevenueUSD: number;
@@ -292,6 +296,11 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [hoveredBar, setHoveredBar] = useState<DailyStat | null>(null);
 
+  // Context Menu & Investment Modal State
+  const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
+  const [selectedOrderForInvestment, setSelectedOrderForInvestment] = useState<any | null>(null);
+  const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false);
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -362,7 +371,66 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
         ord.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (ord.customerCountry || "").toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesType = typeFilter === "ALL" || ord.orderType === typeFilter;
+      let matchesType = false;
+      if (typeFilter === "ALL") {
+        matchesType = true;
+      } else if (typeFilter.startsWith("CAT_")) {
+        const catKey = typeFilter.replace("CAT_", "").toLowerCase();
+        const itemNamesStr = (ord.items || []).map((i) => (i.name || "").toLowerCase()).join(" ");
+        const catSlugsStr = (ord.items || []).map((i) => (i.categorySlug || "").toLowerCase()).join(" ");
+        const catNamesStr = (ord.items || []).map((i) => (i.categoryName || "").toLowerCase()).join(" ");
+
+        if (catKey === "pokemons") {
+          matchesType =
+            catSlugsStr.includes("pokemon") ||
+            catNamesStr.includes("pokemon") ||
+            itemNamesStr.includes("pokemon") ||
+            itemNamesStr.includes("shiny") ||
+            itemNamesStr.includes("mewtwo") ||
+            itemNamesStr.includes("kyogre") ||
+            itemNamesStr.includes("rayquaza") ||
+            itemNamesStr.includes("necrozma") ||
+            itemNamesStr.includes("armored");
+        } else if (catKey === "coins") {
+          matchesType =
+            catSlugsStr.includes("coin") ||
+            catNamesStr.includes("coin") ||
+            itemNamesStr.includes("coin") ||
+            itemNamesStr.includes("pokecoin");
+        } else if (catKey === "stardust") {
+          matchesType =
+            catSlugsStr.includes("stardust") ||
+            catNamesStr.includes("stardust") ||
+            itemNamesStr.includes("stardust");
+        } else if (catKey === "accounts") {
+          matchesType =
+            catSlugsStr.includes("account") ||
+            catNamesStr.includes("account") ||
+            itemNamesStr.includes("account");
+        } else if (catKey === "xp") {
+          matchesType =
+            catSlugsStr.includes("xp") ||
+            catNamesStr.includes("xp") ||
+            itemNamesStr.includes("xp");
+        } else if (catKey === "items") {
+          matchesType =
+            catSlugsStr.includes("item") ||
+            catNamesStr.includes("item") ||
+            itemNamesStr.includes("item") ||
+            itemNamesStr.includes("pass") ||
+            itemNamesStr.includes("ticket");
+        } else if (catKey === "raids") {
+          matchesType =
+            catSlugsStr.includes("raid") ||
+            catNamesStr.includes("raid") ||
+            itemNamesStr.includes("raid");
+        } else {
+          matchesType = itemNamesStr.includes(catKey) || catSlugsStr.includes(catKey);
+        }
+      } else {
+        matchesType = ord.orderType === typeFilter;
+      }
+
       const matchesCountry =
         selectedCountry === "ALL" ||
         (ord.customerCountry || "").toLowerCase() === selectedCountry.toLowerCase();
@@ -383,6 +451,8 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     if (!data?.summary) {
       return {
         totalRevenueUSD: 0,
+        totalInvestmentUSD: 0,
+        netProfitUSD: 0,
         totalOrdersCount: 0,
         averageOrderValueUSD: 0,
         storefrontRevenueUSD: 0,
@@ -398,6 +468,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     }
 
     let totalRevenueUSD = 0;
+    let totalInvestmentUSD = 0;
     let storefrontRevenueUSD = 0;
     let buyNowRevenueUSD = 0;
     let auctionRevenueUSD = 0;
@@ -407,6 +478,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     filteredOrders.forEach((ord) => {
       const amt = ord.totalPriceUSD || 0;
       totalRevenueUSD += amt;
+      totalInvestmentUSD += (ord.investmentAmount || 0);
       if (ord.orderType === "STOREFRONT") storefrontRevenueUSD += amt;
       else if (ord.orderType === "BUY_NOW") buyNowRevenueUSD += amt;
       else if (ord.orderType === "AUCTION") auctionRevenueUSD += amt;
@@ -419,6 +491,8 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
 
     return {
       totalRevenueUSD: Math.round(totalRevenueUSD * 100) / 100,
+      totalInvestmentUSD: Math.round(totalInvestmentUSD * 100) / 100,
+      netProfitUSD: Math.round((totalRevenueUSD - totalInvestmentUSD) * 100) / 100,
       totalOrdersCount,
       averageOrderValueUSD: Math.round(averageOrderValueUSD * 100) / 100,
       storefrontRevenueUSD: Math.round(storefrontRevenueUSD * 100) / 100,
@@ -459,22 +533,24 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     });
 
     const stats: DailyStat[] = [];
+    const startDate = new Date("2026-07-15T00:00:00Z");
     const today = new Date();
-    for (let i = 364; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
+    const curr = new Date(startDate);
+
+    while (curr <= today) {
+      const year = curr.getFullYear();
+      const month = String(curr.getMonth() + 1).padStart(2, "0");
+      const day = String(curr.getDate()).padStart(2, "0");
       const key = `${year}-${month}-${day}`;
       const stat = dailyMap.get(key) || { count: 0, revenue: 0 };
-      const formattedDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const formattedDate = curr.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       stats.push({
         date: key,
         formattedDate,
         ordersCount: stat.count,
         revenue: Math.round(stat.revenue * 100) / 100,
       });
+      curr.setDate(curr.getDate() + 1);
     }
     return stats;
   }, [data?.dailyStats, filteredOrders, selectedCountry]);
@@ -554,7 +630,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   // CSV Export Handler
   const exportToCSV = () => {
     if (!filteredOrders || filteredOrders.length === 0) return;
-    const headers = ["Order Number", "Customer Name", "Customer Email", "Country", "Order Type", "Items", "Price USD", "Date"];
+    const headers = ["Order Number", "Customer Name", "Customer Email", "Country", "Order Type", "Items", "Price USD", "Investment", "Date"];
     const rows = filteredOrders.map((ord) => [
       `"${(ord.orderNumber || "").replace(/"/g, '""')}"`,
       `"${(ord.customerName || "").replace(/"/g, '""')}"`,
@@ -563,6 +639,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
       `"${(ord.orderType || "").replace(/"/g, '""')}"`,
       `"${(ord.items || []).map((i) => `${i.name} (x${i.quantity})`).join("; ").replace(/"/g, '""')}"`,
       ord.totalPriceUSD || 0,
+      ord.investmentAmount || 0,
       `"${new Date(ord.createdAt).toISOString()}"`,
     ]);
 
@@ -588,6 +665,40 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   }
 
   const activeOrdersCountInPeriod = dailyStats.reduce((acc, s) => acc + s.ordersCount, 0);
+
+  const handleRowContextMenu = (e: React.MouseEvent, ord: any) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      order: ord,
+    });
+  };
+
+  const handleOpenInvestmentModal = (ord: any) => {
+    setSelectedOrderForInvestment(ord);
+    setIsInvestmentModalOpen(true);
+  };
+
+  const handleInvestmentSaved = (orderId: string, investmentAmount: number, investmentBy: string) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      const updatedOrders = prev.orders.map((o) =>
+        o.id === orderId ? { ...o, investmentAmount, investmentBy } : o
+      );
+      const newTotalInv = updatedOrders.reduce((sum, o) => sum + (o.investmentAmount || 0), 0);
+      const newNetProfit = prev.summary.totalRevenueUSD - newTotalInv;
+      return {
+        ...prev,
+        summary: {
+          ...prev.summary,
+          totalInvestmentUSD: newTotalInv,
+          netProfitUSD: newNetProfit,
+        },
+        orders: updatedOrders,
+      };
+    });
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-6xl mx-auto pb-20 text-zinc-900 dark:text-zinc-100 font-sans">
@@ -667,18 +778,40 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
         </div>
       )}
 
-      {/* 2. EXECUTIVE FINANCIAL KPI CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* 2. SUMMARY STAT CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         
         <div className="p-3.5 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-1.5 sm:space-y-2 shadow-xs">
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-            <span>Gross Revenue</span>
-            <DollarSign className="h-4 w-4 text-purple-500" />
+            <span>Total Revenue</span>
+            <DollarSign className="h-4 w-4 text-[#6133e1]" />
           </div>
           <p className="text-lg sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white font-mono">
             {convertPrice(summary.totalRevenueUSD)}
           </p>
           <span className="text-[10px] sm:text-[11px] text-zinc-400 font-normal">Total processed sales</span>
+        </div>
+
+        <div className="p-3.5 sm:p-5 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/[0.03] space-y-1.5 sm:space-y-2 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 font-bold">
+            <span>Total Investment</span>
+            <DollarSign className="h-4 w-4 text-amber-500" />
+          </div>
+          <p className="text-lg sm:text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono">
+            {convertPrice(summary.totalInvestmentUSD || 0)}
+          </p>
+          <span className="text-[10px] sm:text-[11px] text-amber-500/70 font-normal">Sourcing & product cost</span>
+        </div>
+
+        <div className="p-3.5 sm:p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/[0.03] space-y-1.5 sm:space-y-2 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+            <span>Net Profit</span>
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
+          </div>
+          <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono">
+            {convertPrice(summary.netProfitUSD ?? summary.totalRevenueUSD)}
+          </p>
+          <span className="text-[10px] sm:text-[11px] text-emerald-500/70 font-normal">Revenue minus investment</span>
         </div>
 
         <div className="p-3.5 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-1.5 sm:space-y-2 shadow-xs">
@@ -891,12 +1024,23 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
               onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
               className="w-full sm:w-auto h-9 sm:h-7 px-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-md text-xs text-zinc-800 dark:text-zinc-200 font-medium outline-none cursor-pointer"
             >
-              <option value="ALL">All Types</option>
-              <option value="STOREFRONT">Storefront</option>
-              <option value="BUY_NOW">Buy Now</option>
-              <option value="AUCTION">Auction</option>
-              <option value="RECOVERY">Recovery</option>
-              <option value="REGISTRATION">Registration Fees</option>
+              <option value="ALL">All Types & Categories</option>
+              <optgroup label="Order Types">
+                <option value="STOREFRONT">Storefront</option>
+                <option value="BUY_NOW">Buy Now</option>
+                <option value="AUCTION">Auction</option>
+                <option value="RECOVERY">Recovery</option>
+                <option value="REGISTRATION">Registration Fees</option>
+              </optgroup>
+              <optgroup label="Product Categories">
+                <option value="CAT_POKEMONS">✨ Pokemons</option>
+                <option value="CAT_COINS">🪙 Pokecoins / Coins</option>
+                <option value="CAT_STARDUST">⭐ Stardust</option>
+                <option value="CAT_ACCOUNTS">🎮 Accounts</option>
+                <option value="CAT_XP">⚡ XP Service</option>
+                <option value="CAT_ITEMS">🎒 Items & Passes</option>
+                <option value="CAT_RAIDS">🗡️ Raid Services</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -979,50 +1123,83 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
                     <th className="px-4 py-2.5">Items</th>
                     <th className="px-4 py-2.5">Type</th>
                     <th className="px-4 py-2.5">Date</th>
-                    <th className="px-4 py-2.5 text-right">Price ({selectedCurrency})</th>
+                    <th className="px-4 py-2.5">Investment / By</th>
+                    <th className="px-4 py-2.5 text-right">Net Profit</th>
+                    <th className="px-4 py-2.5 text-right">Revenue ({selectedCurrency})</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/60 text-zinc-800 dark:text-zinc-200">
-                  {paginatedOrders.map((ord) => (
-                    <tr key={ord.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors">
-                      <td className="px-4 py-3 font-mono font-semibold text-purple-600 dark:text-purple-400">
-                        {ord.orderNumber}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-semibold text-zinc-900 dark:text-white leading-tight">{ord.customerName}</p>
-                          <p className="text-[10px] text-zinc-400">{ord.customerEmail}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-zinc-500 font-medium">
-                        {ord.customerCountry || "Unspecified"}
-                      </td>
-                      <td className="px-4 py-3 max-w-xs">
-                        <div className="truncate text-xs">
-                          {ord.items && ord.items.length > 0 ? (
-                            ord.items.map((i) => i.name).join(", ")
-                          ) : (
-                            <span className="text-zinc-400 italic">Storefront Product</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-[10px] font-semibold">
-                          {ord.orderType}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-zinc-400 text-xs">
-                        {new Date(ord.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-zinc-900 dark:text-white">
-                        {convertPrice(ord.totalPriceUSD)}
-                      </td>
-                    </tr>
-                  ))}
+                  {paginatedOrders.map((ord) => {
+                    const inv = ord.investmentAmount || 0;
+                    const profit = ord.totalPriceUSD - inv;
+
+                    return (
+                      <tr
+                        key={ord.id}
+                        onContextMenu={(e) => handleRowContextMenu(e, ord)}
+                        className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors cursor-context-menu"
+                      >
+                        <td className="px-4 py-3 font-mono font-semibold text-purple-600 dark:text-purple-400">
+                          {ord.orderNumber}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div>
+                            <p className="font-semibold text-zinc-900 dark:text-white leading-tight">{ord.customerName}</p>
+                            <p className="text-[10px] text-zinc-400">{ord.customerEmail}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-zinc-500 font-medium">
+                          {ord.customerCountry || "Unspecified"}
+                        </td>
+                        <td className="px-4 py-3 max-w-xs">
+                          <div className="truncate text-xs">
+                            {ord.items && ord.items.length > 0 ? (
+                              ord.items.map((i) => i.name).join(", ")
+                            ) : (
+                              <span className="text-zinc-400 italic">Storefront Product</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-[10px] font-semibold">
+                            {ord.orderType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-zinc-400 text-xs">
+                          {new Date(ord.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </td>
+                        {/* Investment & Investment By */}
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleOpenInvestmentModal(ord)}
+                            className="text-left font-mono hover:underline group cursor-pointer"
+                            title="Right click or click to edit investment details"
+                          >
+                            <span className="font-bold text-amber-500 block text-xs">
+                              {convertPrice(inv)}
+                            </span>
+                            <span className="text-[10px] text-zinc-400 block font-sans">
+                              {ord.investmentBy ? `By: ${ord.investmentBy}` : "+ Add Investment"}
+                            </span>
+                          </button>
+                        </td>
+                        {/* Net Profit */}
+                        <td className="px-4 py-3 text-right font-mono font-bold">
+                          <span className={profit >= 0 ? "text-emerald-500" : "text-red-500"}>
+                            {convertPrice(profit)}
+                          </span>
+                        </td>
+                        {/* Revenue */}
+                        <td className="px-4 py-3 text-right font-mono font-bold text-zinc-900 dark:text-white">
+                          {convertPrice(ord.totalPriceUSD)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1060,6 +1237,23 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
 
       </div>
 
+      {/* Right-click Context Menu */}
+      <OrderContextMenu
+        menu={contextMenu}
+        onClose={() => setContextMenu(null)}
+        onEditInvestment={(ord) => handleOpenInvestmentModal(ord)}
+      />
+
+      {/* Edit Investment Modal */}
+      <OrderInvestmentModal
+        isOpen={isInvestmentModalOpen}
+        onClose={() => {
+          setIsInvestmentModalOpen(false);
+          setSelectedOrderForInvestment(null);
+        }}
+        order={selectedOrderForInvestment}
+        onSaved={handleInvestmentSaved}
+      />
     </div>
   );
 }

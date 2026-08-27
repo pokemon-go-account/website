@@ -20,6 +20,7 @@ const productSchema = z.object({
   categoryId: z.string().min(1, "Please select a category"),
   imageUrl: z.string().min(1, "Image URL is required"),
   imageUrls: z.array(z.string()),
+  tags: z.string().optional(),
   isFeatured: z.boolean().optional(),
 });
 
@@ -44,7 +45,11 @@ interface Product {
   isFeatured?: boolean;
   imageUrl: string;
   imageUrls?: string[];
-  categoryId?: Category;
+  tags?: string[];
+  categoryId?: {
+    _id: string;
+    name: string;
+  };
 }
 
 export default function ManageProductsPage() {
@@ -226,6 +231,7 @@ export default function ManageProductsPage() {
       categoryId: product.categoryId?._id || "",
       imageUrl: product.imageUrl,
       imageUrls: product.imageUrls || (product.imageUrl ? [product.imageUrl] : []),
+      tags: product.tags ? product.tags.join(", ") : "",
       isFeatured: product.isFeatured || false,
     });
     setIsModalOpen(true);
@@ -246,6 +252,7 @@ export default function ManageProductsPage() {
       categoryId: values.categoryId,
       imageUrl: values.imageUrl,
       imageUrls: values.imageUrls || [],
+      tags: values.tags ? values.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
       isFeatured: values.isFeatured || false,
     };
 
@@ -619,6 +626,16 @@ export default function ManageProductsPage() {
                   placeholder="Details of the product or service..."
                   {...register("description")}
                   className="w-full min-h-[60px] p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all leading-normal text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-zinc-500 uppercase tracking-wider text-[9px]">Product Tags (Comma Separated)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Shiny, Level 50, Legendary, Stardust, Instant Delivery"
+                  {...register("tags")}
+                  className="w-full h-9 px-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white focus:border-zinc-950 dark:focus:border-white transition-all text-xs"
                 />
               </div>
 

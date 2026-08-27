@@ -564,16 +564,22 @@ export function UserChatPanel({
     }
   }, [initialChatId, conversations]);
 
+  // Sync activeChat metadata when conversations list updates
+  useEffect(() => {
+    if (!activeChatId) {
+      setActiveChat(null);
+      return;
+    }
+    const currentMeta = conversations.find((c) => c.id === activeChatId) || null;
+    setActiveChat(currentMeta);
+  }, [conversations, activeChatId]);
+
   // 2. Listen for messages in active chat & mark read
   useEffect(() => {
     if (!activeChatId || !isAuthReady) {
-      setActiveChat(null);
       setMessages([]);
       return;
     }
-
-    const currentMeta = conversations.find((c) => c.id === activeChatId) || null;
-    setActiveChat(currentMeta);
 
     const db = getDb();
     const msgsRef = collection(db, "supportChats", activeChatId, "messages");
@@ -617,7 +623,7 @@ export function UserChatPanel({
     );
 
     return unsub;
-  }, [activeChatId, isAuthReady, userId, conversations, playSound]);
+  }, [activeChatId, isAuthReady, userId, playSound]);
 
   // Reset reply state whenever the active chat changes
   useEffect(() => {
@@ -1460,7 +1466,7 @@ export function UserChatPanel({
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message… (Shift + Enter for new line)"
                 disabled={isSending || isUploadingImage}
-                className="flex-1 bg-white dark:bg-[#1b1b20] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 rounded-2xl px-4 py-3 text-xs sm:text-sm outline-none border border-zinc-200 dark:border-white/[0.08] focus:border-zinc-400 dark:focus:border-white/30 transition-all resize-none max-h-40 min-h-[50px] leading-relaxed disabled:opacity-50 break-words [word-break:break-word] shadow-xs"
+                className="flex-1 bg-white dark:bg-[#1b1b20] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 rounded-2xl px-4 py-3 text-[16px] sm:text-sm outline-none border border-zinc-200 dark:border-white/[0.08] focus:border-zinc-400 dark:focus:border-white/30 transition-all resize-none max-h-40 min-h-[50px] leading-relaxed disabled:opacity-50 break-words [word-break:break-word] shadow-xs"
               />
               <button
                 onClick={handleSend}
@@ -1485,7 +1491,7 @@ export function UserChatPanel({
   // Full Screen layout (Sidebar + Thread side-by-side)
   if (isFullScreen) {
     return (
-      <div className="flex flex-1 min-h-0 rounded-2xl border border-zinc-200/80 dark:border-white/10 overflow-hidden bg-white dark:bg-[#0c0c10] shadow-xl h-[640px] md:h-[720px]">
+      <div className="flex flex-1 min-h-0 rounded-2xl border border-zinc-200/80 dark:border-white/10 overflow-hidden bg-white dark:bg-[#0c0c10] shadow-xl h-[calc(100dvh-7rem)] min-h-[480px] md:h-[720px]">
         {/* Left sidebar: hidden on mobile if thread is open */}
         <div className={cn(
           "w-full md:w-80 shrink-0 border-r border-zinc-200/80 dark:border-white/[0.08] flex flex-col h-full",

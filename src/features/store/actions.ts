@@ -28,7 +28,7 @@ export async function getStoreProducts() {
   try {
     await connectDB();
     const products = await Product.find()
-      .select("_id name description price mrpPrice discountedPrice isLimitedDeal dealExpiry badge isFeatured imageUrl categoryId sortOrder createdAt")
+      .select("_id name description price mrpPrice discountedPrice isLimitedDeal dealExpiry badge isFeatured imageUrl imageUrls tags categoryId sortOrder createdAt")
       .populate("categoryId", "name slug")
       .sort({ sortOrder: 1, createdAt: -1 })
       .lean();

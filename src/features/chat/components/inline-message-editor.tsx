@@ -80,7 +80,7 @@ export function InlineMessageEditor({
           disabled={isSaving}
           placeholder="Edit message..."
           className={cn(
-            "w-full text-xs sm:text-sm p-3 rounded-xl outline-none resize-none leading-relaxed transition-colors shadow-inner",
+            "w-full text-[16px] sm:text-sm p-3 rounded-xl outline-none resize-none leading-relaxed transition-colors shadow-inner",
             isOutgoing
               ? "bg-black/20 text-white placeholder-white/50 border border-white/30 focus:border-white focus:ring-1 focus:ring-white/50"
               : "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 focus:border-violet-500 dark:focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20"

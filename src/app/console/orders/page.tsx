@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { PriceDisplay } from "@/components/price-display";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { OrderInvestmentModal } from "@/components/console/order-investment-modal";
+import { OrderContextMenu, ContextMenuPosition } from "@/components/console/order-context-menu";
 
 interface OrderData {
   _id: string;
@@ -32,8 +34,10 @@ interface OrderData {
   }>;
   totalPrice: number;
   walletDiscountApplied?: number;
+  investmentAmount?: number;
+  investmentBy?: string;
   status: "PENDING" | "COMPLETED" | "FAILED";
-  orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION";
+  orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION" | "RECOVERY";
   createdAt: string;
 }
 
@@ -47,6 +51,11 @@ export default function OrdersConsolePage() {
   const [selectedCountry, setSelectedCountry] = useState<string>("ALL");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [alert, setAlert] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Context Menu & Investment Modal State
+  const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
+  const [selectedOrderForInvestment, setSelectedOrderForInvestment] = useState<any | null>(null);
+  const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false);
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -123,16 +132,17 @@ export default function OrdersConsolePage() {
   }, [hasMore, loading, loadingMore, page, debouncedSearch, activeTab, selectedCountry]);
 
   const handleComplete = async (id: string) => {
-    setProcessingId(id);
-    setAlert(null);
-    const res = await completeOrderConsole(id);
-    if (res.success) {
-      setAlert({ text: "Order marked as COMPLETED successfully.", ok: true });
-      setOrders(prev => prev.map(o => o._id === id ? { ...o, status: "COMPLETED" } : o));
-    } else {
-      setAlert({ text: res.error || "Action failed.", ok: false });
+    const target = orders.find(o => o._id === id);
+    if (target) {
+      setSelectedOrderForInvestment({
+        id: target._id,
+        orderNumber: `#ORD-${target._id.substring(target._id.length - 6).toUpperCase()}`,
+        totalPrice: target.totalPrice,
+        investmentAmount: target.investmentAmount || 0,
+        investmentBy: target.investmentBy || "",
+      });
+      setIsInvestmentModalOpen(true);
     }
-    setProcessingId(null);
   };
 
   const handleFail = async (id: string) => {
@@ -308,7 +318,22 @@ export default function OrdersConsolePage() {
                   return (
                     <tr
                       key={order._id}
-                      className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors"
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          order: {
+                            id: order._id,
+                            orderNumber: `#ORD-${order._id.substring(order._id.length - 6).toUpperCase()}`,
+                            totalPrice: order.totalPrice,
+                            investmentAmount: order.investmentAmount || 0,
+                            investmentBy: order.investmentBy || "",
+                            status: order.status,
+                          },
+                        });
+                      }}
+                      className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors cursor-context-menu"
                     >
                       {/* Buyer Details & User Location */}
                       <td className="px-6 py-4">
@@ -453,6 +478,31 @@ export default function OrdersConsolePage() {
                             >
                               {order.orderType === "STOREFRONT" ? "STORE" : order.orderType}
                             </span>
+
+                            {/* Investment Info Badge */}
+                            <div className="pt-1 mt-1 border-t border-zinc-200/50 dark:border-white/[0.04]">
+                              <button
+                                onClick={() => {
+                                  setSelectedOrderForInvestment({
+                                    id: order._id,
+                                    orderNumber: `#ORD-${order._id.substring(order._id.length - 6).toUpperCase()}`,
+                                    totalPrice: order.totalPrice,
+                                    investmentAmount: order.investmentAmount || 0,
+                                    investmentBy: order.investmentBy || "",
+                                  });
+                                  setIsInvestmentModalOpen(true);
+                                }}
+                                className="text-left font-mono hover:underline group cursor-pointer"
+                                title="Click or Right Click to Edit Investment Details"
+                              >
+                                <span className="text-[10px] font-bold text-amber-500 block">
+                                  Cost: ${order.investmentAmount || 0}
+                                </span>
+                                <span className="text-[9px] text-zinc-400 block font-sans">
+                                  {order.investmentBy ? `By: ${order.investmentBy}` : "+ Investment"}
+                                </span>
+                              </button>
+                            </div>
                           </div>
                         )}
                       </td>
@@ -522,6 +572,47 @@ export default function OrdersConsolePage() {
           </div>
         )}
       </div>
+
+      {/* Right-click Context Menu */}
+      <OrderContextMenu
+        menu={contextMenu}
+        onClose={() => setContextMenu(null)}
+        onEditInvestment={(ord) => {
+          setSelectedOrderForInvestment({
+            id: ord.id || ord._id,
+            orderNumber: ord.orderNumber || `#ORD-${(ord.id || ord._id).substring(0, 6)}`,
+            totalPrice: ord.totalPrice || ord.totalPriceUSD || 0,
+            investmentAmount: ord.investmentAmount || 0,
+            investmentBy: ord.investmentBy || "",
+          });
+          setIsInvestmentModalOpen(true);
+        }}
+        onMarkCompleted={async (id) => {
+          setProcessingId(id);
+          const res = await completeOrderConsole(id);
+          if (res.success) {
+            setAlert({ text: "Order marked as COMPLETED successfully.", ok: true });
+            setOrders(prev => prev.map(o => o._id === id ? { ...o, status: "COMPLETED" } : o));
+          } else {
+            setAlert({ text: res.error || "Action failed.", ok: false });
+          }
+          setProcessingId(null);
+        }}
+      />
+
+      {/* Edit Investment Modal */}
+      <OrderInvestmentModal
+        isOpen={isInvestmentModalOpen}
+        onClose={() => {
+          setIsInvestmentModalOpen(false);
+          setSelectedOrderForInvestment(null);
+        }}
+        order={selectedOrderForInvestment}
+        onSaved={(id, invAmt, invBy) => {
+          setOrders(prev => prev.map(o => o._id === id ? { ...o, investmentAmount: invAmt, investmentBy: invBy, status: "COMPLETED" } : o));
+          setAlert({ text: "Order investment details updated successfully.", ok: true });
+        }}
+      />
     </div>
   );
 }

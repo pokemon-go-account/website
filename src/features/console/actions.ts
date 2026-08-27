@@ -498,7 +498,7 @@ export async function getOrdersConsole(
   }
 }
 
-export async function completeOrderConsole(orderId: string) {
+export async function completeOrderConsole(orderId: string, investmentAmount?: number, investmentBy?: string) {
   try {
     await checkSuperAdminSession();
     await connectDB();
@@ -510,6 +510,12 @@ export async function completeOrderConsole(orderId: string) {
     if (!order) return { success: false, error: "Order not found." };
 
     order.status = "COMPLETED";
+    if (typeof investmentAmount === "number") {
+      order.investmentAmount = investmentAmount;
+    }
+    if (typeof investmentBy === "string") {
+      order.investmentBy = investmentBy;
+    }
     await order.save();
 
     // Inject a rating-request system card into the order's Firestore chat thread
@@ -638,6 +644,40 @@ export async function failOrderConsole(orderId: string) {
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to fail order." };
+  }
+}
+
+/** Update Investment Details (Investment Amount & Investment By) for an order */
+export async function updateOrderInvestmentConsole(
+  orderId: string,
+  investmentAmount: number,
+  investmentBy: string
+) {
+  try {
+    await checkSuperAdminSession();
+    await connectDB();
+
+    const Order = (await import("@/models/Order")).default;
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return { success: false, error: "Order not found." };
+    }
+
+    order.investmentAmount = Math.max(0, Number(investmentAmount) || 0);
+    order.investmentBy = (investmentBy || "").trim();
+    await order.save();
+
+    revalidatePath("/console/orders");
+    revalidatePath("/console/revenue");
+    revalidatePath("/console/analytics");
+
+    return {
+      success: true,
+      investmentAmount: order.investmentAmount,
+      investmentBy: order.investmentBy,
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update investment details." };
   }
 }
 

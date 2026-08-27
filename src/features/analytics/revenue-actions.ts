@@ -6,6 +6,7 @@ import Order from "@/models/Order";
 import User from "@/models/User";
 import RecoveryRequest from "@/models/RecoveryRequest";
 import Registration from "@/models/Registration";
+import Category from "@/models/Category";
 import { auth } from "@/auth";
 
 export interface DailyStat {
@@ -19,6 +20,8 @@ export interface RevenueOrderItem {
   name: string;
   priceUSD: number;
   quantity: number;
+  categoryName?: string;
+  categorySlug?: string;
 }
 
 export interface RevenueOrderDetails {
@@ -30,6 +33,8 @@ export interface RevenueOrderDetails {
   orderType: "STOREFRONT" | "BUY_NOW" | "AUCTION" | "RECOVERY" | "REGISTRATION";
   status: string;
   totalPriceUSD: number;
+  investmentAmount?: number;
+  investmentBy?: string;
   itemsCount: number;
   items: RevenueOrderItem[];
   createdAt: string;
@@ -179,26 +184,29 @@ export async function getRevenueAnalyticsAction() {
     }
 
     const dailyStats: DailyStat[] = [];
+    const startDate = new Date("2026-07-15T00:00:00Z");
     const today = new Date();
-    for (let i = 364; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const key = getDateKey(d);
+    const curr = new Date(startDate);
+
+    while (curr <= today) {
+      const key = getDateKey(curr);
       const stat = dailyMap.get(key) || { count: 0, revenue: 0 };
-      const formattedDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const formattedDate = curr.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       dailyStats.push({
         date: key,
         formattedDate,
         ordersCount: stat.count,
         revenue: Math.round(stat.revenue * 100) / 100,
       });
+      curr.setDate(curr.getDate() + 1);
     }
 
     // 3. Fetch list of most recent completed orders & recoveries (Limited to 200 to prevent OOM)
-    const [orders, completedRecoveries] = await Promise.all([
+    const [orders, completedRecoveries, categories] = await Promise.all([
       Order.find({ status: "COMPLETED" })
-        .select("_id totalPrice orderType items userId status createdAt")
+        .select("_id totalPrice orderType items userId status createdAt investmentAmount investmentBy")
         .populate("userId", "username name email country")
+        .populate("items.productId", "categoryId name")
         .sort({ createdAt: -1 })
         .limit(200)
         .lean(),
@@ -207,19 +215,32 @@ export async function getRevenueAnalyticsAction() {
         .populate("userId", "username name email country")
         .sort({ createdAt: -1 })
         .limit(200)
-        .lean()
+        .lean(),
+      Category.find({}).select("name slug").lean(),
     ]);
+
+    const categoryMap = new Map<string, { name: string; slug: string }>();
+    for (const cat of (categories || [])) {
+      categoryMap.set(cat._id.toString(), { name: cat.name, slug: cat.slug });
+    }
 
     const orderList: RevenueOrderDetails[] = [];
 
     // Format orders for table output
     for (const ord of orders) {
       const userObj = ord.userId as any;
-      const itemsList: RevenueOrderItem[] = (ord.items || []).map((i: any) => ({
-        name: i.name || "Purchased Product",
-        priceUSD: i.price || 0,
-        quantity: i.quantity || 1,
-      }));
+      const itemsList: RevenueOrderItem[] = (ord.items || []).map((i: any) => {
+        const prodObj = i.productId as any;
+        const catIdStr = prodObj?.categoryId?.toString();
+        const catObj = catIdStr ? categoryMap.get(catIdStr) : undefined;
+        return {
+          name: i.name || "Purchased Product",
+          priceUSD: i.price || 0,
+          quantity: i.quantity || 1,
+          categoryName: catObj?.name || undefined,
+          categorySlug: catObj?.slug || undefined,
+        };
+      });
 
       orderList.push({
         id: ord._id.toString(),
@@ -230,6 +251,8 @@ export async function getRevenueAnalyticsAction() {
         orderType: ord.orderType || "STOREFRONT",
         status: ord.status,
         totalPriceUSD: ord.totalPrice || 0,
+        investmentAmount: ord.investmentAmount || 0,
+        investmentBy: ord.investmentBy || "",
         itemsCount: itemsList.length,
         items: itemsList,
         createdAt: new Date(ord.createdAt).toISOString(),
@@ -294,11 +317,16 @@ export async function getRevenueAnalyticsAction() {
     // Sort orderList chronologically for the table presentation
     orderList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+    const totalInvestmentUSD = orders.reduce((sum, ord) => sum + (ord.investmentAmount || 0), 0);
+    const netProfitUSD = totalRevenueUSD - totalInvestmentUSD;
+
     return {
       success: true,
       data: {
         summary: {
           totalRevenueUSD: Math.round(totalRevenueUSD * 100) / 100,
+          totalInvestmentUSD: Math.round(totalInvestmentUSD * 100) / 100,
+          netProfitUSD: Math.round(netProfitUSD * 100) / 100,
           totalOrdersCount,
           averageOrderValueUSD: Math.round(averageOrderValueUSD * 100) / 100,
           storefrontRevenueUSD: Math.round(storefrontRevenueUSD * 100) / 100,

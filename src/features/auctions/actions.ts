@@ -8,6 +8,7 @@ import { ListingValidationSchema } from "@/models/Listing.validation";
 import Auction from "@/models/Auction";
 import Bid from "@/models/Bid";
 import User from "@/models/User";
+import Order from "@/models/Order";
 import Registration from "@/models/Registration";
 import { sendChatWebhookNotification } from "@/features/chat/actions";
 import { getDb } from "@/lib/firestore";
@@ -140,7 +141,8 @@ export async function fetchAuctionRealtime(auctionId: string) {
     let isRegistered = false;
     if (userId) {
       const user = await User.findById(userId).lean();
-      isRegistered = !!(user && (user as any).hasPaidVerificationDeposit);
+      const userOrderCount = await Order.countDocuments({ userId: userId as any, status: { $ne: "FAILED" } as any });
+      isRegistered = !!(user && ((user as any).hasPaidVerificationDeposit || userOrderCount >= 1));
     }
 
     const bids = await Bid.find({ auctionId })
@@ -211,9 +213,11 @@ export async function placeAuctionBid(auctionId: string, bidAmount: number) {
       return { success: false, error: "Your account is suspended." };
     }
 
-    // 1b. Verify user registration status
-    if (!user.hasPaidVerificationDeposit) {
-      return { success: false, error: "Access denied. Verification deposit ($2.50) is required to place bids." };
+    // 1b. Verify user registration status (free ₹0 for users with 1+ orders, ₹199 for new users)
+    const userOrderCount = await Order.countDocuments({ userId: session.user.id as any, status: { $ne: "FAILED" } as any });
+    const isEligibleToBid = userOrderCount >= 1 || user.hasPaidVerificationDeposit;
+    if (!isEligibleToBid) {
+      return { success: false, error: "Access denied. Auction bidding requires at least 1 completed storefront order or a ₹199 Verification deposit." };
     }
 
     // 2. Fetch auction and validate listing minIncrement rules

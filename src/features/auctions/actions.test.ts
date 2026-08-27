@@ -255,7 +255,7 @@ describe('Auctions Actions', () => {
       expect(res.error).toBe('Your account is suspended.');
     });
 
-    it('should fail if deposit not paid', async () => {
+    it('should fail if deposit not paid and user has 0 orders', async () => {
       const user = await User.create({ name: 'Bidder', username: 'bidder1', email: 'b@test.com', hasPaidVerificationDeposit: false });
       const auctionId = new mongoose.Types.ObjectId().toString();
       vi.mocked(auth).mockResolvedValue({ user: { id: user._id.toString() }, expires: '9999' } as any);
@@ -263,6 +263,17 @@ describe('Auctions Actions', () => {
       const res = await placeAuctionBid(auctionId, 20);
       expect(res.success).toBe(false);
       expect(res.error).toContain('Verification deposit');
+    });
+
+    it('should allow bidding if user has 1+ orders even without deposit', async () => {
+      const user = await User.create({ name: 'Existing Customer', username: 'cust1', email: 'cust@test.com', hasPaidVerificationDeposit: false });
+      const Order = (await import('@/models/Order')).default;
+      await Order.create({ userId: user._id, totalPrice: 50, status: 'COMPLETED', orderType: 'STOREFRONT', items: [{ name: 'Coins', price: 50, quantity: 1 }] });
+      const auctionId = new mongoose.Types.ObjectId().toString();
+      vi.mocked(auth).mockResolvedValue({ user: { id: user._id.toString() }, expires: '9999' } as any);
+
+      const res = await placeAuctionBid(auctionId, 20);
+      expect(res.error).not.toContain('Verification deposit');
     });
   });
 

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { HeaderClient } from "@/components/header-client";
 import { Footer } from "@/components/footer";
-import { ChatWidget } from "@/features/chat/components/chat-widget";
 import { ShieldCheck, ArrowRight, ShieldAlert } from "lucide-react";
 import { getMaintenanceConfig } from "@/features/console/actions";
 import { auth } from "@/auth";
@@ -72,7 +71,6 @@ export default async function StorefrontLayout({
         </main>
         <Footer />
       </div>
-      <ChatWidget />
     </>
   );
 }

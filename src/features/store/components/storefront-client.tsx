@@ -43,6 +43,8 @@ interface Product {
   badge?: "MOST_PURCHASED" | "POPULAR" | "";
   imageUrl: string;
   imageUrls?: string[];
+  tags?: string[];
+  isFeatured?: boolean;
   categoryId?: {
     _id: string;
     name: string;
@@ -171,6 +173,11 @@ export function StorefrontClient({ categories, products, initialCategorySlug }: 
   const [customRequestError, setCustomRequestError] = useState<string | null>(null);
   const [customRequestSuccess, setCustomRequestSuccess] = useState(false);
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
+
+  // Search, Filter & Sort States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"featured" | "price_asc" | "price_desc" | "name_asc" | "name_desc" | "newest">("featured");
 
   const searchParams = useSearchParams();
 
@@ -334,7 +341,43 @@ Please guide me on how to complete the payment!`;
   }, {} as Record<string, Product[]>);
 
   const selectedCategoryObj = categories.find((cat) => cat._id === selectedCategoryId);
-  const catProducts = selectedCategoryId ? (productsByCategory[selectedCategoryId] || []) : [];
+  const baseCategoryProducts = selectedCategoryId ? (productsByCategory[selectedCategoryId] || []) : products;
+
+  // Extract unique tags from current category products or overall products
+  const extractedTags = Array.from(
+    new Set(baseCategoryProducts.flatMap((p) => p.tags || []))
+  ).filter(Boolean);
+  const tagList = Array.from(new Set([...extractedTags, "Shiny", "Level 50", "Legendary", "Stardust", "Instant Delivery"]));
+
+  // Filter and sort products
+  const catProducts = baseCategoryProducts.filter((product) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = product.name.toLowerCase().includes(q);
+      const matchDesc = (product.description || "").toLowerCase().includes(q);
+      const matchTag = (product.tags || []).some((t) => t.toLowerCase().includes(q));
+      if (!matchName && !matchDesc && !matchTag) return false;
+    }
+    if (selectedTags.length > 0) {
+      const pTags = (product.tags || []).map((t) => t.toLowerCase());
+      const hasTag = selectedTags.some((st) => pTags.includes(st.toLowerCase()));
+      if (!hasTag) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    if (sortBy === "price_asc") return a.price - b.price;
+    if (sortBy === "price_desc") return b.price - a.price;
+    if (sortBy === "name_asc") return a.name.localeCompare(b.name);
+    if (sortBy === "name_desc") return b.name.localeCompare(a.name);
+    if (sortBy === "newest") {
+      const tA = a.dealExpiry ? new Date(a.dealExpiry).getTime() : 0;
+      const tB = b.dealExpiry ? new Date(b.dealExpiry).getTime() : 0;
+      return tB - tA;
+    }
+    if (a.isFeatured && !b.isFeatured) return -1;
+    if (!a.isFeatured && b.isFeatured) return 1;
+    return 0;
+  });
 
   return (
     <div className="relative min-h-screen bg-transparent text-zinc-900 dark:text-white transition-colors duration-300">
@@ -425,106 +468,172 @@ Please guide me on how to complete the payment!`;
           </div>
         ) : (
           /* Screen 2: Products of Selected Category Screen */
-          <div className="space-y-8">
-            {/* Header / Nav Options */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-white/[0.06] pb-6">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => handleSelectCategory(null)}
-                  className="h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-white/[0.04] text-zinc-655 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95 shadow-xs"
-                >
-                  <ChevronLeft className="h-4.5 w-4.5" />
-                </button>
-                <div>
-                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 tracking-wider uppercase font-semibold block">Direct Storefront</span>
-                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-                    {selectedCategoryObj?.name}
-                  </h2>
+          <div className="space-y-6">
+            {/* Header, Search, Sort & Request Toolbar */}
+            <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#111116] p-5 space-y-4 shadow-sm">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                {/* Left: Back Button + Title */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleSelectCategory(null)}
+                    className="h-9 w-9 rounded-xl border border-zinc-200 dark:border-white/[0.1] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-300 flex items-center justify-center cursor-pointer transition-colors active:scale-95 shadow-xs shrink-0"
+                    title="Back to All Categories"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <div>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 tracking-wider uppercase font-extrabold block">
+                      Direct Storefront
+                    </span>
+                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                      <span>{selectedCategoryObj?.name}</span>
+                      <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/10 px-2.5 py-0.5 rounded-full border border-zinc-200 dark:border-white/10">
+                        {catProducts.length} {catProducts.length === 1 ? "item" : "items"}
+                      </span>
+                    </h2>
+                  </div>
+                </div>
+
+                {/* Right: Search Input + Sort By + Custom Request Button */}
+                <div className="flex items-center gap-2.5 flex-wrap lg:flex-nowrap flex-1 justify-end">
+                  {/* Search Bar Input */}
+                  <div className="relative min-w-[200px] flex-1 max-w-md">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={`Search in ${selectedCategoryObj?.name || 'products'} (name, tag)...`}
+                      className="w-full h-9 pl-3.5 pr-8 rounded-xl border border-zinc-200 dark:border-white/[0.1] bg-zinc-50 dark:bg-[#181820] text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-[#6133e1] focus:ring-1 focus:ring-[#6133e1]/30 transition-all shadow-xs"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sort By Dropdown */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider hidden sm:inline">Sort:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="h-9 px-3 rounded-xl border border-zinc-200 dark:border-white/[0.1] bg-zinc-50 dark:bg-[#181820] text-xs font-bold text-zinc-900 dark:text-white outline-none focus:border-[#6133e1] transition-all cursor-pointer shadow-xs"
+                    >
+                      <option value="featured">★ Featured First</option>
+                      <option value="price_asc">Price: Low to High</option>
+                      <option value="price_desc">Price: High to Low</option>
+                      <option value="name_asc">Name: A to Z</option>
+                      <option value="name_desc">Name: Z to A</option>
+                      <option value="newest">Newest Deals</option>
+                    </select>
+                  </div>
+
+                  {/* Request Button */}
+                  {selectedCategoryObj?.slug === "pokemons" && (
+                    <button
+                      onClick={() => {
+                        if (!session?.user) {
+                          window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                        } else {
+                          setIsRequestModalOpen(true);
+                        }
+                      }}
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 shadow-md"
+                    >
+                      ★ Request a Pokémon
+                    </button>
+                  )}
+
+                  {selectedCategoryObj?.slug === "accounts" && (
+                    <button
+                      onClick={() => {
+                        if (!session?.user) {
+                          window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                        } else {
+                          setCustomRequestType("ACCOUNT");
+                          setIsCustomRequestModalOpen(true);
+                        }
+                      }}
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 shadow-md"
+                    >
+                      ★ Request Account
+                    </button>
+                  )}
+
+                  {selectedCategoryObj?.slug === "stardust" && (
+                    <button
+                      onClick={() => {
+                        if (!session?.user) {
+                          window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+                        } else {
+                          setCustomRequestType("STARDUST");
+                          setIsCustomRequestModalOpen(true);
+                        }
+                      }}
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 shadow-md"
+                    >
+                      ★ Request Stardust
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {selectedCategoryObj?.slug === "pokemons" && (
+              {/* Tag Pills */}
+              <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-zinc-200/80 dark:border-white/[0.06]">
+                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mr-1">Filter Tags:</span>
                 <button
-                  onClick={() => {
-                    if (!session?.user) {
-                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-                    } else {
-                      setIsRequestModalOpen(true);
-                    }
-                  }}
-                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
+                  onClick={() => setSelectedTags([])}
+                  className={cn(
+                    "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border",
+                    selectedTags.length === 0
+                      ? "bg-[#6133e1] text-white border-[#6133e1] shadow-xs"
+                      : "bg-zinc-50 dark:bg-[#181820] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300"
+                  )}
                 >
-                  ★ Request a Pokémon
+                  All ({baseCategoryProducts.length})
                 </button>
-              )}
 
-              {selectedCategoryObj?.slug === "accounts" && (
-                <button
-                  onClick={() => {
-                    if (!session?.user) {
-                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-                    } else {
-                      setCustomRequestType("ACCOUNT");
-                      setIsCustomRequestModalOpen(true);
-                    }
-                  }}
-                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
-                >
-                  ★ Request Custom Account
-                </button>
-              )}
+                {tagList.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedTags(selectedTags.filter((t) => t !== tag));
+                        } else {
+                          setSelectedTags([...selectedTags, tag]);
+                        }
+                      }}
+                      className={cn(
+                        "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1",
+                        isSelected
+                          ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                          : "bg-zinc-50 dark:bg-[#181820] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:border-purple-500/50"
+                      )}
+                    >
+                      <span>#{tag}</span>
+                      {isSelected && <span className="text-[9px] ml-0.5">✕</span>}
+                    </button>
+                  );
+                })}
 
-              {selectedCategoryObj?.slug === "stardust" && (
-                <button
-                  onClick={() => {
-                    if (!session?.user) {
-                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-                    } else {
-                      setCustomRequestType("STARDUST");
-                      setIsCustomRequestModalOpen(true);
-                    }
-                  }}
-                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
-                >
-                  ★ Request Custom Stardust
-                </button>
-              )}
-
-              {(selectedCategoryObj?.slug === "xp" || selectedCategoryObj?.slug === "") && (
-                <button
-                  onClick={() => {
-                    if (!session?.user) {
-                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-                    } else {
-                      setCustomRequestType("XP");
-                      setIsCustomRequestModalOpen(true);
-                    }
-                  }}
-                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
-                >
-                  ★ Request Custom XP
-                </button>
-              )}
-
-              {(selectedCategoryObj?.slug === "raidservice" || 
-                selectedCategoryObj?.slug === "raid-services" || 
-                selectedCategoryObj?.slug === "raids" || 
-                selectedCategoryObj?.slug === "raid" || 
-                selectedCategoryObj?.slug === "raidservices") && (
-                <button
-                  onClick={() => {
-                    if (!session?.user) {
-                      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-                    } else {
-                      setCustomRequestType("RAIDSERVICE");
-                      setIsCustomRequestModalOpen(true);
-                    }
-                  }}
-                  className="h-8 px-4 rounded-md bg-zinc-900 hover:bg-zinc-850 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] self-start sm:self-auto shadow-xs"
-                >
-                  ★ Request Custom Raid Service
-                </button>
-              )}
+                {(selectedTags.length > 0 || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      setSelectedTags([]);
+                      setSearchQuery("");
+                    }}
+                    className="text-xs font-bold text-red-500 hover:underline ml-auto cursor-pointer"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Product list */}
@@ -603,6 +712,25 @@ Please guide me on how to complete the payment!`;
                         <p className="text-[10px] text-zinc-500 mt-1 leading-normal line-clamp-2 h-8">
                           {product.description || "Premium assets secure deployment coordinate."}
                         </p>
+                        
+                        {/* Product Tags Badges */}
+                        {product.tags && product.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {product.tags.slice(0, 3).map((tag) => (
+                              <span
+                                key={tag}
+                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/10 dark:bg-purple-400/10 text-purple-600 dark:text-purple-300 border border-purple-500/20"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {product.tags.length > 3 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-zinc-100 dark:bg-white/5 text-zinc-400">
+                                +{product.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1679,6 +1807,20 @@ Our recovery specialists have received your payment and are now actively process
                 <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed max-h-[160px] overflow-y-auto pr-1">
                   {selectedProduct.description || "No detailed description available for this premium storefront product."}
                 </div>
+
+                {/* Tags in modal */}
+                {selectedProduct.tags && selectedProduct.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {selectedProduct.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Pricing & Add to Cart */}
