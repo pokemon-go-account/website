@@ -47,11 +47,84 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadChatImage, deleteChatImages, sendChatWebhookNotification, editChatMessage, deleteChatMessage, getFirebaseCustomToken } from "@/features/chat/actions";
+import { getOrderFeedback } from "@/features/feedback/actions";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
 import { FormattedChatMessage } from "./formatted-chat-message";
 import { InlineMessageEditor } from "./inline-message-editor";
+import { Star, CheckCircle2, Clock } from "lucide-react";
+
+function AdminRatingCard({ orderId }: { orderId: string }) {
+  const [review, setReview] = useState<{ rating: number; comment: string; username?: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function checkReview() {
+      if (!orderId) return;
+      try {
+        const res = await getOrderFeedback(orderId);
+        if (isMounted && res.success && res.review) {
+          setReview(res.review);
+        }
+      } catch (err) {
+        console.error("Error fetching order review in admin:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    checkReview();
+    return () => { isMounted = false; };
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-[340px] mx-auto my-2 rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.03] p-3 flex items-center justify-center gap-2 text-xs text-zinc-400">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <span>Loading review status...</span>
+      </div>
+    );
+  }
+
+  if (review) {
+    return (
+      <div className="w-full max-w-[360px] mx-auto my-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 flex flex-col gap-2.5 shadow-xs text-left">
+        <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Customer Left a Review</span>
+          </div>
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star
+                key={s}
+                className={cn(
+                  "h-3.5 w-3.5",
+                  s <= review.rating ? "fill-yellow-400 stroke-yellow-400" : "stroke-zinc-300 dark:stroke-zinc-700 fill-transparent"
+                )}
+              />
+            ))}
+          </div>
+        </div>
+        {review.comment && (
+          <p className="text-xs text-zinc-700 dark:text-zinc-200 italic bg-white/70 dark:bg-black/30 p-2.5 rounded-xl border border-emerald-500/10">
+            "{review.comment}"
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-[340px] mx-auto my-2 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 flex items-center justify-between gap-2 text-xs text-amber-600 dark:text-amber-400">
+      <div className="flex items-center gap-2">
+        <Clock className="h-4 w-4 shrink-0 text-amber-500" />
+        <span className="font-semibold text-xs">Rating Request Sent (Awaiting Customer Review)</span>
+      </div>
+    </div>
+  );
+}
 
 interface ChatMeta {
   id: string; // doc ID (support-xxxx or order-xxxx)
@@ -1463,6 +1536,14 @@ export function AdminChatPanel() {
               )}
 
               {messages.map((msg) => {
+                if (msg.type === "rating_request" && msg.orderId) {
+                  return (
+                    <div key={msg.id} className="w-full flex justify-center py-1">
+                      <AdminRatingCard orderId={msg.orderId} />
+                    </div>
+                  );
+                }
+
                 const isSystem =
                   msg.sender === "system" ||
                   msg.senderName === "System" ||

@@ -593,6 +593,7 @@ export async function completeOrderConsole(orderId: string, investmentAmount?: n
 
     // Note: Wallet balance is already deducted at the time of order creation.
     revalidatePath("/console/orders");
+    revalidatePath("/orders");
     revalidatePath("/feedback"); // revalidate to update review capability
     return { success: true };
   } catch (error: any) {

@@ -227,3 +227,32 @@ export async function deleteOrderFeedback(feedbackId: string) {
     return { success: false, error: "Failed to delete review." };
   }
 }
+
+/** Get existing review for a specific order */
+export async function getOrderFeedback(orderId: string) {
+  try {
+    await connectDB();
+    const Feedback = (await import("@/models/Feedback")).default;
+    
+    // Find review for this orderId
+    const review = await Feedback.findOne({ orderId }).sort({ createdAt: -1 }).lean();
+    if (!review) {
+      return { success: true, review: null };
+    }
+
+    return {
+      success: true,
+      review: {
+        id: (review as any)._id.toString(),
+        rating: (review as any).rating,
+        comment: (review as any).comment,
+        username: (review as any).username,
+        createdAt: (review as any).createdAt ? new Date((review as any).createdAt).toISOString() : null,
+      },
+    };
+  } catch (error: any) {
+    console.error("getOrderFeedback error:", error);
+    return { success: false, review: null };
+  }
+}
+

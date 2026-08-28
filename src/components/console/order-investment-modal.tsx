@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DollarSign, User, TrendingUp, Loader2, Check, X } from "lucide-react";
-import { updateOrderInvestmentConsole } from "@/features/console/actions";
+import { updateOrderInvestmentConsole, completeOrderConsole } from "@/features/console/actions";
 import { cn } from "@/lib/utils";
 
 interface OrderInvestmentModalProps {
@@ -15,6 +15,7 @@ interface OrderInvestmentModalProps {
     totalPriceUSD?: number;
     investmentAmount?: number;
     investmentBy?: string;
+    status?: string;
   } | null;
   onSaved?: (orderId: string, investmentAmount: number, investmentBy: string) => void;
 }
@@ -52,14 +53,18 @@ export function OrderInvestmentModal({
     setError(null);
 
     try {
-      const res = await updateOrderInvestmentConsole(order.id, numericInv, investmentBy);
+      const isCompleted = order.status === "COMPLETED";
+      const res = isCompleted
+        ? await updateOrderInvestmentConsole(order.id, numericInv, investmentBy)
+        : await completeOrderConsole(order.id, numericInv, investmentBy);
+
       if (res.success) {
         if (onSaved) {
           onSaved(order.id, numericInv, investmentBy);
         }
         onClose();
       } else {
-        setError(res.error || "Failed to save investment details.");
+        setError(res.error || "Failed to save order details.");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred while saving.");

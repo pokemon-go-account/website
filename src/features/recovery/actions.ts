@@ -334,7 +334,44 @@ export async function updateRecoveryRequestStatus(requestId: string, status: "PE
       return { success: false, error: "Recovery request not found." };
     }
 
+    if (status === "COMPLETED") {
+      try {
+        const { getAdminDb } = await import("@/lib/firebase-admin");
+        const adminDb = getAdminDb();
+        if (adminDb) {
+          const chatId = `recovery-${requestId}`;
+          const existingRating = await adminDb
+            .collection("supportChats")
+            .doc(chatId)
+            .collection("messages")
+            .where("type", "==", "rating_request")
+            .limit(1)
+            .get();
+
+          if (existingRating.empty) {
+            await adminDb
+              .collection("supportChats")
+              .doc(chatId)
+              .collection("messages")
+              .add({
+                type: "rating_request",
+                text: "System: Your recovery request has been completed! 🎉 We'd love to hear about your experience.",
+                sender: "admin",
+                senderName: "Support Team",
+                timestamp: new Date(),
+                read: false,
+                orderId: requestId,
+              });
+          }
+        }
+      } catch (chatErr) {
+        console.warn("[updateRecoveryRequestStatus] Could not write rating_request to chat:", chatErr);
+      }
+    }
+
     revalidatePath("/console/recovery");
+    revalidatePath("/orders");
+    revalidatePath("/feedback");
     return { success: true, error: null };
   } catch (error: any) {
     console.error("Failed to update status:", error);

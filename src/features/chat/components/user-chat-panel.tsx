@@ -46,7 +46,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadChatImage, getFirebaseCustomToken, sendChatWebhookNotification, editChatMessage, deleteChatMessage } from "@/features/chat/actions";
-import { submitOrderFeedback } from "@/features/feedback/actions";
+import { submitOrderFeedback, getOrderFeedback } from "@/features/feedback/actions";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth as clientAuth, database, app as clientApp } from "@/lib/firebase";
 import { ref, set, remove, onValue, onDisconnect, getDatabase } from "firebase/database";
@@ -89,10 +89,31 @@ function RatingCard({ orderId, onDismiss }: { orderId: string; onDismiss: () => 
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [existingReview, setExistingReview] = useState<{ rating: number; comment: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const starLabels = ["Terrible", "Poor", "Okay", "Good", "Excellent"];
   const activeRating = hovered || rating;
+
+  useEffect(() => {
+    let isMounted = true;
+    async function checkReview() {
+      if (!orderId) return;
+      try {
+        const res = await getOrderFeedback(orderId);
+        if (isMounted && res.success && res.review) {
+          setExistingReview(res.review);
+          setRating(res.review.rating);
+          setComment(res.review.comment);
+          setSubmitted(true);
+        }
+      } catch (err) {
+        console.error("Error checking order review:", err);
+      }
+    }
+    checkReview();
+    return () => { isMounted = false; };
+  }, [orderId]);
 
   const handleSubmit = async () => {
     if (rating === 0) { setError("Please choose a star rating."); return; }
@@ -103,6 +124,7 @@ function RatingCard({ orderId, onDismiss }: { orderId: string; onDismiss: () => 
       const res = await submitOrderFeedback(orderId, rating, comment);
       if (res.success) {
         setSubmitted(true);
+        setExistingReview({ rating, comment });
       } else {
         setError(res.error || "Failed to submit. Please try again.");
       }
@@ -113,22 +135,52 @@ function RatingCard({ orderId, onDismiss }: { orderId: string; onDismiss: () => 
     }
   };
 
-  if (submitted) {
+  if (submitted || existingReview) {
+    const finalRating = existingReview?.rating || rating;
+    const finalComment = existingReview?.comment || comment;
+
     return (
-      <div className="w-full max-w-[340px] mx-auto my-1 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-5 flex flex-col items-center gap-2.5 shadow-lg animate-in fade-in zoom-in-95 duration-300">
-        <div className="h-11 w-11 rounded-full bg-emerald-500/15 flex items-center justify-center">
-          <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+      <div className="w-full max-w-[360px] mx-auto my-1 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 flex flex-col gap-3 shadow-lg animate-in fade-in zoom-in-95 duration-300">
+        <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Review Submitted</p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Order #{orderId.substring(Math.max(0, orderId.length - 6)).toUpperCase()}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={cn(
+                  "h-3.5 w-3.5",
+                  star <= finalRating
+                    ? "fill-yellow-400 stroke-yellow-400"
+                    : "stroke-zinc-300 dark:stroke-zinc-700 fill-transparent"
+                )}
+              />
+            ))}
+          </div>
         </div>
-        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 text-center">Review submitted!</p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center leading-relaxed">
-          Thank you — your feedback helps us improve the experience for every trainer.
-        </p>
-        <button
-          onClick={onDismiss}
-          className="mt-1 text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline underline-offset-2 cursor-pointer transition-colors"
-        >
-          Dismiss
-        </button>
+
+        {finalComment && (
+          <p className="text-xs text-zinc-700 dark:text-zinc-300 italic bg-white/60 dark:bg-black/20 p-2.5 rounded-xl border border-emerald-500/10 leading-relaxed">
+            "{finalComment}"
+          </p>
+        )}
+
+        <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-0.5">
+          <span className="font-semibold text-emerald-600/80 dark:text-emerald-400/80">Verified Feedback</span>
+          <a
+            href="/orders"
+            className="text-violet-600 dark:text-violet-400 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+          >
+            View in My Orders <ArrowRight className="h-3 w-3" />
+          </a>
+        </div>
       </div>
     );
   }

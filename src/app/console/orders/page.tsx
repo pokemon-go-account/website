@@ -140,6 +140,7 @@ export default function OrdersConsolePage() {
         totalPrice: target.totalPrice,
         investmentAmount: target.investmentAmount || 0,
         investmentBy: target.investmentBy || "",
+        status: target.status,
       });
       setIsInvestmentModalOpen(true);
     }
@@ -584,6 +585,7 @@ export default function OrdersConsolePage() {
             totalPrice: ord.totalPrice || ord.totalPriceUSD || 0,
             investmentAmount: ord.investmentAmount || 0,
             investmentBy: ord.investmentBy || "",
+            status: ord.status,
           });
           setIsInvestmentModalOpen(true);
         }}
