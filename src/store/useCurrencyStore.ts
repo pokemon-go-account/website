@@ -86,6 +86,21 @@ export const useCurrencyStore = create<CurrencyState>()(
     {
       name: "pokemon-go-currency-storage",
       partialize: (state) => ({ currency: state.currency, rates: state.rates }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // If stored rates have the old hardcoded 83.5 or invalid rates, reset them
+          if (!state.rates || state.rates.INR === 83.5) {
+            state.rates = {
+              USD: 1.0,
+              EUR: 0.87,
+              INR: 95.9,
+              GBP: 0.75,
+              JPY: 157.0,
+            };
+          }
+          state.fetchRates();
+        }
+      },
     }
   )
 );

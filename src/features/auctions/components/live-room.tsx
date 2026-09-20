@@ -1783,7 +1783,8 @@ export function LiveRoom({
                             try {
                               const res = await createBuyNowOrderAction(auction._id);
                               if (res.success && res.orderId) {
-                                const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                                const storeRates = useCurrencyStore.getState().rates;
+                                const inrRate = storeRates?.INR && storeRates.INR !== 83.5 ? storeRates.INR : 95.94;
                                 setUpiCheckoutData({ orderId: res.orderId, amount: Math.round(finalBuyNowPrice * inrRate), email: session?.user?.email || "customer@store.com" });
                                 setSelectedMethod("UPI"); setPaymentStage("upi");
                               } else { alert("Error: " + (res.error || "Failed to create order")); }
@@ -1957,7 +1958,7 @@ export function LiveRoom({
                   <div className="text-right">
                     <div className="text-xl font-black text-[#6133e1] dark:text-purple-400 tracking-tight"><PriceDisplay amountInUSD={finalBuyNowPrice} /></div>
                     {selectedMethod === "UPI" && (
-                      <div className="text-[10px] text-zinc-450 dark:text-zinc-550 font-bold mt-0.5">≈ ₹{Math.round(finalBuyNowPrice * (useCurrencyStore.getState().rates.INR || 83.5)).toLocaleString("en-IN")}</div>
+                      <div className="text-[10px] text-zinc-450 dark:text-zinc-550 font-bold mt-0.5">≈ ₹{Math.round(finalBuyNowPrice * (useCurrencyStore.getState().rates?.INR && useCurrencyStore.getState().rates.INR !== 83.5 ? useCurrencyStore.getState().rates.INR : 95.94)).toLocaleString("en-IN")}</div>
                     )}
                   </div>
                 </div>
@@ -2085,7 +2086,7 @@ export function LiveRoom({
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {/* UPI */}
-                    <button onClick={async () => { setWinnerLoadingMethod("UPI"); try { const res = await createAuctionWinnerOrderAction(auction._id); if (res.success && res.orderId) { const inrRate = useCurrencyStore.getState().rates.INR || 83.5; setWinnerUpiCheckoutData({ orderId: res.orderId, amount: Math.round(finalWinPrice * inrRate), email: session?.user?.email || "" }); setWinnerPaymentStage("upi"); } else { alert(res.error || "Failed"); } } catch (err) { console.error(err); } finally { setWinnerLoadingMethod(null); } }} disabled={winnerLoadingMethod !== null} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-[#6133e1] hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer transition disabled:opacity-50">
+                    <button onClick={async () => { setWinnerLoadingMethod("UPI"); try { const res = await createAuctionWinnerOrderAction(auction._id); if (res.success && res.orderId) { const storeRates = useCurrencyStore.getState().rates; const inrRate = storeRates?.INR && storeRates.INR !== 83.5 ? storeRates.INR : 95.94; setWinnerUpiCheckoutData({ orderId: res.orderId, amount: Math.round(finalWinPrice * inrRate), email: session?.user?.email || "" }); setWinnerPaymentStage("upi"); } else { alert(res.error || "Failed"); } } catch (err) { console.error(err); } finally { setWinnerLoadingMethod(null); } }} disabled={winnerLoadingMethod !== null} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-black/20 hover:border-[#6133e1] hover:bg-white dark:hover:bg-white/[0.02] active:scale-[0.98] cursor-pointer transition disabled:opacity-50">
                       {winnerLoadingMethod === "UPI" ? <Loader2 className="h-5 w-5 animate-spin" /> : <ScanQrCode className="h-5 w-5 text-[#6133e1]" />}
                       <span className="text-xs font-black text-zinc-900 dark:text-white">UPI</span>
                     </button>

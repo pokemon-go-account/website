@@ -303,7 +303,8 @@ Please guide me on how to complete the payment!`;
                         const res = await createRegistrationOrder(auctionId);
                         if (res.success && res.orderContext?.id) {
                           const depositPrice = 2.50; // USD
-                          const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                          const storeRates = useCurrencyStore.getState().rates;
+                          const inrRate = storeRates?.INR && storeRates.INR !== 83.5 ? storeRates.INR : 95.94;
                           const amountInINR = Math.round(depositPrice * inrRate);
 
                           setUpiCheckoutData({

@@ -74,10 +74,10 @@ export function ResendMessageButton({
   };
 
   const { rates, currency, convert } = useCurrencyStore();
-  const inrRate = rates.INR || 83.5;
+  const inrRate = rates?.INR && rates.INR !== 83.5 ? rates.INR : 95.94;
   const amountInINR = Math.round(price * inrRate);
 
-  const eurRate = rates.EUR || 0.92;
+  const eurRate = rates?.EUR && rates.EUR !== 0.92 ? rates.EUR : 0.87;
   const amountInEUR = Math.round(price * eurRate * 100) / 100;
 
   const selectedCurrency = currency;

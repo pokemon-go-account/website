@@ -1391,7 +1391,8 @@ Our recovery specialists have received your payment and are now actively process
                           const totalPrice = getTotalPrice();
                           const discount = Math.min(totalPrice, walletCreditAmount);
                           const finalPrice = Math.max(0, totalPrice - discount);
-                          const inrRate = useCurrencyStore.getState().rates.INR || 83.5;
+                          const storeRates = useCurrencyStore.getState().rates;
+                          const inrRate = storeRates?.INR && storeRates.INR !== 83.5 ? storeRates.INR : 95.94;
                           const amountInINR = Math.round(finalPrice * inrRate);
 
                           setUpiCheckoutData({

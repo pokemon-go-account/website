@@ -79,7 +79,7 @@ export function WisePaymentCheckout({
     };
   }, []);
 
-  const inrRate = liveInrRate || rates?.INR || 95.94;
+  const inrRate = liveInrRate || (rates?.INR && rates.INR !== 83.5 ? rates.INR : 95.94);
   const selectedRate = rates?.[currency as Currency] || 1.0;
   const finalPriceUSD = (originalTotalPrice !== undefined) 
     ? Math.max(0, originalTotalPrice - (walletDiscountApplied || 0)) 
