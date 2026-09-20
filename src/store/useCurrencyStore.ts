@@ -16,6 +16,7 @@ interface CurrencyState {
   rates: Record<Currency, number>;
   isConverting: boolean;
   setCurrency: (currency: Currency) => Promise<void>;
+  fetchRates: () => Promise<void>;
   convert: (amountInUSD: number) => { amount: number; symbol: string; formatted: string };
 }
 
@@ -25,12 +26,25 @@ export const useCurrencyStore = create<CurrencyState>()(
       currency: "USD",
       rates: {
         USD: 1.0,
-        EUR: 0.92,
-        INR: 83.5,
-        GBP: 0.79,
-        JPY: 155.0,
+        EUR: 0.87,
+        INR: 95.9,
+        GBP: 0.75,
+        JPY: 157.0,
       },
       isConverting: false,
+      fetchRates: async () => {
+        try {
+          const { getLiveExchangeRates } = await import("@/features/store/currency-actions");
+          const res = await getLiveExchangeRates();
+          if (res.success && res.rates) {
+            set({
+              rates: res.rates as Record<Currency, number>,
+            });
+          }
+        } catch (error) {
+          console.error("Failed to refresh exchange rates:", error);
+        }
+      },
       setCurrency: async (newCurrency) => {
         if (newCurrency === get().currency) return;
 

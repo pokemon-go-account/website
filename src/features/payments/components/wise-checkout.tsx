@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getDb } from "@/lib/firestore";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -23,14 +23,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn, getUserCountry } from "@/lib/utils";
+import { sendChatWebhookNotification } from "@/features/chat/actions";
 import { useCurrencyStore, CURRENCY_SYMBOLS, Currency } from "@/store/useCurrencyStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { sendChatWebhookNotification } from "@/features/chat/actions";
 
 interface WisePaymentCheckoutProps {
   orderId: string;
-  amount: number; // in customer's selected currency
-  currency: Currency; // e.g. "USD", "EUR", "INR" etc.
+  amount: number;
+  currency: string;
   customerEmail: string;
   wiseLink?: string;
   walletDiscountApplied?: number;
@@ -48,10 +48,42 @@ export function WisePaymentCheckout({
 }: WisePaymentCheckoutProps) {
   const { data: session } = useSession();
   const rates = useCurrencyStore((state) => state.rates);
-  const inrRate = rates?.INR || 83.5;
+  const [liveInrRate, setLiveInrRate] = useState<number | null>(null);
+  const [loadingRate, setLoadingRate] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveWiseRate() {
+      try {
+        setLoadingRate(true);
+        const { getLiveExchangeRates } = await import("@/features/store/currency-actions");
+        const res = await getLiveExchangeRates();
+        if (isMounted && res.success && res.rates?.INR) {
+          setLiveInrRate(res.rates.INR);
+          useCurrencyStore.setState((state) => ({
+            rates: {
+              ...state.rates,
+              ...(res.rates as Record<Currency, number>),
+            },
+          }));
+        }
+      } catch (err) {
+        console.error("[Wise Checkout] Failed to fetch live exchange rate:", err);
+      } finally {
+        if (isMounted) setLoadingRate(false);
+      }
+    }
+    fetchLiveWiseRate();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const inrRate = liveInrRate || rates?.INR || 95.94;
+  const selectedRate = rates?.[currency as Currency] || 1.0;
   const finalPriceUSD = (originalTotalPrice !== undefined) 
     ? Math.max(0, originalTotalPrice - (walletDiscountApplied || 0)) 
-    : amount;
+    : (currency === "USD" ? amount : amount / (selectedRate > 0 ? selectedRate : 1.0));
   const amountInINR = finalPriceUSD * inrRate;
 
   const transactionReference = "N/A";
@@ -66,7 +98,7 @@ export function WisePaymentCheckout({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatSelected = () => {
-    const symbol = CURRENCY_SYMBOLS[currency] || "$";
+    const symbol = CURRENCY_SYMBOLS[currency as Currency] || "$";
     const hasDecimals = amount % 1 !== 0;
     const formatted = (currency === "JPY" || !hasDecimals)
       ? Math.round(amount).toLocaleString()
@@ -390,12 +422,15 @@ Our recovery specialists have received your payment proof and will start process
              </p>
              
              {/* Dynamic INR converted amount display */}
-             <div className="mt-2.5 px-3 py-1 rounded bg-[#6133e1]/5 dark:bg-[#6133e1]/10 border border-[#6133e1]/10 text-center">
-               <p className="text-[9px] text-[#6133e1] dark:text-[#a78bfa] font-bold uppercase tracking-wide">Or in INR (1$ = {inrRate.toFixed(2)} INR)</p>
-               <p className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 mt-0.5">
-                 {amountInINR.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} INR
-               </p>
-             </div>
+              <div className="mt-2.5 px-3 py-1 rounded bg-[#6133e1]/5 dark:bg-[#6133e1]/10 border border-[#6133e1]/10 text-center">
+                <p className="text-[9px] text-[#6133e1] dark:text-[#a78bfa] font-bold uppercase tracking-wide flex items-center justify-center gap-1.5">
+                  {loadingRate && <Loader2 className="h-2.5 w-2.5 animate-spin inline" />}
+                  <span>Or in INR (1$ = {inrRate.toFixed(2)} INR)</span>
+                </p>
+                <p className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 mt-0.5">
+                  {amountInINR.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} INR
+                </p>
+              </div>
           </div>
 
           {/* How to Pay Toggle Button */}
@@ -436,7 +471,7 @@ Our recovery specialists have received your payment proof and will start process
                     <span className="text-zinc-950 dark:text-white font-mono select-all font-bold underline bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded text-[10px]">Dipanshusingh697@gmail.com</span>.
                   </li>
                   <li>
-                    Calculate the amount to send using our conversion rate (<strong>1 USD = {inrRate.toFixed(2)} INR</strong>):
+                    Calculate the amount to send using our live conversion rate (<strong>1 USD = {inrRate.toFixed(2)} INR</strong>):
                     <div className="mt-1.5 p-2 bg-[#6133e1]/5 dark:bg-[#6133e1]/10 rounded border border-[#6133e1]/20 font-bold text-zinc-950 dark:text-white text-[10.5px] flex items-center justify-between">
                       <span>Total INR to send:</span>
                       <span className="text-[#6133e1] dark:text-[#a78bfa] text-xs font-black">

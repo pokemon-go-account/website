@@ -20,10 +20,10 @@ export async function getLiveExchangeRates() {
       };
     }
 
-    // Otherwise, fetch new rates from the API with a 2.5s timeout
+    // Otherwise, fetch new rates from the API with a 6s timeout
     console.log("[Currency API] Cache expired or missing. Fetching fresh rates from open.er-api.com...");
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     const res = await fetch("https://open.er-api.com/v6/latest/USD", {
       cache: "no-store", // Bypass Next.js static cache, always fetch fresh data since we cache in MongoDB!
@@ -35,10 +35,10 @@ export async function getLiveExchangeRates() {
     if (data && data.rates) {
       const extractedRates = {
         USD: 1.0,
-        EUR: data.rates.EUR || 0.92,
-        INR: data.rates.INR || 83.5,
-        GBP: data.rates.GBP || 0.79,
-        JPY: data.rates.JPY || 155.0,
+        EUR: typeof data.rates.EUR === "number" ? data.rates.EUR : 0.87,
+        INR: typeof data.rates.INR === "number" ? data.rates.INR : 95.9,
+        GBP: typeof data.rates.GBP === "number" ? data.rates.GBP : 0.75,
+        JPY: typeof data.rates.JPY === "number" ? data.rates.JPY : 157.0,
       };
 
       // Upsert the new rates into MongoDB

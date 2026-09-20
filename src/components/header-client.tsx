@@ -54,6 +54,7 @@ export function HeaderClient({ user: propUser, signOutAction }: HeaderClientProp
 
   useEffect(() => {
     setMounted(true);
+    useCurrencyStore.getState().fetchRates();
   }, []);
 
   const [copied, setCopied] = useState(false);
