@@ -24,6 +24,7 @@ const FeedbackSchema: Schema<IFeedback> = new Schema(
 );
 
 FeedbackSchema.index({ createdAt: -1 });
+FeedbackSchema.index({ userId: 1 });
 
 const Feedback: Model<IFeedback> =
   mongoose.models.Feedback || mongoose.model<IFeedback>("Feedback", FeedbackSchema);

@@ -23,23 +23,22 @@ export default async function UserOrdersPage() {
 
   await connectDB();
 
-  const ordersDocs = await Order.find({ userId: session.user.id })
-    .sort({ createdAt: -1 })
-    .lean();
-
-  const wonAuctionsDocs = await Auction.find({
-    highestBidderId: session.user.id,
-    status: "COMPLETED",
-  })
-    .populate("listingId", "title stardust team shinyCount")
-    .sort({ endTime: -1 })
-    .lean();
-
-  const recoveryDocs = await RecoveryRequest.find({ userId: session.user.id })
-    .sort({ createdAt: -1 })
-    .lean();
-
-  const reviewsDocs = await Feedback.find({ userId: session.user.id }).lean();
+  const [ordersDocs, wonAuctionsDocs, recoveryDocs, reviewsDocs] = await Promise.all([
+    Order.find({ userId: session.user.id })
+      .sort({ createdAt: -1 })
+      .lean(),
+    Auction.find({
+      highestBidderId: session.user.id,
+      status: "COMPLETED",
+    })
+      .populate("listingId", "title stardust team shinyCount")
+      .sort({ endTime: -1 })
+      .lean(),
+    RecoveryRequest.find({ userId: session.user.id })
+      .sort({ createdAt: -1 })
+      .lean(),
+    Feedback.find({ userId: session.user.id }).lean(),
+  ]);
 
   const directOrders = ordersDocs.map((o: any) => ({
     id: o._id.toString(),

@@ -12,6 +12,8 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+export const revalidate = 60; // Cache individual news articles for 60 seconds (ISR)
+
 const DEFAULT_ARTICLE_SEO_KEYWORDS = [
   "pokemon go accounts",
   "pokemon go",

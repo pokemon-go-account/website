@@ -19,6 +19,8 @@ const CategorySchema: Schema<ICategory> = new Schema(
   { timestamps: true }
 );
 
+CategorySchema.index({ displayOrder: 1, name: 1 });
+
 const Category: Model<ICategory> =
   mongoose.models.Category || mongoose.model<ICategory>("Category", CategorySchema);
 

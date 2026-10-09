@@ -28,14 +28,16 @@ export default async function FeedbackPage() {
     const Order = (await import("@/models/Order")).default;
     const Auction = (await import("@/models/Auction")).default;
 
-    const completedOrdersCount = await Order.countDocuments({
-      userId: session.user.id,
-      status: "COMPLETED",
-    });
-    const completedAuctionsCount = await Auction.countDocuments({
-      highestBidderId: session.user.id,
-      status: "COMPLETED",
-    });
+    const [completedOrdersCount, completedAuctionsCount] = await Promise.all([
+      Order.countDocuments({
+        userId: session.user.id,
+        status: "COMPLETED",
+      }),
+      Auction.countDocuments({
+        highestBidderId: session.user.id,
+        status: "COMPLETED",
+      }),
+    ]);
 
     if (completedOrdersCount > 0 || completedAuctionsCount > 0) {
       hasPurchased = true;

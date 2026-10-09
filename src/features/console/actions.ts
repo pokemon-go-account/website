@@ -283,18 +283,20 @@ export async function getRegistrationsConsole(
 
     const skip = (page - 1) * limit;
 
-    const registrations = await Registration.find(query)
-      .populate("userId", "name username email telegramUsername")
-      .populate({
-        path: "auctionId",
-        populate: { path: "listingId", select: "title startingBid" }
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-      
-    const totalCount = await Registration.countDocuments(query);
+    const [registrations, totalCount] = await Promise.all([
+      Registration.find(query)
+        .populate("userId", "name username email telegramUsername")
+        .populate({
+          path: "auctionId",
+          populate: { path: "listingId", select: "title startingBid" }
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Registration.countDocuments(query),
+    ]);
+
     const hasMore = skip + registrations.length < totalCount;
       
     const formattedRegistrations = registrations.map((r: any) => ({
@@ -1074,8 +1076,22 @@ export async function markAuctionDelivered(orderId: string) {
   }
 }
 
+let cachedTotalRevenueConsole: {
+  timestamp: number;
+  data: { totalRevenue: number; completedOrdersCount: number };
+} | null = null;
+
 /** Get total revenue calculated upon every COMPLETED order and registrations added to revenue */
-export async function getTotalRevenueConsole() {
+export async function getTotalRevenueConsole(forceFresh: boolean = false) {
+  if (!forceFresh && cachedTotalRevenueConsole && (Date.now() - cachedTotalRevenueConsole.timestamp < 15000)) {
+    return {
+      success: true,
+      totalRevenue: cachedTotalRevenueConsole.data.totalRevenue,
+      completedOrdersCount: cachedTotalRevenueConsole.data.completedOrdersCount,
+      cached: true,
+    };
+  }
+
   try {
     await checkSuperAdminSession();
     await connectDB();
@@ -1097,14 +1113,37 @@ export async function getTotalRevenueConsole() {
     const totalRevenue = Math.round((orderRevenue + registrationRevenue) * 100) / 100;
     const completedOrdersCount = orderCount + registrationCount;
 
+    cachedTotalRevenueConsole = {
+      timestamp: Date.now(),
+      data: { totalRevenue, completedOrdersCount },
+    };
+
     return { success: true, totalRevenue, completedOrdersCount };
   } catch (error: any) {
     return { success: false, totalRevenue: 0, completedOrdersCount: 0, error: error.message };
   }
 }
 
+let cachedMaintenanceConfig: {
+  timestamp: number;
+  data: { maintenanceMode: boolean; contactEmail: string };
+} | null = null;
+
+export async function invalidateMaintenanceConfigCache() {
+  cachedMaintenanceConfig = null;
+}
+
 /** Fetch System Maintenance Mode Configuration */
 export async function getMaintenanceConfig() {
+  if (cachedMaintenanceConfig && (Date.now() - cachedMaintenanceConfig.timestamp < 15000)) {
+    return {
+      success: true,
+      maintenanceMode: cachedMaintenanceConfig.data.maintenanceMode,
+      contactEmail: cachedMaintenanceConfig.data.contactEmail,
+      cached: true,
+    };
+  }
+
   try {
     await connectDB();
     const SystemConfig = (await import("@/models/SystemConfig")).default;
@@ -1116,10 +1155,19 @@ export async function getMaintenanceConfig() {
         contactEmail: "support@pokemongo.com",
       });
     }
+
+    const maintenanceMode = Boolean(config.maintenanceMode);
+    const contactEmail = config.contactEmail || "support@pokemongo.com";
+
+    cachedMaintenanceConfig = {
+      timestamp: Date.now(),
+      data: { maintenanceMode, contactEmail },
+    };
+
     return {
       success: true,
-      maintenanceMode: Boolean(config.maintenanceMode),
-      contactEmail: config.contactEmail || "support@pokemongo.com",
+      maintenanceMode,
+      contactEmail,
     };
   } catch (error: any) {
     return {
@@ -1152,6 +1200,9 @@ export async function updateMaintenanceConfig(data: {
       { $set: updateData },
       { returnDocument: "after", upsert: true }
     ).lean();
+
+    // Invalidate local in-memory cache immediately
+    cachedMaintenanceConfig = null;
 
     revalidatePath("/", "layout");
 

@@ -58,6 +58,8 @@ const OrderSchema = new Schema<IOrder>(
 
 OrderSchema.index({ userId: 1, status: 1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ createdAt: -1 });
+OrderSchema.index({ userId: 1, createdAt: -1 });
 
 const Order: Model<IOrder> = mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
 

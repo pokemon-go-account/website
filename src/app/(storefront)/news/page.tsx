@@ -6,6 +6,8 @@ import { ArticleData } from "@/features/news/types";
 import { Calendar, Clock, Eye, Sparkles, ArrowRight, Tag, BookOpen, ShieldCheck, Newspaper } from "lucide-react";
 import { NewsClientFilter } from "./news-client-filter";
 
+export const revalidate = 60; // Cache news page for 60 seconds (ISR)
+
 export const metadata: Metadata = {
   title: "Pokémon GO News, Event Guides & Account Buying Market Updates",
   description: "Stay updated with Pokémon GO news, raids, event guides, shiny Pokémon for sale updates, and market trends for buying cheap level 80 Pokémon GO accounts.",

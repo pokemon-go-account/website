@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import NewsArticle from "@/models/NewsArticle";
 import { ArticleData, ArticleInputData } from "./types";
 import { auth } from "@/auth";
+import { cache } from "react";
 
 
 const SEED_ARTICLES: ArticleData[] = [
@@ -327,7 +328,11 @@ Looking to acquire a ready-to-compete Legend rank account? Browse our live aucti
 import { convertLegacyContentToHtml, isLikelyHtml } from "@/lib/legacy-content";
 
 // Seed initial articles into MongoDB once if DB has no seed marker
+let hasCheckedNewsSeeded = false;
+
 async function ensureNewsSeeded() {
+  if (hasCheckedNewsSeeded) return;
+
   try {
     await connectDB();
     const db = mongoose.connection.db;
@@ -354,6 +359,7 @@ async function ensureNewsSeeded() {
         { upsert: true }
       );
     }
+    hasCheckedNewsSeeded = true;
   } catch (err) {
     console.error("[ensureNewsSeeded] Seeding error:", err);
   }
@@ -401,7 +407,7 @@ export async function getAllNewsArticles(category?: string, query?: string): Pro
   }
 }
 
-export async function getNewsArticleById(idOrSlug: string): Promise<ArticleData | null> {
+export const getNewsArticleById = cache(async (idOrSlug: string): Promise<ArticleData | null> => {
   if (!idOrSlug) return null;
   const decodedId = decodeURIComponent(idOrSlug).trim();
 
@@ -443,7 +449,7 @@ export async function getNewsArticleById(idOrSlug: string): Promise<ArticleData 
   }
 
   return null;
-}
+});
 
 export async function getRelatedNewsArticles(
   currentId: string,

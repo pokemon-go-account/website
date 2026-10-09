@@ -32,6 +32,8 @@ const RegistrationSchema: Schema<IRegistration> = new Schema(
 // Unique compound index so a user can never register twice for the same auction
 RegistrationSchema.index({ userId: 1, auctionId: 1 }, { unique: true });
 RegistrationSchema.index({ addedToRevenue: 1 });
+RegistrationSchema.index({ status: 1, createdAt: -1 });
+RegistrationSchema.index({ createdAt: -1 });
 
 const Registration: Model<IRegistration> =
   mongoose.models.Registration ||

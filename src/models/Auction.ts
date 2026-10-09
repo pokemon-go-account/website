@@ -35,6 +35,8 @@ const AuctionSchema: Schema<IAuction> = new Schema(
 
 // Critical indexes for live querying and chronological grouping
 AuctionSchema.index({ status: 1, startTime: 1 });
+AuctionSchema.index({ status: 1, endTime: 1 });
+AuctionSchema.index({ highestBidderId: 1, status: 1 });
 
 const Auction: Model<IAuction> = mongoose.models.Auction || mongoose.model<IAuction>('Auction', AuctionSchema);
 export default Auction;

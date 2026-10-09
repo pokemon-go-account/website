@@ -112,9 +112,9 @@ export default async function AuctionsCatalogPage({ searchParams }: AuctionsCata
     query.listingId = { $in: matchingIds };
   }
 
-  // Fetch all auctions sorted chronologically
+  // Fetch all auctions sorted chronologically with targeted projection
   const auctionDocs = await Auction.find(query)
-    .populate("listingId")
+    .populate("listingId", "title description level shinyCount legendaryCount mythicalCount shinyPokemons legendaryPokemons mythicalPokemons team startingBid region screenshots")
     .sort({ startTime: 1 })
     .lean();
 
