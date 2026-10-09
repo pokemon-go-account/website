@@ -3,20 +3,32 @@
 import connectDB from "@/lib/db";
 import ExchangeRate from "@/models/ExchangeRate";
 
+let memoryRates: Record<string, number> | null = null;
+let memoryTimestamp = 0;
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes cache window
+
 export async function getLiveExchangeRates() {
   try {
+    // 1. Fast in-memory check (0ms, no DB/network overhead)
+    if (memoryRates && Date.now() - memoryTimestamp < CACHE_TTL_MS) {
+      return { success: true, rates: memoryRates };
+    }
+
     await connectDB();
     
-    // Check if we have recent rates in DB (within 5 minutes)
-    const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
+    // 2. Check recent rates in MongoDB
+    const cacheThreshold = new Date(Date.now() - CACHE_TTL_MS);
     const existingRate = await ExchangeRate.findOne({ baseCurrency: "USD" });
 
-    // If we have rates and they are less than 5 minutes old, return them directly from MongoDB
-    if (existingRate && existingRate.updatedAt > fiveMinsAgo) {
+    // If we have rates and they are less than 30 minutes old, return them directly
+    if (existingRate && existingRate.updatedAt > cacheThreshold) {
       console.log(`[Currency API] Serving rates from MongoDB Cache (Last updated: ${existingRate.updatedAt.toISOString()})`);
+      const rates = Object.fromEntries(existingRate.rates);
+      memoryRates = rates;
+      memoryTimestamp = Date.now();
       return { 
         success: true, 
-        rates: Object.fromEntries(existingRate.rates) 
+        rates, 
       };
     }
 
@@ -52,6 +64,8 @@ export async function getLiveExchangeRates() {
       );
 
       console.log("[Currency API] Successfully fetched and cached new rates to MongoDB.");
+      memoryRates = extractedRates;
+      memoryTimestamp = Date.now();
       return { success: true, rates: extractedRates };
     }
     

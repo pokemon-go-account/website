@@ -41,40 +41,120 @@ export interface RevenueOrderDetails {
   createdAt: string;
 }
 
-export async function getRevenueAnalyticsAction() {
+// In-memory cache for fast repeated dashboard requests & instant page loads
+let cachedRevenueData: { data: any; timestamp: number } | null = null;
+const REVENUE_CACHE_TTL_MS = 15 * 1000; // 15 seconds cache window
+
+export async function getRevenueAnalyticsAction(options?: { forceFresh?: boolean }) {
   try {
     const session = await auth();
     if (!session?.user || (session.user as any).role !== "SUPER_ADMIN") {
       return { success: false, error: "Unauthorized access. Super Admin required." };
     }
 
+    // Serve from fast in-memory cache if fresh and not forcing refresh
+    if (!options?.forceFresh && cachedRevenueData && Date.now() - cachedRevenueData.timestamp < REVENUE_CACHE_TTL_MS) {
+      return { success: true, data: cachedRevenueData.data };
+    }
+
     await connectDB();
 
-    // 1. Calculate all-time summary stats using database-level aggregates
-    const orderStats = await Order.aggregate([
-      { $match: { status: "COMPLETED" } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$totalPrice" },
-          count: { $sum: 1 },
-          storefront: {
-            $sum: { $cond: [{ $eq: ["$orderType", "STOREFRONT"] }, "$totalPrice", 0] }
-          },
-          buyNow: {
-            $sum: { $cond: [{ $eq: ["$orderType", "BUY_NOW"] }, "$totalPrice", 0] }
-          },
-          auction: {
-            $sum: { $cond: [{ $eq: ["$orderType", "AUCTION"] }, "$totalPrice", 0] }
-          },
-          recovery: {
-            $sum: { $cond: [{ $eq: ["$orderType", "RECOVERY"] }, "$totalPrice", 0] }
+    // Ensure Mongoose models are registered
+    void User.modelName;
+    void Product.modelName;
+    void Category.modelName;
+    void Order.modelName;
+    void RecoveryRequest.modelName;
+    void Registration.modelName;
+
+    const maxDaysAgo = new Date();
+    maxDaysAgo.setDate(maxDaysAgo.getDate() - 365);
+    maxDaysAgo.setHours(0, 0, 0, 0);
+
+    // Parallelize all independent database queries concurrently
+    const [
+      orderStatsRes,
+      recoveryOrders,
+      completedRecoveries,
+      paidRegistrationsAll,
+      dailyOrderAgg,
+      orders,
+      categories
+    ] = await Promise.all([
+      // 1. All-time summary aggregate for completed orders
+      Order.aggregate([
+        { $match: { status: "COMPLETED" } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$totalPrice" },
+            count: { $sum: 1 },
+            storefront: {
+              $sum: { $cond: [{ $eq: ["$orderType", "STOREFRONT"] }, "$totalPrice", 0] }
+            },
+            buyNow: {
+              $sum: { $cond: [{ $eq: ["$orderType", "BUY_NOW"] }, "$totalPrice", 0] }
+            },
+            auction: {
+              $sum: { $cond: [{ $eq: ["$orderType", "AUCTION"] }, "$totalPrice", 0] }
+            },
+            recovery: {
+              $sum: { $cond: [{ $eq: ["$orderType", "RECOVERY"] }, "$totalPrice", 0] }
+            }
           }
         }
-      }
+      ]),
+
+      // 2. Recovery orders (to extract linked recovery IDs to prevent double counting)
+      Order.find({
+        status: "COMPLETED",
+        orderType: "RECOVERY"
+      }).select("items.productId items.recoveryRequestId").lean(),
+
+      // 3. Completed recoveries (single unified query for revenue, daily history & table)
+      RecoveryRequest.find({ status: "COMPLETED" })
+        .select("_id price accountLevel userId status createdAt")
+        .populate("userId", "username name email country")
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .lean(),
+
+      // 4. Paid bidder registration fees
+      Registration.find({ addedToRevenue: true })
+        .select("_id userId createdAt")
+        .populate("userId", "username email name country")
+        .lean(),
+
+      // 5. Database-level daily order performance aggregation for past 365 days (runs on index in ~30ms)
+      Order.aggregate([
+        {
+          $match: {
+            status: "COMPLETED",
+            createdAt: { $gte: maxDaysAgo }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            count: { $sum: 1 },
+            revenue: { $sum: "$totalPrice" }
+          }
+        }
+      ]),
+
+      // 6. Top 200 completed orders for table ledger (lean, no nested product populate)
+      Order.find({ status: "COMPLETED" })
+        .select("_id totalPrice orderType items userId status createdAt investmentAmount investmentBy")
+        .populate("userId", "username name email country")
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .lean(),
+
+      // 7. Categories for fast lookup
+      Category.find({}).select("name slug").lean(),
     ]);
 
-    const orderStatResult = orderStats[0] || {
+    const orderStatResult = orderStatsRes[0] || {
       total: 0,
       count: 0,
       storefront: 0,
@@ -84,11 +164,6 @@ export async function getRevenueAnalyticsAction() {
     };
 
     // Find all recovery request IDs paid via a completed order to prevent double-counting
-    const recoveryOrders = await Order.find({
-      status: "COMPLETED",
-      orderType: "RECOVERY"
-    }).select("items.productId items.recoveryRequestId").lean();
-
     const orderRecoveryIds = new Set<string>();
     for (const ord of recoveryOrders) {
       for (const i of (ord.items || [])) {
@@ -99,29 +174,21 @@ export async function getRevenueAnalyticsAction() {
       }
     }
 
-    const validRecoveryObjectIds = Array.from(orderRecoveryIds)
-      .filter((id) => mongoose.Types.ObjectId.isValid(id))
-      .map((id) => new mongoose.Types.ObjectId(id));
-
-    // Calculate completed recoveries revenue that was paid through channels other than standard Storefront orders
-    const independentRecoveries = await RecoveryRequest.find({
-      status: "COMPLETED",
-      price: { $gt: 0 },
-      _id: { $nin: validRecoveryObjectIds }
-    }).select("price");
-
+    // Calculate completed recoveries revenue paid through channels other than standard Storefront orders
     let independentRecoveryRevenue = 0;
-    for (const rec of independentRecoveries) {
-      independentRecoveryRevenue += rec.price || 0;
+    let independentRecoveriesCount = 0;
+    for (const rec of completedRecoveries) {
+      const recIdStr = rec._id.toString();
+      if (!orderRecoveryIds.has(recIdStr) && (rec.price || 0) > 0) {
+        independentRecoveryRevenue += rec.price || 0;
+        independentRecoveriesCount++;
+      }
     }
 
     // Calculate total bidder registration deposit fees ($2.50 per registration explicitly added to revenue)
-    const paidRegistrationsAll = await Registration.find({ addedToRevenue: true })
-      .populate("userId", "username email name country")
-      .lean();
     const registrationRevenueUSD = paidRegistrationsAll.length * 2.50;
 
-    const totalOrdersCount = orderStatResult.count + independentRecoveries.length + paidRegistrationsAll.length;
+    const totalOrdersCount = orderStatResult.count + independentRecoveriesCount + paidRegistrationsAll.length;
     const storefrontRevenueUSD = orderStatResult.storefront;
     const buyNowRevenueUSD = orderStatResult.buyNow;
     const auctionRevenueUSD = orderStatResult.auction;
@@ -129,24 +196,35 @@ export async function getRevenueAnalyticsAction() {
     const totalRevenueUSD = storefrontRevenueUSD + buyNowRevenueUSD + auctionRevenueUSD + recoveryRevenueUSD + registrationRevenueUSD;
     const averageOrderValueUSD = totalOrdersCount > 0 ? totalRevenueUSD / totalOrdersCount : 0;
 
-    // 2. Fetch completed orders & recoveries for daily performance history (past 365 days)
-    const maxDaysAgo = new Date();
-    maxDaysAgo.setDate(maxDaysAgo.getDate() - 365);
-    maxDaysAgo.setHours(0, 0, 0, 0);
+    // Fast batch lookup for unique product categories across the 200 orders (avoids Mongoose nested populate)
+    const uniqueProductIds = Array.from(new Set(
+      orders.flatMap(o => (o.items || []).map((i: any) => i.productId?.toString())).filter(Boolean)
+    ));
+    const products = uniqueProductIds.length > 0
+      ? await Product.find({ _id: { $in: uniqueProductIds } }).select("_id categoryId").lean()
+      : [];
 
-    const [recentOrders, recentRecoveries] = await Promise.all([
-      Order.find({
-        status: "COMPLETED",
-        createdAt: { $gte: maxDaysAgo }
-      }).select("totalPrice createdAt"),
-      RecoveryRequest.find({
-        status: "COMPLETED",
-        price: { $gt: 0 },
-        createdAt: { $gte: maxDaysAgo }
-      }).select("price _id createdAt")
-    ]);
+    const categoryMap = new Map<string, { name: string; slug: string }>();
+    for (const cat of (categories || [])) {
+      categoryMap.set(cat._id.toString(), { name: cat.name, slug: cat.slug });
+    }
 
+    const productCategoryMap = new Map<string, { name: string; slug: string }>();
+    for (const prod of products) {
+      if (prod.categoryId) {
+        const catObj = categoryMap.get(prod.categoryId.toString());
+        if (catObj) {
+          productCategoryMap.set(prod._id.toString(), catObj);
+        }
+      }
+    }
+
+    // Daily map initialized with database-aggregated order performance
     const dailyMap = new Map<string, { count: number; revenue: number }>();
+    for (const item of dailyOrderAgg) {
+      dailyMap.set(item._id, { count: item.count, revenue: item.revenue });
+    }
+
     const getDateKey = (date: Date) => {
       const d = new Date(date);
       const year = d.getFullYear();
@@ -155,28 +233,19 @@ export async function getRevenueAnalyticsAction() {
       return `${year}-${month}-${day}`;
     };
 
-    for (const ord of recentOrders) {
-      const dateKey = getDateKey(ord.createdAt);
-      const amount = ord.totalPrice || 0;
-      const existing = dailyMap.get(dateKey) || { count: 0, revenue: 0 };
-      dailyMap.set(dateKey, {
-        count: existing.count + 1,
-        revenue: existing.revenue + amount,
-      });
-    }
-
-    for (const rec of recentRecoveries) {
-      if (!orderRecoveryIds.has(rec._id.toString())) {
+    // Add independent completed recoveries to daily stats
+    for (const rec of completedRecoveries) {
+      if (!orderRecoveryIds.has(rec._id.toString()) && (rec.price || 0) > 0) {
         const dateKey = getDateKey(rec.createdAt);
-        const price = rec.price || 0;
         const existing = dailyMap.get(dateKey) || { count: 0, revenue: 0 };
         dailyMap.set(dateKey, {
           count: existing.count + 1,
-          revenue: existing.revenue + price,
+          revenue: existing.revenue + (rec.price || 0),
         });
       }
     }
 
+    // Add paid registrations to daily stats
     for (const reg of paidRegistrationsAll) {
       if (reg.createdAt) {
         const dateKey = getDateKey(new Date(reg.createdAt));
@@ -207,38 +276,14 @@ export async function getRevenueAnalyticsAction() {
       curr.setDate(curr.getDate() + 1);
     }
 
-    // 3. Fetch list of most recent completed orders & recoveries (Limited to 200 to prevent OOM)
-    const [orders, completedRecoveries, categories] = await Promise.all([
-      Order.find({ status: "COMPLETED" })
-        .select("_id totalPrice orderType items userId status createdAt investmentAmount investmentBy")
-        .populate("userId", "username name email country")
-        .populate("items.productId", "categoryId name")
-        .sort({ createdAt: -1 })
-        .limit(200)
-        .lean(),
-      RecoveryRequest.find({ status: "COMPLETED" })
-        .select("_id price accountLevel userId status createdAt")
-        .populate("userId", "username name email country")
-        .sort({ createdAt: -1 })
-        .limit(200)
-        .lean(),
-      Category.find({}).select("name slug").lean(),
-    ]);
-
-    const categoryMap = new Map<string, { name: string; slug: string }>();
-    for (const cat of (categories || [])) {
-      categoryMap.set(cat._id.toString(), { name: cat.name, slug: cat.slug });
-    }
-
     const orderList: RevenueOrderDetails[] = [];
 
     // Format orders for table output
     for (const ord of orders) {
       const userObj = ord.userId as any;
       const itemsList: RevenueOrderItem[] = (ord.items || []).map((i: any) => {
-        const prodObj = i.productId as any;
-        const catIdStr = prodObj?.categoryId?.toString();
-        const catObj = catIdStr ? categoryMap.get(catIdStr) : undefined;
+        const prodIdStr = i.productId?.toString();
+        const catObj = prodIdStr ? productCategoryMap.get(prodIdStr) : undefined;
         return {
           name: i.name || "Purchased Product",
           priceUSD: i.price || 0,
@@ -326,24 +371,31 @@ export async function getRevenueAnalyticsAction() {
     const totalInvestmentUSD = orders.reduce((sum, ord) => sum + (ord.investmentAmount || 0), 0);
     const netProfitUSD = totalRevenueUSD - totalInvestmentUSD;
 
+    const payload = {
+      summary: {
+        totalRevenueUSD: Math.round(totalRevenueUSD * 100) / 100,
+        totalInvestmentUSD: Math.round(totalInvestmentUSD * 100) / 100,
+        netProfitUSD: Math.round(netProfitUSD * 100) / 100,
+        totalOrdersCount,
+        averageOrderValueUSD: Math.round(averageOrderValueUSD * 100) / 100,
+        storefrontRevenueUSD: Math.round(storefrontRevenueUSD * 100) / 100,
+        buyNowRevenueUSD: Math.round(buyNowRevenueUSD * 100) / 100,
+        auctionRevenueUSD: Math.round(auctionRevenueUSD * 100) / 100,
+        recoveryRevenueUSD: Math.round(recoveryRevenueUSD * 100) / 100,
+        registrationRevenueUSD: Math.round(registrationRevenueUSD * 100) / 100,
+      },
+      dailyStats,
+      orders: orderList,
+    };
+
+    cachedRevenueData = {
+      data: payload,
+      timestamp: Date.now(),
+    };
+
     return {
       success: true,
-      data: {
-        summary: {
-          totalRevenueUSD: Math.round(totalRevenueUSD * 100) / 100,
-          totalInvestmentUSD: Math.round(totalInvestmentUSD * 100) / 100,
-          netProfitUSD: Math.round(netProfitUSD * 100) / 100,
-          totalOrdersCount,
-          averageOrderValueUSD: Math.round(averageOrderValueUSD * 100) / 100,
-          storefrontRevenueUSD: Math.round(storefrontRevenueUSD * 100) / 100,
-          buyNowRevenueUSD: Math.round(buyNowRevenueUSD * 100) / 100,
-          auctionRevenueUSD: Math.round(auctionRevenueUSD * 100) / 100,
-          recoveryRevenueUSD: Math.round(recoveryRevenueUSD * 100) / 100,
-          registrationRevenueUSD: Math.round(registrationRevenueUSD * 100) / 100,
-        },
-        dailyStats,
-        orders: orderList,
-      },
+      data: payload,
     };
   } catch (error: any) {
     console.error("Failed to fetch revenue analytics:", error);

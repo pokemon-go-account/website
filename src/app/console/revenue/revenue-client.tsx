@@ -56,16 +56,13 @@ function RevenueLineChart({
   maxChartValue,
   chartMode,
   convertPrice,
-  hoveredBar,
-  setHoveredBar,
 }: {
   dailyStats: DailyStat[];
   maxChartValue: number;
   chartMode: "revenue" | "orders";
   convertPrice: (val: number) => string;
-  hoveredBar: DailyStat | null;
-  setHoveredBar: (bar: DailyStat | null) => void;
 }) {
+  const [hoveredBar, setHoveredBar] = useState<DailyStat | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   const width = 1000;
@@ -293,8 +290,16 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   const [timeRange, setTimeRange] = useState<"1d" | "7d" | "14d" | "30d" | "90d" | "all">("14d");
   const [chartMode, setChartMode] = useState<"revenue" | "orders">("revenue");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 200);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  const [hoveredBar, setHoveredBar] = useState<DailyStat | null>(null);
 
   // Context Menu & Investment Modal State
   const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
@@ -310,7 +315,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     setRefreshing(true);
     try {
       const [revRes, rateRes] = await Promise.all([
-        getRevenueAnalyticsAction(),
+        getRevenueAnalyticsAction({ forceFresh: true }),
         getLiveExchangeRates(),
       ]);
 
@@ -363,13 +368,14 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
   // Filtered orders list
   const filteredOrders = useMemo(() => {
     if (!data?.orders) return [];
+    const q = debouncedSearch.trim().toLowerCase();
     return data.orders.filter((ord) => {
       const matchesSearch =
-        searchQuery.trim() === "" ||
-        ord.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ord.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ord.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (ord.customerCountry || "").toLowerCase().includes(searchQuery.toLowerCase());
+        q === "" ||
+        ord.orderNumber.toLowerCase().includes(q) ||
+        ord.customerName.toLowerCase().includes(q) ||
+        ord.customerEmail.toLowerCase().includes(q) ||
+        (ord.customerCountry || "").toLowerCase().includes(q);
 
       let matchesType = false;
       if (typeFilter === "ALL") {
@@ -436,7 +442,7 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
         (ord.customerCountry || "").toLowerCase() === selectedCountry.toLowerCase();
       return matchesSearch && matchesType && matchesCountry;
     });
-  }, [data?.orders, searchQuery, typeFilter, selectedCountry]);
+  }, [data?.orders, debouncedSearch, typeFilter, selectedCountry]);
 
   // Paginated Orders
   const paginatedOrders = useMemo(() => {
@@ -517,8 +523,8 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
 
   // Full Daily Stats array from filter or database
   const fullDailyStats = useMemo(() => {
-    if (selectedCountry === "ALL" && data?.dailyStats) {
-      return data.dailyStats;
+    if (selectedCountry === "ALL") {
+      return data?.dailyStats || [];
     }
 
     const dailyMap = new Map<string, { count: number; revenue: number }>();
@@ -533,27 +539,20 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
     });
 
     const stats: DailyStat[] = [];
-    const startDate = new Date("2026-07-15T00:00:00Z");
-    const today = new Date();
-    const curr = new Date(startDate);
-
-    while (curr <= today) {
-      const year = curr.getFullYear();
-      const month = String(curr.getMonth() + 1).padStart(2, "0");
-      const day = String(curr.getDate()).padStart(2, "0");
-      const key = `${year}-${month}-${day}`;
-      const stat = dailyMap.get(key) || { count: 0, revenue: 0 };
-      const formattedDate = curr.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      stats.push({
-        date: key,
-        formattedDate,
-        ordersCount: stat.count,
-        revenue: Math.round(stat.revenue * 100) / 100,
-      });
-      curr.setDate(curr.getDate() + 1);
+    const baseList = data?.dailyStats || [];
+    if (baseList.length > 0) {
+      for (const item of baseList) {
+        const stat = dailyMap.get(item.date) || { count: 0, revenue: 0 };
+        stats.push({
+          date: item.date,
+          formattedDate: item.formattedDate,
+          ordersCount: stat.count,
+          revenue: Math.round(stat.revenue * 100) / 100,
+        });
+      }
     }
     return stats;
-  }, [data?.dailyStats, filteredOrders, selectedCountry]);
+  }, [data?.dailyStats, selectedCountry, filteredOrders]);
 
   // Active Daily or Hourly Stats based on selected timeRange
   const dailyStats = useMemo(() => {
@@ -927,8 +926,6 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
           maxChartValue={maxChartValue}
           chartMode={chartMode}
           convertPrice={convertPrice}
-          hoveredBar={hoveredBar}
-          setHoveredBar={setHoveredBar}
         />
 
       </div>
@@ -1210,10 +1207,11 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
                 <span>
                   Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredOrders.length)} of {filteredOrders.length} orders
                 </span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5" suppressHydrationWarning>
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
+                    disabled={currentPage <= 1}
+                    suppressHydrationWarning
                     className="h-7 w-7 rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300 flex items-center justify-center transition-colors disabled:opacity-40"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
@@ -1223,7 +1221,8 @@ export function RevenueClient({ initialData, initialRates }: RevenueClientProps)
                   </span>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage >= totalPages}
+                    suppressHydrationWarning
                     className="h-7 w-7 rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300 flex items-center justify-center transition-colors disabled:opacity-40"
                   >
                     <ChevronRight className="h-3.5 w-3.5" />
