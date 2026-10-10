@@ -91,7 +91,7 @@ const BENEFITS = [
   {
     icon: ShieldCheck,
     title: "Pay $0 Today",
-    desc: "No payment before the account have been recovered. You pay starting at $49 only after your account is 100% restored.",
+    desc: "No payment upfront. Once our team recovers and secures your account, you pay starting at $49 and receive full handover.",
   },
   {
     icon: Lock,
@@ -100,8 +100,8 @@ const BENEFITS = [
   },
   {
     icon: Activity,
-    title: "95%+ Escalation Success Rate",
-    desc: "Our specialists utilize formal appeal procedures, coordinate logs analysis, and Niantic terms support.",
+    title: "95%+ Recovery Success Rate",
+    desc: "Our specialists utilize advanced restoration procedures, coordinate logs analysis, and dedicated account support.",
   },
 ];
 
@@ -113,8 +113,8 @@ const STEPS = [
   },
   {
     num: "02",
-    title: "Diagnosis & Niantic Appeal",
-    desc: "Our security team inspects coordinate signatures, account logs, and submits a formal appeal.",
+    title: "Diagnosis & Account Recovery",
+    desc: "Our security team inspects coordinate signatures, account logs, and initiates recovery procedures.",
   },
   {
     num: "03",
@@ -123,8 +123,8 @@ const STEPS = [
   },
   {
     num: "04",
-    title: "Handover & Payment (Starts at $49)",
-    desc: "Log in, verify your account is fully restored, and ONLY THEN settle the starting $49 recovery fee.",
+    title: "Payment & Account Handover (Starts at $49)",
+    desc: "Once we recover and secure your account, you complete the starting $49 payment, and credentials are handed over to you.",
   },
 ];
 
@@ -381,10 +381,10 @@ export function RecoveryClient({ product, isLoggedIn }: RecoveryClientProps) {
               <div className="space-y-1">
                 <div className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                  <span>No Payment Before The Account Have Been Recovered</span>
+                  <span>No Payment Before Your Account Has Been Recovered</span>
                 </div>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed pl-6 font-normal">
-                  Submit your recovery case for $0 today. Our security specialists run diagnostics and prepare formal Niantic appeals. You only pay starting at $49 after your account is recovered and handed back to you.
+                  Submit your recovery case for $0 today. Our security specialists run full account diagnostics and recovery procedures. Once we recover and secure your account, you complete the starting $49 fee, and the account is immediately handed over to you.
                 </p>
               </div>
 
